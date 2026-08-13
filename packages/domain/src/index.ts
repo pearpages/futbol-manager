@@ -55,6 +55,8 @@ export {
 export {
   ageOn,
   type Attributes,
+  type Contract,
+  contractMonthsLeft,
   ATTRIBUTE_KEYS,
   clampRating,
   overall,
@@ -80,7 +82,29 @@ export {
   worstXI,
 } from './lineup.ts'
 
-export { generateLeagueSquads, generateSquad, SQUAD_SIZE, type SquadOptions } from './squad.ts'
+export {
+  generateLeagueSquads,
+  generateSquad,
+  generateYouthPlayer,
+  SQUAD_SIZE,
+  type SquadOptions,
+} from './squad.ts'
+
+export { askingPrice, expectedWage, valuePlayer } from './valuation.ts'
+
+export {
+  applyTransfers,
+  isTransferWindowOpen,
+  MAX_SQUAD,
+  MIN_SQUAD,
+  needFor,
+  runTransferWindow,
+  surplus,
+  totalBudget,
+  type Transfer,
+} from './market.ts'
+
+export { contractExpiry, rolloverSeason, type RolloverOptions } from './season.ts'
 
 export {
   clubIds,
@@ -95,6 +119,7 @@ export {
   DEFAULT_FORMATION,
   defaultSeasonStart,
   newSeason,
+  simulateCareer,
   type NewSeasonOptions,
   type SeasonRun,
   simulateSeason,

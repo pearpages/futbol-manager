@@ -46,6 +46,15 @@ export interface Club {
    */
   readonly attack: number
   readonly defence: number
+  /**
+   * Transfer kitty, added at M4. Falls when the club buys, rises when it sells.
+   *
+   * Seeded from the club's rating, which is what keeps the table's shape stable
+   * across a decade: if Almería could outspend Madrid the league would invert
+   * within a few seasons. **M5 replaces the seeding** with money that actually
+   * comes from somewhere — gate receipts, TV, prize money, minus wages.
+   */
+  readonly budget: number
 }
 
 export function clubRating(club: Club): TeamRating {

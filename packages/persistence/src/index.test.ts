@@ -19,6 +19,7 @@ const clubs: Club[] = Array.from({ length: 20 }, (_, i) => ({
   shortName: `C${String(i + 1).padStart(2, '0')}`,
   attack: 50 + ((i * 7) % 35),
   defence: 50 + ((i * 11) % 35),
+  budget: 400 + i * 50,
 }))
 
 const tableOf = (state: GameState) => computeTable(state.competition.clubIds, state.season.fixtures)

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { bestXI, computeTable, overall, worstXI } from '@fm/domain'
+import { bestXI, overall, startersOf, teamRating, worstXI } from '@fm/domain'
 import { App } from './App.tsx'
 import { useGame } from './store.ts'
 
@@ -155,25 +155,45 @@ describe('the lineup screen', () => {
   })
 })
 
-describe('a bad lineup costs results', () => {
-  it('concedes more over a season than the best XI does', () => {
-    // Same seed, same league, one difference: the XI the player picked.
-    const pointsWith = (pick: typeof bestXI) => {
-      useGame.getState().newGame()
-      const { game, clubId } = managed()
-      useGame.getState().dispatch({
-        type: 'SetLineup',
-        clubId,
-        lineup: pick(game.squads[clubId] ?? [], '4-4-2'),
-      })
-      for (let day = 0; day < 300; day++) {
-        useGame.getState().dispatch({ type: 'AdvanceDay' })
-      }
-      const finished = useGame.getState().game
-      const table = computeTable(finished.competition.clubIds, finished.season.fixtures)
-      return table.find((r) => r.clubId === clubId)?.points ?? 0
-    }
+describe('a bad lineup reaches the resolver', () => {
+  // This used to compare two single seasons and assert the better XI won more
+  // points. A single season cannot resolve the effect — it is ~7 points against
+  // season-to-season variance of a similar size — so the test was passing on
+  // luck, and stopped when an unrelated change shifted the rng stream.
+  //
+  // The statistical claim belongs to the domain harness, which measures it over
+  // 20 seasons. What the UI needs to prove is narrower and deterministic: a
+  // lineup chosen on screen changes the two numbers the resolver reads.
 
-    expect(pointsWith(bestXI)).toBeGreaterThan(pointsWith(worstXI))
+  const ratingAfter = (pick: typeof bestXI) => {
+    useGame.getState().newGame()
+    const { game, clubId } = managed()
+    const squad = game.squads[clubId] ?? []
+    useGame.getState().dispatch({ type: 'SetLineup', clubId, lineup: pick(squad, '4-4-2') })
+
+    const after = useGame.getState().game
+    const lineup = after.lineups[clubId]
+    if (lineup === undefined) throw new Error('no lineup')
+    return teamRating(startersOf(after.squads[clubId] ?? [], lineup), after.tactics[clubId])
+  }
+
+  it('a worse XI produces worse attack and defence', () => {
+    const best = ratingAfter(bestXI)
+    const worst = ratingAfter(worstXI)
+    expect(best.attack).toBeGreaterThan(worst.attack)
+    expect(best.defence).toBeGreaterThan(worst.defence)
+  })
+
+  it('and the season actually plays out through that lineup', () => {
+    // Cheap end-to-end check that dispatching from the UI reaches match results
+    // at all — one round, deterministic, no statistics involved.
+    useGame.getState().newGame()
+    const { clubId } = managed()
+    const squad = useGame.getState().game.squads[clubId] ?? []
+    useGame.getState().dispatch({ type: 'SetLineup', clubId, lineup: worstXI(squad, '4-4-2') })
+    useGame.getState().dispatch({ type: 'AdvanceDay' })
+
+    const played = useGame.getState().game.season.fixtures.filter((f) => f.result !== null)
+    expect(played).toHaveLength(10)
   })
 })

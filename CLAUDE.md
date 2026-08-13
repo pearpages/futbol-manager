@@ -179,6 +179,22 @@ Three things that measured as _not_ mattering, so nobody spends time on them: fo
 
 **A gap worth knowing:** the harness runs every club on balanced tactics, so **it cannot see tactical exploits at all.** The M3c test covers this for now by driving tactics explicitly; a broader tactical sweep in the harness would be the real fix if the model grows more levers.
 
-**Pending:** **M4** — transfer windows, player valuation, bids and contract negotiation, and AI clubs that buy and sell plausibly. The roadmap calls the AI the hardest part here by a distance, and wants a scoring function over squad needs rather than a rule tree. Remember the goalkeeper warning above.
+### 2026-08-14 — M4a ✅
+
+**Split, per the roadmap's own exit criterion** — "sim ten seasons headless with no human input" has no human in it. M4b is the player's side.
+
+**Three prerequisites the roadmap did not mention.** No season rollover (`simulateSeasons` regenerated all 460 players yearly, so squads could not drift and the criterion was unmeasurable), no contracts, no money. All three landed. Ageing came free from `birthDate`.
+
+**`market.ts` is a scoring function, not a rule tree.** Need = the marginal gain in team rating from adding a player. **Do not add rules capping goalkeepers or squad size** — a second keeper cannot enter the XI so his need is already zero, and squad size falls out of needs decaying. A cap would hide the bug the exit criterion hunts for.
+
+**Exit met:** ten continuous seasons, champions rotating across four clubs, squads 18–25, mean age steady at 27, pecking order intact. **Money conserved exactly** — 27,854k every season. That invariant is never to be loosened.
+
+**The harness earned its keep.** Squads carried forward with no retirement aged the league to a mean of 33.75 by season ten. Fixed with retirement from 33 plus a youth replacement at the same position — _not_ the youth academy, which is M7's scouting and development.
+
+**Known imbalance, and it is M5's job:** money only moves between clubs, never in. After a decade the top three hold 21.5M of 27.9M and the bottom clubs are at single-digit thousands, so a small club eventually cannot buy. Revenue turns that ratchet into a cycle.
+
+**A test was passing on luck and is now deterministic.** `App.test.tsx` compared two _single_ seasons and asserted the better XI won more points — an effect of ~7 points against season variance of the same size. Adding one rng draw for contracts shifted the stream and it failed. The statistical claim belongs to the domain harness at 20 seasons; the UI test now asserts the rating changes, which is what the UI actually needs to prove. **Watch for this shape** — any test comparing a single stochastic run is luck.
+
+**Pending:** **M4b** — bids, counter-bids, contract negotiation, transfer screen and shortlist. Then **M5**, which is what makes the market a cycle rather than a ratchet.
 
 **Open design question carried forward:** the tactical slider is a way to lose, not a way to win. Correcting M3a's free-attack exploit left _balanced_ dominant everywhere. A tempo term — defensive setups lowering total goals for both sides — would make the underdog's low block genuinely correct. Recorded in the roadmap's M3c; decide it deliberately rather than drifting.

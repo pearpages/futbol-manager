@@ -60,8 +60,72 @@ const v2ToV3: Migration = {
   },
 }
 
+/**
+ * v3 → v4: contracts and money.
+ *
+ * A v3 save has squads but nobody under contract and no club with a budget, so a
+ * transfer market has nothing to work with. Both are filled in from what the save
+ * already knows — budgets from the club's rating, contracts staggered across the
+ * next four summers so the whole league does not expire in one window.
+ *
+ * Deterministic rather than random: a migration that used an rng would produce a
+ * different league every time the same save was loaded.
+ */
+const v3ToV4: Migration = {
+  from: 3,
+  to: 4,
+  describe: 'contracts on players and transfer budgets on clubs',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v3 save payload is not an object')
+    }
+
+    const save = payload as {
+      clubs?: { id: string; attack?: number; defence?: number }[]
+      season?: { startYear?: number }
+      squads?: Record<string, { id: string }[]>
+    }
+    const startYear = save.season?.startYear ?? 2026
+
+    const clubs = (save.clubs ?? []).map((club) => {
+      const rating = ((club.attack ?? 50) + (club.defence ?? 50)) / 2
+      return { ...club, budget: Math.round(400 * Math.pow(rating / 50, 4)) }
+    })
+
+    const squads: Record<string, unknown[]> = {}
+    for (const [clubId, squad] of Object.entries(save.squads ?? {})) {
+      squads[clubId] = squad.map((player, index) => ({
+        ...player,
+        contract: {
+          // Staggered by squad position, so expiries spread over four summers.
+          until: daysFromCivil(startYear + 1 + (index % 4), 6, 30),
+          wage: 0,
+        },
+      }))
+    }
+
+    return { ...payload, clubs, squads }
+  },
+}
+
+/**
+ * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
+ *
+ * `persistence` must not import `domain` for this: a migration has to keep
+ * producing the same output forever, and importing a live function means a future
+ * change there silently rewrites how an old save is read.
+ */
+function daysFromCivil(y: number, m: number, d: number): number {
+  const year = m <= 2 ? y - 1 : y
+  const era = Math.floor(year / 400)
+  const yoe = year - era * 400
+  const doy = Math.floor((153 * (m + (m > 2 ? -3 : 9)) + 2) / 5) + d - 1
+  const doe = yoe * 365 + Math.floor(yoe / 4) - Math.floor(yoe / 100) + doy
+  return era * 146097 + doe - 719468
+}
+
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3]
+export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

@@ -6,7 +6,8 @@ import { reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
 import { generateLeagueSquads } from './squad.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
-import { type DayNumber, fromCivil } from './time.ts'
+import { defaultSeasonStart, rolloverSeason } from './season.ts'
+import { applyTransfers, runTransferWindow } from './market.ts'
 
 /**
  * Season drivers shared by the headless script, the harness and (from M3) the UI.
@@ -17,10 +18,7 @@ import { type DayNumber, fromCivil } from './time.ts'
  * code path that never ships.
  */
 
-/** Mid-August, the traditional opening weekend. */
-export function defaultSeasonStart(startYear: number): DayNumber {
-  return fromCivil(startYear, 8, 15)
-}
+export { defaultSeasonStart } from './season.ts'
 
 export const DEFAULT_FORMATION: Formation = '4-4-2'
 
@@ -92,6 +90,37 @@ export function simulateSeason(state: GameState, rng: Rng): GameState {
   }
 
   throw new Error('Season did not complete within 1000 days — check fixture scheduling')
+}
+
+/**
+ * A continuous career: the same clubs and squads, year after year, with transfer
+ * windows in between.
+ *
+ * Deliberately separate from `simulateSeasons`. Independent seasons remain the
+ * right instrument for distribution bands — each is a clean sample from the same
+ * starting conditions — while squad drift can only be seen in a career. One
+ * function serving both would serve neither well.
+ */
+export function simulateCareer(
+  clubs: readonly Club[],
+  seasons: number,
+  seed: number,
+  options: { names: readonly string[]; firstYear?: number },
+): SeasonRun[] {
+  const rng = createRng(seed)
+  const runs: SeasonRun[] = []
+  let state = newSeason(clubs, options.firstYear ?? 2026, { names: options.names, rng })
+
+  for (let i = 0; i < seasons; i++) {
+    // Business is done before a ball is kicked, which is when a real pre-season
+    // window closes.
+    state = applyTransfers(state, runTransferWindow(state, rng))
+    state = simulateSeason(state, rng)
+    runs.push({ startYear: state.season.startYear, state })
+    if (i < seasons - 1) state = rolloverSeason(state, rng, { names: options.names })
+  }
+
+  return runs
 }
 
 export interface SeasonRun {

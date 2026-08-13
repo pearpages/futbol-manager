@@ -60,6 +60,21 @@ const CLUBS: readonly (readonly [string, string, string, number, number])[] = [
   ['almeria', 'Almería', 'ALM', 49, 50],
 ]
 
+/**
+ * Transfer budgets, in thousands, seeded from the club's rating.
+ *
+ * Steeply convex on purpose. If Almería could outspend Madrid the table would
+ * invert within a few seasons, so the money has to reflect the pecking order it
+ * came from — real budgets are far more unequal than real squads.
+ *
+ * **M5 replaces this** with money that actually comes from somewhere: gate
+ * receipts, TV, prize money, minus wages.
+ */
+function seedBudget(attack: number, defence: number): number {
+  const rating = (attack + defence) / 2
+  return Math.round(400 * Math.pow(rating / 50, 4))
+}
+
 export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(
   ([id, name, shortName, attack, defence]) => ({
     id: id as ClubId,
@@ -67,5 +82,6 @@ export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(
     shortName,
     attack,
     defence,
+    budget: seedBudget(attack, defence),
   }),
 )

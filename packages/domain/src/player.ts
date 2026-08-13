@@ -36,6 +36,18 @@ export const ATTRIBUTE_KEYS = [
   'stamina',
 ] as const satisfies readonly (keyof Attributes)[]
 
+/**
+ * Terms a player is on. Added at M4 — a transfer means nothing if nobody is under
+ * contract, and the length remaining is most of what a player is worth: six months
+ * left and he walks for free, so he is cheap.
+ */
+export interface Contract {
+  /** Expiry. Contracts run to 30 June, as they do in reality. */
+  readonly until: DayNumber
+  /** Per season. **Recorded at M4, never spent** — M5 is what pays wages. */
+  readonly wage: number
+}
+
 export interface Player {
   readonly id: PlayerId
   readonly name: string
@@ -44,9 +56,17 @@ export interface Player {
    * Age is derived, never stored — the same reason the day clock is state. A
    * stored age would drift out of sync with the season the moment a save is
    * reloaded, and birthdays are what M6's age curve keys off.
+   *
+   * It is also why a season rollover ages everybody for free.
    */
   readonly birthDate: DayNumber
   readonly attributes: Attributes
+  readonly contract: Contract
+}
+
+/** Months left to run. Negative once expired. */
+export function contractMonthsLeft(player: Player, date: DayNumber): number {
+  return (player.contract.until - date) / 30.44
 }
 
 /**

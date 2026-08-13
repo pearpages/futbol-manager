@@ -30,6 +30,7 @@ const player = (position: Position, attributes: Attributes, birthYear = 2000): P
   position,
   birthDate: fromCivil(birthYear, 6, 15),
   attributes,
+  contract: { until: fromCivil(2030, 6, 30), wage: 100 },
 })
 
 describe('POSITION_WEIGHTS', () => {
@@ -101,6 +102,7 @@ describe('ageOn', () => {
     position: 'MF',
     birthDate: fromCivil(y, m, d),
     attributes: attrs(50),
+    contract: { until: fromCivil(2030, 6, 30), wage: 100 },
   })
 
   it('counts completed years', () => {

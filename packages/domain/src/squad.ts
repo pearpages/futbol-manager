@@ -1,5 +1,6 @@
 import type { Club } from './entities.ts'
 import { bestXI, teamRating } from './lineup.ts'
+import { expectedWage } from './valuation.ts'
 import {
   type Attributes,
   ATTRIBUTE_KEYS,
@@ -9,6 +10,7 @@ import {
   type Position,
 } from './player.ts'
 import type { Rng } from './rng.ts'
+import { contractExpiry } from './season.ts'
 import { addDays, type DayNumber, fromCivil, toCivil } from './time.ts'
 
 /**
@@ -69,18 +71,25 @@ export function generateSquad(club: Club, rng: Rng, options: SquadOptions): Play
       const defenceBase = club.defence - decline
 
       const name = options.names[index % options.names.length] ?? `Player ${index + 1}`
+      const birthDate = birthDateFor(options.seasonStart, rng)
       players.push({
         id: `${club.id}-p${String(index + 1).padStart(2, '0')}` as PlayerId,
         name,
         position,
-        birthDate: birthDateFor(options.seasonStart, rng),
+        birthDate,
         attributes: attributesFor(position, attackBase, defenceBase, rng),
+        // Staggered 1-4 years so a whole league does not come out of contract in
+        // the same summer, which would make one window do all the business.
+        contract: {
+          until: contractExpiry(toCivil(options.seasonStart).y + 1 + Math.floor(rng.next() * 4)),
+          wage: 0, // set by calibrateSquad once attributes are final
+        },
       })
       index++
     }
   }
 
-  return calibrateSquad(club, players)
+  return calibrateSquad(club, players, options.seasonStart)
 }
 
 function attributesFor(
@@ -129,7 +138,7 @@ function birthDateFor(seasonStart: DayNumber, rng: Rng): DayNumber {
  * round trip exact by construction — the generation constants control the *shape*
  * of a squad, and this controls its *level*.
  */
-function calibrateSquad(club: Club, players: Player[]): Player[] {
+function calibrateSquad(club: Club, players: Player[], seasonStart: DayNumber): Player[] {
   let adjusted = players
 
   // Two passes converge well within a rating point: the mapping from a uniform
@@ -153,8 +162,55 @@ function calibrateSquad(club: Club, players: Player[]): Player[] {
     })
   }
 
-  return adjusted
+  // Wages follow the finished attributes, so they are priced after calibration.
+  return adjusted.map((player) => ({
+    ...player,
+    contract: { ...player.contract, wage: expectedWage(player, seasonStart) },
+  }))
 }
+
+/**
+ * A single young player, to replace someone who has retired.
+ *
+ * Not the youth academy — that is M7, with scouting, development and fog-of-war.
+ * This is the minimum that keeps a career alive: without *any* inflow, a league
+ * that carries squads forward simply ages, and ten seasons in the average squad
+ * is 34. The harness caught exactly that.
+ *
+ * Generated a little below the club's level, because a teenager is not a
+ * first-teamer yet. M6's training curve is what will grow him.
+ */
+export function generateYouthPlayer(
+  club: Club,
+  position: Position,
+  rng: Rng,
+  options: SquadOptions & { readonly serial: string },
+): Player {
+  const base = position === 'FW' || position === 'MF' ? club.attack : club.defence
+  const age = 17 + Math.floor(rng.next() * 3)
+  const seasonYear = toCivil(options.seasonStart).y
+  const name = options.names[Math.floor(rng.next() * options.names.length)] ?? 'Youth Player'
+
+  const player: Player = {
+    id: `${club.id}-y${options.serial}` as PlayerId,
+    name,
+    position,
+    birthDate: addDays(fromCivil(seasonYear - age, 1, 1), Math.floor(rng.next() * 365)),
+    attributes: attributesFor(position, base - YOUTH_GAP, base - YOUTH_GAP, rng),
+    contract: {
+      until: contractExpiry(seasonYear + 3 + Math.floor(rng.next() * 2)),
+      wage: 0,
+    },
+  }
+
+  return {
+    ...player,
+    contract: { ...player.contract, wage: expectedWage(player, options.seasonStart) },
+  }
+}
+
+/** How far below the first team a newly promoted teenager starts. */
+const YOUTH_GAP = 12
 
 /**
  * Squads for a whole league, with names allocated so no two players share one.

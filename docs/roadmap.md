@@ -161,15 +161,33 @@ Two open questions closed. Two others recorded rather than solved, because they 
 
 ---
 
-## M4 — Transfers
+## M4a — A market that runs itself ✅
 
-**~4 weeks**
+**done 2026-08-14**
 
-Transfer windows. Player valuation. Bids, counter-bids, contract negotiation (wage, length, signing bonus). AI clubs that buy and sell plausibly — the hardest part here by a distance.
+**M4 splits, and the roadmap's own exit criterion says so** — "sim ten seasons headless with no human input; squads should still look reasonable and no club should own 40 players" contains no human, no bidding and no screens. M4b adds the human's side.
 
-AI transfer logic wants to be a scoring function over squad needs, not a rule tree. Rule trees in transfer markets produce clubs that stockpile goalkeepers.
+**Three prerequisites the one-liner hid.** There was **no season rollover** — `simulateSeasons` regenerated all 460 players every August, so a squad could not drift and the exit criterion was unmeasurable. There were **no contracts**, and **no money**. All three landed here. (Ageing came free: `ageOn` derives from `birthDate`, so advancing the clock ages the league.)
 
-**Exit:** sim ten seasons headless with no human input; squads should still look reasonable and no club should own 40 players.
+**The AI is a scoring function, not a rule tree**, exactly as the roadmap insists. A club's need for a player is the **marginal gain in its team rating** from adding him. There is no rule limiting goalkeepers — once a club has a good one, a second cannot enter the XI, so his need score is zero. Squad size is likewise a consequence of needs falling away, not a cap.
+
+**Exit — met.** Ten continuous seasons: champions rotated across four clubs (Barcelona ×4, Madrid ×3, Manzanares ×2, Sevilla), champion points 79–96, squads 18–25, mean age steady at 27, and the pecking order held without inverting or running away.
+
+**Money is conserved exactly** — 27,854k in the league every season for ten seasons. That is the structural invariant most likely to catch a real bug, and it is never to be loosened.
+
+**The harness caught a real one.** With squads carrying forward and nobody retiring, the league aged into a retirement home — mean squad age 33.75 after ten seasons. Fixed with retirement from 33 (certain by 39) and a youth replacement at the same position. That is _not_ the youth academy, which is M7's scouting and development; it is the minimum inflow a career needs to survive.
+
+**A known imbalance, and M5 is the fix.** Money only moves between clubs, never in. After a decade the three richest hold 21.5M of the league's 27.9M and the poorest are down to single-digit thousands, so a small club eventually cannot buy anyone. Revenue is what makes that a cycle instead of a ratchet.
+
+---
+
+## M4b — The human in the market
+
+**~1.5 weeks**
+
+Bids and counter-bids, contract negotiation (wage, length, signing bonus), a transfer screen, a shortlist. The AI market already runs; this is the player's way into it.
+
+**Exit:** you can identify a weakness, buy a player to fix it, and see it change your results.
 
 ---
 

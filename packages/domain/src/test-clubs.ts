@@ -42,6 +42,9 @@ export const TEST_CLUBS: readonly Club[] = RATINGS.map(([attack, defence], i) =>
   shortName: `C${String(i + 1).padStart(2, '0')}`,
   attack,
   defence,
+  // Same convex shape as the real clubs: budgets must reflect the pecking order
+  // or a decade of transfers inverts the table.
+  budget: Math.round(400 * Math.pow((attack + defence) / 100, 4)),
 }))
 
 /** All clubs identical — isolates variance from rating effects. */
