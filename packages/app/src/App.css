@@ -77,6 +77,12 @@
 
 /* ── Stage ───────────────────────────────────────────────────────────────── */
 
+/* Setup has no left rail — the club picker takes the full width. */
+.shell--setup {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 .shell__stage {
   min-height: 0;
   min-width: 0;

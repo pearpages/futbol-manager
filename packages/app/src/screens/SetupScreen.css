@@ -1,0 +1,40 @@
+.setup {
+  height: 100%;
+  min-height: 0;
+}
+
+.setup__panel {
+  height: 100%;
+  min-height: 0;
+}
+
+.setup__club {
+  font-family: var(--fm-font-condensed);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.setup__tier strong {
+  display: inline-block;
+  min-width: 11rem;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-champion);
+}
+
+.setup__tier span {
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-xs);
+}
+
+@media (width < 52rem) {
+  .setup__tier span {
+    display: none;
+  }
+
+  .setup__tier strong {
+    min-width: 0;
+  }
+}

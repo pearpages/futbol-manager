@@ -130,17 +130,34 @@ Three decisions worth recording:
 
 ---
 
-## M3c — Open questions before M4
+## M3c — Choose your club, and make tactics a decision ✅
 
-The manager currently starts at **Almería**, the weakest club, because `newSeason` defaults to the last-rated. That is a deliberate "hard game" default but it was never chosen — a club-picker at new-game is the obvious fix and takes an hour.
+**done 2026-08-14**
 
-**Nothing has been looked at in a browser yet.** The Chrome extension has not connected across two attempts, so the UI is verified by build, tests and rendered-DOM dumps only. The layout, bevels and colour have never been seen.
+Two open questions closed. Two others recorded rather than solved, because they are not code.
 
-**The manager has almost nothing to manage, and that is expected.** Measured across every club and every formation × tactics combination: total agency is roughly **1 point a season**, with a downside of −4 to −9 for choosing badly. The optimal play everywhere is the default lineup and a balanced approach.
+**You choose a club.** `newSeason` defaulted to `clubs.at(-1)`, so every career started at Almería — a default nobody chose, and the club with the least to play for. There is now a setup screen listing all twenty with their ratings and what the season realistically holds, from "Contender" to "Relegation favourite".
 
-That is not a bug. The resolver reads two numbers and both are fixed by the squad you were handed, so until something can _change the squad_ there is nothing to decide. M4 is that something — and per [attribute-model.md](./attribute-model.md#what-actually-moves-results), a goalkeeper is worth ~2.5× any other signing, which is where the first real decision lives.
+**Tactics became a decision.** The slider was measured and found to be a trap: upside 0–3 points, downside −4 to −9, balanced optimal everywhere. It only ever redistributed strength between attack and defence, so nothing described how _open_ a game was and a low block could not do the one thing a low block is for.
 
-**A live design question, not yet decided:** the tactical slider is currently a way to lose rather than a way to win. Both directions cost more than they give — deliberately, since a symmetric trade made all-out attack a free +2.1 points at M3a — but the correction left _balanced_ dominant everywhere. Giving tactics a **tempo** term (a defensive setup lowering total goals for both sides, an attacking one raising them) would make parking the bus genuinely correct for an underdog under three-points-for-a-win. Worth deciding before or after M4, not silently.
+`TeamRating` gained a third number, `tempo`, applied to **both** sides' expected goals — see [attribute-model.md](./attribute-model.md#step-4--modifiers). Fewer goals means more draws, and a draw is worth far more to the weaker side. Measured over 40 seasons:
+
+| Club                | Best approach  | Gain     |
+| ------------------- | -------------- | -------- |
+| Madrid 88/85        | all-out attack | **+3.5** |
+| San Sebastián 70/74 | attacking      | +1.3     |
+| Vigo 65/65          | balanced       | —        |
+| Getafe 59/60        | balanced       | —        |
+| Almería 49/50       | low block      | **+2.9** |
+
+**The term vanishes at balanced tactics**, so every M2 and M3a harness band passed unchanged and `pnpm season` is byte-identical. That is what let a calibrated model be extended without re-tuning it.
+
+`MODEL.TEMPO = 0.6` sits between two failures: below ~0.4 the effect is inside the noise and the slider stays decorative; above ~0.9 the strongest club gains 7+ points for simply always maxing out — a dominant strategy wearing different clothes.
+
+**Still open, and not code:**
+
+- **Nothing has been looked at in a browser.** The Chrome extension has refused to connect across three attempts, so the UI is verified by build, tests and rendered-DOM dumps only.
+- **The manager still has little to manage, and that is expected.** Tactics are worth ~3 points; a single goalkeeper is worth +10.5. The squad is the real lever and M4 is what changes it.
 
 ---
 

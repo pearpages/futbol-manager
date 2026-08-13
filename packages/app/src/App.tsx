@@ -5,6 +5,7 @@ import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
 import { LineupScreen } from './screens/LineupScreen.tsx'
+import { SetupScreen } from './screens/SetupScreen.tsx'
 import './App.css'
 
 /**
@@ -36,6 +37,8 @@ export function App() {
   const save = useGame((s) => s.save)
   const restore = useGame((s) => s.restore)
   const saving = useGame((s) => s.saving)
+  const needsSetup = useGame((s) => s.needsSetup)
+  const restart = useGame((s) => s.restart)
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
@@ -46,6 +49,24 @@ export function App() {
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const finished = isSeasonComplete(game)
   const Current = SCREENS[screen]
+
+  // No career yet: the club picker replaces the whole shell rather than sitting
+  // inside it, because none of the navigation means anything before a club exists.
+  if (needsSetup) {
+    return (
+      <div className="shell shell--setup">
+        <header className="panel shell__bar">
+          <h1 className="shell__wordmark">Fútbol Manager</h1>
+          <p className="shell__club">
+            <span className="shell__date">Primera División · 2026/27</span>
+          </p>
+        </header>
+        <main className="shell__stage">
+          <SetupScreen />
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="shell">
@@ -81,6 +102,9 @@ export function App() {
           </button>
           <button type="button" className="button" disabled={saving} onClick={() => void save()}>
             {saving ? 'Saving…' : 'Save'}
+          </button>
+          <button type="button" className="button" onClick={restart}>
+            New career
           </button>
         </div>
       </nav>

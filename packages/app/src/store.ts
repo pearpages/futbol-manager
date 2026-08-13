@@ -34,6 +34,12 @@ interface Store {
   /** Most recent events, newest first — the match feed on the table screen. */
   readonly feed: readonly Event[]
   readonly saving: boolean
+  /**
+   * True until a club has been chosen or a save restored. Distinguishes "no
+   * career yet" from "career loaded" — without it the app cannot tell whether the
+   * state it holds is a real game or the placeholder season built at module load.
+   */
+  readonly needsSetup: boolean
 
   dispatch(command: Command): void
   go(screen: Screen): void
@@ -41,6 +47,8 @@ interface Store {
   save(): Promise<void>
   restore(): Promise<boolean>
   newGame(managedClubId?: string): void
+  /** Back to the club picker, leaving any saved career on disk untouched. */
+  restart(): void
 }
 
 const START_SEED = 20260813
@@ -65,6 +73,7 @@ export const useGame = create<Store>((set, get) => ({
   inspectedPlayerId: null,
   feed: [],
   saving: false,
+  needsSetup: true,
 
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
@@ -101,11 +110,21 @@ export const useGame = create<Store>((set, get) => ({
 
     if (loaded === null) return false
     rng = createRng(loaded.rngState as RngState)
-    set({ game: loaded.payload as GameState, feed: [] })
+    set({ game: loaded.payload as GameState, feed: [], needsSetup: false })
     return true
   },
 
   newGame(managedClubId) {
-    set({ game: freshGame(managedClubId), feed: [], screen: 'table', inspectedPlayerId: null })
+    set({
+      game: freshGame(managedClubId),
+      feed: [],
+      screen: 'table',
+      inspectedPlayerId: null,
+      needsSetup: false,
+    })
+  },
+
+  restart() {
+    set({ needsSetup: true, screen: 'table', inspectedPlayerId: null, feed: [] })
   },
 }))

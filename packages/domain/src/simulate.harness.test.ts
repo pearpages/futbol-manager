@@ -266,6 +266,54 @@ describe('lineup selection matters — the M3 exit criterion', () => {
   })
 })
 
+describe('tactics are a decision, not a cost — the M3c exit criterion', () => {
+  // Before tempo existed, balanced was optimal at every club: upside 0-3 points,
+  // downside -4 to -9. A slider with one right answer is not a decision.
+  //
+  // This asserts the *gradient* rather than any club's argmax. Gaps between the
+  // extremes run to 8-16 points, far outside the noise, whereas an argmax over
+  // five settings can flip on a couple of points of variance.
+
+  const TACTIC_SEASONS = 12
+
+  const pointsWith = (club: (typeof clubs)[number], attacking: number) =>
+    mean(
+      simulateSeasons(clubs, TACTIC_SEASONS, SEED, {
+        names: TEST_NAMES,
+        adjust: (state) => ({
+          ...state,
+          tactics: { ...state.tactics, [club.id]: { attacking } },
+        }),
+      }).map((run) => {
+        const table = computeTable(run.state.competition.clubIds, run.state.season.fixtures)
+        return table.find((r) => r.clubId === club.id)?.points ?? 0
+      }),
+    )
+
+  const strongest = clubs[0]
+  const weakest = clubs.at(-1)
+  /* c8 ignore next */
+  if (strongest === undefined || weakest === undefined) throw new Error('no clubs')
+
+  it('rewards a strong club for opening the game up', () => {
+    expect(pointsWith(strongest, 100)).toBeGreaterThan(pointsWith(strongest, 0) + 5)
+  })
+
+  it('rewards a weak club for smothering it', () => {
+    // The underdog's whole game: fewer goals means more draws, and a draw is
+    // worth far more to the side that would otherwise lose.
+    expect(pointsWith(weakest, 0)).toBeGreaterThan(pointsWith(weakest, 100) + 3)
+  })
+
+  it('has no setting that suits everybody', () => {
+    // The actual criterion. If one approach were best for both ends of the table
+    // it would be a dominant strategy and the slider would be decoration again.
+    const strongPrefersAttack = pointsWith(strongest, 100) > pointsWith(strongest, 0)
+    const weakPrefersAttack = pointsWith(weakest, 100) > pointsWith(weakest, 0)
+    expect(strongPrefersAttack).not.toBe(weakPrefersAttack)
+  })
+})
+
 describe('determinism at scale', () => {
   it('reproduces an identical multi-season run from the same seed', () => {
     const repeat = simulateSeasons(clubs, SEASONS, SEED, { names: TEST_NAMES })

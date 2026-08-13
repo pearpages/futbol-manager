@@ -37,18 +37,43 @@ export const MODEL = {
   SCALE: 42,
   /** Log-scale home bonus. exp(0.26) ≈ 1.30, i.e. ~30% more goals at home. */
   HOME_EDGE: 0.26,
+  /**
+   * How much the two sides' tempo opens or smothers a game, applied to *both*
+   * expected-goal figures. At 0.60, two teams in a full low block produce
+   * exp(−0.60) ≈ 55% of the usual goals; two going all-out produce ~180%.
+   *
+   * Fewer goals means more draws, and a draw is worth far more to the weaker
+   * side — which is what makes the slider a decision instead of a flat cost.
+   *
+   * Calibrated 2026-08-14 over 40 seasons. The value is a balance between two
+   * failures: below ~0.4 the effect is inside the noise and the slider stays
+   * decorative; above ~0.9 the strongest club gains 7+ points for simply always
+   * maxing out, which is a dominant strategy wearing different clothes. At 0.60
+   * the best approach runs cleanly with club strength — Madrid +3.5 attacking,
+   * Almería +2.9 defending, mid-table punished either way.
+   */
+  TEMPO: 0.6,
   /** Guards the tail: without a cap, an extreme mismatch can produce absurd scorelines. */
   MAX_LAMBDA: 5,
 } as const
 
-/** Expected goals for a side. Exported for tests and for M2's calibration work. */
+/**
+ * Expected goals for a side. Exported for tests and calibration work.
+ *
+ * `tempo` is deliberately the *average* of both sides rather than the attacking
+ * team's alone: one team can slow a game down, but it takes both to make it a
+ * shootout. That averaging is why a low block costs the favourite.
+ */
 export function expectedGoals(
   attacking: TeamRating,
   defending: TeamRating,
   atHome: boolean,
 ): number {
   const edge = (attacking.attack - defending.defence) / MODEL.SCALE
-  const lambda = Math.exp(MODEL.BASE + MODEL.SLOPE * edge + (atHome ? MODEL.HOME_EDGE : 0))
+  const tempo = (attacking.tempo + defending.tempo) / 2
+  const lambda = Math.exp(
+    MODEL.BASE + MODEL.SLOPE * edge + (atHome ? MODEL.HOME_EDGE : 0) + MODEL.TEMPO * tempo,
+  )
   return Math.min(lambda, MODEL.MAX_LAMBDA)
 }
 

@@ -10,7 +10,11 @@ import { createRng } from './rng.ts'
  * restating the current settings.
  */
 
-const rating = (attack: number, defence: number): TeamRating => ({ attack, defence })
+const rating = (attack: number, defence: number, tempo = 0): TeamRating => ({
+  attack,
+  defence,
+  tempo,
+})
 const EVEN = rating(65, 65)
 const STRONG = rating(88, 85)
 const WEAK = rating(49, 50)

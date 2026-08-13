@@ -46,7 +46,9 @@ A keeper's `finishing` is worth nothing; their `keeping` dominates. A striker's 
 
 ## Bridge to M2 — the resolver contract
 
-M2's Poisson model takes exactly two numbers per side: `attack` and `defence`, both on a 1–99 scale. Everything above collapses into those two. Getting this written down now is what lets M3 slot into M2 rather than rewrite it.
+M2's Poisson model takes **three** numbers per side: `attack` and `defence` on a 1–99 scale, plus `tempo` on −1…+1. Everything above collapses into those. Getting this written down is what lets M3 slot into M2 rather than rewrite it.
+
+> **Changed at M3c.** This was two numbers until the tactical slider was measured and found to be a trap — upside 0–3 points, downside −4 to −9, with balanced optimal at every club. `attack` and `defence` only describe how strength is _split_; nothing described how _open_ a game is, so a low block could not do the one thing a low block is for. `tempo` is that third dimension. See [Step 4](#step-4--modifiers).
 
 ### Step 1 — per-player ratings
 
@@ -84,12 +86,26 @@ The keeper carries 35% of the defensive rating alone. That is deliberate: a grea
 
 Applied to `teamAttack` / `teamDefence` after step 3, in this order, so each milestone bolts on without touching the ones before it:
 
-1. **Tactical sliders** (M3) — trade attack against defence around a fixed total; an all-out attacking side gains attack and loses defence.
+1. **The tactical slider** (M3) — one control, 0–100, doing two things at once:
+   - **Split.** Trades attack against defence, with both extremes surrendering 1.6× what they gain. The asymmetry exists because a symmetric trade was strictly exploitable: under three-points-for-a-win, converting a draw into a 50/50 result is worth +0.5 points, so all-out attack was a free +2.1 points a season until M3a fixed it.
+   - **Tempo.** `(attacking − 50) / 50`, so −1 at a full low block and +1 at all-out attack. This is how open the game is, and it is the half that makes the slider a decision rather than a cost.
 2. **Home advantage** (M2) — lives in the resolver, not here.
 3. **Form, morale, fatigue** (M6) — multipliers in roughly 0.9–1.1.
 4. **Missing players** (M6) — injuries and suspensions change the XI, so they change these numbers by construction. No separate penalty term.
 
-Result: two integers in 1–99, which is all M2 needs to know about players.
+**How tempo reaches the scoreline.** Both sides shape a game, so the resolver averages them and applies the result to _both_ expected-goal figures:
+
+```
+combined = (home.tempo + away.tempo) / 2
+λ_home   = exp(BASE + SLOPE×(atk_h − def_a)/SCALE + HOME_EDGE + TEMPO×combined)
+λ_away   = exp(BASE + SLOPE×(atk_a − def_h)/SCALE            + TEMPO×combined)
+```
+
+Lower tempo means fewer goals for everybody, which means more draws — and a draw is worth far more to the weaker side than the stronger one. That is the whole mechanism: **a low block is the underdog's weapon, and it costs the favourite.** It also means tempo is not free for either party; you cannot smother a game without giving up your own chances.
+
+**At balanced tactics `combined` is 0 and the term vanishes**, so the M2 calibration is untouched by construction. Only deviation from balanced changes anything.
+
+Result: two integers in 1–99 plus a tempo in −1…+1, which is all M2 needs to know about players.
 
 **M2 already consumes this shape.** `resolveFixture(home: TeamRating, away: TeamRating, rng)` is live, fed at M2 from provisional `Club.attack` / `Club.defence`. M3's job is to replace the _supplier_ with the collapse above — the resolver signature does not change. For scale: the calibrated model uses `SCALE = 42`, so roughly 42 rating points is one unit on the log-goals scale. A side rated ~20 points above its opponent scores about 1.6× as often.
 
@@ -125,11 +141,11 @@ One starter replaced by a 90-rated player, everything else unchanged:
 
 **The goalkeeper is worth ~2.5× any other single signing.** That follows directly from 35% of the defensive rating resting on one player — a deliberate choice made so "a great keeper behind a poor back four should visibly matter", and this is the size of that decision. If a keeper being the most valuable player in a squad ever feels wrong, `KEEPER_WEIGHT` in `lineup.ts` is the dial, and the harness bands are what would have to stay green.
 
-### Three things that turn out not to matter
+### What turns out not to matter
 
 - **Formation, currently.** It only re-weights the shares. Generated squads scale every position from a single club rating, so nothing is lopsided enough for a shape to exploit — measured spread across all four formations is under 1.5 points. This becomes a real decision once M4 lets a squad become unbalanced.
 - **Cleverness about lineup selection.** `bestXI` ranks by `overall`, which uses different weights than the resolver does, so in principle it could leave points on the table. An XI picked by actual contribution to `attack`/`defence` instead changes 0–1 slots and gains ~0.1 points.
-- **Tactics.** Across every club and every formation × slider combination, the upside is 0–3 points and the downside is −4 to −9. The optimal play at every club is the default. See the roadmap's M3c note.
+- **Tactics — until M3c.** The upside used to be 0–3 points against a −4 to −9 downside, with balanced optimal at every club. Adding `tempo` fixed that: the best approach now runs with club strength. **Madrid gains +3.5 attacking, Almería +2.9 with a low block, and mid-table clubs are punished either way.** Still small next to a signing, which is the point — a manager wins by building a squad, not by nudging a slider.
 
 **These figures are downstream of the M2 calibration.** Change `MODEL` in `resolve.ts`, the position weights above, or squad generation, and they move. Re-measure rather than trusting the table.
 

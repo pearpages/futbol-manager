@@ -9,15 +9,28 @@ export type ClubId = string & { readonly __clubId: unique symbol }
 export type FixtureId = string & { readonly __fixtureId: unique symbol }
 
 /**
- * The two numbers the result resolver consumes, per side, on a 1–99 scale.
+ * What the result resolver consumes, per side.
  *
- * This is the contract defined in docs/attribute-model.md. At M2 it comes off the
- * club directly; at M3 it is computed from the starting XI. The resolver never
- * learns the difference — M3 replaces the supplier, not the signature.
+ * This is the contract defined in docs/attribute-model.md. At M2 it came off the
+ * club directly; from M3 it is computed from the starting XI. The resolver never
+ * learns the difference — M3 replaced the supplier, not the signature.
  */
 export interface TeamRating {
+  /** 1–99. */
   readonly attack: number
+  /** 1–99. */
   readonly defence: number
+  /**
+   * How open this side wants the game, −1 (low block) to +1 (all-out attack).
+   *
+   * Added at M3c. `attack` and `defence` describe how strength is *split*;
+   * nothing described how many chances a game has, so a low block could not do
+   * the one thing a low block is for. Lower tempo means fewer goals for both
+   * sides, which means more draws — worth far more to the weaker team.
+   *
+   * Zero at balanced tactics, so the M2 calibration is untouched by default.
+   */
+  readonly tempo: number
 }
 
 export interface Club {
@@ -36,7 +49,7 @@ export interface Club {
 }
 
 export function clubRating(club: Club): TeamRating {
-  return { attack: club.attack, defence: club.defence }
+  return { attack: club.attack, defence: club.defence, tempo: 0 }
 }
 
 export interface Score {

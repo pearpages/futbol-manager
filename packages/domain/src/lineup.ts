@@ -111,10 +111,12 @@ export function teamRating(starters: readonly Player[], tactics: Tactics = BALAN
   const outfieldDefence = defenceShares > 0 ? defenceWeighted / defenceShares : 0
   const defence = (1 - KEEPER_WEIGHT) * outfieldDefence + KEEPER_WEIGHT * playerDefence(keeper)
 
-  // Step 4.1 — the slider. What you gain is linear; what you give up grows with how
-  // far you push. The penalty always applies to the side being *reduced*, in both
-  // directions — apply it to the signed shift instead and going defensive gains
-  // more defence than it costs attack, which is free strength.
+  // Step 4.1 — the slider, which does two things at once.
+  //
+  // Split: what you gain is linear; what you give up grows with how far you push.
+  // The penalty always applies to the side being *reduced*, in both directions —
+  // apply it to the signed shift instead and going defensive gains more defence
+  // than it costs attack, which is free strength.
   const lever = (tactics.attacking - 50) / 50 // −1 … +1
   const magnitude = Math.abs(lever) * SLIDER_SWING
   const surrendered = magnitude * (1 + Math.abs(lever) * EXTREME_PENALTY)
@@ -125,6 +127,11 @@ export function teamRating(starters: readonly Player[], tactics: Tactics = BALAN
   return {
     attack: clampRating(attack + attackShift),
     defence: clampRating(defence + defenceShift),
+    // Tempo: how open you want the game. The resolver averages both sides and
+    // applies it to both scorelines, so a low block smothers the match rather
+    // than only your half of it. Zero at balanced, which is what keeps the M2
+    // calibration intact.
+    tempo: lever,
   }
 }
 
