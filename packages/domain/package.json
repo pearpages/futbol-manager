@@ -1,0 +1,11 @@
+{
+  "name": "@fm/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "comment": "Ground rule 1: this package has no dependencies. Not devDependencies-only, not peer — none. If something needs adding here, the design is wrong.",
+  "dependencies": {}
+}

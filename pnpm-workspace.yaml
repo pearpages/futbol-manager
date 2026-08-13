@@ -1,0 +1,4 @@
+packages:
+  - 'packages/*'
+minimumReleaseAgeExclude:
+  - zustand@5.0.15

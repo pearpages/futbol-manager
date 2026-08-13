@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    // No "DOM". Ground rule 1 enforced by the compiler: `fetch`, `document` and
+    // `localStorage` are type errors here, before ESLint gets a turn.
+    "lib": ["ES2023"],
+    "types": []
+  },
+  "include": ["src"]
+}

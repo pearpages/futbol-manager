@@ -1,0 +1,14 @@
+{
+  "name": "@fm/persistence",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@fm/data": "workspace:*",
+    "@fm/domain": "workspace:*",
+    "idb": "8.0.3"
+  }
+}

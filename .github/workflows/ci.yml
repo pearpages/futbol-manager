@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reads mise.toml, so Node and pnpm versions have exactly one source of
+      # truth and CI cannot silently drift from local.
+      - uses: jdx/mise-action@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      # ADR 0001 makes ESLint the readable half of boundary enforcement, and notes
+      # it only counts if it runs here rather than only on someone's laptop.
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test -- --run
+      - run: pnpm format:check
