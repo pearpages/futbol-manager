@@ -42,8 +42,12 @@ export {
   type Command,
   type DayAdvanced,
   type Event,
+  type LineupChanged,
   type MatchPlayed,
   reduce,
+  type SetLineup,
+  type SetTactics,
+  type TacticsChanged,
   type ReduceResult,
   type SeasonEnded,
 } from './reduce.ts'

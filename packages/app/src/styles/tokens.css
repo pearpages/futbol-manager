@@ -1,23 +1,69 @@
 /*
- * Design tokens. Custom properties rather than a preprocessor: they cascade, they
- * are readable in devtools, and a theme swap is a `:root` override rather than a
- * rebuild.
+ * Design tokens.
  *
- * Only what is actually used lives here. The retro chrome earns its tokens at M3,
- * when real screens exist to derive them from — ground rule 5.
+ * The look is a 1999 Spanish CD-ROM, not a terminal. Dinamic's visual language was
+ * *hardware*: chunky bevelled panels with data sunk into inset screens. So the
+ * palette has two materials — a light panel face you could press, and a dark
+ * screen you read. Everything else follows from that split.
+ *
+ * Custom properties rather than a preprocessor: they cascade, they are legible in
+ * devtools, and a theme swap is a `:root` override rather than a rebuild.
  */
 
 :root {
-  --fm-bg: #0b1d12;
-  --fm-fg: #e8f0e9;
-  --fm-fg-muted: #8ba392;
+  /* ── Material: the hardware ───────────────────────────────────────────────
+     Sun-faded stadium-seat grey-green, not Win95 grey. Bevels are 1px, which
+     reads as considered rather than pastiche. */
+  --fm-panel: #b9bfae;
+  --fm-panel-raised: #c5cbba;
+  --fm-bevel-light: #dfe4d4;
+  --fm-bevel-dark: #7f8676;
+  --fm-ink: #171c14;
+  --fm-ink-soft: #4c5348;
 
+  /* ── Material: the screen ─────────────────────────────────────────────────
+     Where data lives. Deep pitch-green, so numbers read as illuminated. */
+  --fm-screen: #0e1f16;
+  --fm-screen-raised: #16301f;
+  --fm-screen-ink: #d3e6d6;
+  --fm-screen-ink-soft: #7e9b86;
+  --fm-screen-rule: #23422e;
+
+  --fm-void: #0a120c;
+
+  /* ── Position bands ───────────────────────────────────────────────────────
+     Not decoration. Every Spanish classification is read by these colours, so
+     they encode qualification and relegation the way the subject actually does. */
+  --fm-champion: #e8b33a;
+  --fm-europe: #4a86c8;
+  --fm-conference: #4fa88a;
+  --fm-relegation: #c0483a;
+
+  /* Brass — the one interactive accent, picked up from the trophy. */
+  --fm-accent: #e8b33a;
+  --fm-accent-ink: #201704;
+
+  /* ── Type ─────────────────────────────────────────────────────────────────
+     No web fonts: the project ships no dependency it can avoid. Personality
+     comes from treatment — condensed stacks, tight uppercase tracking, heavy
+     weight contrast, and tabular figures everywhere a number appears. */
+  --fm-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --fm-font-condensed: 'Helvetica Neue Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+
+  --fm-text-xs: 0.6875rem;
+  --fm-text-sm: 0.8125rem;
+  --fm-text-md: 0.9375rem;
+  --fm-text-lg: 1.25rem;
+  --fm-text-xl: 1.75rem;
+
+  --fm-track-wide: 0.14em;
+
+  /* ── Space ────────────────────────────────────────────────────────────────
+     Tight. The subject is information-dense; generous whitespace would be a
+     different product. */
+  --fm-space-1: 0.25rem;
   --fm-space-2: 0.5rem;
-  --fm-space-4: 2rem;
-
-  --fm-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-  --fm-text-sm: 0.875rem;
-  --fm-text-lg: 1.5rem;
-
-  --fm-tracking-wide: 0.08em;
+  --fm-space-3: 0.75rem;
+  --fm-space-4: 1rem;
+  --fm-space-6: 1.5rem;
 }

@@ -1,5 +1,5 @@
 import { type ClubId, type FixtureId, type Score, type TeamRating } from './entities.ts'
-import { BALANCED, startersOf, teamRating } from './lineup.ts'
+import { BALANCED, type Lineup, startersOf, type Tactics, teamRating } from './lineup.ts'
 import { resolveFixture } from './resolve.ts'
 import type { Rng } from './rng.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
@@ -14,8 +14,7 @@ import { addDays, type DayNumber } from './time.ts'
  * statistical harness drives the exact same door, which is the point — a
  * regression net only covers what it actually exercises.
  *
- * One command today. M6 grows the `AdvanceDay` handler into the day pipeline the
- * roadmap sketches — `[ageAndContracts, injuries, training, morale, aiTransfers,
+ * M6 grows the `AdvanceDay` handler into the day pipeline the roadmap sketches — `[ageAndContracts, injuries, training, morale, aiTransfers,
  * playMatches, finances]` — by inserting pure functions in front of the existing
  * match resolution, not by restructuring this.
  */
@@ -24,7 +23,20 @@ export interface AdvanceDay {
   readonly type: 'AdvanceDay'
 }
 
-export type Command = AdvanceDay
+/** Rejected if the XI is illegal, so an invalid lineup can never reach a match. */
+export interface SetLineup {
+  readonly type: 'SetLineup'
+  readonly clubId: ClubId
+  readonly lineup: Lineup
+}
+
+export interface SetTactics {
+  readonly type: 'SetTactics'
+  readonly clubId: ClubId
+  readonly tactics: Tactics
+}
+
+export type Command = AdvanceDay | SetLineup | SetTactics
 
 export interface MatchPlayed {
   readonly type: 'MatchPlayed'
@@ -45,7 +57,17 @@ export interface SeasonEnded {
   readonly startYear: number
 }
 
-export type Event = MatchPlayed | DayAdvanced | SeasonEnded
+export interface LineupChanged {
+  readonly type: 'LineupChanged'
+  readonly clubId: ClubId
+}
+
+export interface TacticsChanged {
+  readonly type: 'TacticsChanged'
+  readonly clubId: ClubId
+}
+
+export type Event = MatchPlayed | DayAdvanced | SeasonEnded | LineupChanged | TacticsChanged
 
 export interface ReduceResult {
   readonly state: GameState
@@ -56,6 +78,33 @@ export function reduce(state: GameState, command: Command, rng: Rng): ReduceResu
   switch (command.type) {
     case 'AdvanceDay':
       return advanceDay(state, rng)
+    case 'SetLineup':
+      return setLineup(state, command)
+    case 'SetTactics':
+      return setTactics(state, command)
+  }
+}
+
+function setLineup(state: GameState, command: SetLineup): ReduceResult {
+  // Validated here rather than in the UI. A screen can forget; the reducer is the
+  // only way in, so an illegal XI cannot reach a matchday through any other route.
+  startersOf(state.squads[command.clubId] ?? [], command.lineup)
+
+  return {
+    state: { ...state, lineups: { ...state.lineups, [command.clubId]: command.lineup } },
+    events: [{ type: 'LineupChanged', clubId: command.clubId }],
+  }
+}
+
+function setTactics(state: GameState, command: SetTactics): ReduceResult {
+  const attacking = command.tactics.attacking
+  if (!Number.isFinite(attacking) || attacking < 0 || attacking > 100) {
+    throw new Error(`Tactics must sit between 0 and 100, got ${attacking}`)
+  }
+
+  return {
+    state: { ...state, tactics: { ...state.tactics, [command.clubId]: command.tactics } },
+    events: [{ type: 'TacticsChanged', clubId: command.clubId }],
   }
 }
 

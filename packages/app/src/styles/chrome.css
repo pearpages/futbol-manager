@@ -1,10 +1,393 @@
 /*
- * Shared chrome — the panels, tables, stat rows and field labels that every screen
- * is built from. This is the lever on the roadmap's third risk ("screen count is
- * the silent cost"): if the primitives here are right, a new screen is markup and
- * data wiring with no new CSS.
+ * Shared chrome — the primitives every screen is built from.
  *
- * Deliberately empty until M3. The placeholder shell needs none of it, and
- * inventing primitives before real screens exist is guessing — ground rule 5.
- * Add a class here the second time a screen needs it, not the first.
+ * The lever on the roadmap's third risk ("screen count is the silent cost"): if
+ * these are right, a new screen is markup and data wiring with no new CSS. Add a
+ * class here the *second* time a screen needs it, not the first.
+ *
+ * Two materials, and the distinction is structural rather than decorative:
+ *   .panel  — hardware. Raised, bevelled, holds controls and labels.
+ *   .screen — an inset display. Recessed, dark, holds data.
  */
+
+/* ── Panels: raised hardware ─────────────────────────────────────────────── */
+
+.panel {
+  background: var(--fm-panel);
+  border-top: 1px solid var(--fm-bevel-light);
+  border-left: 1px solid var(--fm-bevel-light);
+  border-right: 1px solid var(--fm-bevel-dark);
+  border-bottom: 1px solid var(--fm-bevel-dark);
+  color: var(--fm-ink);
+}
+
+.panel__title {
+  margin: 0;
+  padding: var(--fm-space-2) var(--fm-space-3);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-ink-soft);
+  border-bottom: 1px solid var(--fm-bevel-dark);
+}
+
+/* ── Screens: recessed displays ──────────────────────────────────────────── */
+
+.screen {
+  background: var(--fm-screen);
+  color: var(--fm-screen-ink);
+  border-top: 1px solid var(--fm-bevel-dark);
+  border-left: 1px solid var(--fm-bevel-dark);
+  border-right: 1px solid var(--fm-bevel-light);
+  border-bottom: 1px solid var(--fm-bevel-light);
+  overflow: auto;
+}
+
+.screen__heading {
+  margin: 0;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+.screen__note {
+  padding: var(--fm-space-3) var(--fm-space-4);
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-sm);
+}
+
+/* ── Data tables ─────────────────────────────────────────────────────────── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fm-text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table__head th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--fm-space-2) var(--fm-space-2);
+  background: var(--fm-screen-raised);
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table__head th:first-child,
+.data-table__head th.is-text {
+  text-align: left;
+}
+
+.data-table__row td {
+  padding: var(--fm-space-1) var(--fm-space-2);
+  border-top: 1px solid var(--fm-screen-rule);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table__row td:first-child,
+.data-table__row td.is-text {
+  text-align: left;
+}
+
+.data-table__row:nth-child(even) {
+  background: rgb(255 255 255 / 3%);
+}
+
+.data-table__row.is-you {
+  background: rgb(232 179 58 / 12%);
+}
+
+.data-table__row.is-you td {
+  color: #fff;
+  font-weight: 700;
+}
+
+.data-table__row.is-clickable {
+  cursor: pointer;
+}
+
+.data-table__row.is-clickable:hover td,
+.data-table__row.is-clickable:focus-visible td {
+  background: rgb(255 255 255 / 7%);
+}
+
+.data-table__num {
+  color: var(--fm-screen-ink-soft);
+}
+
+/* The position band — how a Spanish classification is actually read. */
+.data-table__band {
+  width: 3px;
+  padding: 0;
+  border-top: 0;
+}
+
+.data-table__band.is-champion {
+  background: var(--fm-champion);
+}
+.data-table__band.is-europe {
+  background: var(--fm-europe);
+}
+.data-table__band.is-conference {
+  background: var(--fm-conference);
+}
+.data-table__band.is-relegation {
+  background: var(--fm-relegation);
+}
+
+/* ── Chips ───────────────────────────────────────────────────────────────── */
+
+.chip {
+  display: inline-block;
+  min-width: 2.4em;
+  padding: 0 var(--fm-space-1);
+  background: var(--fm-screen-raised);
+  border: 1px solid var(--fm-screen-rule);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.chip.is-gk {
+  border-color: var(--fm-champion);
+  color: var(--fm-champion);
+}
+.chip.is-df {
+  border-color: var(--fm-europe);
+  color: var(--fm-europe);
+}
+.chip.is-mf {
+  border-color: var(--fm-conference);
+  color: var(--fm-conference);
+}
+.chip.is-fw {
+  border-color: var(--fm-relegation);
+  color: #e08a7e;
+}
+
+/* ── Attribute bars — the ficha's signature ──────────────────────────────── */
+
+.attr {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr 2ch;
+  align-items: center;
+  gap: var(--fm-space-2);
+  padding: 2px 0;
+  font-size: var(--fm-text-xs);
+}
+
+.attr__label {
+  font-family: var(--fm-font-condensed);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
+.attr__track {
+  height: 9px;
+  background: var(--fm-screen-raised);
+  border: 1px solid var(--fm-screen-rule);
+}
+
+.attr__fill {
+  height: 100%;
+  background: var(--fm-screen-ink-soft);
+}
+
+.attr__fill.is-strong {
+  background: var(--fm-champion);
+}
+.attr__fill.is-weak {
+  background: var(--fm-relegation);
+}
+
+/* Bar length in 5% steps. Verbose, but it keeps every styling decision in CSS
+   rather than reaching for a JSX `style` prop, and at this size the granularity
+   is invisible. */
+.attr__fill[data-fill='0'] {
+  width: 0%;
+}
+.attr__fill[data-fill='1'] {
+  width: 5%;
+}
+.attr__fill[data-fill='2'] {
+  width: 10%;
+}
+.attr__fill[data-fill='3'] {
+  width: 15%;
+}
+.attr__fill[data-fill='4'] {
+  width: 20%;
+}
+.attr__fill[data-fill='5'] {
+  width: 25%;
+}
+.attr__fill[data-fill='6'] {
+  width: 30%;
+}
+.attr__fill[data-fill='7'] {
+  width: 35%;
+}
+.attr__fill[data-fill='8'] {
+  width: 40%;
+}
+.attr__fill[data-fill='9'] {
+  width: 45%;
+}
+.attr__fill[data-fill='10'] {
+  width: 50%;
+}
+.attr__fill[data-fill='11'] {
+  width: 55%;
+}
+.attr__fill[data-fill='12'] {
+  width: 60%;
+}
+.attr__fill[data-fill='13'] {
+  width: 65%;
+}
+.attr__fill[data-fill='14'] {
+  width: 70%;
+}
+.attr__fill[data-fill='15'] {
+  width: 75%;
+}
+.attr__fill[data-fill='16'] {
+  width: 80%;
+}
+.attr__fill[data-fill='17'] {
+  width: 85%;
+}
+.attr__fill[data-fill='18'] {
+  width: 90%;
+}
+.attr__fill[data-fill='19'] {
+  width: 95%;
+}
+.attr__fill[data-fill='20'] {
+  width: 100%;
+}
+
+.attr__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* ── Controls ────────────────────────────────────────────────────────────── */
+
+.button {
+  padding: var(--fm-space-2) var(--fm-space-4);
+  background: var(--fm-panel-raised);
+  border-top: 1px solid var(--fm-bevel-light);
+  border-left: 1px solid var(--fm-bevel-light);
+  border-right: 1px solid var(--fm-bevel-dark);
+  border-bottom: 1px solid var(--fm-bevel-dark);
+  color: var(--fm-ink);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-sm);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--fm-bevel-light);
+}
+
+/* Pressed state is a real bevel inversion — the control depresses. */
+.button:active {
+  border-top-color: var(--fm-bevel-dark);
+  border-left-color: var(--fm-bevel-dark);
+  border-right-color: var(--fm-bevel-light);
+  border-bottom-color: var(--fm-bevel-light);
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  color: var(--fm-ink-soft);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.button.is-primary {
+  background: var(--fm-accent);
+  color: var(--fm-accent-ink);
+}
+
+.button.is-primary:hover {
+  background: #f2c157;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-1);
+}
+
+.field__label {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
+/* ── Stat readouts ───────────────────────────────────────────────────────── */
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat__label {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
+.stat__value {
+  font-size: var(--fm-text-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* ── Accessibility floor ─────────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--fm-accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

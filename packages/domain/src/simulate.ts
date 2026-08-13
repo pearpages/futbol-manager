@@ -1,4 +1,4 @@
-import type { Club, Competition } from './entities.ts'
+import type { Club, ClubId, Competition } from './entities.ts'
 import { generateFixtures } from './fixtures.ts'
 import { BALANCED, bestXI, type Formation, type Lineup, type Tactics } from './lineup.ts'
 import type { Player } from './player.ts'
@@ -29,6 +29,8 @@ export interface NewSeasonOptions {
   readonly names: readonly string[]
   /** Seeds squad generation. Required — a league without squads cannot resolve a match. */
   readonly rng: Rng
+  /** Which club the human takes. Defaults to the last-rated, which is the hard game. */
+  readonly managedClubId?: ClubId
 }
 
 export function newSeason(
@@ -73,6 +75,7 @@ export function newSeason(
     squads,
     lineups,
     tactics,
+    managedClubId: options.managedClubId ?? clubs.at(-1)?.id ?? (ids[0] as ClubId),
   }
 }
 

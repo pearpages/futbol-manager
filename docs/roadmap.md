@@ -107,13 +107,32 @@ Also here: the **save migration chain** (`migratePayload`, an ordered forward-on
 
 ---
 
-## M3b — The first screens
+## M3b — The first screens ✅
 
-**~1.5 weeks**
+**~1.5 weeks · done 2026-08-13**
 
-Squad screen, player detail screen, lineup selection, the Zustand store, navigation, and the first real `chrome.css` primitives. The UI is still the M0 placeholder, so this is where the roadmap's "screen count is the silent cost" risk starts landing.
+Table, squad, ficha and lineup screens; the Zustand store; navigation; the first real `chrome.css` primitives; and save/load, because a game you cannot save is not playable in the sense ground rule 6 means.
 
-**Exit:** you can open the game, look at your squad, change your XI, and see it affect results.
+**Exit — met.** You can open the game, read the classification, browse the squad, open a player, change formation and approach, advance the day and watch results land. A best-XI vs worst-XI season driven entirely through the UI's own store shows the points gap.
+
+**The look is a 1999 Spanish CD-ROM, not a terminal.** The default retro answer — dark background, acid-green monospace, scanlines — is 1980s BBS and wrong for the subject. Dinamic's visual language was _hardware_: bevelled panels you could press, with data sunk into inset screens. So the chrome has two materials, and the distinction is structural rather than decorative:
+
+- `.panel` — raised, bevelled, holds controls and labels
+- `.screen` — recessed, dark, holds data
+
+The one real information device is the **position band**: a colour spine on each table row for the title, Europe and the drop. That is how every Spanish classification is read, so it encodes qualification rather than decorating a row. The signature is the **ficha** — the player card with eight attribute bars.
+
+Three decisions worth recording:
+
+- **No router.** Navigation is a value in the store. This is a game, not a site: there are no URLs to share and no back button to honour, so a router would be a dependency bought for nothing.
+- **Attribute bar widths use bucketed `data-fill` attribute selectors**, not a JSX `style` prop. The styling convention has no exception for data-driven values, and 5% steps are visually indistinguishable from exact.
+- **Lineup validation lives in the reducer, not the screen.** `SetLineup` runs `startersOf`, so an illegal XI cannot reach a matchday through any route — a screen can forget, the reducer cannot.
+
+---
+
+## M3c — Open questions before M4
+
+The manager currently starts at **Almería**, the weakest club, because `newSeason` defaults to the last-rated. That is a deliberate "hard game" default but it was never chosen — a club-picker at new-game is the obvious fix and takes an hour.
 
 ---
 

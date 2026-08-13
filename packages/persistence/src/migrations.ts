@@ -39,8 +39,29 @@ const v1ToV2: Migration = {
   },
 }
 
-/** Ordered, contiguous, forward-only. `migrateSave` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2]
+/**
+ * v2 → v3: the human takes a club.
+ *
+ * Before M3b every club was played by the AI, so a v2 save has no notion of "your"
+ * club. Adopting the first in the competition is arbitrary but harmless — a v2 save
+ * has no manager to disappoint, and the alternative is refusing to load it.
+ */
+const v2ToV3: Migration = {
+  from: 2,
+  to: 3,
+  describe: 'managedClubId added — the human now manages one club',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v2 save payload is not an object')
+    }
+    const competition = (payload as { competition?: { clubIds?: unknown } }).competition
+    const clubIds = Array.isArray(competition?.clubIds) ? competition.clubIds : []
+    return { ...payload, managedClubId: clubIds[0] ?? '' }
+  },
+}
+
+/** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
+export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

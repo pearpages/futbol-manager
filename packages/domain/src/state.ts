@@ -17,6 +17,11 @@ export interface GameState {
   /** Selected XI and tactics per club. AI clubs are re-picked from `bestXI` each matchday. */
   readonly lineups: Readonly<Record<string, Lineup>>
   readonly tactics: Readonly<Record<string, Tactics>>
+  /**
+   * The club the human manages. Everything else in the league is played by the AI.
+   * Added at M3b — a save from before then is migrated by adopting the first club.
+   */
+  readonly managedClubId: ClubId
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {

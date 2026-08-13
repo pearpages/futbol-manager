@@ -1,0 +1,73 @@
+.table-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.table-screen__main {
+  min-height: 0;
+}
+
+.table-screen__side {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--fm-space-3);
+  min-height: 0;
+}
+
+.table-screen__stats {
+  display: flex;
+  gap: var(--fm-space-6);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.table-screen__date {
+  font-size: var(--fm-text-md);
+}
+
+.table-screen__results {
+  min-height: 0;
+}
+
+.result-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result-list__item {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-1) var(--fm-space-4);
+  border-top: 1px solid var(--fm-screen-rule);
+  font-size: var(--fm-text-sm);
+}
+
+.result-list__club {
+  font-family: var(--fm-font-condensed);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+.result-list__club.is-away {
+  text-align: left;
+  color: var(--fm-screen-ink-soft);
+}
+
+.result-list__score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--fm-champion);
+}
+
+@media (width < 60rem) {
+  .table-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}

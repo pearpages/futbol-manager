@@ -1,0 +1,13 @@
+.squad-screen {
+  height: 100%;
+  min-height: 0;
+}
+
+.squad-screen__selected {
+  color: var(--fm-champion);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}

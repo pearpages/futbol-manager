@@ -133,4 +133,24 @@ M0 complete and its exit criterion met: four packages wired, `sfc32` in `package
 
 **Migration chain now exists** (`packages/persistence/src/migrations.ts`): ordered, forward-only, refuses a save from the future rather than guessing, with a committed `fixtures/v1.json` to migrate against. Adding a schema change means adding a migration _and_ a fixture save for the version you are leaving.
 
-**Pending:** **M3b** — squad screen, player detail, lineup selection, the Zustand store, navigation, and the first real `chrome.css` primitives. The UI is still the M0 placeholder, so this is where the ~40-screen cost starts.
+### 2026-08-13 (g) — M3b ✅
+
+**Done.** Table, squad, ficha and lineup screens; Zustand store; navigation; the first real `chrome.css`; and IndexedDB save/load, since a game you can't save isn't playable in the sense ground rule 6 means. 202 tests green.
+
+**The visual direction is a 1999 Spanish CD-ROM, not a terminal.** Two materials, and the split is structural: `.panel` is raised bevelled hardware holding controls, `.screen` is a recessed dark display holding data. Every new screen picks one. The position band on table rows is the one real information device — it's how a Spanish classification is read. Tokens and primitives live in `packages/app/src/styles/`; **reach for `chrome.css` before writing screen CSS**, and add a primitive there the _second_ time a screen needs it.
+
+**Decisions a later session should not relitigate:**
+
+- **No router.** Navigation is a `Screen` value in the store. It's a game — no URLs to share, no back button to honour.
+- **Attribute bar widths use bucketed `data-fill` attribute selectors, not a JSX `style` prop.** The styling convention has no exception for data-driven values. 21 rules in `chrome.css`, 5% steps, visually exact.
+- **Lineup validation lives in the reducer.** `SetLineup` runs `startersOf`, so an illegal XI can't reach a matchday by any route. Screens forget; the reducer can't.
+- **`restore()` swallows storage errors.** Private browsing, a blocked origin or a test with no IndexedDB should land the player in a fresh season, not a blank screen.
+
+**Gotcha that cost time:** Testing Library only auto-cleans when Vitest globals are on, and they're not — tests import `describe`/`it` explicitly. Without `afterEach(cleanup)` every `render` stacked into one document and queries found duplicates. Now in `packages/app/src/test-setup.ts`, wired via the app project's `setupFiles`, so all future screen tests inherit it.
+
+**Two things I could not verify and one that needs your call:**
+
+- **Nothing has been looked at in a browser.** The Chrome extension wasn't connected, so verification was the build, the test suite, and a rendered-DOM dump. The layout, bevels and colour have never been seen.
+- **The manager starts at Almería** — the weakest club — because `newSeason` defaults to `clubs.at(-1)`. Defensible as a hard-mode default but never actually chosen. A club picker at new-game is about an hour.
+
+**Pending:** **M4** — transfer windows, player valuation, bids and contract negotiation, and AI clubs that buy and sell plausibly. The roadmap calls the AI the hardest part here by a distance, and wants a scoring function over squad needs rather than a rule tree.

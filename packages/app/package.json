@@ -12,6 +12,7 @@
     "@fm/data": "workspace:*",
     "@fm/domain": "workspace:*",
     "@fm/persistence": "workspace:*",
+    "idb": "8.0.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "zustand": "5.0.15"

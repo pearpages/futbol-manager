@@ -36,6 +36,7 @@ export default defineConfig({
           name: 'app',
           root: 'packages/app',
           environment: 'jsdom',
+          setupFiles: ['./src/test-setup.ts'],
         },
       },
       {
