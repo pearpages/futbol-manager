@@ -56,7 +56,24 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 
 **Zustand** is the store behind the roadmap's "table-heavy screens reading from a store". It holds _projected_ state and dispatches commands; it never becomes a second source of truth. Ground rule 2 still owns state.
 
-**Styling is CSS Modules** — built into Vite, no dependency. Never inline styles, style objects, CSS-in-JS, or a JSX `style` prop.
+### Styling — plain CSS, global, block-element class names
+
+No CSS Modules, no Sass, no CSS-in-JS. **Never** inline styles, style objects, or a JSX `style` prop.
+
+```
+packages/app/src/styles/
+  tokens.css    custom properties — palette, spacing, type scale
+  reset.css
+  chrome.css    shared primitives: panels, tables, stat rows, field labels
+```
+
+Screens get a sibling `.css` file (`SquadScreen.css`) with block-element names — `.squad-screen`, `.squad-screen__row` — imported for its side effect: `import './SquadScreen.css'`.
+
+**Why not CSS Modules**, given the roadmap originally said so. Modules exist to stop unrelated components' styles colliding — right when components have independent visual identities. These ~40 screens are the opposite: a league table, a squad list and a transfer list are the same object with different columns, sharing one chrome. Scoping guards a collision that shouldn't happen while making "every screen looks identical" harder — you either duplicate the chrome per module or build a `composes:` graph to climb back out of the scoping. It also defeats the block-element naming convention, since the mechanism _is_ generated names.
+
+The roadmap's third risk is screen count. The lever on it is a `chrome.css` good enough that a new screen needs no new CSS — a design-system problem, which wants shared global classes.
+
+**Why not Sass.** Nesting is native and Vite handles it; custom properties beat Sass variables for tokens because they cascade and swap at runtime. Mixins are the only real loss, and composing classes covers it. A CSS compiler also cuts against a codebase whose `domain` has zero dependencies and whose PRNG is ten hand-written lines.
 
 ## Lint and format
 

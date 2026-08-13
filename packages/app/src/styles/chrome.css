@@ -1,0 +1,10 @@
+/*
+ * Shared chrome — the panels, tables, stat rows and field labels that every screen
+ * is built from. This is the lever on the roadmap's third risk ("screen count is
+ * the silent cost"): if the primitives here are right, a new screen is markup and
+ * data wiring with no new CSS.
+ *
+ * Deliberately empty until M3. The placeholder shell needs none of it, and
+ * inventing primitives before real screens exist is guessing — ground rule 5.
+ * Add a class here the second time a screen needs it, not the first.
+ */

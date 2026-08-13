@@ -1,0 +1,16 @@
+.app-shell {
+  min-height: 100vh;
+  padding: var(--fm-space-4);
+}
+
+.app-shell__title {
+  margin-bottom: var(--fm-space-2);
+  font-size: var(--fm-text-lg);
+  letter-spacing: var(--fm-tracking-wide);
+  text-transform: uppercase;
+}
+
+.app-shell__status {
+  color: var(--fm-fg-muted);
+  font-size: var(--fm-text-sm);
+}

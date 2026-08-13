@@ -150,7 +150,9 @@ Derivation layer mapping FBref/StatsBomb per-90 stats onto the eight attributes 
 Every schema change gets a migration and a round-trip test against a stored fixture save from the previous version. Keep one fixture save per shipped version in the repo. See [ADR 0005](./adr/0005-persistence.md).
 
 **UI** _(continuous from M3)_
-Table-heavy screens reading from a store. Expect ~40 distinct views by M7. The retro chrome is fun in CSS Modules but each screen still needs wiring — budget for it.
+Table-heavy screens reading from a store. Expect ~40 distinct views by M7. The retro chrome is fun to build, but each screen still needs wiring — budget for it.
+
+The mitigation for the screen-count risk is a shared chrome layer (`packages/app/src/styles/chrome.css`) good enough that a new screen is markup and data wiring with no new CSS. That is why styling is plain global CSS with block-element names rather than per-component modules — see [stack.md](./stack.md#styling--plain-css-global-block-element-class-names).
 
 ---
 

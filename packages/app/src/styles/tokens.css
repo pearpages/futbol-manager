@@ -1,0 +1,23 @@
+/*
+ * Design tokens. Custom properties rather than a preprocessor: they cascade, they
+ * are readable in devtools, and a theme swap is a `:root` override rather than a
+ * rebuild.
+ *
+ * Only what is actually used lives here. The retro chrome earns its tokens at M3,
+ * when real screens exist to derive them from — ground rule 5.
+ */
+
+:root {
+  --fm-bg: #0b1d12;
+  --fm-fg: #e8f0e9;
+  --fm-fg-muted: #8ba392;
+
+  --fm-space-2: 0.5rem;
+  --fm-space-4: 2rem;
+
+  --fm-font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+  --fm-text-sm: 0.875rem;
+  --fm-text-lg: 1.5rem;
+
+  --fm-tracking-wide: 0.08em;
+}
