@@ -47,9 +47,9 @@ Monorepo, Vite, Vitest, strict TS config, import-boundary lint rule. A Vitest `p
 
 ---
 
-## M1 — League skeleton
+## M1 — League skeleton ✅
 
-**~1.5 weeks**
+**~1.5 weeks · done 2026-08-13**
 
 Core entities: `Club`, `Competition`, `Fixture`, `Season` (carrying `currentDate`, per the ground rules). Round-robin fixture generation for **20 clubs over 38 rounds**. League table computation with the full Spanish tiebreaker chain: points → head-to-head points → head-to-head goal difference → overall goal difference → goals for. One hardcoded competition (ground rule 5). See [ADR 0003](./adr/0003-league-format.md).
 
@@ -59,7 +59,12 @@ Dummy result resolution — pure coin flip, placeholder.
 
 No players yet. No decisions yet.
 
-**Exit:** headless script simulates a full 38-fixture season and prints a final table. Deterministic under a fixed seed. The harness runs 50 seasons and asserts.
+**Exit — met:** `pnpm season` simulates a full 38-round season and prints the final table, byte-identical across runs for a given seed. The harness runs 50 seasons and asserts.
+
+Two decisions taken here, both following from the ground rules rather than overriding them, so neither got an ADR:
+
+- **Dates are an integer day number** (`DayNumber`, branded), with `fromCivil`/`toCivil` as the only calendar code. Adding days and comparing dates are the hot-path operations and become `+` and `<`; `currentDate + 1` is literally the tick. The conversion pair is round-trip tested across every day from 1900 to 2300.
+- **`reduce(state, command, rng)` exists from M1**, with one command and three events. Ground rule 2 is an invariant and M1 mutates state — but the deciding reason is that the harness must drive the same door the UI will. A regression net that exercised private helpers would verify a path that never ships.
 
 ---
 

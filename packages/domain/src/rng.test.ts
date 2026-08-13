@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createRng, type RngState } from './rng.js'
+import { createRng, type RngState } from './rng.ts'
 
 const draw = (rng: { next(): number }, n: number): number[] =>
   Array.from({ length: n }, () => rng.next())

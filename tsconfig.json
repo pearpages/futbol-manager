@@ -1,0 +1,10 @@
+{
+  // Root-level files that live outside any workspace package. `pnpm -r` does not
+  // reach these, so without this they would go unchecked.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "types": ["node"]
+  },
+  "include": ["scripts", "vitest.config.ts", "tests"]
+}

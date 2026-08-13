@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client'
 import './styles/tokens.css'
 import './styles/reset.css'
 import './styles/chrome.css'
-import { App } from './App.js'
+import { App } from './App.tsx'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('#root missing from index.html')

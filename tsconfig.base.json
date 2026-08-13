@@ -9,6 +9,13 @@
     "verbatimModuleSyntax": true,
     "erasableSyntaxOnly": true,
 
+    // Relative imports carry `.ts` / `.tsx` extensions rather than the `.js` a
+    // compiler would emit. Nothing here is compiled — Vite and Vitest transform in
+    // memory — and it lets bare `node scripts/*.ts` resolve package sources, since
+    // Node's native type stripping has no notion of rewriting `.js` back to `.ts`.
+    // Requires `noEmit`, which is set below.
+    "allowImportingTsExtensions": true,
+
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true,

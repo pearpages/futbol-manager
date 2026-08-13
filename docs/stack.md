@@ -28,6 +28,7 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 - `noUncheckedIndexedAccess` — a league table lookup that might miss should be typed as maybe-missing. Directly load-bearing given how much of this codebase indexes into arrays of clubs and players.
 - `exactOptionalPropertyTypes` — `undefined` and absent are different things in a save file.
 - `verbatimModuleSyntax`, `erasableSyntaxOnly`, `isolatedModules` — keeps the source transpile-only, which is what Vite and Vitest actually do with it.
+- `allowImportingTsExtensions` — **relative imports carry `.ts` / `.tsx`, not `.js`.** Nothing here is compiled, and it means bare `node scripts/season.ts` resolves package sources directly: Node strips types natively (which `erasableSyntaxOnly` guarantees is safe) but has no notion of rewriting `.js` back to `.ts`. That is what keeps the headless runners dependency-free — no `tsx`, no `ts-node`.
 - `noImplicitOverride`, `noFallthroughCasesInSwitch`.
 
 **`domain`'s `tsconfig.json` sets `"lib": ["ES2023"]` with no `DOM`.** That makes `fetch`, `document` and `localStorage` type errors inside `domain` rather than lint errors — ground rule 1 enforced by the compiler, before ESLint gets a turn.

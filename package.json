@@ -11,8 +11,9 @@
     "dev": "pnpm --filter @fm/app dev",
     "build": "pnpm --filter @fm/app build",
     "test": "vitest",
+    "season": "node scripts/season.ts",
     "lint": "eslint .",
-    "typecheck": "pnpm -r --parallel exec tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r --parallel exec tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
