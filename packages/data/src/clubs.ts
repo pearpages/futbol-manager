@@ -1,52 +1,63 @@
 import type { Club, ClubId } from '@fm/domain'
 
 /**
- * The default fictional league — twenty invented clubs in a Spanish idiom.
+ * The default league — twenty clubs named after their cities.
  *
- * Content lives in `data`, never in `domain`. Real club names stay a user-supplied
- * import, per the roadmap: the game ships fictional by default.
+ * **A club is its city.** Where a city fields more than one club in the division,
+ * the second takes the name of the district or ground it is identified with —
+ * Manzanares, Heliópolis, Sarrià, Vallecas. A supporter places those instantly,
+ * and they read as club names in a table, which crowd nicknames
+ * ("Colchoneros", "Periquitos") do not.
  *
- * Ordering is the canonical one; it seeds fixture generation, so changing it
- * changes every generated season for a given seed.
+ * This is the convention unlicensed football games have always used: a city name
+ * is not a club trademark. Real club names stay a user-supplied import.
+ *
+ * Content lives in `data`, never in `domain`.
+ *
+ * **Ordering is canonical and load-bearing** — ids seed fixture generation, so
+ * reordering this list or renaming an id changes every generated season for a
+ * given seed.
  */
+
 /**
  * `[id, name, shortName, attack, defence]`.
  *
  * Ratings are **provisional and M2-only** — they stand in for squads until players
- * exist at M3, where the rating is derived from the selected XI instead.
+ * exist at M3, where the rating is derived from the selected XI instead. They were
+ * calibrated with the harness; see docs/roadmap.md M2.
  *
- * The shape of the spread is what makes a league feel like a league, and it is the
- * main lever on the champion-points band in the harness. Real top divisions are
- * top-heavy rather than evenly graded: two or three clubs clear of the rest, a
- * broad middle where a few rating points separate seventh from fourteenth, and a
- * weak tail. A uniform ramp from 40 to 90 produces a tidy, lifeless table.
+ * The shape of the spread is what makes a league feel like a league. Real top
+ * divisions are top-heavy rather than evenly graded: two or three clubs clear of
+ * the rest, a broad middle where a few rating points separate seventh from
+ * fourteenth, and a weak tail. A uniform ramp from 40 to 90 produces a tidy,
+ * lifeless table.
  */
 const CLUBS: readonly (readonly [string, string, string, number, number])[] = [
   // Contenders
-  ['montjuic', 'Montjuïc Barcelona', 'MON', 88, 85],
-  ['hispalis', 'Hispalis Sevilla', 'HIS', 86, 82],
-  ['atletico-nervion', 'Atlético Nervión', 'ANV', 80, 86],
+  ['madrid', 'Madrid', 'MAD', 88, 85],
+  ['barcelona', 'Barcelona', 'BAR', 86, 82],
+  ['manzanares', 'Manzanares', 'MZN', 80, 86], // Madrid's second club
   // European places
-  ['ebro', 'Ebro Zaragoza', 'EBR', 76, 74],
-  ['real-tajo', 'Real Tajo Toledo', 'RTA', 73, 72],
-  ['cantera', 'Cantera Bilbaína', 'CAN', 70, 74],
+  ['sevilla', 'Sevilla', 'SEV', 76, 74],
+  ['bilbao', 'Bilbao', 'BIL', 73, 72],
+  ['san-sebastian', 'San Sebastián', 'SSB', 70, 74],
   // The broad middle — a few points apart, so finishing order here is mostly form
-  ['duero', 'Duero Valladolid', 'DUE', 68, 66],
-  ['guadalquivir', 'Guadalquivir CF', 'GUA', 66, 67],
-  ['tramontana', 'Tramontana Girona', 'TRA', 67, 64],
-  ['almirante', 'Almirante Cádiz', 'ALM', 65, 65],
-  ['costa-verde', 'Costa Verde CF', 'CVE', 64, 66],
-  ['numancia-real', 'Real Numancia', 'NUM', 63, 64],
-  ['bahia', 'Bahía Sotogrande', 'BAH', 65, 61],
-  ['sierra', 'Sierra Granada', 'SIE', 61, 63],
+  ['valencia', 'Valencia', 'VAL', 68, 66],
+  ['villarreal', 'Villarreal', 'VLL', 67, 64],
+  ['heliopolis', 'Heliópolis', 'HEL', 66, 67], // Sevilla's second club
+  ['vigo', 'Vigo', 'VIG', 65, 65],
+  ['girona', 'Girona', 'GIR', 65, 61],
+  ['pamplona', 'Pamplona', 'PAM', 64, 66],
+  ['palma', 'Palma', 'PAL', 63, 64],
+  ['sarria', 'Sarrià', 'SAR', 61, 63], // Barcelona's second club
   // Strugglers
-  ['calatrava', 'CD Calatrava', 'CAL', 59, 60],
-  ['levante-mar', 'Levante del Mar', 'LMA', 58, 58],
-  ['union-astur', 'Unión Astur', 'UAS', 57, 56],
+  ['getafe', 'Getafe', 'GET', 59, 60],
+  ['vitoria', 'Vitoria', 'VIT', 58, 58],
+  ['vallecas', 'Vallecas', 'VAS', 57, 56], // Madrid's third club
   // The tail
-  ['aguilas', 'Águilas de Marbella', 'AGU', 54, 53],
-  ['pinares', 'Pinares Soria', 'PIN', 52, 51],
-  ['gaviotas', 'Gaviotas de Vigo', 'GAV', 49, 50],
+  ['cadiz', 'Cádiz', 'CAD', 54, 53],
+  ['granada', 'Granada', 'GRA', 52, 51],
+  ['almeria', 'Almería', 'ALM', 49, 50],
 ]
 
 export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(

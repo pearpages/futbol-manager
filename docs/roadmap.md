@@ -157,7 +157,9 @@ Fog-of-war is worth doing properly: store true attributes, expose an estimate wh
 Run these alongside, not as separate phases.
 
 **Data pipeline** _(starts at M3, ~2 weeks total)_
-Derivation layer mapping FBref/StatsBomb per-90 stats onto the eight attributes — skeleton mapping table already in [attribute-model.md](./attribute-model.md#bridge-to-the-data-pipeline). Pure functions, unit-tested. openfootball for club and league structure. Ships fictional by default; real-name import stays a user-supplied file.
+Derivation layer mapping FBref/StatsBomb per-90 stats onto the eight attributes — skeleton mapping table already in [attribute-model.md](./attribute-model.md#bridge-to-the-data-pipeline). Pure functions, unit-tested. openfootball for club and league structure.
+
+**Ships with unlicensed city names by default** — a club is its city (Madrid, Barcelona, Sevilla), and a city's second club takes the district or ground it is identified with (Manzanares, Heliópolis, Sarrià, Vallecas). A city name is not a club trademark. Real club and player names stay a user-supplied import. Player names are generated from Spanish name pools, never lifted from real squads — there is no city-name equivalent for people.
 
 **Save migrations** _(continuous)_
 Every schema change gets a migration and a round-trip test against a stored fixture save from the previous version. Keep one fixture save per shipped version in the repo. See [ADR 0005](./adr/0005-persistence.md).

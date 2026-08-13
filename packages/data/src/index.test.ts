@@ -7,8 +7,12 @@ describe('DEFAULT_CLUBS', () => {
     expect(DEFAULT_CLUBS).toHaveLength(CLUB_COUNT)
   })
 
-  it('has unique ids and short names', () => {
+  it('has unique ids, names and short names', () => {
+    // Names matter now that clubs are named after cities: two entries sharing a
+    // city would make the table ambiguous, and a duplicate id would silently
+    // collapse two clubs into one during fixture generation.
     expect(new Set(DEFAULT_CLUBS.map((c) => c.id)).size).toBe(CLUB_COUNT)
+    expect(new Set(DEFAULT_CLUBS.map((c) => c.name)).size).toBe(CLUB_COUNT)
     expect(new Set(DEFAULT_CLUBS.map((c) => c.shortName)).size).toBe(CLUB_COUNT)
   })
 
