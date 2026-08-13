@@ -1,4 +1,4 @@
-import type { ClubId, FixtureId, Score } from './entities.ts'
+import { type ClubId, clubRating, type FixtureId, type Score, type TeamRating } from './entities.ts'
 import { resolveFixture } from './resolve.ts'
 import type { Rng } from './rng.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
@@ -63,13 +63,26 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const wasComplete = isSeasonComplete(state)
   const events: Event[] = []
 
-  // Resolve everything scheduled for today. Fixtures are walked in stored order so
-  // that rng draws happen in a fixed sequence — the same seed must always produce
-  // the same season.
-  const played = state.season.fixtures.map((fixture) => {
-    if (fixture.date !== today || fixture.result !== null) return fixture
+  // At M3 this lookup is replaced by a rating derived from each club's selected
+  // XI. `resolveFixture` does not change — only what feeds it.
+  const ratings = new Map<ClubId, TeamRating>(state.clubs.map((c) => [c.id, clubRating(c)]))
 
-    const score = resolveFixture(rng)
+  // Resolve everything *due* — not merely everything dated today. An exact date
+  // match silently drops any fixture the clock has already passed, and anything
+  // that jumps the clock produces exactly that: "continue to next match" is a
+  // standard manager feature, and postponements arrive at M7.
+  //
+  // Fixtures are walked in stored order so rng draws happen in a fixed sequence —
+  // the same seed must always produce the same season.
+  const played = state.season.fixtures.map((fixture) => {
+    if (fixture.date > today || fixture.result !== null) return fixture
+
+    const home = ratings.get(fixture.homeId)
+    const away = ratings.get(fixture.awayId)
+    /* c8 ignore next */
+    if (home === undefined || away === undefined) return fixture
+
+    const score = resolveFixture(home, away, rng)
     events.push({
       type: 'MatchPlayed',
       fixtureId: fixture.id,

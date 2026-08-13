@@ -14,12 +14,14 @@ export {
 export {
   type Club,
   type ClubId,
+  clubRating,
   type Competition,
   type Fixture,
   type FixtureId,
   isPlayed,
   type Score,
   type Season,
+  type TeamRating,
 } from './entities.ts'
 
 export {
@@ -33,7 +35,7 @@ export {
 
 export { computeTable, type TableRow } from './table.ts'
 
-export { resolveFixture } from './resolve.ts'
+export { expectedGoals, MODEL, resolveFixture } from './resolve.ts'
 
 export {
   type AdvanceDay,

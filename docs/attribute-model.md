@@ -91,6 +91,8 @@ Applied to `teamAttack` / `teamDefence` after step 3, in this order, so each mil
 
 Result: two integers in 1–99, which is all M2 needs to know about players.
 
+**M2 already consumes this shape.** `resolveFixture(home: TeamRating, away: TeamRating, rng)` is live, fed at M2 from provisional `Club.attack` / `Club.defence`. M3's job is to replace the _supplier_ with the collapse above — the resolver signature does not change. For scale: the calibrated model uses `SCALE = 42`, so roughly 42 rating points is one unit on the log-goals scale. A side rated ~20 points above its opponent scores about 1.6× as often.
+
 ---
 
 ## Age curve

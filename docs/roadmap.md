@@ -68,15 +68,23 @@ Two decisions taken here, both following from the ground rules rather than overr
 
 ---
 
-## M2 — Result resolver
+## M2 — Result resolver ✅
 
-**~2 weeks**
+**~2 weeks · done 2026-08-13**
 
 Squad strength → scoreline. Poisson-ish goal model with home advantage, driven by the `attack` / `defence` ratings defined in [attribute-model.md](./attribute-model.md#bridge-to-m2--the-resolver-contract). Season-long calibration: goals per game, home win rate, points spread of champion vs relegated.
 
-The harness from M1 is now the regression net. **Tighten its bands** from "a coin flip passes" to real historical distributions, and treat every subsequent balance change as something that has to keep them green. This is the highest-value test in the project.
+The harness from M1 is now the regression net. Its bands were **tightened** from "a coin flip passes" to real distributions; every subsequent balance change has to keep them green. This is the highest-value test in the project.
 
-**Exit:** simulated league tables look plausible against real historical distributions. Champion lands ~85–95 points, not 130.
+**Exit — met.** Calibrated over 50 seasons: **2.70 goals/game, 45.5% home wins, 23.6% draws, champion 87.1 (76–98), 18th on 33, spread 61.5.** Over 200 seasons the top-rated club takes 51% of titles, the runner-up 37%, third 11%, with occasional surprises — and mid-table clubs are sometimes relegated.
+
+Goals are Poisson-distributed with the mean set on a log scale, so ratings compose multiplicatively and λ can never go negative:
+
+```
+λ_home = exp(BASE + SLOPE × (home.attack − away.defence) / SCALE + HOME_EDGE)
+```
+
+**Club ratings here are provisional.** M2 predates players, so `Club` carries `attack`/`defence` directly. M3 replaces the _supplier_ — the rating is derived from the selected XI — and `resolveFixture`'s signature does not change.
 
 ---
 

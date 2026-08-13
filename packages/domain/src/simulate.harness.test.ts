@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { Club, ClubId } from './entities.ts'
 import { TOTAL_ROUNDS } from './fixtures.ts'
 import { computeTable, type TableRow } from './table.ts'
 import { simulateSeasons } from './simulate.ts'
+import { EVEN_CLUBS, TEST_CLUBS } from './test-clubs.ts'
 
 /**
  * The N-season statistical harness. Pulled forward from M2 deliberately — the
@@ -16,20 +16,15 @@ import { simulateSeasons } from './simulate.ts'
  *   Poisson model, true at M7. If one of these breaks, something is genuinely
  *   wrong, not merely mistuned. Never loosen these to make a change pass.
  *
- *   DISTRIBUTION BANDS — provisional. Deliberately wide enough that M1's coin-flip
- *   resolver passes. Each records the real target alongside. M2's job is to narrow
- *   numbers that already exist rather than to build this file while also tuning
- *   against it.
+ *   DISTRIBUTION BANDS — calibrated. Narrowed at M2 from the wide M1 widths that a
+ *   coin flip could pass, and now sitting either side of measured figures. When a
+ *   change pushes one out of band, retune the model — do not widen the band.
  */
 
 const SEASONS = 50
 const SEED = 20260813
 
-const clubs: Club[] = Array.from({ length: 20 }, (_, i) => ({
-  id: `c${String(i + 1).padStart(2, '0')}` as ClubId,
-  name: `Club ${i + 1}`,
-  shortName: `C${String(i + 1).padStart(2, '0')}`,
-}))
+const clubs = TEST_CLUBS
 
 const runs = simulateSeasons(clubs, SEASONS, SEED)
 const tables: TableRow[][] = runs.map((run) =>
@@ -96,39 +91,115 @@ describe(`structural invariants over ${SEASONS} seasons`, () => {
   })
 })
 
-describe('distribution bands — LOOSE AT M1, TIGHTEN AT M2', () => {
+describe('distribution bands — calibrated at M2', () => {
+  // Measured over this exact 50-season run at calibration time, 2026-08-13:
+  //   goals/game 2.70 · home wins 45.5% · draws 23.6%
+  //   champion 87.1 (76–98) · 18th 33.0 · bottom 25.6 · spread 61.5
+
   it('goals per game', () => {
-    // Target (real football): ~2.6–2.8. M1 coin flip: uniform 0–3 a side → ~3.0.
     const goals = allFixtures.reduce(
       (sum, f) => sum + (f.result?.home ?? 0) + (f.result?.away ?? 0),
       0,
     )
     const perGame = goals / allFixtures.length
-    expect(perGame).toBeGreaterThan(1.5)
-    expect(perGame).toBeLessThan(5.5)
+    expect(perGame).toBeGreaterThan(2.45)
+    expect(perGame).toBeLessThan(2.95)
   })
 
   it('home win rate', () => {
-    // Target: ~45%. M1 has no home advantage at all, so expect ~38% by symmetry.
     const homeWins = allFixtures.filter((f) => (f.result?.home ?? 0) > (f.result?.away ?? 0)).length
     const rate = homeWins / allFixtures.length
-    expect(rate).toBeGreaterThan(0.2)
-    expect(rate).toBeLessThan(0.65)
+    expect(rate).toBeGreaterThan(0.41)
+    expect(rate).toBeLessThan(0.5)
   })
 
-  it('champion points', () => {
-    // Target: 85–95. M1 has no skill differences, so the champion is whoever got
-    // lucky — expect ~70. This band is the single clearest marker of M2's job.
+  it('draw rate', () => {
+    const draws = allFixtures.filter((f) => f.result?.home === f.result?.away).length
+    const rate = draws / allFixtures.length
+    expect(rate).toBeGreaterThan(0.19)
+    expect(rate).toBeLessThan(0.29)
+  })
+
+  it('champion points — the roadmap exit criterion', () => {
+    // "Champion lands ~85–95 points, not 130."
     const champions = tables.map((t) => t[0]?.points ?? 0)
-    expect(mean(champions)).toBeGreaterThan(55)
-    expect(mean(champions)).toBeLessThan(105)
+    expect(mean(champions)).toBeGreaterThan(82)
+    expect(mean(champions)).toBeLessThan(95)
+    // No individual season absurd in either direction.
+    expect(Math.min(...champions)).toBeGreaterThan(68)
+    expect(Math.max(...champions)).toBeLessThan(110)
+  })
+
+  it('relegation and bottom-of-table points', () => {
+    const eighteenth = tables.map((t) => t[17]?.points ?? 0)
+    const bottom = tables.map((t) => t.at(-1)?.points ?? 0)
+    expect(mean(eighteenth)).toBeGreaterThan(25)
+    expect(mean(eighteenth)).toBeLessThan(42)
+    expect(mean(bottom)).toBeGreaterThan(15)
   })
 
   it('spread between champion and bottom club', () => {
-    // Target: ~55–70 points. Under a coin flip, pure variance gives ~30.
     const spreads = tables.map((t) => (t[0]?.points ?? 0) - (t.at(-1)?.points ?? 0))
-    expect(mean(spreads)).toBeGreaterThan(15)
-    expect(mean(spreads)).toBeLessThan(85)
+    expect(mean(spreads)).toBeGreaterThan(45)
+    expect(mean(spreads)).toBeLessThan(80)
+  })
+})
+
+describe('ratings actually drive results', () => {
+  // None of this could be asserted at M1 — under a coin flip every club is
+  // identical. These are the tests that say the resolver reads its inputs.
+
+  const meanPosition = (clubId: string) =>
+    mean(tables.map((t) => t.findIndex((r) => r.clubId === clubId) + 1))
+
+  it('ranks strong clubs above weak ones on average', () => {
+    // TEST_CLUBS is ordered strongest to weakest.
+    const strongest = clubs.slice(0, 5).map((c) => meanPosition(c.id))
+    const weakest = clubs.slice(-5).map((c) => meanPosition(c.id))
+    expect(mean(strongest)).toBeLessThan(8)
+    expect(mean(weakest)).toBeGreaterThan(13)
+  })
+
+  it('gives the title to a well-rated club nearly always', () => {
+    const topSix = new Set<string>(clubs.slice(0, 6).map((c) => c.id))
+    const wins = tables.filter((t) => topSix.has(t[0]?.clubId ?? '')).length
+    expect(wins / tables.length).toBeGreaterThan(0.85)
+  })
+
+  it('still lets a weak club beat a strong one sometimes', () => {
+    // Without upsets the game is a spreadsheet; without the ceiling it is a lottery.
+    const strongest = clubs[0]
+    const weakest = clubs.at(-1)
+    /* c8 ignore next */
+    if (strongest === undefined || weakest === undefined) throw new Error('no clubs')
+
+    const meetings = allFixtures.filter(
+      (f) =>
+        (f.homeId === strongest.id && f.awayId === weakest.id) ||
+        (f.homeId === weakest.id && f.awayId === strongest.id),
+    )
+    const upsets = meetings.filter((f) => {
+      const weakScored = f.homeId === weakest.id ? f.result?.home : f.result?.away
+      const strongScored = f.homeId === strongest.id ? f.result?.home : f.result?.away
+      return (weakScored ?? 0) > (strongScored ?? 0)
+    })
+
+    expect(meetings).toHaveLength(SEASONS * 2)
+    expect(upsets.length).toBeGreaterThan(0)
+    expect(upsets.length / meetings.length).toBeLessThan(0.3)
+  })
+
+  it('collapses the points spread when every club is rated identically', () => {
+    // Proves the spread comes from the ratings rather than the model's own
+    // variance — this is what would catch a resolver silently ignoring its input.
+    const even = simulateSeasons(EVEN_CLUBS, 10, SEED)
+    const evenSpreads = even.map((run) => {
+      const t = computeTable(run.state.competition.clubIds, run.state.season.fixtures)
+      return (t[0]?.points ?? 0) - (t.at(-1)?.points ?? 0)
+    })
+    const ratedSpreads = tables.map((t) => (t[0]?.points ?? 0) - (t.at(-1)?.points ?? 0))
+
+    expect(mean(evenSpreads)).toBeLessThan(mean(ratedSpreads) * 0.7)
   })
 })
 

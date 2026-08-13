@@ -1,17 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import type { Club, ClubId } from './entities.ts'
-import { CLUB_COUNT, FIXTURES_PER_ROUND } from './fixtures.ts'
+import { FIXTURES_PER_ROUND } from './fixtures.ts'
+import { TEST_CLUBS } from './test-clubs.ts'
 import { type Event, reduce } from './reduce.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
 import { addDays } from './time.ts'
 
-const clubs: Club[] = Array.from({ length: CLUB_COUNT }, (_, i) => ({
-  id: `c${String(i + 1).padStart(2, '0')}` as ClubId,
-  name: `Club ${i + 1}`,
-  shortName: `C${String(i + 1).padStart(2, '0')}`,
-}))
+const clubs = TEST_CLUBS
 
 const fresh = (): GameState => newSeason(clubs, 2026)
 const tick = (state: GameState, seed = 1) => reduce(state, { type: 'AdvanceDay' }, createRng(seed))
@@ -64,6 +60,24 @@ describe('reduce · AdvanceDay', () => {
     )
   })
 
+  it('resolves fixtures the clock has already passed', () => {
+    // An exact date match would silently drop these forever. Anything that jumps
+    // the clock hits this — "continue to next match" is a standard manager
+    // feature, and postponements arrive at M7.
+    const start = fresh()
+    const jumped: GameState = {
+      ...start,
+      season: { ...start.season, currentDate: addDays(start.season.currentDate, 21) },
+    }
+
+    const { state, events } = tick(jumped)
+
+    // Rounds 1–4 are all due by day 21 (one round per week), so all forty play.
+    expect(events.filter((e) => e.type === 'MatchPlayed')).toHaveLength(FIXTURES_PER_ROUND * 4)
+    expect(state.season.fixtures.filter((f) => f.round <= 4 && f.result === null)).toHaveLength(0)
+    expect(state.season.fixtures.filter((f) => f.round === 5 && f.result !== null)).toHaveLength(0)
+  })
+
   it('emits SeasonEnded exactly once, on the final matchday', () => {
     let state = fresh()
     const rng = createRng(7)
@@ -103,14 +117,30 @@ describe('simulateSeason', () => {
     expect(isSeasonComplete(done)).toBe(true)
   })
 
-  it('throws rather than looping forever if fixtures can never be reached', () => {
+  it('catches up a season whose clock has run ahead', () => {
+    // Previously this state was unfinishable: an exact date match skipped every
+    // fixture the clock had passed. Now they are all simply due.
+    const behind = fresh()
+    const jumped: GameState = {
+      ...behind,
+      season: { ...behind.season, currentDate: addDays(behind.season.currentDate, 100_000) },
+    }
+    expect(isSeasonComplete(simulateSeason(jumped, createRng(1)))).toBe(true)
+  })
+
+  it('throws rather than looping forever if a fixture can never be reached', () => {
+    // The remaining unreachable case: a fixture dated beyond the day ceiling.
+    // The guard exists so a scheduling bug fails loudly instead of hanging.
     const broken = fresh()
+    const [first, ...rest] = broken.season.fixtures
+    /* c8 ignore next */
+    if (first === undefined) throw new Error('no fixtures')
+
     const unreachable: GameState = {
       ...broken,
       season: {
         ...broken.season,
-        // Clock already past every scheduled date, so nothing will ever resolve.
-        currentDate: addDays(broken.season.currentDate, 100_000),
+        fixtures: [{ ...first, date: addDays(first.date, 5_000) }, ...rest],
       },
     }
     expect(() => simulateSeason(unreachable, createRng(1))).toThrow(/did not complete/)

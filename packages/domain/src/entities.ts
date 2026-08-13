@@ -8,11 +8,35 @@ import type { DayNumber } from './time.ts'
 export type ClubId = string & { readonly __clubId: unique symbol }
 export type FixtureId = string & { readonly __fixtureId: unique symbol }
 
+/**
+ * The two numbers the result resolver consumes, per side, on a 1–99 scale.
+ *
+ * This is the contract defined in docs/attribute-model.md. At M2 it comes off the
+ * club directly; at M3 it is computed from the starting XI. The resolver never
+ * learns the difference — M3 replaces the supplier, not the signature.
+ */
+export interface TeamRating {
+  readonly attack: number
+  readonly defence: number
+}
+
 export interface Club {
   readonly id: ClubId
   readonly name: string
   /** Short form for tables, where 20 rows of full names do not fit. */
   readonly shortName: string
+  /**
+   * **Provisional, M2 only.** Stands in for a squad until players exist. At M3
+   * these stop being read: the rating is derived from the selected XI via the
+   * position-weighted collapse in docs/attribute-model.md, and these fields become
+   * a seed for squad generation rather than a live input to results.
+   */
+  readonly attack: number
+  readonly defence: number
+}
+
+export function clubRating(club: Club): TeamRating {
+  return { attack: club.attack, defence: club.defence }
 }
 
 export interface Score {
