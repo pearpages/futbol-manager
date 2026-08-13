@@ -10,6 +10,7 @@ import {
   type RngState,
   simulateSeason,
 } from '@fm/domain'
+import { PLAYER_NAMES } from '@fm/data'
 import { SCHEMA_VERSION, type SaveEnvelope, wrapSave } from './index.ts'
 
 const clubs: Club[] = Array.from({ length: 20 }, (_, i) => ({
@@ -48,11 +49,14 @@ describe('mid-season save and restore', () => {
     const HALF_SEASON_DAYS = 140
 
     // Uninterrupted control run.
-    const control = simulateSeason(newSeason(clubs, 2026), createRng(SEED))
+    const control = simulateSeason(
+      newSeason(clubs, 2026, { names: PLAYER_NAMES, rng: createRng(11) }),
+      createRng(SEED),
+    )
 
     // Interrupted run: play half a season, then save.
     const rng = createRng(SEED)
-    let state = newSeason(clubs, 2026)
+    let state = newSeason(clubs, 2026, { names: PLAYER_NAMES, rng: createRng(11) })
     for (let day = 0; day < HALF_SEASON_DAYS; day++) {
       state = reduce(state, { type: 'AdvanceDay' }, rng).state
     }
@@ -75,10 +79,13 @@ describe('mid-season save and restore', () => {
     // A save that omits rngState looks fine and silently breaks determinism. This
     // asserts the previous test would actually catch that.
     const SEED = 4242
-    const control = simulateSeason(newSeason(clubs, 2026), createRng(SEED))
+    const control = simulateSeason(
+      newSeason(clubs, 2026, { names: PLAYER_NAMES, rng: createRng(11) }),
+      createRng(SEED),
+    )
 
     const rng = createRng(SEED)
-    let state = newSeason(clubs, 2026)
+    let state = newSeason(clubs, 2026, { names: PLAYER_NAMES, rng: createRng(11) })
     for (let day = 0; day < 140; day++) {
       state = reduce(state, { type: 'AdvanceDay' }, rng).state
     }
@@ -89,7 +96,7 @@ describe('mid-season save and restore', () => {
   })
 
   it('round-trips branded types through JSON unchanged', () => {
-    const state = newSeason(clubs, 2026)
+    const state = newSeason(clubs, 2026, { names: PLAYER_NAMES, rng: createRng(11) })
     const envelope: SaveEnvelope<GameState> = wrapSave(state, createRng(1).state())
     const revived = JSON.parse(JSON.stringify(envelope)) as SaveEnvelope<GameState>
 

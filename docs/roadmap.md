@@ -88,15 +88,32 @@ Goals are Poisson-distributed with the mean set on a log scale, so ratings compo
 
 ---
 
-## M3 — Players and lineups
+## M3a — Players and lineups (headless) ✅
 
-**~3 weeks**
+**done 2026-08-13**
 
-Player entity implementing [attribute-model.md](./attribute-model.md) — eight attributes on 1–99, four positions, weighted `overall`. Lineup selection, formations, basic tactical sliders feeding the resolver. Squad screen, player detail screen.
+**M3 was split.** As written it bundled the player/lineup domain model with the entire first UI, which is why it carried a 3-week estimate against M1's 1.5 and M2's 2. The exit criterion is a _statistical_ claim, so the harness settles it headlessly — and the screens then get built against a model already known to work.
 
-The attribute model is specified rather than spiked: the eight attributes, the position weights, the age curve, and — critically — how a starting XI collapses into the two numbers M2 already consumes. Implement against that document; if something needs to change, change it there first.
+Player entity implementing [attribute-model.md](./attribute-model.md) — eight attributes on 1–99, four positions, weighted `overall`, age derived from `birthDate`. Deterministic squad generation, ~23 players a club. Formations, a tactical slider, and the XI → `TeamRating` collapse feeding the resolver.
 
-**Exit:** you can pick a starting XI, and picking a bad one demonstrably costs you points over a season.
+**Exit — met.** A mid-table club forced to field its worst legal XI loses **14.8 points and 5 league places** over a season, averaged across 20 seasons. Asserted in the harness, not claimed.
+
+Two things worth recording:
+
+- **Squad generation round-trips club strength.** A club rated 88/85 generates a squad whose best XI collapses back to 88/85 within ±3, across every club and 20 seasons. That is what kept M2's calibration valid — every distribution band passed unchanged once squads replaced club ratings.
+- **The tactical slider had to be made asymmetric.** A symmetric attack/defence trade is strictly exploitable: under three-points-for-a-win, converting a draw into a 50/50 result is worth +0.5 points, so all-out attack was measured at **+2.1 points a season** for free. Both extremes now surrender 1.6× what they gain, which makes the slider a decision — a strong side gains from attacking, a weak side is punished for it.
+
+Also here: the **save migration chain** (`migratePayload`, an ordered forward-only list, and a committed `v1.json` fixture save), because adding players was the first real schema change. See [ADR 0005](./adr/0005-persistence.md).
+
+---
+
+## M3b — The first screens
+
+**~1.5 weeks**
+
+Squad screen, player detail screen, lineup selection, the Zustand store, navigation, and the first real `chrome.css` primitives. The UI is still the M0 placeholder, so this is where the roadmap's "screen count is the silent cost" risk starts landing.
+
+**Exit:** you can open the game, look at your squad, change your XI, and see it affect results.
 
 ---
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { TOTAL_ROUNDS } from './fixtures.ts'
 import { computeTable, type TableRow } from './table.ts'
-import { simulateSeasons } from './simulate.ts'
+import { DEFAULT_FORMATION, simulateSeasons } from './simulate.ts'
+import { worstXI } from './lineup.ts'
+import { TEST_NAMES } from './test-clubs.ts'
 import { EVEN_CLUBS, TEST_CLUBS } from './test-clubs.ts'
 
 /**
@@ -26,7 +28,7 @@ const SEED = 20260813
 
 const clubs = TEST_CLUBS
 
-const runs = simulateSeasons(clubs, SEASONS, SEED)
+const runs = simulateSeasons(clubs, SEASONS, SEED, { names: TEST_NAMES })
 const tables: TableRow[][] = runs.map((run) =>
   computeTable(run.state.competition.clubIds, run.state.season.fixtures),
 )
@@ -192,7 +194,7 @@ describe('ratings actually drive results', () => {
   it('collapses the points spread when every club is rated identically', () => {
     // Proves the spread comes from the ratings rather than the model's own
     // variance — this is what would catch a resolver silently ignoring its input.
-    const even = simulateSeasons(EVEN_CLUBS, 10, SEED)
+    const even = simulateSeasons(EVEN_CLUBS, 10, SEED, { names: TEST_NAMES })
     const evenSpreads = even.map((run) => {
       const t = computeTable(run.state.competition.clubIds, run.state.season.fixtures)
       return (t[0]?.points ?? 0) - (t.at(-1)?.points ?? 0)
@@ -203,9 +205,70 @@ describe('ratings actually drive results', () => {
   })
 })
 
+describe('lineup selection matters — the M3 exit criterion', () => {
+  // "You can pick a starting XI, and picking a bad one demonstrably costs you
+  // points over a season." That is a statistical claim, so the harness is where it
+  // gets settled — before any screen exists to pick a lineup on.
+  //
+  // A mid-table club is sabotaged rather than the strongest: the best club would
+  // still finish high on reputation alone, which would prove less.
+
+  const victim = clubs[9]
+  /* c8 ignore next */
+  if (victim === undefined) throw new Error('no victim club')
+
+  const SABOTAGE_SEASONS = 20
+
+  const control = simulateSeasons(clubs, SABOTAGE_SEASONS, SEED, { names: TEST_NAMES })
+  const sabotaged = simulateSeasons(clubs, SABOTAGE_SEASONS, SEED, {
+    names: TEST_NAMES,
+    adjust: (state) => ({
+      ...state,
+      lineups: {
+        ...state.lineups,
+        [victim.id]: worstXI(state.squads[victim.id] ?? [], DEFAULT_FORMATION),
+      },
+    }),
+  })
+
+  const pointsFor = (runs: typeof control) =>
+    mean(
+      runs.map((run) => {
+        const table = computeTable(run.state.competition.clubIds, run.state.season.fixtures)
+        return table.find((r) => r.clubId === victim.id)?.points ?? 0
+      }),
+    )
+
+  const positionFor = (runs: typeof control) =>
+    mean(
+      runs.map((run) => {
+        const table = computeTable(run.state.competition.clubIds, run.state.season.fixtures)
+        return table.findIndex((r) => r.clubId === victim.id) + 1
+      }),
+    )
+
+  it('costs real points over a season', () => {
+    const lost = pointsFor(control) - pointsFor(sabotaged)
+    expect(lost).toBeGreaterThan(8)
+  })
+
+  it('costs league positions', () => {
+    expect(positionFor(sabotaged)).toBeGreaterThan(positionFor(control) + 2)
+  })
+
+  it('leaves every other club’s season untouched by the same seed', () => {
+    // Sanity check on the experiment itself: only the sabotaged club's results
+    // should differ, or the comparison above is measuring noise.
+    const untouched = clubs[0]
+    /* c8 ignore next */
+    if (untouched === undefined) throw new Error('no club')
+    expect(control[0]?.state.squads[untouched.id]).toEqual(sabotaged[0]?.state.squads[untouched.id])
+  })
+})
+
 describe('determinism at scale', () => {
   it('reproduces an identical multi-season run from the same seed', () => {
-    const repeat = simulateSeasons(clubs, SEASONS, SEED)
+    const repeat = simulateSeasons(clubs, SEASONS, SEED, { names: TEST_NAMES })
     const repeatTables = repeat.map((run) =>
       computeTable(run.state.competition.clubIds, run.state.season.fixtures),
     )
@@ -213,7 +276,7 @@ describe('determinism at scale', () => {
   })
 
   it('produces a different run from a different seed', () => {
-    const other = simulateSeasons(clubs, 3, SEED + 1)
+    const other = simulateSeasons(clubs, 3, SEED + 1, { names: TEST_NAMES })
     const otherTables = other.map((run) =>
       computeTable(run.state.competition.clubIds, run.state.season.fixtures),
     )

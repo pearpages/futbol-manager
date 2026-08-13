@@ -48,11 +48,50 @@ export {
   type SeasonEnded,
 } from './reduce.ts'
 
-export { clubIds, currentDate, fixtures, type GameState, isSeasonComplete } from './state.ts'
+export {
+  ageOn,
+  type Attributes,
+  ATTRIBUTE_KEYS,
+  clampRating,
+  overall,
+  type Player,
+  type PlayerId,
+  type Position,
+  POSITION_WEIGHTS,
+  POSITIONS,
+} from './player.ts'
 
 export {
+  BALANCED,
+  bestXI,
+  type Formation,
+  FORMATION_NAMES,
+  FORMATIONS,
+  type Lineup,
+  playerAttack,
+  playerDefence,
+  startersOf,
+  type Tactics,
+  teamRating,
+  worstXI,
+} from './lineup.ts'
+
+export { generateLeagueSquads, generateSquad, SQUAD_SIZE, type SquadOptions } from './squad.ts'
+
+export {
+  clubIds,
+  currentDate,
+  fixtures,
+  type GameState,
+  isSeasonComplete,
+  squadOf,
+} from './state.ts'
+
+export {
+  DEFAULT_FORMATION,
   defaultSeasonStart,
   newSeason,
+  type NewSeasonOptions,
   type SeasonRun,
   simulateSeason,
   simulateSeasons,

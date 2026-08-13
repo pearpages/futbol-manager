@@ -19,6 +19,7 @@ import {
   simulateSeason,
 } from '../packages/domain/src/index.ts'
 import { DEFAULT_CLUBS } from '../packages/data/src/clubs.ts'
+import { PLAYER_NAMES } from '../packages/data/src/names.ts'
 
 const seed = Number(process.argv[2] ?? 20260813)
 if (!Number.isFinite(seed)) {
@@ -26,7 +27,7 @@ if (!Number.isFinite(seed)) {
   process.exit(1)
 }
 
-const start = newSeason(DEFAULT_CLUBS, 2026)
+const start = newSeason(DEFAULT_CLUBS, 2026, { names: PLAYER_NAMES, rng: createRng(seed) })
 const final = simulateSeason(start, createRng(seed))
 const table = computeTable(final.competition.clubIds, final.season.fixtures)
 

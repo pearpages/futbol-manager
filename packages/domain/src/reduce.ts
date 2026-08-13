@@ -1,4 +1,5 @@
-import { type ClubId, clubRating, type FixtureId, type Score, type TeamRating } from './entities.ts'
+import { type ClubId, type FixtureId, type Score, type TeamRating } from './entities.ts'
+import { BALANCED, startersOf, teamRating } from './lineup.ts'
 import { resolveFixture } from './resolve.ts'
 import type { Rng } from './rng.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
@@ -63,9 +64,18 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const wasComplete = isSeasonComplete(state)
   const events: Event[] = []
 
-  // At M3 this lookup is replaced by a rating derived from each club's selected
-  // XI. `resolveFixture` does not change — only what feeds it.
-  const ratings = new Map<ClubId, TeamRating>(state.clubs.map((c) => [c.id, clubRating(c)]))
+  // Ratings come from each club's selected XI and tactics — the collapse specified
+  // in docs/attribute-model.md. `resolveFixture` is unchanged from M2; M3 replaced
+  // the supplier, not the signature, which is what the TeamRating parameter was for.
+  const ratings = new Map<ClubId, TeamRating>(
+    state.clubs.map((club) => {
+      const squad = state.squads[club.id] ?? []
+      const lineup = state.lineups[club.id]
+      /* c8 ignore next */
+      if (lineup === undefined) throw new Error(`No lineup selected for ${club.id}`)
+      return [club.id, teamRating(startersOf(squad, lineup), state.tactics[club.id] ?? BALANCED)]
+    }),
+  )
 
   // Resolve everything *due* — not merely everything dated today. An exact date
   // match silently drops any fixture the clock has already passed, and anything

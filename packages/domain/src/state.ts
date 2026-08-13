@@ -1,4 +1,6 @@
 import type { Club, ClubId, Competition, Fixture, Season } from './entities.ts'
+import type { Lineup, Tactics } from './lineup.ts'
+import type { Player } from './player.ts'
 import type { DayNumber } from './time.ts'
 
 /**
@@ -10,6 +12,11 @@ export interface GameState {
   readonly clubs: readonly Club[]
   readonly competition: Competition
   readonly season: Season
+  /** Squad per club. Added at M3; the v1→v2 migration generates them for older saves. */
+  readonly squads: Readonly<Record<string, readonly Player[]>>
+  /** Selected XI and tactics per club. AI clubs are re-picked from `bestXI` each matchday. */
+  readonly lineups: Readonly<Record<string, Lineup>>
+  readonly tactics: Readonly<Record<string, Tactics>>
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {
@@ -22,6 +29,10 @@ export function fixtures(state: GameState): readonly Fixture[] {
 
 export function currentDate(state: GameState): DayNumber {
   return state.season.currentDate
+}
+
+export function squadOf(state: GameState, clubId: ClubId): readonly Player[] {
+  return state.squads[clubId] ?? []
 }
 
 /** True once every fixture in the season has a result. */

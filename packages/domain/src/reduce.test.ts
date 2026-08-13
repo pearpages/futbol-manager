@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FIXTURES_PER_ROUND } from './fixtures.ts'
-import { TEST_CLUBS } from './test-clubs.ts'
+import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { type Event, reduce } from './reduce.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
@@ -9,7 +9,7 @@ import { addDays } from './time.ts'
 
 const clubs = TEST_CLUBS
 
-const fresh = (): GameState => newSeason(clubs, 2026)
+const fresh = (): GameState => newSeason(clubs, 2026, { names: TEST_NAMES, rng: createRng(11) })
 const tick = (state: GameState, seed = 1) => reduce(state, { type: 'AdvanceDay' }, createRng(seed))
 const kinds = (events: readonly Event[]) => events.map((e) => e.type)
 

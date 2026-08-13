@@ -50,3 +50,13 @@ export const EVEN_CLUBS: readonly Club[] = TEST_CLUBS.map((club) => ({
   attack: 65,
   defence: 65,
 }))
+
+/**
+ * Enough distinct names to fill twenty squads. Generic on purpose — `domain` ships
+ * no content, and the real Spanish pools live in `@fm/data`, which `domain` cannot
+ * import (wrong direction).
+ */
+export const TEST_NAMES: readonly string[] = Array.from(
+  { length: 600 },
+  (_, i) => `Player ${i + 1}`,
+)

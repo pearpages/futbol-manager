@@ -1,10 +1,13 @@
 import type { RngState } from '@fm/domain'
+import { migratePayload, SCHEMA_VERSION } from './migrations.ts'
 
-/**
- * Bumped by every schema change, each of which ships a migration and a round-trip
- * test against the previous version's fixture save. See docs/adr/0005-persistence.md.
- */
-export const SCHEMA_VERSION = 1
+export {
+  MIGRATIONS,
+  type Migration,
+  migratePayload,
+  needsSquads,
+  SCHEMA_VERSION,
+} from './migrations.ts'
 
 /**
  * The envelope every save is wrapped in. Ground rule 3 — `schemaVersion` is present
@@ -22,4 +25,20 @@ export interface SaveEnvelope<T> {
 
 export function wrapSave<T>(payload: T, rngState: RngState): SaveEnvelope<T> {
   return { schemaVersion: SCHEMA_VERSION, rngState, payload }
+}
+
+/**
+ * Reads a save of any known version and returns it at the current one.
+ *
+ * The payload comes back as `unknown` deliberately: migration cannot prove the
+ * result matches the caller's expected type, and pretending otherwise with a cast
+ * inside here would hide exactly the bug this machinery exists to catch. The
+ * caller asserts the shape once, at a single known place.
+ */
+export function readSave(envelope: SaveEnvelope<unknown>): SaveEnvelope<unknown> {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    rngState: envelope.rngState,
+    payload: migratePayload(envelope.payload, envelope.schemaVersion),
+  }
 }
