@@ -120,7 +120,7 @@ Table, squad, ficha and lineup screens; the Zustand store; navigation; the first
 - `.panel` — raised, bevelled, holds controls and labels
 - `.screen` — recessed, dark, holds data
 
-The one real information device is the **position band**: a colour spine on each table row for the title, Europe and the drop. That is how every Spanish classification is read, so it encodes qualification rather than decorating a row. The signature is the **ficha** — the player card with eight attribute bars.
+The one real information device is the **position band**: a colour spine on each table row. That is how every Spanish classification is read, so it encodes qualification rather than decorating a row — **1 champion, 2–4 Champions League, 5 Europa League, 6 Conference League, bottom 3 relegated**, with a legend under the table and text for readers who cannot use colour. The signature is the **ficha** — the player card with eight attribute bars.
 
 Three decisions worth recording:
 
@@ -133,6 +133,8 @@ Three decisions worth recording:
 ## M3c — Open questions before M4
 
 The manager currently starts at **Almería**, the weakest club, because `newSeason` defaults to the last-rated. That is a deliberate "hard game" default but it was never chosen — a club-picker at new-game is the obvious fix and takes an hour.
+
+**Nothing has been looked at in a browser yet.** The Chrome extension has not connected across two attempts, so the UI is verified by build, tests and rendered-DOM dumps only. The layout, bevels and colour have never been seen.
 
 ---
 

@@ -33,10 +33,13 @@
 
   /* ── Position bands ───────────────────────────────────────────────────────
      Not decoration. Every Spanish classification is read by these colours, so
-     they encode qualification and relegation the way the subject actually does. */
+     they encode qualification and relegation the way the subject actually does.
+     Named for the competition, not the colour's role — the earlier `--fm-europe`
+     was ambiguous enough that a whole position fell through the mapping. */
   --fm-champion: #e8b33a;
-  --fm-europe: #4a86c8;
-  --fm-conference: #4fa88a;
+  --fm-ucl: #4a86c8;
+  --fm-uel: #d97a2b;
+  --fm-uecl: #4fa88a;
   --fm-relegation: #c0483a;
 
   /* Brass — the one interactive accent, picked up from the trophy. */

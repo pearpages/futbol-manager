@@ -31,6 +31,27 @@
   min-height: 0;
 }
 
+.table-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2) var(--fm-space-4);
+  margin: 0;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  list-style: none;
+  border-top: 1px solid var(--fm-screen-rule);
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table-legend__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}
+
 .result-list {
   margin: 0;
   padding: 0;

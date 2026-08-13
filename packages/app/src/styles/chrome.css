@@ -140,14 +140,59 @@
 .data-table__band.is-champion {
   background: var(--fm-champion);
 }
-.data-table__band.is-europe {
-  background: var(--fm-europe);
+.data-table__band.is-ucl {
+  background: var(--fm-ucl);
 }
-.data-table__band.is-conference {
-  background: var(--fm-conference);
+.data-table__band.is-uel {
+  background: var(--fm-uel);
+}
+.data-table__band.is-uecl {
+  background: var(--fm-uecl);
 }
 .data-table__band.is-relegation {
   background: var(--fm-relegation);
+}
+
+/* Swatch — the legend's key. Same colours, same class names as the bands, so a
+   band can never be shown without an explanation existing for it. */
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1px solid var(--fm-screen-rule);
+  vertical-align: -1px;
+}
+
+.swatch.is-champion {
+  background: var(--fm-champion);
+}
+.swatch.is-ucl {
+  background: var(--fm-ucl);
+}
+.swatch.is-uel {
+  background: var(--fm-uel);
+}
+.swatch.is-uecl {
+  background: var(--fm-uecl);
+}
+.swatch.is-relegation {
+  background: var(--fm-relegation);
+}
+
+/* ── Utilities ───────────────────────────────────────────────────────────── */
+
+/* Text for assistive tech only. The qualification bands are colour; this is how
+   they still say something to a reader who cannot use colour. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* ── Chips ───────────────────────────────────────────────────────────────── */
@@ -170,12 +215,12 @@
   color: var(--fm-champion);
 }
 .chip.is-df {
-  border-color: var(--fm-europe);
-  color: var(--fm-europe);
+  border-color: var(--fm-ucl);
+  color: var(--fm-ucl);
 }
 .chip.is-mf {
-  border-color: var(--fm-conference);
-  color: var(--fm-conference);
+  border-color: var(--fm-uecl);
+  color: var(--fm-uecl);
 }
 .chip.is-fw {
   border-color: var(--fm-relegation);
