@@ -136,6 +136,12 @@ The manager currently starts at **Almería**, the weakest club, because `newSeas
 
 **Nothing has been looked at in a browser yet.** The Chrome extension has not connected across two attempts, so the UI is verified by build, tests and rendered-DOM dumps only. The layout, bevels and colour have never been seen.
 
+**The manager has almost nothing to manage, and that is expected.** Measured across every club and every formation × tactics combination: total agency is roughly **1 point a season**, with a downside of −4 to −9 for choosing badly. The optimal play everywhere is the default lineup and a balanced approach.
+
+That is not a bug. The resolver reads two numbers and both are fixed by the squad you were handed, so until something can _change the squad_ there is nothing to decide. M4 is that something — and per [attribute-model.md](./attribute-model.md#what-actually-moves-results), a goalkeeper is worth ~2.5× any other signing, which is where the first real decision lives.
+
+**A live design question, not yet decided:** the tactical slider is currently a way to lose rather than a way to win. Both directions cost more than they give — deliberately, since a symmetric trade made all-out attack a free +2.1 points at M3a — but the correction left _balanced_ dominant everywhere. Giving tactics a **tempo** term (a defensive setup lowering total goals for both sides, an attacking one raising them) would make parking the bus genuinely correct for an underdog under three-points-for-a-win. Worth deciding before or after M4, not silently.
+
 ---
 
 ## M4 — Transfers

@@ -95,6 +95,46 @@ Result: two integers in 1–99, which is all M2 needs to know about players.
 
 ---
 
+## What actually moves results
+
+The weights above are the design. This section is their **observable consequence**, which is not obvious from reading them — it only shows up when you measure. Written down because M4 has to price players, and pricing them wrong is how a transfer market gets broken.
+
+Measured 2026-08-14, Almería (the weakest club), 20 seasons per row.
+
+### The shares, as percentages of the final number
+
+The steps above are weights; these are what a person can reason with. Every column is the share of that team number the position owns.
+
+|        | Attack (4-4-2) | Defence (4-4-2) | Attack (4-3-3) | Defence (5-3-2) |
+| ------ | -------------- | --------------- | -------------- | --------------- |
+| **GK** | 0%             | **35%**         | 0%             | 35%             |
+| **DF** | 14%            | 41%             | 12%            | **48%**         |
+| **MF** | 41%            | 21%             | 27%            | 14%             |
+| **FW** | **45%**        | 3%              | **61%**        | 3%              |
+
+### Leverage, in league points
+
+One starter replaced by a 90-rated player, everything else unchanged:
+
+| Signing       | Points gained | Per player |
+| ------------- | ------------- | ---------- |
+| Goalkeeper    | +10.5         | **+10.5**  |
+| 4 defenders   | +16.4         | +4.1       |
+| 2 forwards    | +7.6          | +3.8       |
+| 4 midfielders | +11.5         | +2.9       |
+
+**The goalkeeper is worth ~2.5× any other single signing.** That follows directly from 35% of the defensive rating resting on one player — a deliberate choice made so "a great keeper behind a poor back four should visibly matter", and this is the size of that decision. If a keeper being the most valuable player in a squad ever feels wrong, `KEEPER_WEIGHT` in `lineup.ts` is the dial, and the harness bands are what would have to stay green.
+
+### Three things that turn out not to matter
+
+- **Formation, currently.** It only re-weights the shares. Generated squads scale every position from a single club rating, so nothing is lopsided enough for a shape to exploit — measured spread across all four formations is under 1.5 points. This becomes a real decision once M4 lets a squad become unbalanced.
+- **Cleverness about lineup selection.** `bestXI` ranks by `overall`, which uses different weights than the resolver does, so in principle it could leave points on the table. An XI picked by actual contribution to `attack`/`defence` instead changes 0–1 slots and gains ~0.1 points.
+- **Tactics.** Across every club and every formation × slider combination, the upside is 0–3 points and the downside is −4 to −9. The optimal play at every club is the default. See the roadmap's M3c note.
+
+**These figures are downstream of the M2 calibration.** Change `MODEL` in `resolve.ts`, the position weights above, or squad generation, and they move. Re-measure rather than trusting the table.
+
+---
+
 ## Age curve
 
 The curve is a **multiplier on progression**, never on the stored value. Attributes only change through M6's `training` step in the day pipeline; nothing derives a value from age at read time. That keeps saves honest and makes decline visible in the player's history rather than implied.
