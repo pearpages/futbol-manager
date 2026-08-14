@@ -68,15 +68,23 @@ function qualityFactor(rating: number): number {
   return Math.pow(rating / 50, 3.2)
 }
 
-export function valuePlayer(player: Player, date: DayNumber): number {
-  const value =
+/**
+ * What he is worth on the pitch, before anything about his contract.
+ *
+ * Split out at M4c because a **fee** and a **wage** depend on the contract in
+ * opposite directions, and deriving both from one number got the wage badly wrong.
+ */
+function playerWorth(player: Player, date: DayNumber): number {
+  return (
     BASE_VALUE *
     qualityFactor(overall(player)) *
     ageFactor(ageOn(player, date)) *
-    contractFactor(contractMonthsLeft(player, date)) *
     SCARCITY[player.position]
+  )
+}
 
-  return Math.round(value)
+export function valuePlayer(player: Player, date: DayNumber): number {
+  return Math.round(playerWorth(player, date) * contractFactor(contractMonthsLeft(player, date)))
 }
 
 /**
@@ -87,9 +95,20 @@ export function askingPrice(player: Player, date: DayNumber): number {
   return Math.round(valuePlayer(player, date) * 1.35)
 }
 
-/** Annual wage a player of this quality expects, in thousands. */
+/**
+ * Annual wage a player of this quality expects, in thousands.
+ *
+ * **Deliberately ignores how long his contract has left**, which `valuePlayer`
+ * does not. A fee collapses as a deal runs down — six months left and he walks for
+ * nothing — but a wage does not: a player out of contract wants *more*, not a
+ * token. Deriving this from `valuePlayer` meant `contractFactor` returned 0 for
+ * exactly the players whose terms were being decided, so every renewal in
+ * `rolloverSeason` and every free agent came out on the 50 floor. It also made a
+ * free agent look costless to the AI, which took one every window and never bought
+ * anybody with a price on his head.
+ */
 export function expectedWage(player: Player, date: DayNumber): number {
-  return Math.max(50, Math.round(valuePlayer(player, date) * 0.22))
+  return Math.max(50, Math.round(playerWorth(player, date) * 0.22))
 }
 
 /**

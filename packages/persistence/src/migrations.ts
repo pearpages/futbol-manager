@@ -133,6 +133,26 @@ const v4ToV5: Migration = {
 }
 
 /**
+ * v5 → v6: you can sell.
+ *
+ * A v5 save could buy but not offer anything of its own — the manager's club was
+ * excluded from the AI market in both directions, so nothing he owned was ever in
+ * front of a buyer. The transfer list is how a player is opted back in, and an
+ * in-progress career has nobody on it yet.
+ */
+const v5ToV6: Migration = {
+  from: 5,
+  to: 6,
+  describe: 'the transfer list — the manager can put his own players up for sale',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v5 save payload is not an object')
+    }
+    return { ...payload, transferList: [] }
+  },
+}
+
+/**
  * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
  *
  * `persistence` must not import `domain` for this: a migration has to keep
@@ -149,7 +169,7 @@ function daysFromCivil(y: number, m: number, d: number): number {
 }
 
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5]
+export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5, v5ToV6]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

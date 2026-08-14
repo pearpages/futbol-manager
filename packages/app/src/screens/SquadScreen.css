@@ -3,6 +3,33 @@
   min-height: 0;
 }
 
+/* The name opens the ficha, so it is a control rather than a label. The row is no
+   longer clickable as a whole: it now carries a button of its own. */
+.squad-screen__name {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.squad-screen__name:hover {
+  color: var(--fm-champion);
+}
+
+.squad-screen__sale {
+  text-align: right;
+}
+
+.squad-screen__list {
+  padding: 2px var(--fm-space-2);
+  font-size: var(--fm-text-xs);
+}
+
 .squad-screen__selected {
   color: var(--fm-champion);
   font-family: var(--fm-font-condensed);

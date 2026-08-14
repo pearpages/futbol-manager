@@ -121,7 +121,13 @@ describe('the market screen', () => {
 
     const squad = game().squads[game().managedClubId] ?? []
     expect(squad.some((p) => p.id === target.player.id)).toBe(true)
-    expect(game().bids.filter(bidIsLive)).toHaveLength(0)
+    // Only our own bids. Since M4c the clock also brings in offers for our players,
+    // so `bids` runs in both directions.
+    expect(
+      game()
+        .bids.filter((b) => b.from === RICH)
+        .filter(bidIsLive),
+    ).toHaveLength(0)
   })
 
   it('keeps a shortlist that survives navigation', () => {

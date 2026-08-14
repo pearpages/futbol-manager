@@ -8,6 +8,7 @@ import {
   type DayNumber,
   formatMoney,
   isTransferWindowOpen,
+  listedForSale,
   MAX_CONTRACT_YEARS,
   MIN_CONTRACT_YEARS,
   needFor,
@@ -108,6 +109,10 @@ export function MarketScreen() {
     60,
   )
 
+  // What is actually on the market, not merely what you clicked: a player listed
+  // in August may have won his place back by January, and `listedForSale` is what
+  // the transfer window will really act on.
+  const onSale = listedForSale(game)
   const outgoing = game.bids.filter((b) => b.from === managed && bidIsLive(b))
   const incoming = game.bids.filter((b) => b.to === managed && b.status === 'pending')
   const byId = new Map<PlayerId, Player>(
@@ -276,6 +281,40 @@ export function MarketScreen() {
             onClose={() => setTarget(null)}
           />
         )}
+
+        <section className="screen market-screen__panel">
+          <h2 className="screen__heading">Up for sale</h2>
+          {onSale.length === 0 ? (
+            <p className="screen__note">
+              Nobody listed. Your squad is invisible to other clubs until you put someone on the
+              market — list them from the squad screen.
+            </p>
+          ) : (
+            <ul className="offer-list">
+              {onSale.map((player) => (
+                <li key={player.id} className="offer-list__item">
+                  <span className="offer-list__name">{player.name}</span>
+                  <span className="offer-list__detail">
+                    {player.position} · asking {formatMoney(askingPrice(player, date))}
+                  </span>
+                  <span className="offer-list__actions">
+                    <button
+                      type="button"
+                      className="button market-screen__mini"
+                      onClick={() =>
+                        attempt(() =>
+                          dispatch({ type: 'ListPlayer', playerId: player.id, on: false }),
+                        )
+                      }
+                    >
+                      Take off
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="screen market-screen__panel market-screen__inbox">
           <h2 className="screen__heading">Offers for your players</h2>

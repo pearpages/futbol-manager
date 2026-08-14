@@ -223,3 +223,25 @@ Three things that measured as _not_ mattering, so nobody spends time on them: fo
 **Still not seen in a browser.** The Chrome extension failed to connect again, a fourth time. Verified by the build, 309 tests, and a rendered-DOM dump: a mid club with €5.7M sees an 88-rated forward at €14.1M it cannot afford and a reachable +5.0 upgrade at €4.6M, which is the intended shape of the decision.
 
 **Pending: M5** — revenue, wage bill, board objectives. The seeded budget is now load-bearing for whether a manager can fix anything at all, so replacing it with income is the next real constraint. The signing bonus was deliberately deferred there.
+
+### 2026-08-14 — M4c ✅ (the sell side)
+
+**Prompted by a question, not a plan: "when and how will I be able to sell?"** The answer turned out to be "you already can, once a year, if you are lucky" — and chasing why exposed four defects stacked on top of each other. Worth remembering as a pattern: the feature looked finished and its tests were green.
+
+**The visible bug.** Incoming offers were gated on `toCivil(today).d === 1` inside an open window. The clock enters every season on 15 August and `StartNewSeason` jumps straight to the next 15 August, so **1 July and 1 August are never reached** — exactly one generation day a year, 1 January, yielding at most one offer. Now `dayOfWeek(today) === 1` while the window is open.
+
+**Three defects underneath it, each hidden by the one above:**
+
+- **`expectedWage` came from `valuePlayer`, which multiplies by `contractFactor` — zero once a contract expires.** So every free agent _and every renewal in `rolloverSeason`_ was written on the 50 floor. Shipped in M4b and invisible. A fee collapses as a deal runs down; a wage does not. `playerWorth` is now the contract-free base and `expectedWage` uses it.
+- **A free agent looked costless, so no fee was ever paid again.** need/fee gives a zero-fee player an unbeatable ratio; with one signing per club per window, every club took a free agent every time and the pool is never empty. Value is now need per **fee + wages**, and a club makes one paid signing _and_ one free transfer — genuinely different resources, since a free transfer does not touch the budget. **Keeping the paid rate at one preserves M4a's career comparability.**
+- **`surplus` was computed once at window open and then trusted.** Two forwards each spareable alone left a club with two between them — no legal 4-3-3. Sales are re-checked against the live squad now.
+
+**Squads were draining to the legal minimum.** Releases floored on `MIN_SQUAD`, so every club settled at exactly 18 — and `surplus` returns `[]` at 18, which freezes the whole market in both directions. Mean squad size measured 18.4 by season four. `RELEASE_FLOOR = 21` fixes it; squads hold at 18–23, pool ~45. **`MIN_SQUAD` is a hard floor, not a target — do not reuse it as one.**
+
+**The transfer list.** `ListPlayer`, spare players only, re-filtered through `surplus` at window time. Listing is the consent, so a listed player who attracts a buyer is sold without a prompt. Sold, retired and released players are pruned from the list in `applyTransfers` and `rolloverSeason`.
+
+**Numbers:** 332 tests, `pnpm season` byte-identical to `426f2f6`, M2/M3 bands untouched, money conserved. The M4b exit criterion re-measures at **+4.3 points / 2.2 places** (it briefly read +11.8 before the squad-drain fix — a signal that the _control_ arm was degrading, not that shopping had got better).
+
+**Cost:** the weekly cadence roughly doubled suite runtime (4.5s → 9s), because `bestOfferFor` scores nineteen clubs and now runs ~7 days a season instead of one. Accepted deliberately. If it needs trimming later, cap the candidate spares — but note that restricting to a club's _best_ spares produces no offers at all, since the deals that exist are the cheap ones at the bottom.
+
+**Still not seen in a browser** — fifth failed extension connection. Verified by a DOM dump of the full loop: list 12 spares → "Up for sale" panel with asking prices → roll over → one sold, budget €5.7M → €5.9M.

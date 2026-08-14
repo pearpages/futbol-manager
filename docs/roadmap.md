@@ -206,6 +206,30 @@ Bids and counter-bids, personal terms, a free-agent pool, a transfer screen and 
 
 ---
 
+## M4c — The sell side ✅
+
+**done 2026-08-14**
+
+M4b shipped a market you could buy in. Selling existed on paper and was unreachable in practice, which is a good illustration of why a feature is not done until somebody plays it.
+
+**A transfer list.** Your club is invisible to the AI market by default — that is what stops it trading your squad behind your back — so nothing you owned was ever in front of a buyer. `ListPlayer` opts one player, and only that player, back into the pool AI clubs already shop from. Spare players only, by the same `surplus` rule the AI sells by, re-checked at window time: a player listed in August who has won his place back by January is not sold out from under you. **The listing is the consent**, so a listed player who attracts a buyer goes; the inbox stays for unsolicited offers.
+
+**The bug this milestone existed for.** Incoming offers were generated on "the first of a transfer-window month". The clock enters every season on **15 August** and `StartNewSeason` jumps straight to the next 15 August, so **1 July and 1 August are never reached** — leaving exactly one generation day a year, 1 January, producing at most one offer. A manager could play for seasons and never be approached. Offers now arrive **weekly while the window is open**, and a listed player attracts interest on far less need than an approach out of the blue.
+
+**Three real defects surfaced underneath, each hidden by the one above it:**
+
+- **`expectedWage` was derived from `valuePlayer`, which multiplies by `contractFactor` — zero for an expired contract.** So every free agent and _every renewal in `rolloverSeason`_ came out on the 50 floor. A fee collapses as a deal runs down; a wage does not — a player out of contract wants more, not a token. Wages now come from quality, age and scarcity alone.
+- **A free agent looked costless, so nobody ever paid a fee again.** Ranking need per unit of _fee_ gives a zero-fee player an unbeatable ratio, and with one signing per club per window every club took a free agent every time — the pool is never empty, so a player with a price on his head was never bought at all. Value is now need per unit of **fee plus wages**, and a club may make one paid signing _and_ one free transfer, because those are different resources: a free transfer does not touch the transfer budget.
+- **`surplus` was evaluated once at window open, then trusted.** Two of a club's forwards could each be spareable alone and leave it with two between them — a squad that cannot field a 4-3-3, which the career harness forbids. Sales are now re-checked against the squad as it stands.
+
+**Squads were quietly draining to the legal minimum.** Releases used `MIN_SQUAD` as their floor, so every club settled at exactly 18 — and `surplus` returns nothing at 18, which freezes the market: nobody lists anybody, there is nothing to buy, and you cannot sell either. The league sat at a mean of 18.4. Releases now stop at a _healthy_ squad size rather than the legal one, and squads hold at 18–23 with a stable pool of ~45.
+
+**Exit — met.** The M4b criterion is re-measured at **+4.3 points and 2.2 places** a season over 60 seasons. `pnpm season` is still byte-identical to `426f2f6`, and every M2/M3 band is untouched: the market tick remains rng-free.
+
+**Schema v6**, with `fixtures/v5.json` captured by `pnpm fixture` before the migration existed — the one moment it could have been.
+
+---
+
 ## M5 — Economy and board
 
 **~3 weeks**

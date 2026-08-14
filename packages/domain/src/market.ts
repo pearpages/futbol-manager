@@ -95,6 +95,21 @@ export function surplus(squad: readonly Player[]): Player[] {
     .sort((a, b) => overall(a) - overall(b))
 }
 
+/**
+ * The manager's listed players who are *currently* sellable.
+ *
+ * `surplus` is applied again here rather than trusted from when the button was
+ * pressed. A player listed in August may be a starter by January — an injury to
+ * the man ahead of him, a sale elsewhere — and selling him then would break up an
+ * XI the manager chose on purpose. Listing says "I would let him go", not "sell
+ * him whatever happens".
+ */
+export function listedForSale(state: GameState): Player[] {
+  if (state.transferList.length === 0) return []
+  const listed = new Set<PlayerId>(state.transferList)
+  return surplus(state.squads[state.managedClubId] ?? []).filter((player) => listed.has(player.id))
+}
+
 /** True when removing this player still leaves a legal XI in the reference shape. */
 function canSpare(squad: readonly Player[], player: Player): boolean {
   const remaining = squad.filter((p) => p.id !== player.id)
@@ -113,9 +128,13 @@ function canSpare(squad: readonly Player[], player: Player): boolean {
  */
 export interface TransferWindowOptions {
   /**
-   * A club the AI must not trade for. This is the human's, and leaving it out is
-   * how the AI would otherwise buy over the top of the manager and sell his squad
-   * from under him.
+   * The club the AI does not play. This is the human's.
+   *
+   * **It excludes him as a buyer, not as a seller.** Left out entirely, the AI
+   * buys over the top of the manager; excluded from both roles — which is how M4b
+   * shipped — nothing he owns is ever in front of a buyer, so selling is
+   * impossible by construction. What he puts on the transfer list, and only that,
+   * goes on the market.
    *
    * Optional, and unset by default, because `simulateCareer` is deliberately the
    * *no-human* instrument — M4a's ten-season measurements only mean what they say
@@ -147,6 +166,11 @@ export function runTransferWindow(
       listed.push({ player, from: club.id })
     }
   }
+  // The manager's own contribution is exactly what he put up for sale. An AI club
+  // offers a whole squad's worth of spares automatically; he offers a list.
+  if (options.exclude !== undefined) {
+    for (const player of listedForSale(state)) listed.push({ player, from: options.exclude })
+  }
   for (const player of state.freeAgents) listed.push({ player, from: null })
 
   const order = shuffle(state.clubs, rng)
@@ -158,21 +182,50 @@ export function runTransferWindow(
     if (squad === undefined) continue
     if (squad.length >= MAX_SQUAD) continue
 
-    // Score everything on the market for this club, best value first. `Math.max(1, …)`
-    // keeps a free agent's zero fee from dividing by zero — he ranks top, which is
-    // right: no fee is the best value there is.
+    // Score everything on the market for this club, best value first.
+    //
+    // Value is need per unit of **total cost — fee plus wages**, not per unit of
+    // fee. Ranking on the fee alone divides by zero for a free agent, and papering
+    // over that with `Math.max(1, fee)` gives him an unbeatable ratio: with a
+    // one-signing-per-window rule, every club took a free agent every time and a
+    // player with any price on his head was never bought at all. That silently
+    // made selling impossible for the human, since the pool is never empty.
+    //
+    // A free agent is not free. He is a wage, which is exactly what a club weighs
+    // him against — and no money moves either way, so conservation is untouched.
     const candidates = listed
       .filter((entry) => entry.from !== club.id)
-      .map((entry) => ({
-        ...entry,
-        need: needFor(squad, entry.player),
-        fee: entry.from === null ? 0 : askingPrice(entry.player, date),
-      }))
+      .map((entry) => {
+        const fee = entry.from === null ? 0 : askingPrice(entry.player, date)
+        return {
+          ...entry,
+          fee,
+          need: needFor(squad, entry.player),
+          cost: Math.max(1, fee + expectedWage(entry.player, date)),
+        }
+      })
       .filter((entry) => entry.need > NEED_THRESHOLD)
-      .filter((entry) => entry.need / Math.max(1, entry.fee) > VALUE_FOR_MONEY)
-      .sort((a, b) => b.need / Math.max(1, b.fee) - a.need / Math.max(1, a.fee))
+      .filter((entry) => entry.need / entry.cost > VALUE_FOR_MONEY)
+      .sort((a, b) => b.need / b.cost - a.need / a.cost)
+
+    // One paid signing and one free transfer, tracked separately.
+    //
+    // A single "one signing per window" cap crowds out every paid deal: a free
+    // agent is always better value than anyone with a price on his head, so with
+    // one slot a club takes a free agent every time, and the pool is never empty.
+    // Nobody would ever have bought a listed player again — including the human's.
+    //
+    // Two counters rather than a bigger cap, because they really are different
+    // resources: a free transfer does not touch the transfer budget, so it is not
+    // competing with a fee for the same money. The paid rate is unchanged from
+    // M4a, which is what keeps the career harness comparable.
+    let paid = false
+    let free = false
 
     for (const candidate of candidates) {
+      if (paid && free) break
+      if (candidate.from === null ? free : paid) continue
+
       const buyer = budgets.get(club.id) ?? 0
       if (buyer < candidate.fee) continue
 
@@ -185,6 +238,11 @@ export function runTransferWindow(
         if (sellerSquad === undefined) continue
         if (sellerSquad.length <= MIN_SQUAD) continue
         if (!sellerSquad.some((p) => p.id === candidate.player.id)) continue // already sold
+        // Re-checked against the squad *as it stands now*, not as it stood when
+        // `listed` was built. Two of a club's forwards can each be spareable on
+        // their own and leave it with two between them — which is a squad that
+        // cannot field a 4-3-3, and the career harness says that must never happen.
+        if (!canSpare(sellerSquad, candidate.player)) continue
 
         squads.set(
           candidate.from,
@@ -207,9 +265,12 @@ export function runTransferWindow(
       const index = listed.findIndex((e) => e.player.id === candidate.player.id)
       if (index >= 0) listed.splice(index, 1)
 
-      // One signing per club per window keeps a rich club from emptying the
-      // market in a single pass, and spreads business across the league.
-      break
+      // Capping each kind at one keeps a rich club from emptying the market in a
+      // single pass, and spreads business across the league.
+      if (candidate.from === null) free = true
+      else paid = true
+
+      if (squad.length >= MAX_SQUAD) break
     }
   }
 
@@ -284,7 +345,12 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
     lineups[clubId] = bestXI(squad, formation)
   }
 
-  return { ...state, clubs, squads, lineups, freeAgents }
+  // A sold player comes off the transfer list, or it slowly fills with the ids of
+  // players who left years ago.
+  const own = new Set<PlayerId>((squads[state.managedClubId] ?? []).map((p) => p.id))
+  const transferList = state.transferList.filter((id) => own.has(id))
+
+  return { ...state, clubs, squads, lineups, freeAgents, transferList }
 }
 
 /** Fisher–Yates over the injected rng — no `Math.random`, so a seed reproduces the market. */

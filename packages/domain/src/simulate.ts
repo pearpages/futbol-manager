@@ -79,6 +79,7 @@ export function newSeason(
     freeAgents: [],
     bids: [],
     shortlist: [],
+    transferList: [],
   }
 }
 

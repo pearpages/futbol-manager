@@ -1,6 +1,6 @@
 import { generateFixtures } from './fixtures.ts'
 import { bestXI, FORMATIONS, keepsLineup } from './lineup.ts'
-import { MIN_SQUAD, needFor } from './market.ts'
+import { needFor } from './market.ts'
 import {
   ageOn,
   contractExpiry,
@@ -75,6 +75,19 @@ function retirementChance(age: number): number {
  * the free-agent pool permanently empty.
  */
 const RETAIN_THRESHOLD = 0.25
+
+/**
+ * The squad size a club releases *down to* — deliberately above `MIN_SQUAD`.
+ *
+ * `MIN_SQUAD` is a hard floor ("a club will not sell below this"), and using it
+ * here let every club drain to exactly 18. That looks harmless and quietly kills
+ * the market: `surplus` returns nothing at 18, so nobody lists anybody, there is
+ * nothing to buy, and the manager cannot sell either. Measured over ten seasons
+ * the whole league sat at a mean of 18.4.
+ *
+ * A club keeps a few spares beyond the eleven it needs, as clubs do.
+ */
+const RELEASE_FLOOR = 21
 
 /**
  * The deepest requirement at each position across every formation — 5 defenders
@@ -152,7 +165,7 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
       .sort((a, b) => overall(a) - overall(b))
 
     for (const player of expiring) {
-      if (working.length <= MIN_SQUAD) break
+      if (working.length <= RELEASE_FLOOR) break
 
       const without = working.filter((p) => p.id !== player.id)
       if (!canRelease(without, player.position)) continue
@@ -193,11 +206,15 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
     }
   }
 
+  // Anyone who retired or was released comes off the transfer list with them.
+  const own = new Set((squads[state.managedClubId] ?? []).map((player) => player.id))
+
   return {
     ...state,
     squads,
     lineups,
     freeAgents,
+    transferList: state.transferList.filter((id) => own.has(id)),
     season: {
       startYear: nextYear,
       currentDate: start,

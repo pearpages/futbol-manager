@@ -141,7 +141,9 @@ describe('bidding', () => {
     const answered = bidAndWait(player, Math.round(asking * 0.4))
 
     expect(answered.status).toBe('rejected')
-    expect(state.bids.filter(bidIsLive)).toHaveLength(0)
+    // Scoped to bids *we* made. Since M4c the clock also brings in offers for our
+    // own players, so the bid list is two-directional.
+    expect(state.bids.filter((b) => b.from === RICH).filter(bidIsLive)).toHaveLength(0)
   })
 
   it('does not answer before the answer is due', () => {
@@ -373,6 +375,192 @@ describe('the season rollover, through the reducer', () => {
       expect(squad.length).toBeGreaterThanOrEqual(MIN_SQUAD)
       expect(squad.length).toBeLessThanOrEqual(MAX_SQUAD)
     }
+  })
+})
+
+describe('the transfer list — putting your own players up for sale', () => {
+  /** A mid club: its spares are cheap enough that somebody actually wants them. */
+  const MID = TEST_CLUBS[13]?.id ?? SELLER
+
+  beforeEach(() => {
+    rng = createRng(4242)
+    state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng, managedClubId: MID })
+  })
+
+  const aSpare = () => {
+    const player = surplus(state.squads[MID] ?? [])[0]
+    /* c8 ignore next */
+    if (player === undefined) throw new Error('nothing spare')
+    return player
+  }
+
+  const aStarter = () => {
+    const starters = new Set(state.lineups[MID]?.starters ?? [])
+    const player = (state.squads[MID] ?? []).find((p) => starters.has(p.id))
+    /* c8 ignore next */
+    if (player === undefined) throw new Error('no starter')
+    return player
+  }
+
+  it('lists a spare player', () => {
+    const player = aSpare()
+    const events = dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+
+    expect(state.transferList).toEqual([player.id])
+    expect(events).toEqual([{ type: 'PlayerListed', playerId: player.id, on: true }])
+  })
+
+  it('refuses to list a first-team player', () => {
+    // Selling is squad management, not asset-stripping — you cannot break up the
+    // XI you just picked. Same `surplus` rule the AI sells by.
+    expect(() => dispatch({ type: 'ListPlayer', playerId: aStarter().id, on: true })).toThrow(
+      /first team/,
+    )
+    expect(state.transferList).toEqual([])
+  })
+
+  it('refuses to list a player who is not yours', () => {
+    const theirs = state.squads[RICH]?.[0]
+    /* c8 ignore next */
+    if (theirs === undefined) throw new Error('no squad')
+    expect(() => dispatch({ type: 'ListPlayer', playerId: theirs.id, on: true })).toThrow(
+      /your own players/,
+    )
+  })
+
+  it('unlists, and does not duplicate on a repeat listing', () => {
+    const player = aSpare()
+    dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    expect(state.transferList).toEqual([player.id])
+
+    dispatch({ type: 'ListPlayer', playerId: player.id, on: false })
+    expect(state.transferList).toEqual([])
+  })
+
+  it('always allows unlisting, even once he is a starter again', () => {
+    // Refusing would strand him on a list `listedForSale` already ignores, so the
+    // screen would show a state the market does not agree with.
+    const player = aSpare()
+    dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+
+    const squad = state.squads[MID] ?? []
+    const lineup = state.lineups[MID]
+    /* c8 ignore next */
+    if (lineup === undefined) throw new Error('no lineup')
+    const swapped = [...lineup.starters]
+    const dropped = swapped.findIndex((id) =>
+      squad.some((p) => p.id === id && p.position === player.position),
+    )
+    swapped[dropped] = player.id
+    state = { ...state, lineups: { ...state.lineups, [MID]: { ...lineup, starters: swapped } } }
+
+    expect(() => dispatch({ type: 'ListPlayer', playerId: player.id, on: false })).not.toThrow()
+    expect(state.transferList).toEqual([])
+  })
+
+  it('sells a listed player at the next window, and the money moves', () => {
+    // Nothing of yours reaches a buyer unless you list it — that is the whole
+    // mechanism, and before M4c there was no way in at all.
+    const before = totalBudget(state)
+    for (const player of surplus(state.squads[MID] ?? [])) {
+      dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    }
+    const listedIds = new Set(state.transferList)
+
+    state = simulateSeason(state, rng)
+    const budgetBefore = state.clubs.find((c) => c.id === MID)?.budget ?? 0
+    const events = dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+
+    const sold = events.filter((e) => e.type === 'TransferCompleted').filter((e) => e.from === MID)
+    expect(sold.length).toBeGreaterThan(0)
+    for (const sale of sold) expect(listedIds.has(sale.playerId)).toBe(true)
+
+    const earned = sold.reduce((sum, sale) => sum + sale.fee, 0)
+    expect(state.clubs.find((c) => c.id === MID)?.budget).toBe(budgetBefore + earned)
+    expect(totalBudget(state)).toBe(before)
+  })
+
+  it('takes a sold player off the list rather than leaving a dead id', () => {
+    for (const player of surplus(state.squads[MID] ?? [])) {
+      dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    }
+    state = simulateSeason(state, rng)
+    dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+
+    const own = new Set((state.squads[MID] ?? []).map((p) => p.id))
+    for (const id of state.transferList) expect(own.has(id)).toBe(true)
+  })
+
+  it('sells nobody you did not list', () => {
+    const before = new Set((state.squads[MID] ?? []).map((p) => p.id))
+    state = simulateSeason(state, rng)
+    dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+
+    // Retirement still applies; trading does not.
+    const after = state.squads[MID] ?? []
+    const bought = after.filter((p) => !before.has(p.id) && !p.id.includes('-2027-'))
+    expect(bought).toHaveLength(0)
+  })
+
+  it('never sells you below the squad floor', () => {
+    for (const player of surplus(state.squads[MID] ?? [])) {
+      dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    }
+    for (let season = 0; season < 3; season++) {
+      state = simulateSeason(state, rng)
+      dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+      expect((state.squads[MID] ?? []).length).toBeGreaterThanOrEqual(MIN_SQUAD)
+    }
+  })
+})
+
+describe('offers arrive through the window, not once a year', () => {
+  const MID = TEST_CLUBS[13]?.id ?? SELLER
+
+  beforeEach(() => {
+    rng = createRng(4242)
+    state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng, managedClubId: MID })
+  })
+
+  it('offers during August, which the old gate could never reach', () => {
+    // The bug this milestone exists for: generation was gated on the 1st of a
+    // window month, but the clock enters every season on 15 August and rolls
+    // straight to the next 15 August, so 1 July and 1 August never happened. One
+    // generation day a season, 1 January, and a manager could play for years
+    // without being offered anything.
+    const seen: Event[] = []
+    for (let day = 0; day < 30; day++) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'OfferReceived') seen.push(event)
+      }
+    }
+    expect(seen.length).toBeGreaterThan(0)
+  })
+
+  it('asks about a listed player it would not have approached you about', () => {
+    // Listing lowers the bar: you advertised him, so less interest is needed than
+    // for an approach out of the blue.
+    const quiet: Event[] = []
+    for (let day = 0; day < 30; day++) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'OfferReceived') quiet.push(event)
+      }
+    }
+
+    rng = createRng(4242)
+    state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng, managedClubId: MID })
+    for (const player of surplus(state.squads[MID] ?? [])) {
+      dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    }
+    const listedOffers: Event[] = []
+    for (let day = 0; day < 30; day++) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'OfferReceived') listedOffers.push(event)
+      }
+    }
+
+    expect(listedOffers.length).toBeGreaterThanOrEqual(quiet.length)
   })
 })
 

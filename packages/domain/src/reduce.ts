@@ -25,7 +25,7 @@ import { resolveFixture } from './resolve.ts'
 import type { Rng } from './rng.ts'
 import { rolloverSeason } from './season.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
-import { addDays, type DayNumber, toCivil } from './time.ts'
+import { addDays, type DayNumber, dayOfWeek } from './time.ts'
 import { askingPrice } from './valuation.ts'
 
 /**
@@ -107,6 +107,19 @@ export interface Shortlist {
   readonly on: boolean
 }
 
+/**
+ * Put one of your own players up for sale, or take him off the market.
+ *
+ * Your club is invisible to the AI market by default. This is how you opt a
+ * single player back into it — the only way anything of yours is ever offered to
+ * anyone.
+ */
+export interface ListPlayer {
+  readonly type: 'ListPlayer'
+  readonly playerId: PlayerId
+  readonly on: boolean
+}
+
 export type Command =
   | AdvanceDay
   | SetLineup
@@ -117,6 +130,7 @@ export type Command =
   | OfferContract
   | RespondToOffer
   | Shortlist
+  | ListPlayer
 
 export interface MatchPlayed {
   readonly type: 'MatchPlayed'
@@ -185,6 +199,12 @@ export interface TermsRejected {
   readonly wanted: number
 }
 
+export interface PlayerListed {
+  readonly type: 'PlayerListed'
+  readonly playerId: PlayerId
+  readonly on: boolean
+}
+
 export interface TransferCompleted {
   readonly type: 'TransferCompleted'
   readonly playerId: PlayerId
@@ -204,6 +224,7 @@ export type Event =
   | BidAnswered
   | OfferReceived
   | TermsRejected
+  | PlayerListed
   | TransferCompleted
 
 export interface ReduceResult {
@@ -231,6 +252,8 @@ export function reduce(state: GameState, command: Command, rng: Rng): ReduceResu
       return respondToOffer(state, command)
     case 'Shortlist':
       return shortlist(state, command)
+    case 'ListPlayer':
+      return listPlayer(state, command)
   }
 }
 
@@ -524,6 +547,42 @@ function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult
   }
 }
 
+/**
+ * List or unlist one of your own players.
+ *
+ * Only a spare player can be listed, using the same `surplus` rule that decides
+ * what an AI club will part with — there is deliberately not a second notion of
+ * "spare" for the human. Selling stays squad management: you cannot strip out the
+ * XI you just picked.
+ *
+ * Unlisting is always allowed. A player who has become a starter since he was
+ * listed must still be removable, and refusing that would strand him on the list
+ * — where `listedForSale` would ignore him anyway, so the screen would show a
+ * state the market did not agree with.
+ */
+function listPlayer(state: GameState, command: ListPlayer): ReduceResult {
+  const squad = state.squads[state.managedClubId] ?? []
+  const without = state.transferList.filter((id) => id !== command.playerId)
+
+  if (!command.on) {
+    return {
+      state: { ...state, transferList: without },
+      events: [{ type: 'PlayerListed', playerId: command.playerId, on: false }],
+    }
+  }
+
+  const player = squad.find((p) => p.id === command.playerId)
+  if (player === undefined) throw new Error('You can only list your own players')
+  if (!surplus(squad).some((p) => p.id === command.playerId)) {
+    throw new Error(`${player.name} is in your first team — you cannot list him`)
+  }
+
+  return {
+    state: { ...state, transferList: [...without, command.playerId] },
+    events: [{ type: 'PlayerListed', playerId: command.playerId, on: true }],
+  }
+}
+
 function shortlist(state: GameState, command: Shortlist): ReduceResult {
   const without = state.shortlist.filter((id) => id !== command.playerId)
   return {
@@ -578,10 +637,18 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
     })
   }
 
-  // 2. Offers for our players, on the first of each window month. Restricted to
-  //    those three days a season because scoring nineteen clubs against a squad is
-  //    not something to do 380 times a year for a result that cannot change daily.
-  const offer = isTransferWindowOpen(today) && toCivil(today).d === 1 ? bestOfferFor(state) : null
+  // 2. Offers for our players, on Mondays while the window is open.
+  //
+  //    This was "the first of a window month", which sounds equivalent and is not:
+  //    the clock enters every season on 15 August and `StartNewSeason` jumps
+  //    straight to the next 15 August, so **1 July and 1 August are never
+  //    reached**. That left exactly one generation day in a whole season, 1
+  //    January, producing at most one offer — which is why a manager could play for
+  //    years and never be offered anything.
+  //
+  //    Weekly rather than daily because scoring nineteen clubs against a squad is
+  //    not worth doing 380 times a year for an answer that barely moves.
+  const offer = isTransferWindowOpen(today) && dayOfWeek(today) === 1 ? bestOfferFor(state) : null
   if (offer !== null && !bids.some((bid) => bid.playerId === offer.playerId && bidIsLive(bid))) {
     const bid: Bid = {
       id: `${offer.playerId}-${today}` as BidId,
@@ -638,10 +705,23 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
   if (spare.length === 0) return null
 
   const date = state.season.currentDate
+  // Derived from the `spare` list already computed rather than via `listedForSale`,
+  // which would run `surplus` — a `bestXI` pass plus a check per player — a second
+  // time on every generation day.
+  const listed = new Set<PlayerId>(state.transferList)
+  const onTheMarket = new Set<PlayerId>(
+    spare.filter((player) => listed.has(player.id)).map((player) => player.id),
+  )
+  // Cheapest spare, so a club that cannot afford anybody is skipped before a
+  // single `needFor` is computed. This runs seven or so days a season across a
+  // fifty-season harness, and `needFor` is two `bestXI` passes.
+  const floor = Math.min(...spare.map((player) => askingPrice(player, date)))
+
   let best: { playerId: PlayerId; from: ClubId; fee: number; need: number } | null = null
 
   for (const club of state.clubs) {
     if (club.id === state.managedClubId) continue
+    if (club.budget < floor) continue
     const squad = state.squads[club.id] ?? []
     if (squad.length >= MAX_SQUAD) continue
 
@@ -649,7 +729,11 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
       const fee = askingPrice(player, date)
       if (club.budget < fee) continue
       const need = needFor(squad, player)
-      if (need <= OFFER_NEED_THRESHOLD) continue
+      // A listed player has been advertised, so a club will enquire about him on
+      // far less interest than it would take to approach you out of the blue.
+      if (need <= (onTheMarket.has(player.id) ? LISTED_NEED_THRESHOLD : OFFER_NEED_THRESHOLD)) {
+        continue
+      }
       if (best === null || need > best.need)
         best = { playerId: player.id, from: club.id, fee, need }
     }
@@ -659,11 +743,15 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
 }
 
 /**
- * How badly an AI club must want a player before it offers. Higher than the AI
- * market's own `NEED_THRESHOLD`: an unsolicited offer is an interruption, and one
- * that arrives for a player nobody really wants trains you to ignore the inbox.
+ * How badly an AI club must want a player before it offers unprompted. Higher
+ * than the AI market's own `NEED_THRESHOLD`: an unsolicited offer is an
+ * interruption, and one that arrives for a player nobody really wants trains you
+ * to ignore the inbox.
  */
 const OFFER_NEED_THRESHOLD = 1.5
+
+/** For a player you have listed. You asked for interest, so less of it is needed. */
+const LISTED_NEED_THRESHOLD = 0.4
 
 function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const today = state.season.currentDate

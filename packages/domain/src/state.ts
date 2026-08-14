@@ -43,6 +43,16 @@ export interface GameState {
   readonly bids: readonly Bid[]
   /** Players you are watching. Persisted, so it survives closing the tab. */
   readonly shortlist: readonly PlayerId[]
+  /**
+   * Your players you have put up for sale. Added at M4c.
+   *
+   * Your club is otherwise invisible to the AI market — `runTransferWindow`
+   * excludes it so nobody trades your squad behind your back. Listing a player is
+   * how you opt him, and only him, back into the pool AI clubs shop from. **The
+   * listing is the consent**, so a listed player who attracts a buyer is sold
+   * without a further prompt; the bid inbox is for unsolicited offers.
+   */
+  readonly transferList: readonly PlayerId[]
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {
