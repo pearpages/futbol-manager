@@ -5,6 +5,7 @@ import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { NotificationList } from './NotificationList.tsx'
+import { type IconKey, TileIcon } from './TileIcon.tsx'
 import './HubScreen.css'
 
 /**
@@ -31,9 +32,19 @@ interface Tile {
   readonly to: Screen | null
   /** Shown on a disabled tile. Omitted when nothing has been scheduled. */
   readonly milestone?: string
+  readonly icon: IconKey
 }
 
+/**
+ * Names the section for the CSS, which uses it for **both** the colour and the
+ * grid placement. Placement used to key on `:nth-of-type`, which tied a
+ * quadrant's position to its position in this array — reorder the list and the
+ * screen silently rearranged.
+ */
+export type QuadrantKey = 'seguimiento' | 'entrenador' | 'mercado' | 'finanzas'
+
 interface Quadrant {
+  readonly key: QuadrantKey
   readonly title: string
   readonly tiles: readonly Tile[]
 }
@@ -45,35 +56,39 @@ interface Quadrant {
  */
 export const QUADRANTS: readonly Quadrant[] = [
   {
+    key: 'seguimiento',
     title: 'Seguimiento',
     tiles: [
-      { label: 'Clasificación', to: 'table' },
-      { label: 'Resultados', to: 'table' },
-      { label: 'Calendario', to: null },
+      { label: 'Clasificación', to: 'table', icon: 'table' },
+      { label: 'Resultados', to: 'table', icon: 'results' },
+      { label: 'Calendario', to: null, icon: 'calendar' },
     ],
   },
   {
+    key: 'entrenador',
     title: 'Entrenador',
     tiles: [
-      { label: 'Alineación', to: 'lineup' },
-      { label: 'Tácticas', to: 'lineup' },
-      { label: 'Ver rival', to: null, milestone: 'M7' },
+      { label: 'Alineación', to: 'lineup', icon: 'pitch' },
+      { label: 'Tácticas', to: 'lineup', icon: 'tactics' },
+      { label: 'Ver rival', to: null, milestone: 'M7', icon: 'scout' },
     ],
   },
   {
+    key: 'mercado',
     title: 'Mercado',
     tiles: [
-      { label: 'Fichar', to: 'market' },
-      { label: 'Plantilla', to: 'squad' },
-      { label: 'Cantera', to: null, milestone: 'M7' },
+      { label: 'Fichar', to: 'market', icon: 'contract' },
+      { label: 'Plantilla', to: 'squad', icon: 'roster' },
+      { label: 'Cantera', to: null, milestone: 'M7', icon: 'youth' },
     ],
   },
   {
+    key: 'finanzas',
     title: 'Finanzas',
     tiles: [
-      { label: 'Caja', to: null, milestone: 'M5' },
-      { label: 'Decisiones', to: null, milestone: 'M5' },
-      { label: 'Estadio', to: null, milestone: 'M5' },
+      { label: 'Caja', to: null, milestone: 'M5', icon: 'safe' },
+      { label: 'Decisiones', to: null, milestone: 'M5', icon: 'scales' },
+      { label: 'Estadio', to: null, milestone: 'M5', icon: 'stadium' },
     ],
   },
 ]
@@ -105,8 +120,12 @@ export function HubScreen() {
 
   return (
     <div className="hub">
+      {/* `data-quadrant` carries the section's identity to the CSS, which uses it
+          for the colour and for where the panel sits. The element stays a
+          `<section>` with the title as its heading: that pair is how the tests —
+          and a screen reader — find a quadrant. */}
       {QUADRANTS.map((quadrant) => (
-        <section key={quadrant.title} className="screen hub__quadrant">
+        <section key={quadrant.key} className="screen hub__quadrant" data-quadrant={quadrant.key}>
           <h2 className="screen__heading">{quadrant.title}</h2>
           <div className="hub__tiles">
             {quadrant.tiles.map((tile) => (
@@ -124,6 +143,7 @@ export function HubScreen() {
                 }
                 onClick={() => tile.to !== null && go(tile.to)}
               >
+                <TileIcon icon={tile.icon} />
                 <span className="hub__tile-label">{tile.label}</span>
                 {tile.milestone !== undefined && (
                   <span className="hub__tile-milestone">{tile.milestone}</span>

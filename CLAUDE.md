@@ -379,3 +379,28 @@ Two things fell out of it. `white`'s `--badge-b` changed from a pale grey to nav
 **`position` is memoised on `game`.** The bar re-renders on every tick and `computeTable` walks all 380 fixtures; the reducer replaces `game` wholesale, so identity is the right dependency.
 
 405 tests, `pnpm season` byte-identical to `a66d297`, no domain change. **Still not seen in a browser** — verified by a DOM dump: `Primera División · Jornada 1 · 14º` on a fresh career at Sarrià, `Next VAL v Valencia (A) · today`, and after a round `Jornada 2 · 20º` with `Next BIL v Bilbao (H) · in 5d`.
+
+### 2026-08-14 — the four sections get a colour, the twelve tiles get an icon
+
+**Prompted by the reference, not by a bug:** in 5.0 each hub quadrant has its own colour and every entry carries an illustration. Ours were four identical grey panels distinguishable only by reading the heading.
+
+**What we took and what we did not.** The colour and the _idea_ of per-tile icons are free; the illustrations are not. [ADR 0007](docs/adr/0007-intellectual-property.md) names icons and artwork as the protected part — "designing in the idiom is the point; redrawing their screens is not" — so `TileIcon.tsx` is twelve glyphs drawn here, flat.
+
+**Scope was settled by the reference itself.** `market-jugadores-a-la-venta.jpg` shows the destination screen in ordinary neutral chrome — no red anywhere. **The section colour lives on the hub and nowhere else.** One screen changed; the app did not.
+
+**`aria-hidden` on every icon is load-bearing, not politeness.** Exploration counted **24 assertions across five test files** that resolve a tile by its exact accessible name — `openScreen()` alone is called 21 times with a plain string, and `testing.ts` matches whole-string. An icon contributing any text renames every tile, and two of those call sites sit in `beforeEach`, so whole suites would go down. The guard is a test asserting all twelve still resolve by name; **the fix was never to loosen `openScreen` to a regex**, because that exact match is the thing doing the work.
+
+**The palette follows `club-badges.css`: a variant selector sets custom properties and nothing else.** Each section declares a face and an ink — **two values, not five — because the bevels are mixed from the face** with `color-mix()` rather than picked. That is the lesson the badge rim already paid for: six hand-chosen neutrals looked fine and were wrong, and the fix was deriving the colour from one that was already right. First use of `color-mix()` in the codebase; it is native CSS, needs no build step, and Sass colour functions are what the styling convention rules out.
+
+Two contrast problems caught by reasoning about the materials rather than by a test:
+
+- **A mid-tone heading on the near-black `.screen` is murky for three of the four hues.** The heading is `color-mix(…, #fff 45%)` of the face — one rule that lifts all four, instead of four hand-picked lighter tints.
+- **`.button:disabled` sets `--fm-ink-soft`, a dark neutral meant for the grey panel face**, which disappears on a coloured one. Disabled tiles keep `--quad-ink` and let the inherited `opacity: 0.55` do the work, so an unbuilt tile still reads as part of its section rather than as a grey gap.
+
+**Mercado is brick, not the reference's bright red.** `.hub__play` is already `--fm-relegation` and sits in the centre column, loud on purpose because that press is irreversible. Two saturated reds side by side would cost it exactly the distinctness it was given.
+
+**Placement stopped keying on `:nth-of-type`.** Position followed position in `QUADRANTS`, so reordering that array silently rearranged the screen — and the rules were duplicated in the `width < 68rem` media query, which is the kind of pair that drifts. Both sets now key on `data-quadrant`, and a test asserts `nth-of-type` is gone (**stripping CSS comments first** — the comment explaining the change naturally names the thing it removed, which is how that test first failed).
+
+**A pre-existing wart this surfaced and deliberately left alone:** a disabled tile's accessible name is `"CajaM5"` — no separator between the label and the milestone span. It is why the hub's own tests reach for `/Caja/` rather than an exact name. Hiding the badge from AT would fix it in one attribute, since `title="Arrives at M5"` already carries the information — but it predates this change and was not what was asked for.
+
+418 tests, `pnpm season` byte-identical to `f42d5da`, no domain change. **Still not seen in a browser** — eighth failed extension connection. A DOM dump confirms the four `data-quadrant` values, twelve distinct icons all `aria-hidden`, and every accessible name unchanged. **The appearance is unverified:** nothing here proves four colours are distinguishable, that the brick separates from the Play button, or that a glyph reads at 1.35em.
