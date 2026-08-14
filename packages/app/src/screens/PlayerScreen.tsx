@@ -22,7 +22,13 @@ export function PlayerScreen() {
   const inspect = useGame((s) => s.inspect)
 
   const squad = game.squads[game.managedClubId] ?? []
-  const player = squad.find((p) => p.id === playerId)
+  // The ficha reads anyone in the game, not only your own players — the market
+  // screen opens it for a target you are thinking about bidding for, and a card
+  // that only worked for players you already own would be useless there.
+  const player =
+    squad.find((p) => p.id === playerId) ??
+    game.clubs.flatMap((c) => game.squads[c.id] ?? []).find((p) => p.id === playerId) ??
+    game.freeAgents.find((p) => p.id === playerId)
 
   if (player === undefined) {
     return (
@@ -44,7 +50,7 @@ export function PlayerScreen() {
           <h2 className="ficha__name">{player.name}</h2>
         </div>
         <button className="button" type="button" onClick={() => inspect(null)}>
-          Back to squad
+          Back
         </button>
       </header>
 

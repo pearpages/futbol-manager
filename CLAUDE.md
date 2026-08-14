@@ -44,6 +44,8 @@ Node 24.16.0, pnpm 11.15.0, TypeScript **6.0.3** (not 7 — see [ADR 0006](docs/
 pnpm test -- --run              # always --run; bare `pnpm test` starts watch mode and hangs
 pnpm test -- --run <fileName>   # single test file
 pnpm season [seed]              # headless season, prints the final table
+pnpm fixture                    # write a save fixture for the CURRENT schema version
+                                # — run it before adding the next migration, never after
 pnpm typecheck
 pnpm lint
 pnpm format
@@ -198,3 +200,26 @@ Three things that measured as _not_ mattering, so nobody spends time on them: fo
 **Pending:** **M4b** — bids, counter-bids, contract negotiation, transfer screen and shortlist. Then **M5**, which is what makes the market a cycle rather than a ratchet.
 
 **Open design question carried forward:** the tactical slider is a way to lose, not a way to win. Correcting M3a's free-attack exploit left _balanced_ dominant everywhere. A tempo term — defensive setups lowering total goals for both sides — would make the underdog's low block genuinely correct. Recorded in the roadmap's M3c; decide it deliberately rather than drifting.
+
+### 2026-08-14 — M4b ✅
+
+**Done.** Bids and counter-bids, personal terms, a free-agent pool, the market screen, a shortlist, and a season rollover the UI can actually reach. Six commands, all validated in the reducer. 309 tests green; `pnpm season` byte-identical to `0410926`; every M2/M3a/M3c band untouched.
+
+**Exit met, and measured over 60 seasons:** a mid-table club that shops each summer finishes **+3 points and half a place** above the same club, same seed, standing still. A single +18-overall goalkeeper is worth **+3.3 points and 1.3 places**.
+
+**The rule that made this safe, and the one to keep: the bid subsystem draws no randomness at all.** Bid resolution runs inside `AdvanceDay`, the path every calibrated band is measured through, so one `rng.next()` would move every band in the project. Answers compare against `askingPrice`, the delay is a fixed `madeOn + 2`, and incoming offers derive from `needFor`. Same discipline as M3c's `tempo` vanishing at balanced tactics: **extend a calibrated model only in ways that are inert when the new feature is unused.** If a band ever moves, something drew rng that should not have — find it, don't widen the band.
+
+**Two scale problems that only a human could expose.** The AI never noticed either, because its `VALUE_FOR_MONEY` filter only ever buys cheap marginal players:
+
+- **Budgets were a fraction of one player's price.** A club rated 62 held 946k against a ~3,300k asking price for a player of its own standard. Measured: **48 of 228 listed players affordable to a mid-table club, and every one scored zero on need.** `seedBudget`'s base is now 2400, not 400 — the exponent is untouched, so every club's share of the money is unchanged, and a career at 4×, 6× or 10× produces an identical league. This is headroom for the manager, not for the AI. **The v3→v4 migration deliberately still writes the old 400 figure**; it records what v4 meant when v4 shipped, and `migrations.ts` is emphatic that a migration must not track a live constant.
+- **Deleting unsigned free agents drained the pool to nothing.** Releases outnumber signings, so squads ground to the floor and then nothing more could be released: the pool went 45, 37, 15, 3, 0 and stayed empty from season six. A persistent pool balances itself. The variant that replaced every release with a youth was worse on every axis — squads hit the cap and mean age fell to 21.
+
+**`contractExpiry` moved from `season.ts` to `player.ts`.** It describes a contract, and leaving it in `season.ts` closed a cycle the moment the rollover started asking the market who was still wanted. This also fixed a pre-existing latent cycle: `squad.ts` had been importing it from `season.ts`, which imports `squad.ts`.
+
+**The reducer no longer rebuilds the manager's XI behind his back.** `applyTransfers` and `rolloverSeason` re-picked `bestXI` for _every_ club, so any two clubs trading wiped a hand-picked team sheet. AI clubs still revert to their strongest XI — it is the only place they pick a team, and skipping it leaves them fielding last year's. **Consequence worth knowing: signing a player no longer selects him.** That is correct for a manager and it is why the harness dispatches `SetLineup` after buying — the first measurement came out _negative_ because the signing was sitting on the bench.
+
+**`scripts/fixture.ts` (`pnpm fixture`)** writes a fixture save for whatever version the build currently ships. **Run it before adding the next migration, never after** — the version is read from the live chain, so once `v5ToV6` exists the v5 fixture is unobtainable short of a checkout.
+
+**Still not seen in a browser.** The Chrome extension failed to connect again, a fourth time. Verified by the build, 309 tests, and a rendered-DOM dump: a mid club with €5.7M sees an 88-rated forward at €14.1M it cannot afford and a reachable +5.0 upgrade at €4.6M, which is the intended shape of the decision.
+
+**Pending: M5** — revenue, wage bill, board objectives. The seeded budget is now load-bearing for whether a manager can fix anything at all, so replacing it with income is the next real constraint. The signing bonus was deliberately deferred there.

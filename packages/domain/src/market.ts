@@ -1,10 +1,11 @@
+import { acceptableYears } from './bids.ts'
 import type { Club, ClubId } from './entities.ts'
-import { bestXI, FORMATIONS, startersOf, teamRating } from './lineup.ts'
-import { overall, type Player, type PlayerId, POSITIONS } from './player.ts'
+import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRating } from './lineup.ts'
+import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
 import type { Rng } from './rng.ts'
 import type { GameState } from './state.ts'
 import { type DayNumber, toCivil } from './time.ts'
-import { askingPrice } from './valuation.ts'
+import { askingPrice, expectedWage } from './valuation.ts'
 
 /**
  * The AI transfer market.
@@ -40,9 +41,23 @@ const VALUE_FOR_MONEY = 0.0016
 
 export interface Transfer {
   readonly playerId: PlayerId
-  readonly from: ClubId
+  /**
+   * `null` when the player came out of the free-agent pool. There is no selling
+   * club, so there is nobody to pay — which is exactly why a free agent is the
+   * one thing a club with no money can still do something about.
+   */
+  readonly from: ClubId | null
   readonly to: ClubId
   readonly fee: number
+}
+
+/**
+ * Terms a club offers a free agent. Deterministic, because `applyTransfers` has
+ * no rng and must not acquire one — it runs inside the reducer's day pipeline.
+ */
+function freeAgentContract(player: Player, startYear: number, date: DayNumber) {
+  const years = Math.min(3, acceptableYears(ageOn(player, date)).max)
+  return { until: contractExpiry(startYear + years), wage: expectedWage(player, date) }
 }
 
 /**
@@ -96,7 +111,24 @@ function canSpare(squad: readonly Player[], player: Player): boolean {
  * first: a fixed order would let the same club take the pick of the market every
  * window and compound its advantage into a runaway.
  */
-export function runTransferWindow(state: GameState, rng: Rng): Transfer[] {
+export interface TransferWindowOptions {
+  /**
+   * A club the AI must not trade for. This is the human's, and leaving it out is
+   * how the AI would otherwise buy over the top of the manager and sell his squad
+   * from under him.
+   *
+   * Optional, and unset by default, because `simulateCareer` is deliberately the
+   * *no-human* instrument — M4a's ten-season measurements only mean what they say
+   * if all twenty clubs are still played by the AI.
+   */
+  readonly exclude?: ClubId
+}
+
+export function runTransferWindow(
+  state: GameState,
+  rng: Rng,
+  options: TransferWindowOptions = {},
+): Transfer[] {
   const date = state.season.currentDate
   const transfers: Transfer[] = []
 
@@ -104,61 +136,75 @@ export function runTransferWindow(state: GameState, rng: Rng): Transfer[] {
     state.clubs.map((club) => [club.id, [...(state.squads[club.id] ?? [])]]),
   )
   const budgets = new Map<ClubId, number>(state.clubs.map((club) => [club.id, club.budget]))
+  const pool = new Set<PlayerId>(state.freeAgents.map((player) => player.id))
 
-  // Everything available this window, with the club that holds each player.
-  const listed: { player: Player; from: ClubId }[] = []
+  // Everything available this window, with the club that holds each player —
+  // `null` for the free-agent pool, which belongs to nobody.
+  const listed: { player: Player; from: ClubId | null }[] = []
   for (const club of state.clubs) {
+    if (club.id === options.exclude) continue
     for (const player of surplus(squads.get(club.id) ?? [])) {
       listed.push({ player, from: club.id })
     }
   }
+  for (const player of state.freeAgents) listed.push({ player, from: null })
 
   const order = shuffle(state.clubs, rng)
 
   for (const club of order) {
+    if (club.id === options.exclude) continue
     const squad = squads.get(club.id)
     /* c8 ignore next */
     if (squad === undefined) continue
     if (squad.length >= MAX_SQUAD) continue
 
-    // Score everything on the market for this club, best first.
-    const options = listed
+    // Score everything on the market for this club, best value first. `Math.max(1, …)`
+    // keeps a free agent's zero fee from dividing by zero — he ranks top, which is
+    // right: no fee is the best value there is.
+    const candidates = listed
       .filter((entry) => entry.from !== club.id)
       .map((entry) => ({
         ...entry,
         need: needFor(squad, entry.player),
-        fee: askingPrice(entry.player, date),
+        fee: entry.from === null ? 0 : askingPrice(entry.player, date),
       }))
       .filter((entry) => entry.need > NEED_THRESHOLD)
       .filter((entry) => entry.need / Math.max(1, entry.fee) > VALUE_FOR_MONEY)
-      .sort((a, b) => b.need / b.fee - a.need / a.fee)
+      .sort((a, b) => b.need / Math.max(1, b.fee) - a.need / Math.max(1, a.fee))
 
-    for (const option of options) {
+    for (const candidate of candidates) {
       const buyer = budgets.get(club.id) ?? 0
-      const sellerSquad = squads.get(option.from)
-      /* c8 ignore next */
-      if (sellerSquad === undefined) continue
-      if (buyer < option.fee) continue
-      if (sellerSquad.length <= MIN_SQUAD) continue
-      if (!sellerSquad.some((p) => p.id === option.player.id)) continue // already sold
+      if (buyer < candidate.fee) continue
+
+      if (candidate.from === null) {
+        if (!pool.has(candidate.player.id)) continue // someone signed him first
+        pool.delete(candidate.player.id)
+      } else {
+        const sellerSquad = squads.get(candidate.from)
+        /* c8 ignore next */
+        if (sellerSquad === undefined) continue
+        if (sellerSquad.length <= MIN_SQUAD) continue
+        if (!sellerSquad.some((p) => p.id === candidate.player.id)) continue // already sold
+
+        squads.set(
+          candidate.from,
+          sellerSquad.filter((p) => p.id !== candidate.player.id),
+        )
+        budgets.set(candidate.from, (budgets.get(candidate.from) ?? 0) + candidate.fee)
+      }
 
       transfers.push({
-        playerId: option.player.id,
-        from: option.from,
+        playerId: candidate.player.id,
+        from: candidate.from,
         to: club.id,
-        fee: option.fee,
+        fee: candidate.fee,
       })
 
       // Apply immediately so later clubs see a market that has moved.
-      budgets.set(club.id, buyer - option.fee)
-      budgets.set(option.from, (budgets.get(option.from) ?? 0) + option.fee)
-      squads.set(
-        option.from,
-        sellerSquad.filter((p) => p.id !== option.player.id),
-      )
-      squad.push(option.player)
+      budgets.set(club.id, buyer - candidate.fee)
+      squad.push(candidate.player)
 
-      const index = listed.findIndex((e) => e.player.id === option.player.id)
+      const index = listed.findIndex((e) => e.player.id === candidate.player.id)
       if (index >= 0) listed.splice(index, 1)
 
       // One signing per club per window keeps a rich club from emptying the
@@ -177,21 +223,46 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   const squads: Record<string, Player[]> = {}
   for (const club of state.clubs) squads[club.id] = [...(state.squads[club.id] ?? [])]
   const budgets = new Map<ClubId, number>(state.clubs.map((c) => [c.id, c.budget]))
+  let freeAgents = [...state.freeAgents]
+  // Only these get their lineup re-picked. Re-picking every club wiped out a human
+  // manager's hand-chosen XI every time any two other clubs did business.
+  const touched = new Set<ClubId>()
 
   for (const transfer of transfers) {
-    const from = squads[transfer.from]
     const to = squads[transfer.to]
     /* c8 ignore next */
-    if (from === undefined || to === undefined) continue
+    if (to === undefined) continue
 
-    const player = from.find((p) => p.id === transfer.playerId)
-    /* c8 ignore next */
-    if (player === undefined) continue
+    let player: Player | undefined
 
-    squads[transfer.from] = from.filter((p) => p.id !== transfer.playerId)
+    if (transfer.from === null) {
+      player = freeAgents.find((p) => p.id === transfer.playerId)
+      /* c8 ignore next */
+      if (player === undefined) continue
+      freeAgents = freeAgents.filter((p) => p.id !== transfer.playerId)
+      // A free agent is out of contract by definition, so he arrives on new terms.
+      // Leaving the expired one in place would value him at zero forever and let
+      // him be flipped between clubs for nothing, every window.
+      player = {
+        ...player,
+        contract: freeAgentContract(player, state.season.startYear, state.season.currentDate),
+      }
+    } else {
+      const from = squads[transfer.from]
+      /* c8 ignore next */
+      if (from === undefined) continue
+      player = from.find((p) => p.id === transfer.playerId)
+      /* c8 ignore next */
+      if (player === undefined) continue
+
+      squads[transfer.from] = from.filter((p) => p.id !== transfer.playerId)
+      budgets.set(transfer.from, (budgets.get(transfer.from) ?? 0) + transfer.fee)
+      touched.add(transfer.from)
+    }
+
     to.push(player)
-    budgets.set(transfer.from, (budgets.get(transfer.from) ?? 0) + transfer.fee)
     budgets.set(transfer.to, (budgets.get(transfer.to) ?? 0) - transfer.fee)
+    touched.add(transfer.to)
   }
 
   const clubs = state.clubs.map((club) => ({
@@ -199,17 +270,21 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
     budget: budgets.get(club.id) ?? club.budget,
   }))
 
-  // Any club whose XI was touched needs its lineup re-picked, or a sold player
-  // stays in the starting eleven and the resolver reads a squad that no longer
-  // contains him.
+  // A club whose squad changed needs its lineup re-picked, or a sold player stays
+  // in the starting eleven and the resolver reads a squad that no longer contains
+  // him. The managed club is the exception: the manager picked that XI on purpose,
+  // so it is only rebuilt when the transfer has actually made it illegal.
   const lineups = { ...state.lineups }
-  for (const club of clubs) {
-    const squad = squads[club.id] ?? []
-    if (squad.length >= 11)
-      lineups[club.id] = bestXI(squad, state.lineups[club.id]?.formation ?? '4-4-2')
+  for (const clubId of touched) {
+    const squad = squads[clubId] ?? []
+    if (squad.length < 11) continue
+    const formation = state.lineups[clubId]?.formation ?? '4-4-2'
+
+    if (clubId === state.managedClubId && keepsLineup(squad, state.lineups[clubId])) continue
+    lineups[clubId] = bestXI(squad, formation)
   }
 
-  return { ...state, clubs, squads, lineups }
+  return { ...state, clubs, squads, lineups, freeAgents }
 }
 
 /** Fisher–Yates over the injected rng — no `Math.random`, so a seed reproduces the market. */

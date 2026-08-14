@@ -1,0 +1,170 @@
+/*
+ * Same main-plus-rail shape as the table screen. The rail is wider here because
+ * it holds controls rather than readouts — a negotiation, two inboxes and a
+ * budget, where the table screen only shows numbers.
+ */
+.market-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.market-screen__main {
+  min-height: 0;
+}
+
+.market-screen__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  min-height: 0;
+  overflow: auto;
+}
+
+.market-screen__panel {
+  flex: none;
+}
+
+.market-screen__filters {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-3) var(--fm-space-4);
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+.market-screen__count {
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+/* A player's name opens his ficha, so it is a control, not a label. */
+.market-screen__name {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.market-screen__name:hover {
+  color: var(--fm-champion);
+}
+
+.market-screen__free {
+  color: var(--fm-uecl);
+  font-family: var(--fm-font-condensed);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The one number that answers "is he worth signing?". */
+.market-screen__gain {
+  color: var(--fm-uecl);
+  font-weight: 700;
+}
+
+.market-screen__actions {
+  display: flex;
+  gap: var(--fm-space-1);
+  justify-content: flex-end;
+}
+
+.market-screen__mini {
+  padding: 2px var(--fm-space-2);
+  font-size: var(--fm-text-xs);
+}
+
+.market-screen__money {
+  display: flex;
+  gap: var(--fm-space-6);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.market-screen__window {
+  font-size: var(--fm-text-md);
+}
+
+.market-screen__error {
+  color: #e8a79c;
+}
+
+.market-screen__deal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+/*
+ * First number input in the project. Kept local per the chrome.css rule — a
+ * primitive is promoted on its second use, not its first.
+ */
+.market-screen__input {
+  padding: var(--fm-space-1) var(--fm-space-2);
+  background: var(--fm-void);
+  border-top: 1px solid var(--fm-bevel-dark);
+  border-left: 1px solid var(--fm-bevel-dark);
+  border-right: 1px solid var(--fm-bevel-light);
+  border-bottom: 1px solid var(--fm-bevel-light);
+  color: var(--fm-screen-ink);
+  font-family: var(--fm-font);
+  font-size: var(--fm-text-md);
+  font-variant-numeric: tabular-nums;
+}
+
+.market-screen__hint {
+  padding: 0;
+}
+
+.market-screen__inbox,
+.market-screen__outbox {
+  min-height: 0;
+}
+
+.offer-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offer-list__item {
+  display: grid;
+  gap: 2px;
+  padding: var(--fm-space-2) var(--fm-space-4);
+  border-top: 1px solid var(--fm-screen-rule);
+  font-size: var(--fm-text-sm);
+}
+
+.offer-list__name {
+  font-weight: 700;
+}
+
+.offer-list__detail {
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.offer-list__actions {
+  display: flex;
+  gap: var(--fm-space-1);
+  margin-top: var(--fm-space-1);
+}
+
+@media (width < 60rem) {
+  .market-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}

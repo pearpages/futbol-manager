@@ -91,3 +91,22 @@ export function askingPrice(player: Player, date: DayNumber): number {
 export function expectedWage(player: Player, date: DayNumber): number {
   return Math.max(50, Math.round(valuePlayer(player, date) * 0.22))
 }
+
+/**
+ * Renders a money figure. Every number in this module is **thousands**, which is
+ * exactly the sort of unit that gets displayed raw once and then misread forever.
+ *
+ * Lives here rather than in the app for the same reason `formatDate` lives in
+ * `time.ts`: the unit is a property of the value, so the function that knows the
+ * unit should be the one that prints it.
+ */
+export function formatMoney(thousands: number): string {
+  const value = Math.round(thousands)
+  if (Math.abs(value) >= 1000) {
+    // Millions to one decimal — 12.4M reads at a glance where 12,350k does not.
+    const millions = value / 1000
+    const text = Math.abs(millions) >= 100 ? millions.toFixed(0) : millions.toFixed(1)
+    return `€${text.replace(/\.0$/, '')}M`
+  }
+  return `€${value}k`
+}

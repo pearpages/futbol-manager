@@ -39,23 +39,55 @@ export { expectedGoals, MODEL, resolveFixture } from './resolve.ts'
 
 export {
   type AdvanceDay,
+  type BidAnswered,
+  type BidMade,
   type Command,
   type DayAdvanced,
   type Event,
   type LineupChanged,
+  type MakeBid,
   type MatchPlayed,
+  type OfferContract,
+  type OfferReceived,
   reduce,
+  type RespondToOffer,
   type SetLineup,
   type SetTactics,
+  type Shortlist,
+  type StartNewSeason,
   type TacticsChanged,
+  type TermsRejected,
+  type TransferCompleted,
   type ReduceResult,
   type SeasonEnded,
+  type SeasonStarted,
+  type WithdrawBid,
 } from './reduce.ts'
+
+export {
+  acceptableYears,
+  ANSWER_DAYS,
+  answerBid,
+  type Bid,
+  type BidAnswer,
+  type BidId,
+  bidIsLive,
+  type BidStatus,
+  MAX_CONTRACT_YEARS,
+  MIN_CONTRACT_YEARS,
+  OFFER_LIFETIME_DAYS,
+  offerTerms,
+  scheduleAnswer,
+  suggestedTerms,
+  type Terms,
+  type TermsVerdict,
+} from './bids.ts'
 
 export {
   ageOn,
   type Attributes,
   type Contract,
+  contractExpiry,
   contractMonthsLeft,
   ATTRIBUTE_KEYS,
   clampRating,
@@ -73,6 +105,7 @@ export {
   type Formation,
   FORMATION_NAMES,
   FORMATIONS,
+  keepsLineup,
   type Lineup,
   playerAttack,
   playerDefence,
@@ -90,7 +123,7 @@ export {
   type SquadOptions,
 } from './squad.ts'
 
-export { askingPrice, expectedWage, valuePlayer } from './valuation.ts'
+export { askingPrice, expectedWage, formatMoney, valuePlayer } from './valuation.ts'
 
 export {
   applyTransfers,
@@ -102,9 +135,13 @@ export {
   surplus,
   totalBudget,
   type Transfer,
+  type TransferWindowOptions,
 } from './market.ts'
 
-export { contractExpiry, rolloverSeason, type RolloverOptions } from './season.ts'
+// `contractExpiry` moved to `player.ts` at M4b — it describes a contract, and
+// leaving it here closed a cycle once the rollover started asking the market who
+// was still wanted. Exported above, alongside `Contract`.
+export { rolloverSeason, type RolloverOptions } from './season.ts'
 
 export {
   clubIds,

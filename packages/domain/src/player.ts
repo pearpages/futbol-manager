@@ -1,4 +1,4 @@
-import { type DayNumber, toCivil } from './time.ts'
+import { type DayNumber, fromCivil, toCivil } from './time.ts'
 
 /**
  * The player model. Implements docs/attribute-model.md exactly — that document is
@@ -67,6 +67,18 @@ export interface Player {
 /** Months left to run. Negative once expired. */
 export function contractMonthsLeft(player: Player, date: DayNumber): number {
   return (player.contract.until - date) / 30.44
+}
+
+/**
+ * Contracts run to 30 June, as they do in reality.
+ *
+ * Lives here rather than in `season.ts` — its original home — because it
+ * describes a contract, and both the market and the rollover need it. Leaving it
+ * in `season.ts` forced `market.ts` to import that module for one date, which
+ * closed a cycle once the rollover started asking the market who was still wanted.
+ */
+export function contractExpiry(year: number): DayNumber {
+  return fromCivil(year, 6, 30)
 }
 
 /**

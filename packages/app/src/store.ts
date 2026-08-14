@@ -24,13 +24,15 @@ import { loadGame, saveGame } from '@fm/persistence'
  * alongside the payload, so a reload resumes the same stream.
  */
 
-export type Screen = 'table' | 'squad' | 'lineup' | 'player'
+export type Screen = 'table' | 'squad' | 'lineup' | 'market' | 'player'
 
 interface Store {
   readonly game: GameState
   readonly screen: Screen
-  /** Set when the squad screen opens a ficha; cleared on navigation. */
+  /** Set when a screen opens a ficha; cleared on navigation. */
   readonly inspectedPlayerId: string | null
+  /** Which screen the ficha was opened from, so closing it goes back there. */
+  readonly inspectedFrom: Screen
   /** Most recent events, newest first — the match feed on the table screen. */
   readonly feed: readonly Event[]
   readonly saving: boolean
@@ -49,6 +51,12 @@ interface Store {
   newGame(managedClubId?: string): void
   /** Back to the club picker, leaving any saved career on disk untouched. */
   restart(): void
+  /**
+   * Roll into next season. Separate from `dispatch` only because the command
+   * carries a name pool, and `domain` owns no word lists — the store is where
+   * `@fm/data` is already in scope.
+   */
+  startNewSeason(): void
 }
 
 const START_SEED = 20260813
@@ -71,6 +79,7 @@ export const useGame = create<Store>((set, get) => ({
   game: freshGame(),
   screen: 'table',
   inspectedPlayerId: null,
+  inspectedFrom: 'squad',
   feed: [],
   saving: false,
   needsSetup: true,
@@ -85,7 +94,20 @@ export const useGame = create<Store>((set, get) => ({
   },
 
   inspect(playerId) {
-    set({ inspectedPlayerId: playerId, screen: playerId === null ? 'squad' : 'player' })
+    // Closing the ficha returns you where you opened it from. It always went back
+    // to the squad until M4b, which was right while the squad was the only way in
+    // — the market screen opens it too, and being dumped somewhere else loses
+    // your place in a sixty-row table.
+    if (playerId === null) {
+      set({ inspectedPlayerId: null, screen: get().inspectedFrom })
+      return
+    }
+    const from = get().screen
+    set({
+      inspectedPlayerId: playerId,
+      screen: 'player',
+      inspectedFrom: from === 'player' ? get().inspectedFrom : from,
+    })
   },
 
   async save() {
@@ -126,5 +148,9 @@ export const useGame = create<Store>((set, get) => ({
 
   restart() {
     set({ needsSetup: true, screen: 'table', inspectedPlayerId: null, feed: [] })
+  },
+
+  startNewSeason() {
+    get().dispatch({ type: 'StartNewSeason', names: PLAYER_NAMES })
   },
 }))

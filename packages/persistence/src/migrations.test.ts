@@ -4,6 +4,7 @@ import { MIGRATIONS, migratePayload, needsSquads, SCHEMA_VERSION } from './migra
 import { readSave, type SaveEnvelope, wrapSave } from './index.ts'
 import v1Fixture from './fixtures/v1.json' with { type: 'json' }
 import v3Fixture from './fixtures/v3.json' with { type: 'json' }
+import v4Fixture from './fixtures/v4.json' with { type: 'json' }
 
 describe('the migration chain', () => {
   it('is contiguous and forward-only', () => {
@@ -153,6 +154,61 @@ describe('the v3 fixture save', () => {
     const after = readSave(envelope).payload as typeof before
     expect(after.season.startYear).toBe(before.season.startYear)
     expect(after.season.currentDate).toBe(before.season.currentDate)
+  })
+})
+
+describe('the v4 fixture save', () => {
+  // v4 is what M4a shipped: contracts and budgets, a market the AI ran on its own,
+  // and no way for a person to touch it. Written by `pnpm fixture` against that
+  // build, mid-season, so the day clock and the rng cursor are both off their
+  // starting values.
+  const envelope = v4Fixture as unknown as SaveEnvelope<unknown>
+
+  it('is genuinely a v4 save — a market with no human in it', () => {
+    expect(envelope.schemaVersion).toBe(4)
+    const payload = envelope.payload as Record<string, unknown>
+    expect(payload).not.toHaveProperty('bids')
+    expect(payload).not.toHaveProperty('freeAgents')
+    expect(payload).not.toHaveProperty('shortlist')
+    // But it does already have what v4 added, or it is not really a v4 save.
+    const clubs = payload['clubs'] as { budget?: number }[]
+    expect(clubs.every((c) => typeof c.budget === 'number')).toBe(true)
+  })
+
+  it('gains an empty market for the human to start from', () => {
+    const after = readSave(envelope).payload as {
+      bids: unknown[]
+      freeAgents: unknown[]
+      shortlist: unknown[]
+    }
+    expect(after.bids).toEqual([])
+    expect(after.freeAgents).toEqual([])
+    expect(after.shortlist).toEqual([])
+  })
+
+  it('preserves the career it was saved in', () => {
+    const before = envelope.payload as {
+      season: { startYear: number; currentDate: number; fixtures: { result: unknown }[] }
+      managedClubId: string
+      squads: Record<string, unknown[]>
+    }
+    const after = readSave(envelope).payload as typeof before
+
+    expect(after.season.startYear).toBe(before.season.startYear)
+    expect(after.season.currentDate).toBe(before.season.currentDate)
+    expect(after.managedClubId).toBe(before.managedClubId)
+    // Results already played must survive, or reloading rewrites the season.
+    const playedBefore = before.season.fixtures.filter((f) => f.result !== null).length
+    expect(after.season.fixtures.filter((f) => f.result !== null)).toHaveLength(playedBefore)
+    expect(Object.values(after.squads).flat()).toHaveLength(460)
+  })
+
+  it('carries the rng state through untouched', () => {
+    expect(readSave(envelope).rngState).toEqual(envelope.rngState)
+  })
+
+  it('is deterministic — migrating twice gives the same result', () => {
+    expect(readSave(envelope).payload).toEqual(readSave(envelope).payload)
   })
 })
 

@@ -74,6 +74,11 @@ export function newSeason(
     lineups,
     tactics,
     managedClubId: options.managedClubId ?? clubs.at(-1)?.id ?? (ids[0] as ClubId),
+    // A new league has nobody out of contract and no business done yet. Both fill
+    // from the first rollover onward.
+    freeAgents: [],
+    bids: [],
+    shortlist: [],
   }
 }
 

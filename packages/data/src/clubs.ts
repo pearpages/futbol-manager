@@ -67,12 +67,30 @@ const CLUBS: readonly (readonly [string, string, string, number, number])[] = [
  * invert within a few seasons, so the money has to reflect the pecking order it
  * came from — real budgets are far more unequal than real squads.
  *
+ * **The base was 400 until M4b, and it made the market decorative.** A club rated
+ * 62 held 946k while a player of its own first-team standard asked ~3,300k, so
+ * across the whole league there was not one affordable signing that would improve
+ * anybody's XI — measured, not guessed: 48 of 228 listed players were affordable
+ * to a mid-table club and every one of them scored zero on need. The AI still
+ * traded, because it only ever bought the cheap marginal players its
+ * value-for-money filter allows, which is why nothing looked wrong from outside.
+ *
+ * The base is now set so a budget buys roughly **two players of the club's own
+ * first-team standard** — enough to fix a weakness rather than shuffle a bench.
+ * Only the scale changed; the exponent is untouched, so every club's share of the
+ * league's money is exactly what it was and the pecking-order argument above still
+ * holds.
+ *
+ * This does not make the AI spend more: its `VALUE_FOR_MONEY` filter caps what it
+ * will pay per unit of improvement, so a career at 4×, 6× or 10× this figure
+ * produces an identical league. The money is headroom for the manager.
+ *
  * **M5 replaces this** with money that actually comes from somewhere: gate
  * receipts, TV, prize money, minus wages.
  */
 function seedBudget(attack: number, defence: number): number {
   const rating = (attack + defence) / 2
-  return Math.round(400 * Math.pow(rating / 50, 4))
+  return Math.round(2400 * Math.pow(rating / 50, 4))
 }
 
 export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(

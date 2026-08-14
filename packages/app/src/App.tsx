@@ -5,6 +5,7 @@ import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
 import { LineupScreen } from './screens/LineupScreen.tsx'
+import { MarketScreen } from './screens/MarketScreen.tsx'
 import { SetupScreen } from './screens/SetupScreen.tsx'
 import './App.css'
 
@@ -20,12 +21,14 @@ const NAV: readonly { screen: Screen; label: string }[] = [
   { screen: 'table', label: 'Table' },
   { screen: 'squad', label: 'Squad' },
   { screen: 'lineup', label: 'Lineup' },
+  { screen: 'market', label: 'Market' },
 ]
 
 const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
   table: TableScreen,
   squad: SquadScreen,
   lineup: LineupScreen,
+  market: MarketScreen,
   player: PlayerScreen,
 }
 
@@ -39,6 +42,7 @@ export function App() {
   const saving = useGame((s) => s.saving)
   const needsSetup = useGame((s) => s.needsSetup)
   const restart = useGame((s) => s.restart)
+  const startNewSeason = useGame((s) => s.startNewSeason)
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
@@ -49,6 +53,7 @@ export function App() {
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const finished = isSeasonComplete(game)
   const Current = SCREENS[screen]
+  const nextYearLabel = String(game.season.startYear + 2).slice(2)
 
   // No career yet: the club picker replaces the whole shell rather than sitting
   // inside it, because none of the navigation means anything before a club exists.
@@ -92,13 +97,17 @@ export function App() {
         ))}
 
         <div className="shell__actions">
+          {/*
+            One button, two jobs. Before M4b the season ending disabled it and
+            said "Season over" — permanently, because nothing in the UI could
+            reach a rollover. Now the end of a season is the door to the summer.
+          */}
           <button
             type="button"
             className="button is-primary shell__advance"
-            disabled={finished}
-            onClick={() => dispatch({ type: 'AdvanceDay' })}
+            onClick={() => (finished ? startNewSeason() : dispatch({ type: 'AdvanceDay' }))}
           >
-            {finished ? 'Season over' : 'Advance day'}
+            {finished ? `Start ${game.season.startYear + 1}/${nextYearLabel}` : 'Advance day'}
           </button>
           <button type="button" className="button" disabled={saving} onClick={() => void save()}>
             {saving ? 'Saving…' : 'Save'}

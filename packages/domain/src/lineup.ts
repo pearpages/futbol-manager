@@ -170,6 +170,25 @@ function pickXI(
   return { formation, starters }
 }
 
+/**
+ * True when a stored XI is still legal against this squad — nobody sold, nobody
+ * retired out of it.
+ *
+ * The question a manager's team sheet raises: an AI club can simply be handed
+ * `bestXI` whenever its squad changes, but doing that to the human silently undoes
+ * a selection he made on purpose. So his is rebuilt only once it has actually
+ * become impossible to field.
+ */
+export function keepsLineup(squad: readonly Player[], lineup: Lineup | undefined): boolean {
+  if (lineup === undefined) return false
+  try {
+    startersOf(squad, lineup)
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** Resolves a lineup against a squad, rejecting anything that is not a legal XI. */
 export function startersOf(squad: readonly Player[], lineup: Lineup): Player[] {
   const byId = new Map(squad.map((p) => [p.id, p]))

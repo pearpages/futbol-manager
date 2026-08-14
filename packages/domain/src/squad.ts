@@ -5,12 +5,12 @@ import {
   type Attributes,
   ATTRIBUTE_KEYS,
   clampRating,
+  contractExpiry,
   type Player,
   type PlayerId,
   type Position,
 } from './player.ts'
 import type { Rng } from './rng.ts'
-import { contractExpiry } from './season.ts'
 import { addDays, type DayNumber, fromCivil, toCivil } from './time.ts'
 
 /**

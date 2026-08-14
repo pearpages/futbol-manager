@@ -181,13 +181,28 @@ Two open questions closed. Two others recorded rather than solved, because they 
 
 ---
 
-## M4b — The human in the market
+## M4b — The human in the market ✅
 
-**~1.5 weeks**
+**done 2026-08-14**
 
-Bids and counter-bids, contract negotiation (wage, length, signing bonus), a transfer screen, a shortlist. The AI market already runs; this is the player's way into it.
+Bids and counter-bids, personal terms, a free-agent pool, a transfer screen and a shortlist. Six new commands — `MakeBid`, `WithdrawBid`, `OfferContract`, `RespondToOffer`, `Shortlist`, `StartNewSeason` — all validated in the reducer, because a screen can forget a rule and the reducer cannot.
 
-**Exit:** you can identify a weakness, buy a player to fix it, and see it change your results.
+**Exit — met, and measured.** Over 60 seasons, a mid-table club that shops each summer finishes **+3 points and half a place** above the same club, same seed, standing still. Isolated to a single signing: an +18-overall goalkeeper is worth **+3.3 points and 1.3 places**.
+
+**No signing bonus.** Wages and length only, so wages stay recorded-but-unspent and **no money leaves the league** — `totalBudget` conservation is exactly the invariant M4a set, not a relaxed version of it. The bonus belongs with M5's wage bill.
+
+**The whole bid subsystem draws no randomness, and that is a requirement rather than a style.** Bid resolution runs inside `AdvanceDay`, which is the path every calibrated band in the project is measured through; one `rng.next()` there shifts every downstream draw. Answers are a comparison against `askingPrice`, the delay is a fixed offset, and incoming offers are derived from `needFor`. The result is that `pnpm season` is **byte-identical to M4a** and every M2/M3a/M3c band passed untouched — the same discipline that let M3c's `tempo` extend a calibrated model by vanishing in the default case.
+
+**Two things were badly out of scale, and only became visible with a human in the market:**
+
+- **Budgets were a fraction of one player's price.** A club rated 62 held 946k while a player of its own first-team standard asked ~3,300k. Measured across the whole league: 48 of 228 listed players were affordable to a mid-table club and **every one of them scored zero on need**. The AI never noticed because its value-for-money filter only ever buys cheap marginal players. The base is now 2400 rather than 400, chosen so a budget buys roughly two players of the club's own standard; the exponent is untouched, so every club's share of the league's money is exactly what it was. This does not make the AI spend more — a career at 4×, 6× or 10× produces an identical league.
+- **Deleting unsigned free agents each summer drained the pool to nothing.** Releases outnumber signings, so every squad ground down to the floor, at which point nothing more could be released: the pool measured 45, 37, 15, 3, 0 and stayed empty from season six, closing the only route into the market a poor club has. Left alone the pool balances itself, and age removes players as it removes everyone.
+
+**Expiring contracts are no longer auto-renewed.** A club renews a player only if he still improves its XI — the same marginal-rating score the market runs on, asked in the other direction. Everyone else walks.
+
+**The reducer stopped rebuilding the manager's XI behind his back.** `applyTransfers` and `rolloverSeason` re-picked `bestXI` for _every_ club, so any two clubs doing business wiped out a hand-picked team sheet. AI clubs still revert to their strongest XI — it is the only place they pick a team — while the manager's selection stands until it is actually illegal. The consequence is real: signing a player no longer selects him, which is why the harness's manager dispatches `SetLineup` after buying.
+
+**Schema v5**, plus `scripts/fixture.ts` so a fixture save for the current version is a command rather than an archaeology exercise. Ordering matters and is easy to get wrong — it must run _before_ the next migration exists.
 
 ---
 
@@ -198,6 +213,8 @@ Bids and counter-bids, contract negotiation (wage, length, signing bonus), a tra
 Budgets, wage bill, ticket pricing, sponsors, TV money, prize money. Board objectives and the sack mechanic. Stadium capacity.
 
 This is the milestone that makes M4 _mean_ something — without a constraint, transfers are a shopping trip. Expect to spend more time tuning than coding.
+
+**M4b sharpened the starting point.** Money still only moves between clubs, so a budget is a one-time allowance rather than an income, and the seeded figure is now doing real work: it is what decides whether a manager can fix a weakness at all. Revenue replaces the seed, and the signing bonus deferred from M4b belongs here alongside the wage bill.
 
 **Exit:** 50-season headless run where no AI club goes bankrupt and none accumulates an unspendable fortune.
 

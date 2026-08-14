@@ -1,6 +1,7 @@
+import type { Bid } from './bids.ts'
 import type { Club, ClubId, Competition, Fixture, Season } from './entities.ts'
 import type { Lineup, Tactics } from './lineup.ts'
-import type { Player } from './player.ts'
+import type { Player, PlayerId } from './player.ts'
 import type { DayNumber } from './time.ts'
 
 /**
@@ -22,6 +23,26 @@ export interface GameState {
    * Added at M3b — a save from before then is migrated by adopting the first club.
    */
   readonly managedClubId: ClubId
+  /**
+   * Out of contract and unattached. Added at M4b.
+   *
+   * Until now every expiring deal was renewed, because a club that let four
+   * contracts lapse in one summer would field ten players. Renewals now depend on
+   * whether the club still needs the player, and the ones nobody wants land here.
+   * This is the route a poor club has into a market where nothing good is ever
+   * listed for sale: a free agent costs no fee, only wages.
+   */
+  readonly freeAgents: readonly Player[]
+  /**
+   * Live and settled bids, both directions. Yours are `from === managedClubId`;
+   * offers for your players are `to === managedClubId`.
+   *
+   * State rather than a transient, because an answer takes days to arrive and has
+   * to survive a save — which is what made this a schema bump.
+   */
+  readonly bids: readonly Bid[]
+  /** Players you are watching. Persisted, so it survives closing the tab. */
+  readonly shortlist: readonly PlayerId[]
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {

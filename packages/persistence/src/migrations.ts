@@ -109,6 +109,30 @@ const v3ToV4: Migration = {
 }
 
 /**
+ * v4 → v5: the human joins the market.
+ *
+ * A v4 save has a market that ran itself — the AI traded, and there was no way to
+ * bid, no free-agent pool and nothing to keep a shortlist in. All three are empty
+ * collections rather than derived state: an in-progress career has no pending
+ * bids by definition, and inventing free agents for a league whose contracts were
+ * all auto-renewed would put players on the market their clubs never released.
+ *
+ * The pool fills at the first rollover, which is the only place a contract has
+ * ever been allowed to lapse.
+ */
+const v4ToV5: Migration = {
+  from: 4,
+  to: 5,
+  describe: 'bids, free agents and the shortlist — the human enters the market',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v4 save payload is not an object')
+    }
+    return { ...payload, bids: [], freeAgents: [], shortlist: [] }
+  },
+}
+
+/**
  * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
  *
  * `persistence` must not import `domain` for this: a migration has to keep
@@ -125,7 +149,7 @@ function daysFromCivil(y: number, m: number, d: number): number {
 }
 
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4]
+export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

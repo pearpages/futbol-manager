@@ -12,6 +12,7 @@
     "build": "pnpm --filter @fm/app build",
     "test": "vitest",
     "season": "node scripts/season.ts",
+    "fixture": "node scripts/fixture.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r --parallel exec tsc --noEmit",
     "format": "prettier --write .",
