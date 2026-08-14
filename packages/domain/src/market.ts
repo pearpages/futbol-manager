@@ -1,8 +1,8 @@
 import { acceptableYears } from './bids.ts'
-import type { Club, ClubId } from './entities.ts'
+import type { ClubId } from './entities.ts'
 import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRating } from './lineup.ts'
 import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
-import type { Rng } from './rng.ts'
+import { type Rng, shuffle } from './rng.ts'
 import type { GameState } from './state.ts'
 import { type DayNumber, toCivil } from './time.ts'
 import { askingPrice, expectedWage } from './valuation.ts'
@@ -33,7 +33,12 @@ export const MIN_SQUAD = 18
 /** Above this a club stops buying regardless — a backstop, not the mechanism. */
 export const MAX_SQUAD = 30
 
-/** A need below this is noise; acting on it produces churn for its own sake. */
+/**
+ * A need below this is noise; acting on it produces churn for its own sake.
+ *
+ * `needFor` returns whole numbers, so this reads as **"at least 1"** — the
+ * fraction buys nothing. Moving it to 0.3 or 0.6 changes no decision in the game.
+ */
 const NEED_THRESHOLD = 0.4
 
 /** How much rating gain a club demands per unit of value spent. */
@@ -63,9 +68,30 @@ function freeAgentContract(player: Player, startYear: number, date: DayNumber) {
 /**
  * How much better this club's XI would be with `candidate` in it.
  *
- * The whole scoring function. Positive means the player would improve the team
- * rating; zero or below means he would sit on the bench and is worth nothing to
- * this club, however good he is in the abstract.
+ * The whole scoring function, and the market's single question — asked in both
+ * directions. `runTransferWindow` asks whether a club wants a player,
+ * `rolloverSeason` asks whether it still wants one whose contract is up, and
+ * `bestOfferFor` asks whether it wants one of yours. Full write-up in
+ * docs/market-model.md.
+ *
+ * Three things that surprise people, in rough order of how often:
+ *
+ * **Zero is the normal answer, not a bug.** A player who would not displace
+ * anyone adds nothing, however good he is in the abstract — he would sit on the
+ * bench. A strong club scores zero on the entire market, and that is correct. It
+ * is also why there is no rule against stockpiling goalkeepers: a second good
+ * keeper cannot enter the XI, so he scores zero on his own.
+ *
+ * **It always evaluates in 4-4-2**, whatever formation the club plays. Deliberate
+ * — one fixed shape keeps the score about the player rather than about a
+ * formation change — but it makes the number an approximation under 4-3-3 or
+ * 3-5-2.
+ *
+ * **The result is always a whole number.** `teamRating` runs `clampRating`, which
+ * rounds, so both sides of the subtraction are integers. Every threshold compared
+ * against this therefore collapses to an integer cutoff — see the constants in
+ * this file and in `season.ts`, which are written as fractions and are not as
+ * finely tuned as they look.
  */
 export function needFor(squad: readonly Player[], candidate: Player): number {
   const before = ratingOf(squad)
@@ -351,21 +377,6 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   const transferList = state.transferList.filter((id) => own.has(id))
 
   return { ...state, clubs, squads, lineups, freeAgents, transferList }
-}
-
-/** Fisher–Yates over the injected rng — no `Math.random`, so a seed reproduces the market. */
-function shuffle(clubs: readonly Club[], rng: Rng): Club[] {
-  const result = [...clubs]
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(rng.next() * (i + 1))
-    const a = result[i]
-    const b = result[j]
-    /* c8 ignore next */
-    if (a === undefined || b === undefined) continue
-    result[i] = b
-    result[j] = a
-  }
-  return result
 }
 
 /** Total money in the league. A transfer moves it; nothing creates it. */

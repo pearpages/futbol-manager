@@ -1,4 +1,4 @@
-export { createRng, type Rng, type RngState } from './rng.ts'
+export { createRng, type Rng, type RngState, shuffle } from './rng.ts'
 
 export {
   addDays,

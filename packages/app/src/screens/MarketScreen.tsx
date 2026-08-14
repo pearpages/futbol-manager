@@ -1,22 +1,27 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ageOn,
   askingPrice,
   type Bid,
   bidIsLive,
   type ClubId,
+  createRng,
   type DayNumber,
   formatMoney,
+  type GameState,
   isTransferWindowOpen,
   listedForSale,
   MAX_CONTRACT_YEARS,
   MIN_CONTRACT_YEARS,
-  needFor,
   overall,
   type Player,
   type PlayerId,
+  type Position,
+  POSITIONS,
+  shuffle,
   suggestedTerms,
   surplus,
+  toCivil,
 } from '@fm/domain'
 import { useGame } from '../store.ts'
 import { positionChip } from './SquadScreen.tsx'
@@ -41,42 +46,106 @@ export interface Listing {
   /** `null` for a free agent — nobody to pay. */
   readonly from: ClubId | null
   readonly fee: number
-  /** Marginal gain to your XI. Zero means he would sit on the bench. */
-  readonly need: number
 }
 
 /**
- * Everything you could sign today, best improvement first.
+ * Which transfer window a date belongs to.
+ *
+ * Windows are July/August and January, but the clock spends most of the season
+ * outside one and the market list still has to hold still. So every date maps to
+ * the window it most recently belonged to: February to June follow January, and
+ * July to December follow the summer.
+ */
+export function windowKey(date: DayNumber): number {
+  const { y, m } = toCivil(date)
+  return m <= 6 ? y * 2 + 1 : y * 2
+}
+
+/**
+ * The order players appear in — deliberately shuffled, not ranked.
+ *
+ * The screen used to sort by how much a player would improve your XI, which
+ * turned scouting into reading the top row. Nothing is ranked for you now; the
+ * columns are all sortable if you want an angle on it.
+ *
+ * Seeded from the window and your club, so the order holds still across
+ * re-renders, navigation and a save/reload — a list that reshuffled on every
+ * render would be unusable — while January still looks like a different market
+ * from August. Deterministic, so no ordering has to be stored in the save.
+ */
+export function marketSeed(date: DayNumber, managedClubId: ClubId): number {
+  let hash = windowKey(date)
+  for (let i = 0; i < managedClubId.length; i++) {
+    hash = (hash * 31 + managedClubId.charCodeAt(i)) | 0
+  }
+  return hash
+}
+
+/**
+ * Everything you could sign today, in market order.
  *
  * Exported so it can be tested without rendering — the same pattern `bandFor`
  * follows on the table screen.
  */
-export function listingsFor(
-  squad: readonly Player[],
-  squadsByClub: Readonly<Record<string, readonly Player[]>>,
-  freeAgents: readonly Player[],
-  clubIds: readonly ClubId[],
-  managedClubId: ClubId,
-  date: DayNumber,
-): Listing[] {
+export function listingsFor(game: GameState): Listing[] {
+  const managed = game.managedClubId
+  const date = game.season.currentDate
   const listings: Listing[] = []
 
-  for (const clubId of clubIds) {
-    if (clubId === managedClubId) continue
-    for (const player of surplus(squadsByClub[clubId] ?? [])) {
-      listings.push({
-        player,
-        from: clubId,
-        fee: askingPrice(player, date),
-        need: needFor(squad, player),
-      })
+  for (const clubId of game.competition.clubIds) {
+    if (clubId === managed) continue
+    for (const player of surplus(game.squads[clubId] ?? [])) {
+      listings.push({ player, from: clubId, fee: askingPrice(player, date) })
     }
   }
-  for (const player of freeAgents) {
-    listings.push({ player, from: null, fee: 0, need: needFor(squad, player) })
+  for (const player of game.freeAgents) {
+    listings.push({ player, from: null, fee: 0 })
   }
 
-  return listings.sort((a, b) => b.need - a.need || overall(b.player) - overall(a.player))
+  return shuffle(listings, createRng(marketSeed(date, managed)))
+}
+
+export type SortKey = 'overall' | 'fee' | 'age' | 'name' | 'club'
+
+export interface Sort {
+  readonly key: SortKey
+  readonly desc: boolean
+}
+
+/** Text columns read left, numbers read right — the `data-table` convention. */
+const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
+  name: 'is-text',
+  club: 'is-text',
+  age: '',
+  overall: '',
+  fee: '',
+}
+
+/**
+ * Ordering for one sort setting.
+ *
+ * There is no default: unsorted means market order. These exist because a list of
+ * two hundred is only navigable if you can take an angle on it — sorting by
+ * `Asking` is how a club with no money finds what it can afford — but none of
+ * them tells you whether a player would actually get into your team.
+ */
+export function comparatorFor(sort: Sort, date: DayNumber) {
+  const direction = sort.desc ? -1 : 1
+  return (a: Listing, b: Listing): number => {
+    const by = (value: number) => value * direction
+    switch (sort.key) {
+      case 'overall':
+        return by(overall(a.player) - overall(b.player))
+      case 'fee':
+        return by(a.fee - b.fee)
+      case 'age':
+        return by(ageOn(a.player, date) - ageOn(b.player, date))
+      case 'name':
+        return by(a.player.name.localeCompare(b.player.name))
+      case 'club':
+        return by(String(a.from ?? '').localeCompare(String(b.from ?? '')))
+    }
+  }
 }
 
 export function MarketScreen() {
@@ -87,27 +156,70 @@ export function MarketScreen() {
   const [target, setTarget] = useState<PlayerId | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [onlyShortlist, setOnlyShortlist] = useState(false)
+  const [onlyAffordable, setOnlyAffordable] = useState(false)
+  const [onlyFree, setOnlyFree] = useState(false)
+  /** Empty means every position, so the default is unfiltered. */
+  const [positions, setPositions] = useState<readonly Position[]>([])
+  /** `null` is market order — the shuffle. A column cycles back to it. */
+  const [sort, setSort] = useState<Sort | null>(null)
 
   const managed = game.managedClubId
-  const squad = game.squads[managed] ?? []
   const club = game.clubs.find((c) => c.id === managed)
+  const budget = club?.budget ?? 0
   const date = game.season.currentDate
   const open = isTransferWindowOpen(date)
   const names = new Map(game.clubs.map((c) => [c.id, c]))
   const shortlisted = new Set(game.shortlist)
 
-  const all = listingsFor(
-    squad,
-    game.squads,
-    game.freeAgents,
-    game.competition.clubIds,
-    managed,
-    date,
-  )
-  const listings = (onlyShortlist ? all.filter((l) => shortlisted.has(l.player.id)) : all).slice(
-    0,
-    60,
-  )
+  // One memo is enough now. This used to be split in two because it scored every
+  // listing with `needFor` — two `bestXI` passes apiece, a couple of hundred times
+  // — and that half depended on squads while the prices depended on the date.
+  // Taking the "Improves" column off the screen took the scoring with it.
+  const all = useMemo(() => listingsFor(game), [game])
+
+  // Filtering and sorting stay outside the memo: they are cheap, and they change
+  // with the controls rather than with the game.
+  const filtered = all
+    .filter((l) => !onlyShortlist || shortlisted.has(l.player.id))
+    .filter((l) => !onlyFree || l.from === null)
+    // A free agent costs no fee, so he is always within budget.
+    .filter((l) => !onlyAffordable || l.fee <= budget)
+    .filter((l) => positions.length === 0 || positions.includes(l.player.position))
+
+  const listings = sort === null ? filtered : filtered.sort(comparatorFor(sort, date))
+
+  function toggle<T>(list: readonly T[], value: T): T[] {
+    return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+  }
+
+  /**
+   * A column header that sorts, cycling descending → ascending → market order.
+   *
+   * The third click matters: without a way back, one click would lose the shuffle
+   * for the rest of the session.
+   */
+  function SortHeader({ column, label }: { column: SortKey; label: string }) {
+    const active = sort !== null && sort.key === column
+    const next = (): Sort | null => {
+      if (!active) return { key: column, desc: true }
+      return sort.desc ? { key: column, desc: false } : null
+    }
+    return (
+      <th
+        className={SORT_ALIGN[column]}
+        aria-sort={active ? (sort.desc ? 'descending' : 'ascending') : 'none'}
+      >
+        <button
+          type="button"
+          className={`market-screen__sort${active ? ' is-active' : ''}`}
+          onClick={() => setSort(next())}
+        >
+          {label}
+          {active && <span aria-hidden="true">{sort.desc ? ' ▾' : ' ▴'}</span>}
+        </button>
+      </th>
+    )
+  }
 
   // What is actually on the market, not merely what you clicked: a player listed
   // in August may have won his place back by January, and `listedForSale` is what
@@ -145,38 +257,65 @@ export function MarketScreen() {
           </p>
         )}
 
+        {/* Every control is a toggle labelled with the mode it turns on, with
+            `aria-pressed` carrying whether it is active. Labelling one with its
+            *current* state instead made the button you press to filter read
+            "Whole market", which is backwards. */}
         <div className="market-screen__filters">
-          {/* A toggle, so the label names the mode and `aria-pressed` says whether
-              it is on. Labelling it with the current state instead made the
-              button you press to filter read "Whole market". */}
+          <span className="market-screen__positions">
+            {POSITIONS.map((position) => (
+              <button
+                key={position}
+                type="button"
+                className={`button market-screen__mini${positions.includes(position) ? ' is-primary' : ''}`}
+                aria-pressed={positions.includes(position)}
+                onClick={() => setPositions(toggle(positions, position))}
+              >
+                {position}
+              </button>
+            ))}
+          </span>
           <button
             type="button"
-            className={`button${onlyShortlist ? ' is-primary' : ''}`}
+            className={`button market-screen__mini${onlyAffordable ? ' is-primary' : ''}`}
+            aria-pressed={onlyAffordable}
+            onClick={() => setOnlyAffordable(!onlyAffordable)}
+          >
+            Within budget
+          </button>
+          <button
+            type="button"
+            className={`button market-screen__mini${onlyFree ? ' is-primary' : ''}`}
+            aria-pressed={onlyFree}
+            onClick={() => setOnlyFree(!onlyFree)}
+          >
+            Free agents
+          </button>
+          <button
+            type="button"
+            className={`button market-screen__mini${onlyShortlist ? ' is-primary' : ''}`}
             aria-pressed={onlyShortlist}
             onClick={() => setOnlyShortlist(!onlyShortlist)}
           >
             Shortlist only
           </button>
           <span className="market-screen__count">
-            {listings.length} of {all.length} shown
+            Showing {listings.length} of {all.length}
           </span>
         </div>
 
         {listings.length === 0 ? (
-          <p className="screen__note">
-            {onlyShortlist ? 'Nothing shortlisted yet.' : 'Nobody is available.'}
-          </p>
+          <p className="screen__note">Nobody matches those filters.</p>
         ) : (
           <table className="data-table">
             <thead className="data-table__head">
               <tr>
                 <th className="is-text">Pos</th>
-                <th className="is-text">Player</th>
-                <th className="is-text">Club</th>
-                <th>Age</th>
-                <th>Ovr</th>
-                <th>Improves</th>
-                <th>Asking</th>
+                <SortHeader column="name" label="Player" />
+                <SortHeader column="club" label="Club" />
+                <SortHeader column="age" label="Age" />
+                <SortHeader column="overall" label="Ovr" />
+                <SortHeader column="fee" label="Asking" />
                 <th className="is-text">Act</th>
               </tr>
             </thead>
@@ -209,9 +348,6 @@ export function MarketScreen() {
                     <td>{ageOn(player, date)}</td>
                     <td>
                       <strong>{overall(player)}</strong>
-                    </td>
-                    <td className={listing.need > 0 ? 'market-screen__gain' : undefined}>
-                      {listing.need > 0 ? `+${listing.need.toFixed(1)}` : '—'}
                     </td>
                     <td>{listing.fee === 0 ? 'Free' : formatMoney(listing.fee)}</td>
                     <td className="is-text market-screen__actions">

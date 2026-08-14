@@ -87,3 +87,29 @@ export function createRng(seed: number | RngState): Rng {
     state: (): RngState => [a >>> 0, b >>> 0, c >>> 0, d >>> 0],
   }
 }
+
+/**
+ * Fisher–Yates over an injected generator. Returns a new array; the input is not
+ * touched.
+ *
+ * Lives here rather than in the module that first needed it: a shuffle is a
+ * property of the generator, not of the thing being shuffled. It came out of
+ * `market.ts`, which used it to rotate the order clubs are served in a transfer
+ * window, when the market screen needed the same thing to order its listings.
+ *
+ * Seeded, so a shuffle is reproducible — `Math.random` would break both
+ * determinism in the domain and stable ordering on a screen that re-renders.
+ */
+export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
+  const result = [...items]
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng.next() * (i + 1))
+    const a = result[i]
+    const b = result[j]
+    /* c8 ignore next */
+    if (a === undefined || b === undefined) continue
+    result[i] = b
+    result[j] = a
+  }
+  return result
+}

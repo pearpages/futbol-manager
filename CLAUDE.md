@@ -2,7 +2,7 @@
 
 A PC Fútbol 2001-style football management game. No real-time match engine — results are resolved statistically. Fictional clubs and players by default; dataset import is an opt-in layer.
 
-**Read before working:** [`docs/roadmap.md`](docs/roadmap.md) for what to build and in what order, [`docs/stack.md`](docs/stack.md) for every tool and version, [`docs/attribute-model.md`](docs/attribute-model.md) for the player spec, [`docs/adr/`](docs/adr/) for settled decisions. Do not reopen an ADR's question without saying why the ADR is wrong.
+**Read before working:** [`docs/roadmap.md`](docs/roadmap.md) for what to build and in what order, [`docs/stack.md`](docs/stack.md) for every tool and version, [`docs/attribute-model.md`](docs/attribute-model.md) for the player spec, [`docs/market-model.md`](docs/market-model.md) for what a player is worth and who will sell him, [`docs/adr/`](docs/adr/) for settled decisions. Do not reopen an ADR's question without saying why the ADR is wrong.
 
 ## Ground rules
 
@@ -245,3 +245,43 @@ Three things that measured as _not_ mattering, so nobody spends time on them: fo
 **Cost:** the weekly cadence roughly doubled suite runtime (4.5s → 9s), because `bestOfferFor` scores nineteen clubs and now runs ~7 days a season instead of one. Accepted deliberately. If it needs trimming later, cap the candidate spares — but note that restricting to a club's _best_ spares produces no offers at all, since the deals that exist are the cheap ones at the bottom.
 
 **Still not seen in a browser** — fifth failed extension connection. Verified by a DOM dump of the full loop: list 12 spares → "Up for sale" panel with asking prices → roll over → one sold, budget €5.7M → €5.9M.
+
+### 2026-08-14 — the market's 60-row cap
+
+**Another one found by playing rather than testing: "60 of 228 shown — why can't I see the rest?"** A bare `.slice(0, 60)` in `MarketScreen`, with no filter, sort or pager, so the other 168 were unreachable.
+
+**It was hiding exactly the wrong players.** The list sorts by how much a signing improves your XI, and the biggest improvements are the most expensive. Measured on a fresh season:
+
+| Club    | Listings | Improve XI | Within budget | Both   | Affordable in the visible 60 |
+| ------- | -------- | ---------- | ------------- | ------ | ---------------------------- |
+| Madrid  | 228      | 0          | 228           | 0      | 60                           |
+| Sarrià  | 228      | 66         | 209           | 47     | 41                           |
+| Almería | 228      | 198        | 125           | **95** | **5**                        |
+
+A weak club was shown sixty players it could not buy while ~90 useful, affordable signings sat below the cut — the opposite of what M4b's exit criterion needs. Cap dropped; position / within-budget / free-agent filters and sortable columns added. At Almería "Within budget" now surfaces a 79-rated midfielder at €1.1M for +6.0, which was previously invisible.
+
+**Two things worth keeping:**
+
+- **The listings memo is split on what each half depends on.** `needFor` is the expensive part and depends only on squads; `askingPrice` is cheap and depends on the date. `AdvanceDay` changes the date and leaves squad references untouched, so a single memo re-scored the entire market on every day tick.
+- **`.sort()` mutates.** It is safe here only because every filter in the chain returns a fresh array — worth remembering before someone sorts a memoised array directly.
+
+**Sorting is deliberately local to `MarketScreen`**, not promoted to `chrome.css`: it is the first sortable table, and the house rule graduates a primitive on its _second_ use.
+
+**Cost:** 342 tests, 15s (was 9s). Rendering ~228 rows in ten market tests is most of it, and Testing Library's `getByRole` name computation over ~680 buttons is the rest. One test was flaking at 4.7s against the 5s timeout because it sat on the market screen clicking "Advance day"; it now waits on the table screen, which is what a manager does anyway and is down to 2.6s. **If the market table ever needs to be cheaper, paginate — do not reinstate a silent cap.**
+
+### 2026-08-14 — the need score, documented and then hidden
+
+**[`docs/market-model.md`](docs/market-model.md) is new** and is now the place to look before touching the market. It writes down `needFor` properly — the marginal-rating scoring function the whole market runs on, asked in three places and in both directions — along with valuation, windows, free agents and the balance invariants.
+
+**Three things about `needFor` that are not obvious from the signature**, all now in the doc and its comment: zero is the normal answer rather than a bug (a player who would not displace anyone adds nothing, which is why a strong club scores zero on the whole league and why no rule against stockpiling keepers is needed); it always evaluates in 4-4-2 regardless of what you play, so it approximates under other shapes; and **it always returns a whole number**, because `teamRating` runs `clampRating`.
+
+**That last one has teeth.** Four thresholds are written as fractions and collapse to two integer cutoffs — `RETAIN_THRESHOLD` 0.25, `NEED_THRESHOLD` 0.4 and `LISTED_NEED_THRESHOLD` 0.4 all mean **≥ 1**; `OFFER_NEED_THRESHOLD` 1.5 means **≥ 2**. They look independently tuned and are not. Move one across a whole number or do not bother.
+
+**The "Improves" column is gone and the listing order is shuffled.** Showing the score turned the market into a lookup — read the top row, buy it. The order is now a deterministic shuffle seeded from `(window, managed club)`, so it holds still across renders, navigation and save/reload while January looks like a different market from August. All columns stay sortable; sorting by `Ovr` still finds good players, but nothing tells you whether they would get into your team. A column cycles descending → ascending → back to market order, so one click cannot cost you the shuffle.
+
+**Two knock-ons worth knowing:**
+
+- **Removing the column removed the screen's expensive half.** `need` was used by no filter and no panel, so ~228 `needFor` calls (two `bestXI` passes each) left every market render, and the two-memo split added for it collapsed back to one. The slowest app test went 4.7s → 2.4s.
+- **The harness now knows more than the player does.** `market.human.harness.test.ts` shops with `needFor` directly, so its +4.3 points a season is a perfectly-informed manager — an upper bound, not what a person will get. Recorded in the doc.
+
+`shuffle` moved from `market.ts` to `rng.ts` and is generic: a shuffle is a property of the generator, not of clubs. The market screen was the second case, which is what the house rule waits for.

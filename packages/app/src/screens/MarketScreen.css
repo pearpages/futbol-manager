@@ -29,10 +29,44 @@
 
 .market-screen__filters {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: var(--fm-space-3);
+  gap: var(--fm-space-2) var(--fm-space-3);
   padding: var(--fm-space-3) var(--fm-space-4);
   border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+/* The four positions read as one control, so they sit tighter than the gap. */
+.market-screen__positions {
+  display: flex;
+  gap: 2px;
+}
+
+/*
+ * A sortable column header. Inherits the header's own type so it reads as a label
+ * rather than a control until you hover it.
+ *
+ * Local, not in chrome.css: this is the project's first sortable table, and the
+ * house rule promotes a primitive on its *second* use. The next screen that needs
+ * sorting is the one that moves it.
+ */
+.market-screen__sort {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.market-screen__sort:hover {
+  color: var(--fm-screen-ink);
+}
+
+.market-screen__sort.is-active {
+  color: var(--fm-champion);
 }
 
 .market-screen__count {
@@ -66,12 +100,6 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-}
-
-/* The one number that answers "is he worth signing?". */
-.market-screen__gain {
-  color: var(--fm-uecl);
-  font-weight: 700;
 }
 
 .market-screen__actions {
