@@ -361,3 +361,21 @@ Twenty rows of text was how you told clubs apart. Badges are kit colours, a shir
 Two things fell out of it. `white`'s `--badge-b` changed from a pale grey to navy — it is never rendered as a mark, since that badge is `solid`, so it existed only for the rim and grey was barely an edge. And a test now forbids **any literal colour for `--badge-rim`**: an override must point at another badge token. Hand-picking is how the six neutrals got in, so the rule is enforced by construction rather than by care.
 
 **The one weak pairing left is `sky`** — Vigo's white rim on sky blue is the lowest contrast in the set, because that kit has only two colours and no third to reach for. Following the rule strictly is the right call there; inventing a navy is what this change removed.
+
+### 2026-08-14 — squad numbers, and the title bar
+
+**Two small things, both "the screen is not telling me what I need".**
+
+**`#` on the Plantilla rows.** Squad size is load-bearing — the reducer refuses a bid at `MAX_SQUAD` and a club at `MIN_SQUAD` can sell nobody — so "how many do I have" should not mean counting rows. `.data-table__num` already existed in `chrome.css` (it is what `TableScreen` uses for league positions), so the column cost no CSS at all. The test asserts the numbers run 1..N and that N equals the squad size, which is the actual point of the column rather than the presence of a cell.
+
+**The title bar said who you are; it now says where you stand.** `Primera División · Jornada 6 · 12º` replaces the managed club's name — a fact that never changes and that the hub already states with a crest. Three notes:
+
+- **The matchday is `matchday.fixture.round`, the round you are _about to play_.** `TableScreen`'s "Matchday" stat is `ceil(played / 10)` — _rounds completed_ — so **the two now disagree by one for most of a season**. That is a real inconsistency and it is a one-line fix in `TableScreen`; it was left alone because it is a screen this change was not asked to touch. Decide it deliberately.
+- **Separators are drawn by `.shell__where > * + *::before`, not typed.** The season ending removes the matchday, so a typed `·` would leave a dangling separator.
+- **`.shell__title` became the `<h1>`.** Removing the club name removed the only top-level heading, and the heading of a page should name the screen you are on. The competition strip is deliberately _not_ a heading — promoting it would collide with `App.test.tsx`'s `getByRole('heading', { name: /Primera División/i })`, which targets the table screen's own `<h2>`.
+
+**The next opponent now carries his badge**, in the bar (`is-sm`) and in the hub's Next match panel (`is-lg`, matching the identity crest directly above it — the two clubs in the centre column read at the same weight). `matchdayFor()` already returned `opponent` as a full `Club`, so neither site needed a lookup.
+
+**`position` is memoised on `game`.** The bar re-renders on every tick and `computeTable` walks all 380 fixtures; the reducer replaces `game` wholesale, so identity is the right dependency.
+
+405 tests, `pnpm season` byte-identical to `a66d297`, no domain change. **Still not seen in a browser** — verified by a DOM dump: `Primera División · Jornada 1 · 14º` on a fresh career at Sarrià, `Next VAL v Valencia (A) · today`, and after a round `Jornada 2 · 20º` with `Next BIL v Bilbao (H) · in 5d`.

@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
-import { formatDate } from '@fm/domain'
+import { useEffect, useMemo, useState } from 'react'
+import { computeTable, formatDate } from '@fm/domain'
 import { describeOpponent, matchdayFor } from './matchday.ts'
 import { noticesFrom } from './notifications.ts'
 import { type Screen, useGame } from './store.ts'
-import { BadgeDefs } from './screens/ClubBadge.tsx'
+import { BadgeDefs, ClubBadge } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { NotificationList } from './screens/NotificationList.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
@@ -64,9 +64,16 @@ export function App() {
     void restore()
   }, [restore])
 
-  const club = game.clubs.find((c) => c.id === game.managedClubId)
   const Current = SCREENS[screen]
   const matchday = matchdayFor(game)
+
+  // Where you stand, for the bar. Memoised because the bar re-renders on every
+  // tick of the clock and this walks all 380 fixtures; `game` is replaced
+  // wholesale by the reducer, so identity is the right dependency.
+  const position = useMemo(() => {
+    const table = computeTable(game.competition.clubIds, game.season.fixtures)
+    return table.findIndex((row) => row.clubId === game.managedClubId) + 1
+  }, [game])
 
   // No career yet: the club picker replaces the whole shell rather than sitting
   // inside it, because none of the navigation means anything before a club exists.
@@ -91,8 +98,21 @@ export function App() {
     <div className="shell">
       <BadgeDefs />
       <header className="panel shell__bar">
-        <h1 className="shell__wordmark">{club?.name ?? 'Fútbol Manager'}</h1>
-        <p className="shell__title">{SCREEN_TITLES[screen]}</p>
+        {/* Where you stand, not who you are. The club you manage never changes
+            and the hub states it with a crest; what a title bar is for is the
+            situation — which competition, which matchday, what position. Left a
+            `<p>` deliberately: the heading of the page is the screen you are on,
+            and the table screen already owns "Primera División" as a heading. */}
+        <p className="shell__where">
+          <span className="shell__competition">{game.competition.name}</span>
+          {/* No next fixture means the season is done, so there is no matchday
+              to be on — better absent than pinned at 38. */}
+          {matchday !== null && (
+            <span className="shell__matchday">Jornada {matchday.fixture.round}</span>
+          )}
+          {position > 0 && <span className="shell__position">{position}º</span>}
+        </p>
+        <h1 className="shell__title">{SCREEN_TITLES[screen]}</h1>
         <p className="shell__club">
           <span className="shell__date">{formatDate(game.season.currentDate)}</span>
           {/* Always visible, because sleepwalking past your own fixture was the
@@ -100,8 +120,8 @@ export function App() {
               hub, so this is what tells you to go back there. */}
           {matchday !== null && (
             <span className={`shell__next${matchday.due ? ' is-due' : ''}`}>
-              Next {describeOpponent(matchday)} ·{' '}
-              {matchday.due ? 'today' : `in ${matchday.daysAway}d`}
+              Next {matchday.opponent !== undefined && <ClubBadge club={matchday.opponent} />}{' '}
+              {describeOpponent(matchday)} · {matchday.due ? 'today' : `in ${matchday.daysAway}d`}
             </span>
           )}
           <button

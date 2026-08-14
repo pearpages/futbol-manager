@@ -23,7 +23,41 @@
   padding: var(--fm-space-2) var(--fm-space-4);
 }
 
-.shell__wordmark {
+/* Competition · matchday · position. Set at the same weight as the date on the
+   far side rather than as a wordmark, because it is status, not identity — the
+   screen title in the middle is the loud thing. */
+.shell__where {
+  display: flex;
+  align-items: baseline;
+  gap: var(--fm-space-2);
+  margin: 0;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Interpuncts drawn rather than typed, so an absent matchday (season over) or
+   position never leaves a dangling separator. */
+.shell__where > * + *::before {
+  content: '·';
+  margin-right: var(--fm-space-2);
+  color: var(--fm-ink-soft);
+}
+
+.shell__competition {
+  font-weight: 700;
+}
+
+.shell__matchday,
+.shell__position {
+  color: var(--fm-ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The wordmark survives only on the setup screen, where there is no club, no
+   competition and no position to put here yet. */
+.shell--setup .shell__wordmark {
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-lg);
   font-weight: 700;
@@ -67,6 +101,9 @@
 /* ── Matchday and news, in the title bar ─────────────────────────────────── */
 
 .shell__next {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
   color: var(--fm-ink-soft);
 }
 

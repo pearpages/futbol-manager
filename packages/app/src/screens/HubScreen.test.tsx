@@ -67,6 +67,20 @@ describe('knowing when you play', () => {
     expect(screen.getAllByText(new RegExp(opponent)).length).toBeGreaterThan(0)
   })
 
+  it('shows the opponent’s badge beside his name', () => {
+    // A crest identifies a club faster than a name in a list does, and the two
+    // clubs in the centre column — you and whoever is next — now read at the
+    // same size.
+    render(<App />)
+    const fixture = nextFixtureFor(game().season.fixtures, MID)
+    if (fixture === null) throw new Error('no fixture')
+    const opponentId = fixture.homeId === MID ? fixture.awayId : fixture.homeId
+    const opponent = game().clubs.find((c) => c.id === opponentId)
+
+    const code = document.querySelector('.hub__opponent .club-badge__code')
+    expect(code?.textContent).toBe(opponent?.shortName)
+  })
+
   it('opens a new career with the first fixture already due', () => {
     // Round one is dated on the season start, so kicking off is the first thing
     // asked of you — and it is a distinct button, not Advance day.

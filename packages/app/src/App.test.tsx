@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { bestXI, overall, startersOf, teamRating, worstXI } from '@fm/domain'
+import { bestXI, computeTable, overall, startersOf, teamRating, worstXI } from '@fm/domain'
 import { App } from './App.tsx'
+import { matchdayFor } from './matchday.ts'
 import { useGame } from './store.ts'
 import { advance, back, openScreen } from './testing.ts'
 
@@ -76,6 +77,55 @@ describe('the shell', () => {
       back()
       expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
     }
+  })
+})
+
+describe('the title bar says where you stand', () => {
+  // It used to say which club you manage — a fact that never changes and which
+  // the hub already states with a crest. What a title bar is for is the
+  // situation: which competition, which matchday, what position.
+  const bar = () => {
+    const element = document.querySelector('.shell__bar')
+    if (element === null) throw new Error('no bar')
+    return element as HTMLElement
+  }
+
+  it('names the competition, not the club', () => {
+    render(<App />)
+    const { game, clubId } = managed()
+    const club = game.clubs.find((c) => c.id === clubId)
+
+    expect(within(bar()).getByText('Primera División')).toBeDefined()
+    expect(within(bar()).queryByText(club?.name ?? '')).toBeNull()
+  })
+
+  it('shows the round you are about to play, not the one just finished', () => {
+    render(<App />)
+    expect(within(bar()).getByText('Jornada 1')).toBeDefined()
+
+    advance() // round one is dated on the season start, so this plays it
+    expect(within(bar()).getByText('Jornada 2')).toBeDefined()
+  })
+
+  it('shows the position the classification gives you', () => {
+    render(<App />)
+    advance()
+
+    const { game, clubId } = managed()
+    const table = computeTable(game.competition.clubIds, game.season.fixtures)
+    const place = table.findIndex((row) => row.clubId === clubId) + 1
+
+    expect(place).toBeGreaterThan(0)
+    expect(within(bar()).getByText(`${place}º`)).toBeDefined()
+  })
+
+  it('carries the next opponent’s badge', () => {
+    render(<App />)
+    const { game } = managed()
+    const opponent = matchdayFor(game)?.opponent
+
+    const code = bar().querySelector('.shell__next .club-badge__code')
+    expect(code?.textContent).toBe(opponent?.shortName)
   })
 })
 

@@ -101,6 +101,9 @@
 }
 
 .hub__opponent {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
   margin: 0;
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-lg);

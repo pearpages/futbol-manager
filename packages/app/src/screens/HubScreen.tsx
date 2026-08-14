@@ -158,7 +158,15 @@ export function HubScreen() {
             <p className="screen__note">The season is over.</p>
           ) : (
             <div className="hub__next-body">
-              <p className="hub__opponent">{describeOpponent(matchday)}</p>
+              {/* The badge belongs beside the name, not instead of it — a crest
+                  says *which* club faster than three letters do, and the name
+                  still has to be readable to a first-time player. */}
+              <p className="hub__opponent">
+                {matchday.opponent !== undefined && (
+                  <ClubBadge club={matchday.opponent} size="lg" />
+                )}
+                {describeOpponent(matchday)}
+              </p>
               <p className={`hub__when${matchday.due ? ' is-due' : ''}`}>
                 {matchday.due
                   ? 'Today'
