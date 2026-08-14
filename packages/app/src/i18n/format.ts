@@ -23,12 +23,14 @@ interface Conventions {
   readonly currencyAfter: boolean
   /** Day/month/year order for a numeric date. */
   readonly dateOrder: 'ymd' | 'dmy'
+  /** True where a percent sign is written with a space before it. */
+  readonly percentSpace: boolean
 }
 
 const CONVENTIONS: Readonly<Record<Language, Conventions>> = {
-  ca: { decimal: ',', group: '.', currencyAfter: true, dateOrder: 'dmy' },
-  es: { decimal: ',', group: '.', currencyAfter: true, dateOrder: 'dmy' },
-  en: { decimal: '.', group: ',', currencyAfter: false, dateOrder: 'ymd' },
+  ca: { decimal: ',', group: '.', currencyAfter: true, dateOrder: 'dmy', percentSpace: true },
+  es: { decimal: ',', group: '.', currencyAfter: true, dateOrder: 'dmy', percentSpace: true },
+  en: { decimal: '.', group: ',', currencyAfter: false, dateOrder: 'ymd', percentSpace: false },
 }
 
 /** `45000` → `45.000` in Catalan, `45,000` in English. */
@@ -63,6 +65,19 @@ export function formatMoney(language: Language, thousands: number): string {
   }
 
   return withSymbol(language, formatCount(language, value), 'k')
+}
+
+/**
+ * A fraction as a percentage — `0.227` → `22.7%`, or `22,7 %` in ca/es.
+ *
+ * `decimals` is a parameter because the two uses want different things: a model
+ * weight is a round `70%`, while a keeper's share of the defence is `35%` and a
+ * forward's share of the defence is `1.5%`, which rounds to nothing useful whole.
+ */
+export function formatPercent(language: Language, fraction: number, decimals = 0): string {
+  const { decimal, percentSpace } = CONVENTIONS[language]
+  const text = (fraction * 100).toFixed(decimals).replace(/\.0$/, '').replace('.', decimal)
+  return percentSpace ? `${text} %` : `${text}%`
 }
 
 /** A single ticket, which is small enough to want cents. */

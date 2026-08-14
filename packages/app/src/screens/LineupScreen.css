@@ -105,13 +105,10 @@
   color: var(--fm-screen-ink-soft);
 }
 
+/* Appearance graduated to `.select` in chrome.css; what stays here is the one
+   thing that is about this row's layout rather than about a select. */
 .lineup-row__select {
   max-width: 14rem;
-  padding: 2px var(--fm-space-1);
-  background: var(--fm-screen-raised);
-  border: 1px solid var(--fm-screen-rule);
-  color: var(--fm-screen-ink);
-  font-size: var(--fm-text-xs);
 }
 
 @media (width < 64rem) {

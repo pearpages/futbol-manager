@@ -1,0 +1,88 @@
+/*
+ * The attribute radar.
+ *
+ * Same arrangement as `club-badges.css`: every rule reads a custom property and
+ * the component file holds no colour at all.
+ *
+ * The two series live in `tokens.css` as `--fm-series-a` / `--fm-series-b` rather
+ * than here, because the attribute rows beside the chart ink their numbers to
+ * match and they are not inside it. Neither is a new colour — the subject takes
+ * the brass the ficha already highlights with, the compared player the blue that
+ * marks a Champions League place.
+ */
+
+.radar {
+  display: block;
+  width: 100%;
+  max-width: 17rem;
+  margin-inline: auto;
+}
+
+.radar__ring,
+.radar__spoke {
+  fill: none;
+  stroke: var(--fm-screen-rule);
+  stroke-width: 0.5;
+}
+
+.radar__label {
+  fill: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.radar__area {
+  fill: var(--fm-series-a);
+  fill-opacity: 0.22;
+  stroke: var(--fm-series-a);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+/* No fill on the comparison: two translucent shapes stacked read as a third
+   colour where they cross, and the point is to see which one is further out. */
+.radar__area.is-compare {
+  fill: none;
+  stroke: var(--fm-series-b);
+  stroke-dasharray: 3 2;
+}
+
+.radar__node {
+  fill: var(--fm-series-a);
+}
+
+/* ── The key, naming the two players ─────────────────────────────────────── */
+
+.radar-key {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--fm-text-xs);
+  color: var(--fm-screen-ink);
+}
+
+.radar-key__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}
+
+.radar-key__swatch {
+  flex: none;
+  width: 0.85rem;
+  height: 0.5rem;
+  border: 1px solid var(--fm-screen-rule);
+}
+
+.radar-key__swatch.is-a {
+  background: var(--fm-series-a);
+}
+
+.radar-key__swatch.is-b {
+  background: var(--fm-series-b);
+}

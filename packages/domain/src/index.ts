@@ -145,15 +145,21 @@ export {
 } from './player.ts'
 
 export {
+  ATTACK_SHARE,
+  ATTACK_WEIGHTS,
   BALANCED,
   bestXI,
+  DEFENCE_SHARE,
+  DEFENCE_WEIGHTS,
   type Formation,
   FORMATION_NAMES,
   FORMATIONS,
+  KEEPER_WEIGHT,
   keepsLineup,
   type Lineup,
   playerAttack,
   playerDefence,
+  positionShare,
   startersOf,
   type Tactics,
   teamRating,

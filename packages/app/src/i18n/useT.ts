@@ -3,6 +3,7 @@ import {
   formatCount,
   formatDate,
   formatMoney,
+  formatPercent,
   formatSeason,
   formatTicket,
   LOCALE_TAGS,
@@ -28,6 +29,8 @@ export interface Translator {
   ticket(thousands: number): string
   /** A whole number with thousands separators. */
   count(value: number): string
+  /** A fraction as a percentage — `0.7` → `70%`. */
+  percent(fraction: number, decimals?: number): string
   /** A date, numerically. */
   date(day: number): string
   /** `2026` → `2026/27`. */
@@ -44,6 +47,7 @@ export function translatorFor(language: Language): Translator {
     money: (thousands) => formatMoney(language, thousands),
     ticket: (thousands) => formatTicket(language, thousands),
     count: (value) => formatCount(language, value),
+    percent: (fraction, decimals) => formatPercent(language, fraction, decimals),
     date: (day) => formatDate(language, day as never),
     season: formatSeason,
     locale: LOCALE_TAGS[language],

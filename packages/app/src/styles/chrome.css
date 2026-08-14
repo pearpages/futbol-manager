@@ -336,6 +336,38 @@
   text-align: right;
 }
 
+/* ── Two players on one row ──────────────────────────────────────────────────
+   Comparison adds the other man's number and the difference. No column heading:
+   the two values are inked to match the two shapes on the radar above them, and
+   a signed difference explains itself. */
+
+.attr.is-compare {
+  grid-template-columns: 5.5rem 1fr 2ch 2ch 3.5ch;
+}
+
+.attr__value.is-a {
+  color: var(--fm-series-a);
+}
+
+.attr__value.is-b {
+  color: var(--fm-series-b);
+  font-weight: 400;
+}
+
+.attr__delta {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--fm-screen-ink-soft);
+}
+
+.attr__delta.is-up {
+  color: var(--fm-uecl);
+}
+
+.attr__delta.is-down {
+  color: var(--fm-relegation);
+}
+
 /* ── Controls ────────────────────────────────────────────────────────────── */
 
 .button {
@@ -480,6 +512,16 @@
 .slider {
   width: 100%;
   accent-color: var(--fm-accent);
+}
+
+/* Graduated from `.lineup-row__select` when the ficha's compare picker became the
+   second one — a control on the dark screen material, not a panel one. */
+.select {
+  padding: 2px var(--fm-space-1);
+  background: var(--fm-screen-raised);
+  border: 1px solid var(--fm-screen-rule);
+  color: var(--fm-screen-ink);
+  font-size: var(--fm-text-xs);
 }
 
 .number-input {

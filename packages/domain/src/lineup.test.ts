@@ -8,11 +8,12 @@ import {
   type Formation,
   playerAttack,
   playerDefence,
+  positionShare,
   startersOf,
   teamRating,
   worstXI,
 } from './lineup.ts'
-import type { Attributes, Player, PlayerId } from './player.ts'
+import { type Attributes, type Player, type PlayerId, type Position, POSITIONS } from './player.ts'
 import { createRng } from './rng.ts'
 import { generateSquad } from './squad.ts'
 import { TEST_CLUBS } from './test-clubs.ts'
@@ -56,6 +57,41 @@ describe('per-player ratings', () => {
     expect(playerDefence(keeper)).toBe(88)
   })
 
+  it('still computes exactly what the literal expressions did', () => {
+    // The weights moved out of the two functions and into exported records so the
+    // ficha can state them. This test carries the arithmetic that used to be
+    // spelled out inline, so the display and the model cannot drift apart, and so
+    // a refactor that changed the *sum* — not just where it is written — is loud.
+    const probes = [
+      attrs(50),
+      attrs(50, { finishing: 90, heading: 12 }),
+      attrs(1, { pace: 99, stamina: 73, tackling: 41 }),
+      attrs(99, { passing: 3, dribbling: 64 }),
+    ]
+
+    for (const a of probes) {
+      const outfield: Player = {
+        id: 'p' as PlayerId,
+        name: 'P',
+        position: 'MF',
+        birthDate: seasonStart,
+        attributes: a,
+        contract: { until: fromCivil(2030, 6, 30), wage: 100 },
+      }
+
+      expect(playerAttack(outfield)).toBe(
+        0.35 * a.finishing +
+          0.25 * a.dribbling +
+          0.2 * a.passing +
+          0.12 * a.pace +
+          0.08 * a.heading,
+      )
+      expect(playerDefence(outfield)).toBe(
+        0.4 * a.tackling + 0.25 * a.heading + 0.2 * a.pace + 0.15 * a.stamina,
+      )
+    }
+  })
+
   it('lets a defender who can finish contribute to attack', () => {
     // Position-independent weights: this is the point of step 1 in the spec.
     const base: Player = {
@@ -68,6 +104,59 @@ describe('per-player ratings', () => {
     }
     const clinical: Player = { ...base, attributes: attrs(50, { finishing: 90 }) }
     expect(playerAttack(clinical)).toBeGreaterThan(playerAttack(base))
+  })
+})
+
+describe('positionShare', () => {
+  /** What a whole position group owns, which is what the published table lists. */
+  const group = (position: Position, formation: Formation) => {
+    const share = positionShare(position, formation)
+    const count = FORMATIONS[formation][position]
+    return { attack: share.attack * count, defence: share.defence * count }
+  }
+
+  it('accounts for the whole of both team numbers', () => {
+    for (const formation of FORMATION_NAMES) {
+      let attack = 0
+      let defence = 0
+      for (const position of POSITIONS) {
+        attack += group(position, formation).attack
+        defence += group(position, formation).defence
+      }
+      expect(attack, `${formation} attack`).toBeCloseTo(1, 10)
+      expect(defence, `${formation} defence`).toBeCloseTo(1, 10)
+    }
+  })
+
+  it('reproduces the table published in docs/attribute-model.md', () => {
+    // A doc-versus-code guard. Those percentages are quoted in the market model and
+    // are about to be quoted on the ficha, so they are worth pinning: if a weight
+    // moves, this fails and the document is what has to be corrected.
+    const pct = (n: number) => Math.round(n * 100)
+
+    expect(pct(group('GK', '4-4-2').defence)).toBe(35)
+    expect(pct(group('DF', '4-4-2').defence)).toBe(41)
+    expect(pct(group('MF', '4-4-2').defence)).toBe(21)
+    expect(pct(group('FW', '4-4-2').defence)).toBe(3)
+
+    expect(pct(group('DF', '4-4-2').attack)).toBe(14)
+    expect(pct(group('MF', '4-4-2').attack)).toBe(41)
+    expect(pct(group('FW', '4-4-2').attack)).toBe(45)
+    expect(pct(group('GK', '4-4-2').attack)).toBe(0)
+
+    expect(pct(group('FW', '4-3-3').attack)).toBe(61)
+    expect(pct(group('DF', '5-3-2').defence)).toBe(48)
+  })
+
+  it('gives one goalkeeper more of the defence than any other single player', () => {
+    // The reason a keeper is worth ~2.5× any other signing, stated as a property
+    // rather than left implicit in KEEPER_WEIGHT.
+    for (const formation of FORMATION_NAMES) {
+      const keeper = positionShare('GK', formation).defence
+      for (const position of ['DF', 'MF', 'FW'] as const) {
+        expect(keeper).toBeGreaterThan(positionShare(position, formation).defence)
+      }
+    }
   })
 })
 

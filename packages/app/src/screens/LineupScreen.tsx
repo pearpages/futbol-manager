@@ -67,7 +67,7 @@ export function LineupScreen() {
                   <label className="lineup-row__swap">
                     <span className="lineup-row__swap-label">{t('lineup.replaceWith')}</span>
                     <select
-                      className="lineup-row__select"
+                      className="select lineup-row__select"
                       value=""
                       onChange={(event) => {
                         if (event.target.value !== '')

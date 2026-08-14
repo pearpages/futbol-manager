@@ -146,6 +146,32 @@ export const es: Dictionary = {
   'attribute.heading': 'Juego aéreo',
   'attribute.keeping': 'Portería',
   'attribute.stamina': 'Resistencia',
+  // Formas cortas para los ejes del gráfico: ocho nombres enteros no caben en un octógono.
+  'attribute.short.pace': 'VEL',
+  'attribute.short.finishing': 'DEF',
+  'attribute.short.passing': 'PAS',
+  'attribute.short.dribbling': 'REG',
+  'attribute.short.tackling': 'ENT',
+  'attribute.short.heading': 'AER',
+  'attribute.short.keeping': 'POR',
+  'attribute.short.stamina': 'RES',
+  'player.compare': 'Comparar con',
+  'player.compareNone': 'Nadie',
+  'player.compareOption': '{name} · {position} {overall}',
+  'player.radar': 'Gráfico de atributos de {name}',
+  'player.model.heading': 'Qué hacen estos números',
+  'player.model.overall': 'Media, como {position}',
+  'player.model.attack': 'Ataque del equipo',
+  'player.model.defence': 'Defensa del equipo',
+  'player.model.unused': 'Aquí no cuentan nada: {attributes}',
+  'player.model.keeperAttack': 'Un portero no aporta nada al ataque.',
+  'player.model.keeperDefence': 'Su portería es toda la defensa que aporta.',
+  'player.model.share':
+    'Con tu {formation} tendría {attack} del ataque del equipo y {defence} de la defensa.',
+  'player.model.keeperShare':
+    'Con tu {formation} cargaría él solo con {defence} de la defensa del equipo — más que ningún otro jugador.',
+  'player.model.result':
+    'El ataque contra la defensa rival marca los goles que esperas: {points} puntos de ventaja valen alrededor de un {ratio} más de goles.',
 
   // ── Mercado ──────────────────────────────────────────────────────────────
   'market.heading': 'Mercado de fichajes',

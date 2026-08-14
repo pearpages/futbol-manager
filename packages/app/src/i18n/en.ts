@@ -157,6 +157,32 @@ export const en: Dictionary = {
   'attribute.heading': 'Heading',
   'attribute.keeping': 'Keeping',
   'attribute.stamina': 'Stamina',
+  // Short forms for the radar's axes — eight full names do not fit an octagon.
+  'attribute.short.pace': 'PAC',
+  'attribute.short.finishing': 'FIN',
+  'attribute.short.passing': 'PAS',
+  'attribute.short.dribbling': 'DRI',
+  'attribute.short.tackling': 'TAC',
+  'attribute.short.heading': 'HEA',
+  'attribute.short.keeping': 'KEE',
+  'attribute.short.stamina': 'STA',
+  'player.compare': 'Compare with',
+  'player.compareNone': 'Nobody',
+  'player.compareOption': '{name} · {position} {overall}',
+  'player.radar': 'Attribute chart for {name}',
+  'player.model.heading': 'What his numbers do',
+  'player.model.overall': 'Overall, as a {position}',
+  'player.model.attack': 'Team attack',
+  'player.model.defence': 'Team defence',
+  'player.model.unused': 'Counts for nothing here: {attributes}',
+  'player.model.keeperAttack': 'A goalkeeper adds nothing to the attack.',
+  'player.model.keeperDefence': 'His keeping is the whole of it.',
+  'player.model.share':
+    'In your {formation} he would own {attack} of the team’s attack and {defence} of its defence.',
+  'player.model.keeperShare':
+    'In your {formation} he would carry {defence} of the team’s defence on his own — more than any other single player.',
+  'player.model.result':
+    'Attack against the opponent’s defence sets the goals you expect: {points} rating points of advantage is worth about {ratio} more of them.',
 
   // ── Market ───────────────────────────────────────────────────────────────
   'market.heading': 'Transfer market',

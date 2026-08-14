@@ -535,3 +535,36 @@ And `Open` at the outbox was the last untranslated string on the screen; `market
 **`Element.prototype.scrollIntoView` is shimmed in `test-setup.ts`.** jsdom has no layout and does not implement scrolling at all — not even as a no-op — so a screen that scrolls would throw in tests for a reason the product does not have.
 
 **Still not seen in a browser** — twelfth failed extension connection; `list_connected_browsers` returned `[]`. **The appearance is unverified:** nothing here proves the scroll lands somewhere sensible on a short window, or that the `is-active` band reads against the screen material.
+
+### 2026-08-14 — the ficha grows a radar, a rival, and an explanation
+
+**Prompted by "the diagrams modern games use are different now"** — and the more useful half turned out to be the second ask: say, on the page, which attributes count for what. 547 tests, `pnpm season` **byte-identical to `1ef1470`**, every M2/M3/M5 band untouched, `SCHEMA_VERSION` still 8.
+
+**Three things, in the order a manager asks them.** An **octagon radar** of the eight attributes, because a silhouette says in one look what a list of numbers does not. A **comparison** — any player from your own squad laid over the same axes, with his number and a signed delta on every bar. And **what any of it means**, as a block under the card.
+
+**Every percentage on that block is read from the constants the resolver runs on.** Restating `0.35` as prose in a dictionary is a second copy of a calibrated model, wrong the first time anyone touches `POSITION_WEIGHTS`, so the ficha imports the weights instead. That needed `domain` to stop hiding them: `ATTACK_WEIGHTS` / `DEFENCE_WEIGHTS` were literals inside `playerAttack` / `playerDefence`, and `ATTACK_SHARE` / `DEFENCE_SHARE` / `KEEPER_WEIGHT` were module-private.
+
+**The refactor is bit-identical, and that was the acceptance test, not a hope.** Iterating a record in declaration order and accumulating left to right is exactly the association the old expressions had, so the floating-point sum cannot move — `pnpm season` proves it. `lineup.test.ts` now carries the arithmetic the functions used to spell out, over four probe players, so the display and the model cannot drift apart silently.
+
+**New in `domain`: `positionShare(position, formation)`** — the share of each team number one player in a slot owns. It is the same weighted mean `teamRating` computes, read backwards, and it belongs beside it rather than in a screen. **Its test reproduces the published table in `docs/attribute-model.md`** (GK 35% / DF 41% / MF 21% / FW 3% of defence in a 4-4-2; FW 61% of attack in a 4-3-3; DF 48% of defence in a 5-3-2) — a doc-versus-code guard the project did not have. A forward's card now reads **22.7% of the attack and 1.5% of the defence**, and a keeper's **35% of the defence on his own, more than any other single player**, which is the model's least obvious and most load-bearing property finally said out loud.
+
+**What the block deliberately does not show is what this player would add to _your_ XI.** That number is `needFor`, and it came off the market screen on 2026-08-14 because it turns buying into a lookup — read the top row, sign him. What is on the ficha describes the **model**, identical for every player in a position. Do not reintroduce it here.
+
+**The resolver sentence asks the resolver.** "Ten rating points of advantage is worth about 27% more goals" is computed by calling `expectedGoals` on two synthetic `TeamRating`s ten points apart, so it re-derives itself if `MODEL` ever moves rather than becoming a lie in a dictionary.
+
+**Geometry in `radar.ts`, colour in `radar.css`** — the `badges.ts` split verbatim, and a test enforces it by reading both files: no hex literal in either `.ts`/`.tsx`, and both series declared as tokens. A polygon's `points` is geometry, not a `style` prop, so the styling convention is untouched.
+
+**`--fm-series-a` / `--fm-series-b` are tokens, not properties on `.radar`.** Written on the chart first, which looked right and was wrong: the attribute rows ink their numbers to match the two shapes and are **siblings** of the SVG, so they inherited nothing. Worth remembering — a custom property shared by two elements that are not ancestor and descendant belongs in `tokens.css`.
+
+**`.select` graduated to `chrome.css`**, the compare picker being the second one after `LineupScreen`'s; `.lineup-row__select` keeps only its `max-width`, which is the row's layout rather than a select's appearance.
+
+**Two defects the DOM dump caught that reasoning had not**, both in the model block:
+
+- A keeper's Team-attack group said "a goalkeeper adds nothing to the attack" and then **listed all eight attributes as counting for nothing** — the same thing twice, at length. The unused line now only appears against an actual list.
+- The line read "Worth nothing **at his position**", which is plainly false under _Team defence_: a forward's finishing is worth a great deal at his position, just not to that rating. It is "Counts for nothing here" in all three languages now.
+
+**A test that did not bite, and why it matters.** "A comparison does not follow you onto the next card" passed with the guard removed, because the only route between two fichas goes out through `inspect(null)`, which clears it anyway. The guard inside `inspect(id)` is for the first ficha-to-ficha link, which does not exist yet — so it is driven at the store rather than through the DOM, and **that** version fails without it. Every new test here was checked against the unbuilt code; two were rewritten when they turned out to prove nothing.
+
+**`formatPercent` is new in `i18n/format.ts`** — `22.7%` in English, `22,7 %` in ca/es. The same presentation split `formatMoney` already owns; there was no formatter for it, and one decimal is needed because a forward's share of the defence rounds to nothing whole.
+
+**Still not seen in a browser** — thirteenth failed extension connection; `list_connected_browsers` returned `[]`. Verified by 547 tests and a rendered-DOM dump of a keeper and of a forward compared against his understudy (`+5 / 0 / +9 / +4 / +8 / +14 / −11 / +2` across the eight rows, correctly signed and coloured). **The appearance is unverified:** nothing here proves eight labels fit an octagon at 7px, that gold separates from blue on the dark screen, or that the three model groups sit well at 60rem.

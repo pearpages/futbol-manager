@@ -37,6 +37,13 @@ interface Store {
   readonly inspectedPlayerId: string | null
   /** Which screen the ficha was opened from, so closing it goes back there. */
   readonly inspectedFrom: Screen
+  /**
+   * A second player laid over the ficha's chart, from your own squad.
+   *
+   * Store-only, like `screen` and `feed`: it belongs to this sitting rather than to
+   * a career, so it stays out of the save envelope and needs no migration.
+   */
+  readonly comparedPlayerId: string | null
   /** Most recent events, newest first — what the hub's news panel reads. */
   readonly feed: readonly Event[]
   /**
@@ -78,6 +85,8 @@ interface Store {
    */
   advanceToMatchday(): void
   inspect(playerId: string | null): void
+  /** Lay one of your own players over the ficha's chart, or `null` to clear. */
+  compare(playerId: string | null): void
   save(): Promise<void>
   restore(): Promise<boolean>
   newGame(managedClubId?: string): void
@@ -133,6 +142,7 @@ export const useGame = create<Store>((set, get) => ({
   screen: 'hub',
   inspectedPlayerId: null,
   inspectedFrom: 'squad',
+  comparedPlayerId: null,
   feed: [],
   language: storedLanguage(),
   saving: false,
@@ -167,7 +177,15 @@ export const useGame = create<Store>((set, get) => ({
   },
 
   go(screen) {
-    set({ screen, inspectedPlayerId: screen === 'player' ? get().inspectedPlayerId : null })
+    set({
+      screen,
+      inspectedPlayerId: screen === 'player' ? get().inspectedPlayerId : null,
+      comparedPlayerId: screen === 'player' ? get().comparedPlayerId : null,
+    })
+  },
+
+  compare(playerId) {
+    set({ comparedPlayerId: playerId })
   },
 
   inspect(playerId) {
@@ -176,12 +194,18 @@ export const useGame = create<Store>((set, get) => ({
     // — the market screen opens it too, and being dumped somewhere else loses
     // your place in a sixty-row table.
     if (playerId === null) {
-      set({ inspectedPlayerId: null, screen: get().inspectedFrom })
+      set({ inspectedPlayerId: null, comparedPlayerId: null, screen: get().inspectedFrom })
       return
     }
     const from = get().screen
     set({
       inspectedPlayerId: playerId,
+      // Cleared on every open, not only on closing: a comparison belongs to the
+      // card you set it on, and carrying it silently onto the next man is how you
+      // end up reading the wrong player's numbers. Closing the ficha clears it
+      // too, so today every route is covered twice — this is the half that still
+      // holds the first time one card links straight to another.
+      comparedPlayerId: null,
       screen: 'player',
       inspectedFrom: from === 'player' ? get().inspectedFrom : from,
     })
@@ -219,12 +243,19 @@ export const useGame = create<Store>((set, get) => ({
       feed: [],
       screen: 'hub',
       inspectedPlayerId: null,
+      comparedPlayerId: null,
       needsSetup: false,
     })
   },
 
   restart() {
-    set({ needsSetup: true, screen: 'hub', inspectedPlayerId: null, feed: [] })
+    set({
+      needsSetup: true,
+      screen: 'hub',
+      inspectedPlayerId: null,
+      comparedPlayerId: null,
+      feed: [],
+    })
   },
 
   startNewSeason() {

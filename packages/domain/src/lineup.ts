@@ -1,5 +1,12 @@
 import type { TeamRating } from './entities.ts'
-import { clampRating, overall, type Player, type PlayerId, type Position } from './player.ts'
+import {
+  type Attributes,
+  clampRating,
+  overall,
+  type Player,
+  type PlayerId,
+  type Position,
+} from './player.ts'
 
 /**
  * Collapses a starting XI into the two numbers the resolver consumes.
@@ -62,27 +69,89 @@ const EXTREME_PENALTY = 0.6
 /**
  * Step 1 — per-player ratings. Attribute weights here are **position-independent**:
  * a defender who can finish contributes to attack, which is the point.
+ *
+ * The weights are records rather than literals inside the two functions because
+ * the ficha states them on screen. Restating a calibrated number as prose in a
+ * dictionary is how the display and the model drift apart; there is one copy, and
+ * `lineup.test.ts` pins it to the arithmetic these functions used to spell out.
+ *
+ * Iteration order is the declaration order, and the accumulation is left to right,
+ * which is exactly the association the old expressions had — so the sum is
+ * bit-identical and every calibrated band is untouched.
  */
+export const ATTACK_WEIGHTS: Readonly<Partial<Attributes>> = {
+  finishing: 0.35,
+  dribbling: 0.25,
+  passing: 0.2,
+  pace: 0.12,
+  heading: 0.08,
+}
+
+export const DEFENCE_WEIGHTS: Readonly<Partial<Attributes>> = {
+  tackling: 0.4,
+  heading: 0.25,
+  pace: 0.2,
+  stamina: 0.15,
+}
+
+function weighted(attributes: Attributes, weights: Readonly<Partial<Attributes>>): number {
+  let total = 0
+  for (const [key, weight] of Object.entries(weights) as [keyof Attributes, number][]) {
+    total += weight * attributes[key]
+  }
+  return total
+}
+
 export function playerAttack(player: Player): number {
   if (player.position === 'GK') return 0
-  const a = player.attributes
-  return (
-    0.35 * a.finishing + 0.25 * a.dribbling + 0.2 * a.passing + 0.12 * a.pace + 0.08 * a.heading
-  )
+  return weighted(player.attributes, ATTACK_WEIGHTS)
 }
 
 export function playerDefence(player: Player): number {
-  const a = player.attributes
-  if (player.position === 'GK') return a.keeping
-  return 0.4 * a.tackling + 0.25 * a.heading + 0.2 * a.pace + 0.15 * a.stamina
+  if (player.position === 'GK') return player.attributes.keeping
+  return weighted(player.attributes, DEFENCE_WEIGHTS)
 }
 
 /** Step 2 — how much a slot's rating counts toward the team number. */
-const ATTACK_SHARE: Readonly<Record<Position, number>> = { GK: 0, DF: 0.15, MF: 0.45, FW: 1 }
-const DEFENCE_SHARE: Readonly<Record<Position, number>> = { GK: 0, DF: 1, MF: 0.5, FW: 0.15 }
+export const ATTACK_SHARE: Readonly<Record<Position, number>> = { GK: 0, DF: 0.15, MF: 0.45, FW: 1 }
+export const DEFENCE_SHARE: Readonly<Record<Position, number>> = { GK: 0, DF: 1, MF: 0.5, FW: 0.15 }
 
 /** The keeper alone carries this much of the defensive rating. */
-const KEEPER_WEIGHT = 0.35
+export const KEEPER_WEIGHT = 0.35
+
+/**
+ * What share of each **team** number one player in this slot owns, given a shape.
+ *
+ * The weights above say how much a slot counts relative to the others; this is
+ * what that works out to once the XI is filled — the numbers published in
+ * docs/attribute-model.md's "shares, as percentages" table, which is what a person
+ * can actually reason with. A goalkeeper reads 35% of the defence on his own,
+ * which is the model's least obvious and most load-bearing property.
+ *
+ * Presentation asks for it, but the arithmetic belongs beside `teamRating`: it is
+ * the same weighted mean read backwards, and derived anywhere else it would be a
+ * second copy of the model.
+ */
+export function positionShare(
+  position: Position,
+  formation: Formation,
+): { readonly attack: number; readonly defence: number } {
+  const shape = FORMATIONS[formation]
+  let attackTotal = 0
+  let defenceTotal = 0
+
+  for (const slot of ['DF', 'MF', 'FW'] as const) {
+    attackTotal += shape[slot] * ATTACK_SHARE[slot]
+    defenceTotal += shape[slot] * DEFENCE_SHARE[slot]
+  }
+
+  if (position === 'GK') return { attack: 0, defence: KEEPER_WEIGHT }
+
+  return {
+    attack: attackTotal > 0 ? ATTACK_SHARE[position] / attackTotal : 0,
+    defence: defenceTotal > 0 ? ((1 - KEEPER_WEIGHT) * DEFENCE_SHARE[position]) / defenceTotal : 0,
+  }
+}
 
 export function teamRating(starters: readonly Player[], tactics: Tactics = BALANCED): TeamRating {
   const keeper = starters.find((p) => p.position === 'GK')

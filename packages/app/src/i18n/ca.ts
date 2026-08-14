@@ -146,6 +146,32 @@ export const ca: Dictionary = {
   'attribute.heading': 'Joc aeri',
   'attribute.keeping': 'Porteria',
   'attribute.stamina': 'Resistència',
+  // Formes curtes per als eixos del gràfic: vuit noms sencers no caben en un octàgon.
+  'attribute.short.pace': 'VEL',
+  'attribute.short.finishing': 'DEF',
+  'attribute.short.passing': 'PAS',
+  'attribute.short.dribbling': 'REG',
+  'attribute.short.tackling': 'ENT',
+  'attribute.short.heading': 'AER',
+  'attribute.short.keeping': 'POR',
+  'attribute.short.stamina': 'RES',
+  'player.compare': 'Compara amb',
+  'player.compareNone': 'Ningú',
+  'player.compareOption': '{name} · {position} {overall}',
+  'player.radar': 'Gràfic d’atributs de {name}',
+  'player.model.heading': 'Què fan aquests números',
+  'player.model.overall': 'Mitjana, com a {position}',
+  'player.model.attack': 'Atac de l’equip',
+  'player.model.defence': 'Defensa de l’equip',
+  'player.model.unused': 'Aquí no compten res: {attributes}',
+  'player.model.keeperAttack': 'Un porter no aporta res a l’atac.',
+  'player.model.keeperDefence': 'La seva porteria és tota la defensa que aporta.',
+  'player.model.share':
+    'Amb el teu {formation} tindria {attack} de l’atac de l’equip i {defence} de la defensa.',
+  'player.model.keeperShare':
+    'Amb el teu {formation} carregaria ell sol {defence} de la defensa de l’equip — més que cap altre jugador.',
+  'player.model.result':
+    'L’atac contra la defensa rival marca els gols que esperes: {points} punts d’avantatge valen aproximadament un {ratio} més de gols.',
 
   // ── Mercat ───────────────────────────────────────────────────────────────
   'market.heading': 'Mercat de fitxatges',
