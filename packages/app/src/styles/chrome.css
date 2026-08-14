@@ -251,7 +251,13 @@
   border: 1px solid var(--fm-screen-rule);
 }
 
+/* `display` is load-bearing, not tidiness. A `<span>` is an inline box, and CSS
+   ignores `width` and `height` on non-replaced inline boxes — so every rule below
+   was computed and thrown away, and the bar has painted nothing since M3b. The
+   trough shows because `.attr__track` is a grid item and gets blockified; nothing
+   blockifies its child. */
 .attr__fill {
+  display: block;
   height: 100%;
   background: var(--fm-screen-ink-soft);
 }
