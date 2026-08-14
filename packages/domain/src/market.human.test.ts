@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
 import { bidIsLive } from './bids.ts'
+import { FINANCE } from './finance.ts'
 import { MAX_SQUAD, MIN_SQUAD, surplus, totalBudget } from './market.ts'
 import { contractMonthsLeft, type Player, type PlayerId } from './player.ts'
 import { addDays } from './time.ts'
@@ -33,6 +34,16 @@ function dispatch(command: Command): readonly Event[] {
   state = result.state
   return result.events
 }
+
+/**
+ * The two lines that make the league total move at a rollover: prize money comes
+ * in, signing bonuses go out.
+ *
+ * Read off the ledgers rather than recomputed from `FINANCE`, so a test cannot
+ * agree with a mistake by making it twice.
+ */
+const prizeTotal = (s: GameState) => s.clubs.reduce((sum, c) => sum + c.lastLedger.prize, 0)
+const bonusTotal = (s: GameState) => s.clubs.reduce((sum, c) => sum + c.ledger.bonuses, 0)
 
 /** The first player another club has actually listed. */
 function aListedPlayer(): { player: Player; from: ClubId } {
@@ -87,16 +98,20 @@ describe('bidding', () => {
   it('completes a signing: fee agreed, then terms agreed', () => {
     const { player, from } = aListedPlayer()
     const fee = askingPrice(player, state.season.currentDate)
-    const before = totalBudget(state)
 
     const events = completeSigning(player, fee)
 
     expect(events.map((e) => e.type)).toContain('TransferCompleted')
     expect(state.squads[RICH]?.some((p) => p.id === player.id)).toBe(true)
     expect(state.squads[from]?.some((p) => p.id === player.id)).toBe(false)
-    // Never loosen this. A fee credited but not debited inflates the league
-    // silently for years.
-    expect(totalBudget(state)).toBe(before)
+    // Asserted on the ledger rather than on the totals, because completing a
+    // signing burns days and the clock earns money while it does. The claim is
+    // about the transfer: the fee nets to zero across the league, and the signing
+    // bonus does not, because it is paid to the player.
+    const fees = state.clubs.reduce((sum, c) => sum + c.ledger.transfers, 0)
+    const bonuses = state.clubs.reduce((sum, c) => sum + c.ledger.bonuses, 0)
+    expect(fees).toBe(0)
+    expect(bonuses).toBe(Math.round(fee * FINANCE.SIGNING_BONUS))
   })
 
   it('puts him on the terms that were agreed, not the ones he arrived on', () => {
@@ -114,14 +129,19 @@ describe('bidding', () => {
   it('moves the fee from the buyer to the seller, and nowhere else', () => {
     const { player, from } = aListedPlayer()
     const fee = askingPrice(player, state.season.currentDate)
-    const budgetOf = (id: ClubId) => state.clubs.find((c) => c.id === id)?.budget ?? 0
-    const buyerBefore = budgetOf(RICH)
-    const sellerBefore = budgetOf(from)
+    const ledgerOf = (id: ClubId) => state.clubs.find((c) => c.id === id)?.ledger
 
     completeSigning(player, fee)
 
-    expect(budgetOf(RICH)).toBe(buyerBefore - fee)
-    expect(budgetOf(from)).toBe(sellerBefore + fee)
+    // The buyer pays the fee *and* the player's signing bonus; the seller
+    // receives only the fee, and no third club is touched at all.
+    expect(ledgerOf(RICH)?.transfers).toBe(-fee)
+    expect(ledgerOf(RICH)?.bonuses).toBe(Math.round(fee * FINANCE.SIGNING_BONUS))
+    expect(ledgerOf(from)?.transfers).toBe(fee)
+    for (const club of state.clubs) {
+      if (club.id === RICH || club.id === from) continue
+      expect(club.ledger.transfers, club.id).toBe(0)
+    }
   })
 
   it('counters a bid just under the asking price', () => {
@@ -186,7 +206,7 @@ describe('what the reducer refuses — a screen can forget, this cannot', () => 
   it('rejects a bid you cannot afford', () => {
     const { player } = aListedPlayer()
     expect(() => dispatch({ type: 'MakeBid', playerId: player.id, fee: 99_999_999 })).toThrow(
-      /cannot afford/,
+      /overdraft limit/,
     )
   })
 
@@ -322,7 +342,9 @@ describe('offers for your players', () => {
 
     expect(state.squads[managed]?.some((p) => p.id === offer.playerId)).toBe(false)
     expect(state.clubs.find((c) => c.id === managed)?.budget).toBe(budgetBefore + offer.fee)
-    expect(totalBudget(state)).toBe(before)
+    // You receive the whole fee; the buying club also pays the player a signing
+    // bonus, and that is the part which leaves the league.
+    expect(totalBudget(state)).toBe(before - Math.round(offer.fee * FINANCE.SIGNING_BONUS))
   })
 })
 
@@ -337,7 +359,10 @@ describe('the season rollover, through the reducer', () => {
     expect(state.season.startYear).toBe(2027)
     expect(state.season.fixtures.filter((f) => f.result !== null)).toHaveLength(0)
     expect(state.bids).toEqual([])
-    expect(totalBudget(state)).toBe(before)
+    // The league total is no longer constant across a rollover: prize money comes
+    // in and signing bonuses go out. Stating both exactly is stricter than the old
+    // blanket equality, because it names where every unit went — see ADR 0009.
+    expect(totalBudget(state)).toBe(before + prizeTotal(state) - bonusTotal(state))
   })
 
   it('leaves your club out of the AI window entirely', () => {
@@ -462,14 +487,12 @@ describe('the transfer list — putting your own players up for sale', () => {
   it('sells a listed player at the next window, and the money moves', () => {
     // Nothing of yours reaches a buyer unless you list it — that is the whole
     // mechanism, and before M4c there was no way in at all.
-    const before = totalBudget(state)
     for (const player of surplus(state.squads[MID] ?? [])) {
       dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
     }
     const listedIds = new Set(state.transferList)
 
     state = simulateSeason(state, rng)
-    const budgetBefore = state.clubs.find((c) => c.id === MID)?.budget ?? 0
     const events = dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
 
     const sold = events.filter((e) => e.type === 'TransferCompleted').filter((e) => e.from === MID)
@@ -477,8 +500,11 @@ describe('the transfer list — putting your own players up for sale', () => {
     for (const sale of sold) expect(listedIds.has(sale.playerId)).toBe(true)
 
     const earned = sold.reduce((sum, sale) => sum + sale.fee, 0)
-    expect(state.clubs.find((c) => c.id === MID)?.budget).toBe(budgetBefore + earned)
-    expect(totalBudget(state)).toBe(before)
+    // On the ledger, because the rollover also pays last season's prize and the
+    // new season's first settlement day may already have run. What the sale is
+    // responsible for is the fees line, exactly.
+    expect(state.clubs.find((c) => c.id === MID)?.ledger.transfers).toBe(earned)
+    expect(earned).toBeGreaterThan(0)
   })
 
   it('takes a sold player off the list rather than leaving a dead id', () => {

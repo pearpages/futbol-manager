@@ -47,14 +47,66 @@ export interface Club {
   readonly attack: number
   readonly defence: number
   /**
-   * Transfer kitty, added at M4. Falls when the club buys, rises when it sells.
+   * The club's money, in thousands. Added at M4 as a transfer kitty; at M5a it
+   * became a running balance that revenue feeds and wages drain.
    *
    * Seeded from the club's rating, which is what keeps the table's shape stable
    * across a decade: if Almería could outspend Madrid the league would invert
-   * within a few seasons. **M5 replaces the seeding** with money that actually
-   * comes from somewhere — gate receipts, TV, prize money, minus wages.
+   * within a few seasons. **M5a kept the seed as the opening position** and made
+   * revenue the ongoing source — replacing both at once would have moved two
+   * things and left nothing to measure against.
+   *
+   * **This may be negative.** A club can run into debt down to `debtLimit`; see
+   * `finance.ts`.
    */
   readonly budget: number
+  /**
+   * Seats. The gate-receipts denominator, added at M5a.
+   *
+   * Seeded from rating on the same convex curve as the budget, for the same
+   * reason: a big club's ground is not slightly larger than a small one's.
+   */
+  readonly capacity: number
+  /**
+   * What the club has earned and spent **this season**. Reset at rollover, after
+   * the season's prize money lands.
+   *
+   * Kept per club rather than as a league total because that is what makes the
+   * balance invariant exact — see `LEDGER_KEYS` in `finance.ts`. The old
+   * invariant caught "the league inflated"; this one says which club and which
+   * line.
+   */
+  readonly ledger: Ledger
+  /**
+   * The season just finished, complete with its prize money.
+   *
+   * Not a convenience. Prize money lands *at* the rollover, in the same step
+   * that clears `ledger`, so without this the one line that closes a season's
+   * accounts would never be visible in any state — and the balance identity
+   * would have a hole in it exactly where the money moves. It is also what a
+   * finance screen means by "last season".
+   */
+  readonly lastLedger: Ledger
+}
+
+/**
+ * One season's income and outgoings, in thousands, all stored positive.
+ *
+ * Sign is a property of the line rather than the number, which is what lets the
+ * invariant be written once over `LEDGER_KEYS` instead of field by field.
+ */
+export interface Ledger {
+  readonly gate: number
+  readonly tv: number
+  readonly sponsor: number
+  readonly prize: number
+  /** Net fees received minus fees paid. The one line that may be negative. */
+  readonly transfers: number
+  readonly wages: number
+  /** Paid to the player on signing, so it leaves the league entirely. */
+  readonly bonuses: number
+  /** Charged only while the balance is negative. */
+  readonly interest: number
 }
 
 export function clubRating(club: Club): TeamRating {

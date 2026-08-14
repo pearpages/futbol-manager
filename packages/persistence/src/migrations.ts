@@ -153,6 +153,61 @@ const v5ToV6: Migration = {
 }
 
 /**
+ * v6 → v7: the economy.
+ *
+ * Money used to be a closed quantity that only moved between clubs. From M5a a
+ * club has a ground that takes gate receipts and a ledger recording where the
+ * season's money came from and went — so a v6 club needs both before it can be
+ * loaded.
+ *
+ * **The capacity curve is frozen here, exactly as `v3ToV4` freezes the old 400
+ * budget base.** A migration records what a version *meant* when it shipped; if
+ * it tracked the live `seedCapacity` a later rebalance would silently rewrite
+ * every old save's grounds.
+ *
+ * Ledgers start empty rather than reconstructed. There is no honest way to
+ * invent a season's accounts after the fact, and an empty one is true: this save
+ * has earned nothing under the new rules yet.
+ */
+const v6ToV7: Migration = {
+  from: 6,
+  to: 7,
+  describe: 'stadium capacity and the season ledger — money now comes from somewhere',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v6 save payload is not an object')
+    }
+    const { clubs } = payload as { clubs?: unknown }
+    if (!Array.isArray(clubs)) throw new Error('v6 save has no clubs')
+
+    const empty = {
+      gate: 0,
+      tv: 0,
+      sponsor: 0,
+      prize: 0,
+      transfers: 0,
+      wages: 0,
+      bonuses: 0,
+      interest: 0,
+    }
+
+    return {
+      ...payload,
+      clubs: clubs.map((club: unknown) => {
+        const { attack, defence } = club as { attack?: number; defence?: number }
+        const rating = ((attack ?? 50) + (defence ?? 50)) / 2
+        return {
+          ...(club as object),
+          capacity: Math.round(26_000 * Math.pow(rating / 50, 2.2)),
+          ledger: empty,
+          lastLedger: empty,
+        }
+      }),
+    }
+  },
+}
+
+/**
  * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
  *
  * `persistence` must not import `domain` for this: a migration has to keep
@@ -169,7 +224,7 @@ function daysFromCivil(y: number, m: number, d: number): number {
 }
 
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5, v5ToV6]
+export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5, v5ToV6, v6ToV7]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

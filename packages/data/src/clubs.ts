@@ -1,4 +1,4 @@
-import type { Club, ClubId } from '@fm/domain'
+import { type Club, type ClubId, EMPTY_LEDGER, seedCapacity } from '@fm/domain'
 
 /**
  * The default league — twenty clubs named after their cities.
@@ -85,8 +85,12 @@ const CLUBS: readonly (readonly [string, string, string, number, number])[] = [
  * will pay per unit of improvement, so a career at 4×, 6× or 10× this figure
  * produces an identical league. The money is headroom for the manager.
  *
- * **M5 replaces this** with money that actually comes from somewhere: gate
- * receipts, TV, prize money, minus wages.
+ * **M5a kept this as the opening balance** rather than deleting it. Revenue is
+ * now the ongoing source — gate receipts, TV, sponsorship and prize money, minus
+ * wages — but a career still has to start somewhere, and this figure is
+ * calibrated and pinned by the human market harness. Replacing the seed and the
+ * income in one move would have changed two things and left nothing to measure
+ * the result against.
  */
 function seedBudget(attack: number, defence: number): number {
   const rating = (attack + defence) / 2
@@ -101,5 +105,8 @@ export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(
     attack,
     defence,
     budget: seedBudget(attack, defence),
+    capacity: seedCapacity(attack, defence),
+    ledger: EMPTY_LEDGER,
+    lastLedger: EMPTY_LEDGER,
   }),
 )

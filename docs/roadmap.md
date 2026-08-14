@@ -243,17 +243,29 @@ M4b shipped a market you could buy in. Selling existed on paper and was unreacha
 
 ---
 
-## M5 — Economy and board
+## M5a — Where the money comes from ✅
 
-**~3 weeks**
+**Split, for the same reason M4 was: the exit criterion has no human in it** while the milestone's prose names three screens. So the harness settles the economy headlessly, and M5b builds the board against a model already known to balance.
 
-Budgets, wage bill, ticket pricing, sponsors, TV money, prize money. Board objectives and the sack mechanic. Stadium capacity.
+Gate receipts, TV, sponsorship, prize money, the wage bill, and the signing bonus deferred from M4b. Debt down to a limit, with interest. Schema v7.
 
-This is the milestone that makes M4 _mean_ something — without a constraint, transfers are a shopping trip. Expect to spend more time tuning than coding.
+**Exit met, measured over 50 headless seasons:** **0 of 1000 club-seasons below the overdraft limit**, and the league total settles at 2.1× its opening figure rather than compounding. The imbalance this milestone existed to fix is fixed — **the top three clubs held 77% of the league's money after a decade of M4a; they now hold 24%**, and the gap between richest and poorest narrows from 8× to 3× over fifty seasons instead of widening.
 
-**M4b sharpened the starting point.** Money still only moves between clubs, so a budget is a one-time allowance rather than an income, and the seeded figure is now doing real work: it is what decides whether a manager can fix a weakness at all. Revenue replaces the seed, and the signing bonus deferred from M4b belongs here alongside the wage bill.
+**"Money is conserved" is gone, replaced by a stricter ledger identity** — see [ADR 0009](./adr/0009-the-ledger-identity.md). Every movement writes a line; a balance changes by exactly what its ledger says, checked per club on every tick.
 
-**Exit:** 50-season headless run where no AI club goes bankrupt and none accumulates an unspendable fortune.
+**The tuning was the milestone, as predicted.** Three findings worth keeping: income must be as convex as wages or the table inverts; a fixed surplus compounds without limit, so the brake has to grow with the pile (wage inflation); and that brake must tax the excess over a healthy reserve rather than the balance, or the opening budget is vaporised in season one.
+
+---
+
+## M5b — The board
+
+**~1.5 weeks**
+
+Ticket pricing, stadium capacity as a decision, board objectives and the sack mechanic. The three `Finanzas` hub tiles — Caja, Decisiones, Estadio — are already in place, disabled and badged M5.
+
+The data is built: `Club.ledger` holds the running season and `Club.lastLedger` the one just closed, which is what a finance screen means by "this season" and "last season".
+
+**Exit:** a board that can set you a target, notice you missed it, and sack you for it — and a manager who can see why his money went.
 
 ---
 

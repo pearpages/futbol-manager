@@ -116,7 +116,7 @@ describe('the market screen', () => {
     fireEvent.change(fee, { target: { value: '99999999' } })
     fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
 
-    expect(screen.getByRole('alert').textContent).toMatch(/cannot afford/)
+    expect(screen.getByRole('alert').textContent).toMatch(/overdraft limit/)
     expect(game().bids).toHaveLength(0)
   })
 

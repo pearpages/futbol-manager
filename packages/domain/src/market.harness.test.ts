@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { ageOn, overall, type Player } from './player.ts'
+import { debtLimit, ledgerNet } from './finance.ts'
+import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { bestXI, FORMATION_NAMES, startersOf } from './lineup.ts'
 import { MAX_SQUAD, totalBudget } from './market.ts'
 import { simulateCareer } from './simulate.ts'
@@ -68,14 +70,62 @@ describe(`a ${SEASONS}-season career`, () => {
 })
 
 describe('structural invariants — never loosen these', () => {
-  it('conserves money: a transfer moves it, nothing creates it', () => {
-    // The single most valuable check here. A fee credited to a seller but not
-    // debited from a buyer would inflate the league forever and show up as
-    // nothing else until squads went strange years later.
-    const start = totalBudget(career[0]?.state ?? last.state)
-    for (const run of career) {
-      expect(totalBudget(run.state)).toBeCloseTo(start, 6)
+  it('accounts for every unit of money it moves', () => {
+    // **This replaced "money is conserved" at M5a**, and it is the stricter of
+    // the two. Until revenue existed, `totalBudget` was constant for a whole
+    // career and any drift meant a fee credited without being debited. Money now
+    // enters and leaves, so constancy says nothing — but every movement is a
+    // ledger line, and a club's balance must move by exactly what its ledger
+    // says and by nothing else.
+    //
+    // Between two consecutive seasons of a career, three things happen: the
+    // rollover awards prize money (landing in `lastLedger`, since it arrives in
+    // the same step that clears `ledger`), the summer window trades, and the
+    // season is played. So the change in balance is last season's prize plus
+    // everything the new season's ledger recorded.
+    //
+    // The old test said the league had inflated. This one says which club, and
+    // on which line.
+    for (let i = 1; i < career.length; i++) {
+      const before = career[i - 1]?.state
+      const after = career[i]?.state
+      /* c8 ignore next */
+      if (before === undefined || after === undefined) throw new Error('missing season')
+
+      for (const club of after.clubs) {
+        const was = before.clubs.find((c) => c.id === club.id)
+        /* c8 ignore next */
+        if (was === undefined) throw new Error(`club vanished: ${club.id}`)
+
+        const prize = ledgerNet(club.lastLedger) - ledgerNet(was.ledger)
+        expect(club.budget - was.budget, `${club.id} in ${String(after.season.startYear)}`).toBe(
+          prize + ledgerNet(club.ledger),
+        )
+      }
     }
+  })
+
+  it('leaves nobody past their overdraft limit', () => {
+    // The M5a exit criterion, half of it: "no AI club goes bankrupt". Debt is
+    // allowed and the limit is what bankruptcy means here.
+    for (const run of career) {
+      for (const club of run.state.clubs) {
+        const limit = debtLimit(club, run.state.competition.clubIds.length, ROUNDS_PER_HALF)
+        expect(club.budget, `${club.id} in ${String(run.state.season.startYear)}`).toBeGreaterThan(
+          -limit,
+        )
+      }
+    }
+  })
+
+  it('does not let the league total run away', () => {
+    // The other half: "none accumulates an unspendable fortune". Revenue net of
+    // wages should leave the league roughly where it started rather than
+    // compounding — a total that multiplies over ten seasons is a broken economy
+    // even when no individual club is bankrupt.
+    const start = totalBudget(career[0]?.state ?? last.state)
+    expect(totalBudget(last.state)).toBeGreaterThan(start * 0.4)
+    expect(totalBudget(last.state)).toBeLessThan(start * 3)
   })
 
   it('keeps every squad able to field a legal XI, in every formation', () => {

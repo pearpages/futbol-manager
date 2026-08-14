@@ -1,3 +1,5 @@
+import type { Club } from './entities.ts'
+import { credit, EMPTY_LEDGER, positionsFrom, prizeMoney } from './finance.ts'
 import { generateFixtures } from './fixtures.ts'
 import { bestXI, FORMATIONS, keepsLineup } from './lineup.ts'
 import { needFor } from './market.ts'
@@ -116,6 +118,37 @@ export interface RolloverOptions {
   readonly names: readonly string[]
 }
 
+/**
+ * Close the books: prize money by final position, then a clean ledger.
+ *
+ * Lives here rather than in `startNewSeason` because `simulateCareer` calls
+ * `rolloverSeason` directly — putting the settlement in the command handler would
+ * have given the harness a different economy from the one the game plays, which
+ * is exactly the kind of gap a regression net is supposed to close.
+ *
+ * A season with nothing played awards nothing. That is not a guard against a bug
+ * so much as the honest answer for a career resumed mid-summer.
+ */
+function settleSeason(state: GameState): readonly Club[] {
+  const positions = positionsFrom(state.competition.clubIds, state.season.fixtures)
+  const clubCount = state.competition.clubIds.length
+
+  return state.clubs.map((club) => {
+    const position = positions?.get(club.id)
+    const prize = position === undefined ? 0 : prizeMoney(position, clubCount)
+    const closed = credit(club.ledger, 'prize', prize)
+    return {
+      ...club,
+      // The balance moves by what the whole season's ledger nets, and the ledger
+      // then starts again from nothing. Computing the delta any other way is how
+      // the identity in ADR 0009 drifts.
+      budget: club.budget + prize,
+      ledger: EMPTY_LEDGER,
+      lastLedger: closed,
+    }
+  })
+}
+
 export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOptions): GameState {
   const nextYear = state.season.startYear + 1
   const start = defaultSeasonStart(nextYear)
@@ -211,6 +244,7 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
 
   return {
     ...state,
+    clubs: settleSeason(state),
     squads,
     lineups,
     freeAgents,

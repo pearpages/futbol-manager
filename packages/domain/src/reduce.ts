@@ -10,7 +10,25 @@ import {
   OFFER_LIFETIME_DAYS,
   scheduleAnswer,
 } from './bids.ts'
-import { type ClubId, type FixtureId, type Score, type TeamRating } from './entities.ts'
+import {
+  type Club,
+  type ClubId,
+  type Fixture,
+  type FixtureId,
+  type Score,
+  type TeamRating,
+} from './entities.ts'
+import {
+  canAfford,
+  credit,
+  FINANCE,
+  gateReceipts,
+  isSettlementDay,
+  ledgerNet,
+  monthlyLines,
+  positionsFrom,
+} from './finance.ts'
+import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { BALANCED, type Lineup, startersOf, type Tactics, teamRating } from './lineup.ts'
 import {
   applyTransfers,
@@ -358,7 +376,12 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
   if (!Number.isFinite(command.fee) || command.fee <= 0) {
     throw new Error(`A bid must be a positive fee, got ${command.fee}`)
   }
-  if (command.fee > buyer.budget) throw new Error('You cannot afford that bid')
+  // Checked against the overdraft, not the balance: a manager may spend into
+  // debt, which is the whole point of the limit existing. The AI may not — see
+  // `runTransferWindow`.
+  if (!affordable(state, buyer, command.fee)) {
+    throw new Error('That would take you past your overdraft limit')
+  }
   if ((state.squads[state.managedClubId] ?? []).length >= MAX_SQUAD) {
     throw new Error('Your squad is full')
   }
@@ -446,7 +469,9 @@ function offerContract(state: GameState, command: OfferContract): ReduceResult {
   const buyer = state.clubs.find((c) => c.id === state.managedClubId)
   /* c8 ignore next */
   if (buyer === undefined) throw new Error('No managed club')
-  if (fee > buyer.budget) throw new Error('You cannot afford that fee any more')
+  if (!affordable(state, buyer, fee)) {
+    throw new Error('That would take you past your overdraft limit')
+  }
 
   const verdict = offerTerms(found.player, { wage: command.wage, years: command.years }, date)
   if (!verdict.accepted) {
@@ -753,6 +778,88 @@ const OFFER_NEED_THRESHOLD = 1.5
 /** For a player you have listed. You asked for interest, so less of it is needed. */
 const LISTED_NEED_THRESHOLD = 0.4
 
+/**
+ * Whether a club can commit to an outlay, counting the signing bonus.
+ *
+ * Home games per club is `ROUNDS_PER_HALF` — nineteen in a twenty-club league —
+ * which is what sizes the overdraft against a season's gate.
+ */
+function affordable(state: GameState, club: Club, fee: number): boolean {
+  const outlay = fee + Math.round(fee * FINANCE.SIGNING_BONUS)
+  return canAfford(club, outlay, state.competition.clubIds.length, ROUNDS_PER_HALF)
+}
+
+/**
+ * The day's money. Gate receipts when a home match is played, and everything
+ * else on the first of the month.
+ *
+ * **Draws no randomness, and must never begin to.** This runs inside
+ * `AdvanceDay`, the path every calibrated distribution band in the project is
+ * measured through, so one `rng.next()` here would shift every downstream draw
+ * and move every band at once — the same rule the bid subsystem lives under.
+ * Attendance is therefore a function of quality and league position rather than
+ * a draw, which is also the more legible model: a crowd is not a coin flip.
+ *
+ * Returns the state unchanged on the ~300 days a year when neither a match nor a
+ * settlement falls, so the common tick costs one boolean and a length check.
+ *
+ * **TV merit keys off the current table rather than last season's finish.** That
+ * is an approximation, taken to avoid carrying last season's positions as a
+ * second piece of state: in August nothing has been played, so every club takes
+ * the flat share, and the merit component converges on the finishing order as
+ * the season runs. Averaged over a season it lands in the same place, and money
+ * following current form is arguably the better game anyway.
+ */
+function settleFinances(
+  state: GameState,
+  today: DayNumber,
+  fixtures: readonly Fixture[],
+): GameState {
+  const settling = isSettlementDay(today)
+  const hosted = fixtures.filter((f) => f.date <= today && f.result !== null && f.date === today)
+  if (!settling && hosted.length === 0) return state
+
+  const clubCount = state.competition.clubIds.length
+  const positions = positionsFrom(state.competition.clubIds, fixtures)
+  const byId = new Map(state.clubs.map((club) => [club.id, club]))
+
+  const gate = new Map<ClubId, number>()
+  for (const fixture of hosted) {
+    const home = byId.get(fixture.homeId)
+    /* c8 ignore next */
+    if (home === undefined) continue
+    const taken = gateReceipts(home, positions?.get(home.id) ?? null, clubCount)
+    gate.set(home.id, (gate.get(home.id) ?? 0) + taken)
+  }
+
+  const clubs = state.clubs.map((club) => {
+    let ledger = club.ledger
+    const taken = gate.get(club.id) ?? 0
+    if (taken > 0) ledger = credit(ledger, 'gate', taken)
+
+    if (settling) {
+      const month = monthlyLines(
+        club,
+        state.squads[club.id] ?? [],
+        positions?.get(club.id) ?? null,
+        clubCount,
+        ROUNDS_PER_HALF,
+      )
+      ledger = credit(ledger, 'tv', month.tv)
+      ledger = credit(ledger, 'sponsor', month.sponsor)
+      ledger = credit(ledger, 'wages', month.wages)
+      ledger = credit(ledger, 'interest', month.interest)
+    }
+
+    if (ledger === club.ledger) return club
+    // The balance moves by exactly what the ledger gained — that identity is the
+    // invariant, and computing the delta any other way is how it drifts.
+    return { ...club, budget: club.budget + ledgerNet(ledger) - ledgerNet(club.ledger), ledger }
+  })
+
+  return { ...state, clubs }
+}
+
 function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const today = state.season.currentDate
   const wasComplete = isSeasonComplete(state)
@@ -800,14 +907,18 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
     return { ...fixture, result: score }
   })
 
-  const next: GameState = {
-    ...state,
-    season: {
-      ...state.season,
-      currentDate: addDays(today, 1),
-      fixtures: played,
+  const next: GameState = settleFinances(
+    {
+      ...state,
+      season: {
+        ...state.season,
+        currentDate: addDays(today, 1),
+        fixtures: played,
+      },
     },
-  }
+    today,
+    played,
+  )
 
   events.push({ type: 'DayAdvanced', date: next.season.currentDate })
 

@@ -4,6 +4,7 @@ import {
   type ClubId,
   computeTable,
   createRng,
+  EMPTY_LEDGER,
   type GameState,
   newSeason,
   reduce,
@@ -20,6 +21,9 @@ const clubs: Club[] = Array.from({ length: 20 }, (_, i) => ({
   attack: 50 + ((i * 7) % 35),
   defence: 50 + ((i * 11) % 35),
   budget: 400 + i * 50,
+  capacity: 20_000 + i * 500,
+  ledger: EMPTY_LEDGER,
+  lastLedger: EMPTY_LEDGER,
 }))
 
 const tableOf = (state: GameState) => computeTable(state.competition.clubIds, state.season.fixtures)

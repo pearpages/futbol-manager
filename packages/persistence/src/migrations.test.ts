@@ -6,6 +6,7 @@ import v1Fixture from './fixtures/v1.json' with { type: 'json' }
 import v3Fixture from './fixtures/v3.json' with { type: 'json' }
 import v4Fixture from './fixtures/v4.json' with { type: 'json' }
 import v5Fixture from './fixtures/v5.json' with { type: 'json' }
+import v6Fixture from './fixtures/v6.json' with { type: 'json' }
 
 describe('the migration chain', () => {
   it('is contiguous and forward-only', () => {
@@ -247,6 +248,76 @@ describe('the v5 fixture save', () => {
     expect(after.season.startYear).toBe(before.season.startYear)
     expect(after.season.currentDate).toBe(before.season.currentDate)
     expect(after.managedClubId).toBe(before.managedClubId)
+    expect(after.clubs.map((c) => c.budget)).toEqual(before.clubs.map((c) => c.budget))
+    const playedBefore = before.season.fixtures.filter((f) => f.result !== null).length
+    expect(after.season.fixtures.filter((f) => f.result !== null)).toHaveLength(playedBefore)
+    expect(Object.values(after.squads).flat()).toHaveLength(460)
+  })
+
+  it('carries the rng state through untouched', () => {
+    expect(readSave(envelope).rngState).toEqual(envelope.rngState)
+  })
+
+  it('is deterministic — migrating twice gives the same result', () => {
+    expect(readSave(envelope).payload).toEqual(readSave(envelope).payload)
+  })
+})
+
+describe('the v6 fixture save', () => {
+  // v6 is what M4c shipped: a market you could both buy and sell in, and money
+  // that only ever moved between clubs. Captured by `pnpm fixture` against that
+  // build, before `v6ToV7` existed — the only moment it could have been.
+  const envelope = v6Fixture as unknown as SaveEnvelope<unknown>
+
+  it('is genuinely a v6 save — a closed economy', () => {
+    expect(envelope.schemaVersion).toBe(6)
+    const payload = envelope.payload as { transferList?: unknown; clubs: Record<string, unknown>[] }
+    // M4c's field is there…
+    expect(payload).toHaveProperty('transferList')
+    // …and no club has a ground or a set of books.
+    for (const club of payload.clubs) {
+      expect(club).not.toHaveProperty('capacity')
+      expect(club).not.toHaveProperty('ledger')
+    }
+  })
+
+  it('gives every club a ground sized by its rating', () => {
+    const after = readSave(envelope).payload as {
+      clubs: { attack: number; defence: number; capacity: number }[]
+    }
+    for (const club of after.clubs) {
+      expect(club.capacity).toBeGreaterThan(0)
+    }
+    // Bigger club, bigger ground — the property the curve exists for.
+    const sorted = [...after.clubs].sort((a, b) => b.attack + b.defence - (a.attack + a.defence))
+    expect(sorted[0]?.capacity).toBeGreaterThan(sorted.at(-1)?.capacity ?? 0)
+  })
+
+  it('opens the books empty rather than inventing a season', () => {
+    // There is no honest way to reconstruct accounts after the fact, and empty is
+    // true: this save has earned nothing under the new rules yet.
+    const after = readSave(envelope).payload as {
+      clubs: { ledger: Record<string, number>; lastLedger: Record<string, number> }[]
+    }
+    for (const club of after.clubs) {
+      expect(Object.values(club.ledger).every((v) => v === 0)).toBe(true)
+      expect(Object.values(club.lastLedger).every((v) => v === 0)).toBe(true)
+    }
+  })
+
+  it('preserves the career it was saved in', () => {
+    const before = envelope.payload as {
+      season: { startYear: number; currentDate: number; fixtures: { result: unknown }[] }
+      managedClubId: string
+      squads: Record<string, unknown[]>
+      clubs: { budget: number }[]
+    }
+    const after = readSave(envelope).payload as typeof before
+
+    expect(after.season.startYear).toBe(before.season.startYear)
+    expect(after.season.currentDate).toBe(before.season.currentDate)
+    expect(after.managedClubId).toBe(before.managedClubId)
+    // Balances survive untouched: the economy is new, the money in it is not.
     expect(after.clubs.map((c) => c.budget)).toEqual(before.clubs.map((c) => c.budget))
     const playedBefore = before.season.fixtures.filter((f) => f.result !== null).length
     expect(after.season.fixtures.filter((f) => f.result !== null)).toHaveLength(playedBefore)

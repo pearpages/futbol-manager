@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ANSWER_DAYS, suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
+import { debtLimit } from './finance.ts'
+import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { bestXI } from './lineup.ts'
-import { MAX_SQUAD, MIN_SQUAD, needFor, surplus, totalBudget } from './market.ts'
+import { MAX_SQUAD, MIN_SQUAD, needFor, surplus } from './market.ts'
 import { ageOn, type Player } from './player.ts'
 import { reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
@@ -207,12 +209,17 @@ describe(`the exit criterion, over ${RUNS * SEASONS} seasons`, () => {
 describe('a human career stays structurally sound', () => {
   const runs = shopping.flatMap((r) => r.states)
 
-  it('conserves money exactly, even with a human in the market', () => {
-    // The invariant M4a set and this milestone must not loosen. Wages are recorded
-    // and never paid, and there is no signing bonus, so nothing leaves the league.
-    for (const result of shopping) {
-      const start = totalBudget(result.states[0] ?? runs[0]!)
-      for (const state of result.states) expect(totalBudget(state)).toBeCloseTo(start, 6)
+  it('keeps every club inside its overdraft, even with a human buying', () => {
+    // **This replaced "conserves money exactly" at M5a.** Wages are paid now and
+    // a signing bonus leaves the league, so the total is meant to move; the
+    // exact accounting is asserted per club in `market.harness.test.ts`. What
+    // matters here is the half of the exit criterion a human can break — a
+    // manager who shops every summer must not be able to spend his club under.
+    for (const state of runs) {
+      for (const club of state.clubs) {
+        const limit = debtLimit(club, state.competition.clubIds.length, ROUNDS_PER_HALF)
+        expect(club.budget, club.id).toBeGreaterThan(-limit)
+      }
     }
   })
 

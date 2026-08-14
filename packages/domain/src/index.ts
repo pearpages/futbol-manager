@@ -19,10 +19,33 @@ export {
   type Fixture,
   type FixtureId,
   isPlayed,
+  type Ledger,
   type Score,
   type Season,
   type TeamRating,
 } from './entities.ts'
+
+export {
+  annualIncome,
+  canAfford,
+  credit,
+  debtLimit,
+  EMPTY_LEDGER,
+  FINANCE,
+  gateReceipts,
+  isSettlementDay,
+  LEDGER_KEYS,
+  ledgerNet,
+  monthlyLines,
+  occupancy,
+  positionsFrom,
+  prizeMoney,
+  seedCapacity,
+  sponsorMoney,
+  tvMoney,
+  wageBill,
+  wagePremium,
+} from './finance.ts'
 
 export {
   CLUB_COUNT,

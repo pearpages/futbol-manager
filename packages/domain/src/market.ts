@@ -1,5 +1,6 @@
 import { acceptableYears } from './bids.ts'
-import type { ClubId } from './entities.ts'
+import type { ClubId, Ledger } from './entities.ts'
+import { credit, FINANCE } from './finance.ts'
 import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRating } from './lineup.ts'
 import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
 import { type Rng, shuffle } from './rng.ts'
@@ -252,8 +253,14 @@ export function runTransferWindow(
       if (paid && free) break
       if (candidate.from === null ? free : paid) continue
 
+      // **The AI never borrows to buy.** Debt exists at M5a, but a club only
+      // drifts into it through wages outrunning income — which is the failure the
+      // exit criterion is actually hunting. Letting the AI spend into the
+      // overdraft as well would put two causes behind the same symptom and make
+      // "no club goes bankrupt" impossible to attribute.
       const buyer = budgets.get(club.id) ?? 0
-      if (buyer < candidate.fee) continue
+      const outlay = candidate.fee + Math.round(candidate.fee * FINANCE.SIGNING_BONUS)
+      if (buyer < outlay) continue
 
       if (candidate.from === null) {
         if (!pool.has(candidate.player.id)) continue // someone signed him first
@@ -285,7 +292,7 @@ export function runTransferWindow(
       })
 
       // Apply immediately so later clubs see a market that has moved.
-      budgets.set(club.id, buyer - candidate.fee)
+      budgets.set(club.id, buyer - outlay)
       squad.push(candidate.player)
 
       const index = listed.findIndex((e) => e.player.id === candidate.player.id)
@@ -303,13 +310,27 @@ export function runTransferWindow(
   return transfers
 }
 
-/** Applies transfers to state. Money moves between clubs; none is created. */
+/**
+ * Applies transfers to state.
+ *
+ * A fee moves between two clubs and nets to zero across the league. **The
+ * signing bonus does not** — it is paid to the player, so it leaves the league
+ * entirely, and it is the reason a transfer is no longer a closed movement. Both
+ * are recorded on the buyer's and seller's ledgers, which is what keeps the
+ * balance identity checkable per club rather than only in aggregate.
+ */
 export function applyTransfers(state: GameState, transfers: readonly Transfer[]): GameState {
   if (transfers.length === 0) return state
 
   const squads: Record<string, Player[]> = {}
   for (const club of state.clubs) squads[club.id] = [...(state.squads[club.id] ?? [])]
   const budgets = new Map<ClubId, number>(state.clubs.map((c) => [c.id, c.budget]))
+  const ledgers = new Map<ClubId, Ledger>(state.clubs.map((c) => [c.id, c.ledger]))
+
+  const record = (clubId: ClubId, key: keyof Ledger, amount: number) => {
+    const ledger = ledgers.get(clubId)
+    if (ledger !== undefined) ledgers.set(clubId, credit(ledger, key, amount))
+  }
   let freeAgents = [...state.freeAgents]
   // Only these get their lineup re-picked. Re-picking every club wiped out a human
   // manager's hand-chosen XI every time any two other clubs did business.
@@ -344,17 +365,24 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
 
       squads[transfer.from] = from.filter((p) => p.id !== transfer.playerId)
       budgets.set(transfer.from, (budgets.get(transfer.from) ?? 0) + transfer.fee)
+      record(transfer.from, 'transfers', transfer.fee)
       touched.add(transfer.from)
     }
 
+    // A free transfer still carries a bonus: no fee changes hands, but the player
+    // is paid to sign, which is exactly why a free agent is not costless.
+    const bonus = Math.round(transfer.fee * FINANCE.SIGNING_BONUS)
     to.push(player)
-    budgets.set(transfer.to, (budgets.get(transfer.to) ?? 0) - transfer.fee)
+    budgets.set(transfer.to, (budgets.get(transfer.to) ?? 0) - transfer.fee - bonus)
+    record(transfer.to, 'transfers', -transfer.fee)
+    if (bonus > 0) record(transfer.to, 'bonuses', bonus)
     touched.add(transfer.to)
   }
 
   const clubs = state.clubs.map((club) => ({
     ...club,
     budget: budgets.get(club.id) ?? club.budget,
+    ledger: ledgers.get(club.id) ?? club.ledger,
   }))
 
   // A club whose squad changed needs its lineup re-picked, or a sold player stays
@@ -379,7 +407,17 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   return { ...state, clubs, squads, lineups, freeAgents, transferList }
 }
 
-/** Total money in the league. A transfer moves it; nothing creates it. */
+/**
+ * Total money in the league.
+ *
+ * **This was constant for a whole career until M5a, and is not any more.**
+ * Revenue creates money and wages destroy it, so the old "a transfer moves it,
+ * nothing creates it" invariant has been replaced rather than dropped: every
+ * movement is now a ledger line, and `ledgerNet` over a club's season must equal
+ * the change in its balance exactly. That is a stricter test, not a looser one —
+ * the old one said the league had inflated, the new one says which club and on
+ * which line. See `finance.ts` and ADR 0009.
+ */
 export function totalBudget(state: GameState): number {
   return state.clubs.reduce((sum, club) => sum + club.budget, 0)
 }

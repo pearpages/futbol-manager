@@ -112,11 +112,36 @@ The season runs from 15 August to May, and `StartNewSeason` jumps straight to th
 
 ---
 
+## What a club earns
+
+In [`finance.ts`](../packages/domain/src/finance.ts), all figures in **thousands**. Added at M5a, when money stopped being a fixed allowance.
+
+| Line              | When                     | Driven by                                  |
+| ----------------- | ------------------------ | ------------------------------------------ |
+| **Gate**          | each home match          | capacity × occupancy × ticket price        |
+| **TV**            | monthly                  | 30% shared equally, 70% on league position |
+| **Sponsorship**   | monthly                  | club rating, convexly                      |
+| **Prize**         | at the rollover          | final position, on a geometric ladder      |
+| **Wages**         | monthly                  | the squad's contracts, × the wage premium  |
+| **Signing bonus** | on a transfer            | 10% of the fee, paid to the player         |
+| **Interest**      | monthly, while overdrawn | the overdrawn amount                       |
+
+Four things about this are not obvious from the signatures:
+
+- **Income is convex on purpose, and has to be.** Wages scale roughly as `rating^3.5` because player value does. Income that scaled more gently would bleed the big clubs and enrich the small ones, inverting the table within a few seasons — the exact failure `seedBudget`'s comment warns about. Gate and sponsorship carry that convexity.
+- **The wage premium is the brake on the whole economy.** A club holding more than a healthy reserve pays over the odds. Without it a fixed surplus compounds forever, because the only other outflow is the signing bonus and AI transfer volume falls to zero once squads converge — measured at 36× league growth over fifty seasons. It taxes the _excess_ over the reserve, never the whole balance: taxing the balance vaporised four fifths of the league's money in season one.
+- **TV merit keys off the current table, not last season's.** An approximation, taken so last season's finishing order need not be carried as state. In August nothing has been played and everyone takes the flat share.
+- **Nothing here draws randomness.** Attendance is a function of quality and position, not a draw. See the invariants below.
+
+---
+
 ## Balance invariants
 
 Never loosened without a very good reason, and each has a test:
 
-- **Money is conserved.** A transfer moves it; nothing creates it. `totalBudget` is constant across a whole career.
+- **Money is accounted for.** Every movement writes a ledger line, and a club's balance changes by exactly what its ledger says — checked per club, on every tick. This **replaced "money is conserved"** at M5a, when revenue started creating money and wages started destroying it; it is the stricter of the two, because the old one could only say the league had inflated while this one says which club and on which line. See [ADR 0009](./adr/0009-the-ledger-identity.md).
+- **A club may go into debt, but not past its limit**, which is a fraction of its own annual income rather than a flat figure. The AI never borrows to buy, so debt is always something a club drifted into rather than chose.
+- **Nothing on the money path draws randomness.** Finance runs inside `AdvanceDay`, the path every calibrated band is measured through. `pnpm season` staying byte-identical is the check.
 - **Squads stay between 18 and 30**, as a consequence of needs decaying rather than a cap. Releases stop at `RELEASE_FLOOR` (21) rather than `MIN_SQUAD` — draining to the legal minimum froze the market, because `surplus` returns nothing at 18.
 - **Every squad can field a legal XI in every formation**, which is why sales are re-checked against the squad as it stands rather than as it stood when the window opened.
 - **A budget buys roughly two players of the club's own first-team standard.** Below that the market is decorative: at the old seeding, 48 of 228 listings were affordable to a mid-table club and every one scored zero on need.

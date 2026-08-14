@@ -404,3 +404,31 @@ Two contrast problems caught by reasoning about the materials rather than by a t
 **A pre-existing wart this surfaced and deliberately left alone:** a disabled tile's accessible name is `"CajaM5"` — no separator between the label and the milestone span. It is why the hub's own tests reach for `/Caja/` rather than an exact name. Hiding the badge from AT would fix it in one attribute, since `title="Arrives at M5"` already carries the information — but it predates this change and was not what was asked for.
 
 418 tests, `pnpm season` byte-identical to `f42d5da`, no domain change. **Still not seen in a browser** — eighth failed extension connection. A DOM dump confirms the four `data-quadrant` values, twelve distinct icons all `aria-hidden`, and every accessible name unchanged. **The appearance is unverified:** nothing here proves four colours are distinguishable, that the brick separates from the Play button, or that a glyph reads at 1.35em.
+
+### 2026-08-14 — M5a ✅ (where the money comes from)
+
+**Split, for the reason M4 split.** M5's exit criterion — "50-season headless run where no AI club goes bankrupt and none accumulates an unspendable fortune" — has no human in it, no screen and no board conversation, while the milestone's prose names three UI tiles. So the harness settles the economy headlessly and **M5b** (Caja, Decisiones, Estadio, board objectives, the sack, ticket pricing) gets built against a model already known to balance.
+
+**Done.** `finance.ts` — gate receipts, TV, sponsorship, prize money, the wage bill, the signing bonus deferred from M4b, debt with interest. Schema v7. 445 tests, `pnpm season` byte-identical to `f42d5da`, every M2/M3 band untouched.
+
+**Exit met, over 50 seasons: 0 of 1000 club-seasons below the overdraft limit**, and the league total settles at 2.1× its opening figure rather than compounding. **The imbalance the milestone existed to fix is fixed — the top three held 77% of the league's money after a decade of M4a, and now hold 24%**; richest-to-poorest narrows from 8× to 3× over fifty seasons instead of widening.
+
+**"Money is conserved" is gone and [ADR 0009](docs/adr/0009-the-ledger-identity.md) records what replaced it.** Every club carries a `ledger` (this season) and `lastLedger` (the one just closed); the invariant is that a balance moves by exactly `ledgerNet(after) − ledgerNet(before)`, **per club, on every tick**. That is stricter than what it replaced: the old test said the league had inflated, this one says which club and on which line. **`lastLedger` is not a convenience** — prize money lands in the same step that clears `ledger`, so without it the identity would have a hole exactly where the money moves.
+
+**Three tuning findings, and the tuning genuinely was the milestone:**
+
+- **Income has to be as convex as wages.** Wages scale ~`rating^3.5` because player value does; income modelled naively scaled ~`rating^2.8`. Rescaled uniformly that bleeds the big clubs and enriches the small ones — **inverting the table**, which is the exact failure `seedBudget`'s own comment warns about. Gate and sponsorship carry the convexity now; TV's equal share is the floor that keeps a struggling club solvent.
+- **A fixed surplus compounds without limit, so the brake must grow with the pile.** The league's only other outflow is the signing bonus, and **AI transfer volume falls to zero from about season fifteen** as squads converge — a constant leak cannot balance a proportional inflow. Measured at **36× league growth over fifty seasons** before `WAGE_INFLATION` existed. A club holding more than a healthy reserve now pays over the odds for its players, which is both what happens in football and a cost already modelled.
+- **That premium must tax the excess, not the balance.** Taxing the whole balance **vaporised four fifths of the league's money in season one** and would have quietly undone M4b's calibration that a budget buys two players of a club's own standard. `HEALTHY_RESERVE` is why a reserve is not a fortune.
+
+**`seedBudget` survived as the opening balance.** The roadmap says revenue replaces the seed and it does — as the ongoing source. Replacing the seed _and_ the income together would have moved two things and left nothing to measure against, and `market.human.harness.test.ts` pins the seeded scale directly.
+
+**The rng rule held, and `pnpm season` is the proof.** Attendance is a function of quality and league position rather than a draw — one `rng.next()` inside `AdvanceDay` would have moved every calibrated band in the project at once. It is also the more legible model: a crowd is not a coin flip.
+
+**Three money tests were rewritten onto the ledger rather than the totals**, because completing a signing burns days and the clock now earns money while it does. Asserting `ledger.transfers` and `ledger.bonuses` is both immune to the clock and a sharper claim — it says no third club was touched.
+
+**Debt exists but no AI club ever uses it.** Over 50 seasons the closest any came was 0.49× its limit _in credit_. The mechanism is exercised by unit tests, not by the career; the club that will actually go overdrawn is the human's, which is M5b's board's problem.
+
+**Ordering trap, survived:** `pnpm fixture` must run **before** the new migration exists, because the script stamps the version from the live chain. `v6.json` did not exist on disk and would have been unobtainable once `v6ToV7` landed.
+
+**Pending: M5b** — ticket pricing, stadium capacity as a decision, board objectives and the sack. The three `Finanzas` tiles are already there, disabled and badged.
