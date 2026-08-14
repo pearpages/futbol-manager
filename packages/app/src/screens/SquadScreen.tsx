@@ -42,6 +42,10 @@ export function SquadScreen() {
       <table className="data-table">
         <thead className="data-table__head">
           <tr>
+            {/* A running count, not a shirt number. Squad size is load-bearing —
+                you cannot buy at MAX_SQUAD and cannot sell at MIN_SQUAD — so the
+                last row tells you where you sit between 18 and 30. */}
+            <th>#</th>
             <th className="is-text">Pos</th>
             <th className="is-text">Player</th>
             <th>Age</th>
@@ -52,11 +56,12 @@ export function SquadScreen() {
           </tr>
         </thead>
         <tbody>
-          {squad.map((player: Player) => {
+          {squad.map((player: Player, index: number) => {
             const canSell = spare.has(player.id)
             const onSale = listed.has(player.id)
             return (
               <tr key={player.id} className="data-table__row">
+                <td className="data-table__num">{index + 1}</td>
                 <td className="is-text">{positionChip(player.position)}</td>
                 <td className="is-text">
                   <button

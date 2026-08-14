@@ -78,6 +78,14 @@
   flex: none;
 }
 
+/* The crest sits with the club name rather than above it — the heading is the
+   identity, and splitting them would read as two things. */
+.hub__crest {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-3);
+}
+
 .hub__vitals {
   display: flex;
   gap: var(--fm-space-6);

@@ -1,0 +1,165 @@
+/*
+ * Badge palettes, keyed on the colour scheme rather than the club.
+ *
+ * Twelve-ish schemes cover twenty clubs, because several share kit colours —
+ * which is exactly why `badges.ts` also gives them different shapes. Keying on
+ * the scheme keeps this file short and makes the sharing visible: if two clubs
+ * read the same rule here, they had better differ in shape.
+ *
+ * Three properties each, and the third matters as much as the other two:
+ *   --badge-a    the field
+ *   --badge-b    stripes, halves, sash, hoops, trim — and the rim
+ *   --badge-ink  the three-letter code, which has to stay legible on white,
+ *                on yellow and on navy alike
+ *
+ * **The rim is always one of the club's own colours**, never an invented
+ * neutral. It defaults to `--badge-b` on `.club-badge` below, so a palette gets
+ * a kit-coloured edge for free and cannot drift off-palette without someone
+ * writing a hex — which a test forbids.
+ */
+
+.club-badge[data-colours='white'] {
+  --badge-a: #f4f4f2;
+  /* Not rendered as a mark — this badge is solid — so it exists for the rim.
+     White with navy trim. */
+  --badge-b: #14213a;
+  --badge-ink: #1d2330;
+}
+
+.club-badge[data-colours='garnet-blue'] {
+  --badge-a: #7b1330;
+  --badge-b: #17376b;
+  --badge-ink: #f6d66b;
+  /* Both kit colours are dark, so navy on garnet is mud at this size. The gold
+     is a genuine accent of the same kit and actually reads. */
+  --badge-rim: var(--badge-ink);
+}
+
+.club-badge[data-colours='red-white'] {
+  --badge-a: #cf2027;
+  --badge-b: #f4f4f2;
+  --badge-ink: #1d2330;
+}
+
+.club-badge[data-colours='white-red'] {
+  --badge-a: #f4f4f2;
+  --badge-b: #cf2027;
+  --badge-ink: #8f1419;
+}
+
+.club-badge[data-colours='blue-white'] {
+  --badge-a: #17376b;
+  --badge-b: #f4f4f2;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='orange-black'] {
+  --badge-a: #f4f4f2;
+  --badge-b: #e8720c;
+  --badge-ink: #1d2330;
+}
+
+.club-badge[data-colours='yellow'] {
+  --badge-a: #f2c422;
+  --badge-b: #1f4ea1;
+  --badge-ink: #2a2410;
+}
+
+.club-badge[data-colours='green-white'] {
+  --badge-a: #0f7a43;
+  --badge-b: #f4f4f2;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='sky'] {
+  --badge-a: #5aa7dd;
+  --badge-b: #f4f4f2;
+  --badge-ink: #10314a;
+}
+
+.club-badge[data-colours='red'] {
+  --badge-a: #c8202b;
+  --badge-b: #14213a;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='red-black'] {
+  --badge-a: #c8202b;
+  --badge-b: #1a1a1c;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='blue'] {
+  --badge-a: #1f4ea1;
+  --badge-b: #f4f4f2;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='white-blue'] {
+  --badge-a: #f4f4f2;
+  --badge-b: #1f4ea1;
+  --badge-ink: #14213a;
+}
+
+/* ── The badge itself ────────────────────────────────────────────────────── */
+
+.club-badge {
+  display: block;
+  flex: none;
+  /* The club's second colour, which contrasts with the field by construction —
+     they are the two colours the stripes are made of. Overridden per palette
+     only where both kit colours are too dark to separate each other. */
+  --badge-rim: var(--badge-b);
+}
+
+.club-badge.is-sm {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.club-badge.is-lg {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.club-badge__field {
+  fill: var(--badge-a);
+}
+
+.club-badge__mark {
+  fill: var(--badge-b);
+}
+
+/* The band behind the code on busy patterns — stripes and hoops otherwise cut
+   straight through the letters. */
+.club-badge__plate {
+  fill: var(--badge-a);
+  opacity: 0.92;
+}
+
+.club-badge__code {
+  fill: var(--badge-ink);
+  font-family: var(--fm-font-condensed);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-anchor: middle;
+}
+
+/*
+ * The rim contrasts with the badge's own field rather than with whatever is
+ * behind it. A dark line was invisible on the navy, garnet and green badges —
+ * dark on dark against a near-black screen — while the pale ones never needed
+ * one. Keying it to the field instead gives every badge an edge, and keeps
+ * working if a badge ever lands on a light `.panel` rather than a dark screen.
+ *
+ * Unclipped, so the stroke centres on the edge and reads as a border around the
+ * shape; clipped it was only an inner shade. Rounded joins because the lozenge
+ * and pennant come to points, and a mitre would spike past the viewBox.
+ */
+.club-badge__outline {
+  fill: none;
+  stroke: var(--badge-rim);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}

@@ -1,5 +1,6 @@
 import { computeTable, formatDate } from '@fm/domain'
 import { useGame } from '../store.ts'
+import { ClubBadge } from './ClubBadge.tsx'
 import './TableScreen.css'
 
 /**
@@ -97,7 +98,12 @@ export function TableScreen() {
                     {band !== null && <span className="visually-hidden">{band.label}</span>}
                   </td>
                   <td className="data-table__num">{index + 1}</td>
-                  <td className="is-text">{club?.name ?? row.clubId}</td>
+                  <td className="is-text">
+                    <span className="club-cell">
+                      {club !== undefined && <ClubBadge club={club} />}
+                      {club?.name ?? row.clubId}
+                    </span>
+                  </td>
                   <td>{row.played}</td>
                   <td>{row.won}</td>
                   <td>{row.drawn}</td>

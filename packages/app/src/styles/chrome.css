@@ -486,3 +486,10 @@
   padding: var(--fm-space-3) var(--fm-space-4);
   border-top: 1px solid var(--fm-screen-rule);
 }
+
+/* A badge sitting beside a club's name, in a table cell or a list row. */
+.club-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}

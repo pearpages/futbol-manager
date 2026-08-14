@@ -1,6 +1,7 @@
 import type { Club } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { useGame } from '../store.ts'
+import { ClubBadge } from './ClubBadge.tsx'
 import './SetupScreen.css'
 
 /**
@@ -59,7 +60,12 @@ export function SetupScreen() {
               const tier = tierFor(club)
               return (
                 <tr key={club.id} className="data-table__row">
-                  <td className="is-text setup__club">{club.name}</td>
+                  <td className="is-text setup__club">
+                    <span className="club-cell">
+                      <ClubBadge club={club} />
+                      {club.name}
+                    </span>
+                  </td>
                   <td>{club.attack}</td>
                   <td>{club.defence}</td>
                   <td className="is-text setup__tier">

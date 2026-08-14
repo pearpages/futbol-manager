@@ -3,6 +3,7 @@ import { formatDate, formatMoney, isSeasonComplete } from '@fm/domain'
 import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
+import { ClubBadge } from './ClubBadge.tsx'
 import { NotificationList } from './NotificationList.tsx'
 import './HubScreen.css'
 
@@ -135,7 +136,10 @@ export function HubScreen() {
 
       <aside className="hub__centre">
         <section className="screen hub__identity">
-          <h2 className="screen__heading">{club?.name ?? '—'}</h2>
+          <h2 className="screen__heading hub__crest">
+            {club !== undefined && <ClubBadge club={club} size="lg" labelled />}
+            {club?.name ?? '—'}
+          </h2>
           <div className="hub__vitals">
             <div className="stat">
               <span className="stat__label">Date</span>

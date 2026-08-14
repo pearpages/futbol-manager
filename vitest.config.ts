@@ -37,6 +37,19 @@ export default defineConfig({
           root: 'packages/app',
           environment: 'jsdom',
           setupFiles: ['./src/test-setup.ts'],
+          /*
+           * The default 5s is not a meaningful budget here. The market screen
+           * renders every listing — a couple of hundred rows, each carrying a
+           * club badge — and jsdom is orders of magnitude slower at that than a
+           * browser. The slowest test is ~3s on its own and only tips over 5s
+           * when all five projects compete for CPU, which is a scheduling fact
+           * rather than a defect.
+           *
+           * Not cover for a slow test creeping in: anything approaching 15s here
+           * is genuinely wrong. If this screen has to get cheaper the lever is
+           * pagination, never a silent row cap.
+           */
+          testTimeout: 15_000,
         },
       },
       {

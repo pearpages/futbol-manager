@@ -48,6 +48,21 @@ const aStarter = () => {
 }
 
 describe('the squad screen', () => {
+  it('numbers the rows, so the last one is the squad size', () => {
+    // The point of the column. Squad size is load-bearing — the reducer refuses
+    // a bid at MAX_SQUAD and a club at MIN_SQUAD can sell nobody — so "how many
+    // do I have" should not mean counting rows.
+    openSquad()
+
+    const numbers = [...document.querySelectorAll('.squad-screen .data-table__num')].map((cell) =>
+      Number(cell.textContent),
+    )
+    const size = (game().squads[game().managedClubId] ?? []).length
+
+    expect(numbers).toHaveLength(size)
+    expect(numbers).toEqual(Array.from({ length: size }, (_, i) => i + 1))
+  })
+
   it('says what each player is worth', () => {
     // There was no way to tell who was sellable, or for how much.
     openSquad()

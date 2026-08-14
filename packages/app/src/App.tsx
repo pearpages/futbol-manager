@@ -3,6 +3,7 @@ import { formatDate } from '@fm/domain'
 import { describeOpponent, matchdayFor } from './matchday.ts'
 import { noticesFrom } from './notifications.ts'
 import { type Screen, useGame } from './store.ts'
+import { BadgeDefs } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { NotificationList } from './screens/NotificationList.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
@@ -72,6 +73,7 @@ export function App() {
   if (needsSetup) {
     return (
       <div className="shell shell--setup">
+        <BadgeDefs />
         <header className="panel shell__bar">
           <h1 className="shell__wordmark">Fútbol Manager</h1>
           <p className="shell__club">
@@ -87,6 +89,7 @@ export function App() {
 
   return (
     <div className="shell">
+      <BadgeDefs />
       <header className="panel shell__bar">
         <h1 className="shell__wordmark">{club?.name ?? 'Fútbol Manager'}</h1>
         <p className="shell__title">{SCREEN_TITLES[screen]}</p>

@@ -319,3 +319,45 @@ Two things in there worth arguing with later: PC Fútbol navigates from a **four
 375 tests, `pnpm season` byte-identical. **One flake seen once and not reproduced** — a 5s timeout during a full run while other work was competing for CPU; the suite is 19s clean, and the app project's slowest test is 2.5s. If it returns, it is contention rather than the clock or the rng.
 
 **Still not seen in a browser** — sixth failed extension connection. Verified by a DOM dump: bar reads `Next v Valencia (A) · today`, button reads `Play match v Valencia (A)`; after playing and three days it reads `Advance day` / `Next v Bilbao (H) · in 3d` with an unread badge, and the drawer shows "Cádiz offer €525k for Héctor Bermejo" — exactly the thing that used to pass unnoticed.
+
+### 2026-08-14 — the nav rail is gone
+
+**The hub made the rail redundant**, so the shell carried two competing navigations and the weaker one listed screens while the hub grouped them by the question being asked. PC Fútbol had no global navigation at all: a persistent title bar, the hub as the only branching point, and every other screen carrying its own action rail ending in **Volver**. That is now the model here.
+
+- **`.shell` is a single column.** `NAV`, `.shell__nav` and `.shell__actions` are deleted — `grep shell__nav` returns nothing.
+- **The bar is who · where · when**: club, the screen title, date, next match, Noticias. The title uses **the same words as the hub tile** that got you there, which matters more than it sounds with no rail to orient against.
+- **`.screen-actions` is a chrome primitive**, used by Table, Lineup, Market (foot of the aside each already had) and Squad (a footer, since it has no aside). The ficha keeps its _contextual_ back: opened from a two-hundred-row market list, it returns to that list, never to the hub.
+- **The day controls live on the hub and nowhere else** — inside the Next match panel, where they belong. Save and New career became **Grabar** / **Nueva carrera** in a utility strip beneath the news.
+
+**The trade, accepted deliberately:** Market → Squad is two clicks through the hub instead of one. What it buys is that **every tick of the clock routes you past the news and the next fixture**, which is what the original complaint asked for.
+
+**One thing this quietly broke, worth knowing.** The unread badge can no longer light up from advancing days: the only place to advance is the hub, and the hub clears unread on sight. Its remaining job is events that fire _off_ the hub — a bid, an offer, a listing — which is a smaller but real set, and what its test now covers. If the day controls ever come back to the bar, the badge regains its old purpose.
+
+**Testing:** `src/testing.ts` now carries `openScreen(tile)` and `back()` alongside `ADVANCE`/`advance()`. **`advance()` only works on the hub.** Every screen test is hub → tile → assert → `back()`, and `App.test.tsx` walks all four live tiles in one test so an unreachable screen fails loudly. 375 tests, `pnpm season` byte-identical, no domain change at all.
+
+### 2026-08-14 — club badges
+
+Twenty rows of text was how you told clubs apart. Badges are kit colours, a shirt pattern, a shape, and the three-letter code the clubs already carried in `shortName`.
+
+**Appearance is presentation, never state** — `Club` and the save format are untouched, so no schema bump and no migration. `badges.ts` holds geometry; `styles/club-badges.css` holds colour, keyed on **the palette name rather than the club**, so thirteen rules cover twenty clubs and the sharing is visible in the file.
+
+**Shape is load-bearing, not decoration.** Following real kits puts **five clubs on red-and-white** (Manzanares, Bilbao, Girona, Granada, Almería), two on blue-and-white and two on yellow. The test that matters asserts **no two clubs share a `(colours, pattern, shape)` triple** — with a guard on the guard, since if every club had its own palette that test would pass trivially and prove nothing.
+
+**On IP:** colours and simple geometric patterns are not protectable, so the palette is free. The line is crests and emblems, and these are abstract shapes carrying our own codes. Said out loud in `badges.ts` so nobody later reads "resembling the real ones" as licence to draw a coat of arms.
+
+**Two things caught by rendering it rather than assuming:**
+
+- The market's club column read **"GRAGRA"** — the badge already contains the code, so the adjacent text repeated it. Badge alone there now, with `aria-label` carrying the club name.
+- **228 badges made the market screen genuinely expensive.** Each defined its own `<clipPath>`, so five outlines were declared a couple of hundred times; `<BadgeDefs />` now declares them once at the app root. That fixed the worst of it, but the screen still renders every listing by design, and three tests were tipping over the 5s default under five-way parallelism. The **app project now has `testTimeout: 15_000`** with the reasoning in `vitest.config.ts`: the slowest test is ~3s alone, so this is a scheduling budget rather than cover for a defect. **If that screen must get cheaper, paginate — never a silent row cap.**
+
+384 tests, 23s, `pnpm season` byte-identical.
+
+**Rim, added after.** There was already a border and it pointed the wrong way: a dark stroke, clipped to the shape so only the inner half showed, on badges sitting against a near-black screen. The navy, garnet and green badges got nothing — dark on dark on dark — while the white and yellow ones got a border they did not need. **The rim now contrasts with the badge's own field rather than with the background**, which gives every badge an edge and keeps working if one ever lands on a light `.panel`. Unclipped, so it reads as a border around the shape rather than an inner shade; `stroke-linejoin: round` because the lozenge and pennant come to points and a mitre would spike past the viewBox. The `drop-shadow` filter went with it — redundant, and it was a per-element filter on all 228 market rows.
+
+**A test now reads `club-badges.css` and asserts each palette declares its three colours.** Colour lives in CSS and geometry in TS, so a palette can be named in one and undefined in the other; the result renders as an unfilled badge, which looks unpolished rather than broken. Note for anyone extending it: `import.meta.url` is not a file URL under vite-node, so that test resolves from `process.cwd()`.
+
+**Then the rim was made a kit colour, which it had not been.** Six of the thirteen palettes were using near-white tints I had picked by hand to get contrast — they looked fine and were not colours the club owned. **`--badge-rim` now defaults to `var(--badge-b)` on `.club-badge`**, the club's second kit colour, which contrasts with the field by construction since the two are what the stripes are made of. Twelve palettes take that default and declare no rim at all. One override: **garnet-blue uses the gold ink**, because garnet and navy are both dark and cannot separate each other at a 0.8px hairline.
+
+Two things fell out of it. `white`'s `--badge-b` changed from a pale grey to navy — it is never rendered as a mark, since that badge is `solid`, so it existed only for the rim and grey was barely an edge. And a test now forbids **any literal colour for `--badge-rim`**: an override must point at another badge token. Hand-picking is how the six neutrals got in, so the rule is enforced by construction rather than by care.
+
+**The one weak pairing left is `sky`** — Vigo's white rim on sky blue is the lowest contrast in the set, because that kit has only two colours and no third to reach for. Following the rule strictly is the right call there; inventing a navy is what this change removed.

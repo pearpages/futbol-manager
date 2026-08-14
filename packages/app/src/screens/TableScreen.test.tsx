@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import { BANDS, bandFor } from './TableScreen.tsx'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'

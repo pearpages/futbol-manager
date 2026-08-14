@@ -24,6 +24,7 @@ import {
   toCivil,
 } from '@fm/domain'
 import { useGame } from '../store.ts'
+import { ClubBadge } from './ClubBadge.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
 
@@ -343,7 +344,12 @@ export function MarketScreen() {
                       {listing.from === null ? (
                         <span className="market-screen__free">Free agent</span>
                       ) : (
-                        (names.get(listing.from)?.shortName ?? '???')
+                        (() => {
+                          // The badge carries the three-letter code already —
+                          // repeating it beside itself just read as "GRAGRA".
+                          const seller = names.get(listing.from)
+                          return seller === undefined ? '???' : <ClubBadge club={seller} labelled />
+                        })()
                       )}
                     </td>
                     <td>{ageOn(player, date)}</td>
@@ -464,8 +470,12 @@ export function MarketScreen() {
                   <span className="offer-list__name">
                     {byId.get(bid.playerId)?.name ?? 'Unknown'}
                   </span>
-                  <span className="offer-list__detail">
-                    {names.get(bid.from)?.shortName ?? '???'} · {formatMoney(bid.fee)}
+                  <span className="offer-list__detail club-cell">
+                    {(() => {
+                      const bidder = names.get(bid.from)
+                      return bidder === undefined ? '???' : <ClubBadge club={bidder} labelled />
+                    })()}
+                    {formatMoney(bid.fee)}
                   </span>
                   <span className="offer-list__actions">
                     <button
