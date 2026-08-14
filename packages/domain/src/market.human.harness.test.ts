@@ -33,8 +33,24 @@ import { askingPrice } from './valuation.ts'
 
 const SEASONS = 10
 const RUNS = 6
-/** Mid-table. A contender has no weakness to fix and the bottom club cannot pay. */
-const MANAGED = TEST_CLUBS[13]?.id ?? ('c14' as ClubId)
+/**
+ * Mid-table, **and housed in proportion to that**. A contender has no weakness to
+ * fix and the bottom club cannot pay.
+ *
+ * The second half of that used to be free. While capacity was a curve on rating,
+ * picking a club mid-table on the pitch picked one mid-table in the bank as well.
+ * Real grounds broke the equivalence: this was `c14`, which now has the ninth
+ * biggest stadium in the division behind the fourteenth best squad — the most
+ * over-housed club in the league, and so the one with the most to gain from a
+ * market its rivals cannot afford to enter. It measured **+10.6 points** against
+ * +7.0 to +8.4 for every other mid-table club, on an identical control arm.
+ *
+ * `c13` is the closest the division has to proportionate: thirteenth by rating,
+ * eleventh by seats. Picking it measures the market rather than one club's luck
+ * with a landlord.
+ */
+const MANAGED_INDEX = 12
+const MANAGED = TEST_CLUBS[MANAGED_INDEX]?.id ?? ('c13' as ClubId)
 /** Windows a manager works in a summer. Both arms spend the same days on it. */
 const ROUNDS = 4
 
@@ -201,7 +217,7 @@ describe(`the exit criterion, over ${RUNS * SEASONS} seasons`, () => {
     if (state === undefined) throw new Error('no career')
     const squad = state.squads[MANAGED] ?? []
     const typical = mean(squad.map((p) => askingPrice(p, state.season.currentDate)))
-    const budget = TEST_CLUBS[13]?.budget ?? 0
+    const budget = TEST_CLUBS[MANAGED_INDEX]?.budget ?? 0
     expect(budget).toBeGreaterThan(typical)
   })
 })

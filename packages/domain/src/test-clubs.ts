@@ -1,5 +1,5 @@
 import type { Club, ClubId } from './entities.ts'
-import { EMPTY_LEDGER, FINANCE, seedCapacity } from './finance.ts'
+import { EMPTY_LEDGER, FINANCE } from './finance.ts'
 
 /**
  * A 20-club league for tests. Not exported from the package index — `domain` must
@@ -13,31 +13,45 @@ import { EMPTY_LEDGER, FINANCE, seedCapacity } from './finance.ts'
  *
  * Index 0 is the strongest and index 19 the weakest — several tests rely on that
  * ordering to check rating against finishing position.
+ *
+ * `[attack, defence, capacity]`, mirroring `CLUBS` in `@fm/data` row for row.
+ *
+ * **The seat counts are the real grounds, copied verbatim, and they must stay in
+ * step with the ones in `@fm/data` — change one list and change the other.** Every
+ * harness band runs on this copy, including M5a's economy criterion, which asks
+ * whether any club goes bankrupt or banks an unspendable fortune; gate receipts are
+ * `capacity × occupancy × price`, so a league whose grounds are the wrong size is a
+ * league the harness cannot speak for.
+ *
+ * **Capacity deliberately does not track rating**, for the reasons set out in
+ * `@fm/data`: index 9 has 70% more seats than index 10 despite being two rating
+ * points apart, and index 8 outsizes index 3 outright. Those inversions are copied
+ * on purpose.
  */
-const RATINGS: readonly (readonly [number, number])[] = [
-  [88, 85],
-  [86, 82],
-  [80, 86],
-  [76, 74],
-  [73, 72],
-  [70, 74],
-  [68, 66],
-  [67, 64],
-  [66, 67],
-  [65, 65],
-  [65, 61],
-  [64, 66],
-  [63, 64],
-  [61, 63],
-  [59, 60],
-  [58, 58],
-  [57, 56],
-  [54, 53],
-  [52, 51],
-  [49, 50],
+const CLUBS: readonly (readonly [number, number, number])[] = [
+  [88, 85, 83_186],
+  [86, 82, 105_000],
+  [80, 86, 70_692],
+  [76, 74, 43_864],
+  [73, 72, 53_331],
+  [70, 74, 40_000],
+  [68, 66, 49_430],
+  [67, 64, 23_500],
+  [66, 67, 60_270],
+  [65, 65, 24_870],
+  [65, 61, 14_624],
+  [64, 66, 23_576],
+  [63, 64, 25_736],
+  [61, 63, 38_529],
+  [59, 60, 17_393],
+  [58, 58, 19_840],
+  [57, 56, 14_708],
+  [54, 53, 25_033],
+  [52, 51, 21_600],
+  [49, 50, 21_350],
 ]
 
-export const TEST_CLUBS: readonly Club[] = RATINGS.map(([attack, defence], i) => ({
+export const TEST_CLUBS: readonly Club[] = CLUBS.map(([attack, defence, capacity], i) => ({
   id: `c${String(i + 1).padStart(2, '0')}` as ClubId,
   name: `Club ${i + 1}`,
   shortName: `C${String(i + 1).padStart(2, '0')}`,
@@ -48,7 +62,7 @@ export const TEST_CLUBS: readonly Club[] = RATINGS.map(([attack, defence], i) =>
   // inverts the table, and they must be large enough relative to `askingPrice`
   // that a signing which improves the XI is reachable at all.
   budget: Math.round(2400 * Math.pow((attack + defence) / 100, 4)),
-  capacity: seedCapacity(attack, defence),
+  capacity,
   ticketPrice: FINANCE.TICKET,
   expansion: null,
   ledger: EMPTY_LEDGER,

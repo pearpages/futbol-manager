@@ -11,7 +11,6 @@ import {
   ledgerNet,
   occupancy,
   prizeMoney,
-  seedCapacity,
   sponsorMoney,
   tvMoney,
   wageBill,
@@ -62,9 +61,12 @@ describe('the ledger', () => {
 
 describe('the gate', () => {
   it('gives a bigger club a bigger ground', () => {
-    expect(seedCapacity(BIG.attack, BIG.defence)).toBeGreaterThan(
-      seedCapacity(SMALL.attack, SMALL.defence) * 2,
-    )
+    // Capacity is literal data now, not a curve, so this asserts the league rather
+    // than a function: a big club's ground is not slightly larger than a small
+    // one's, it is several times larger, and the gate is the one revenue stream a
+    // club can influence. Individual grounds may invert against rating on purpose —
+    // the claim is about the two ends of the table, not about any neighbouring pair.
+    expect(BIG.capacity).toBeGreaterThan(SMALL.capacity * 2)
   })
 
   it('fills a good club’s ground fuller than a poor one’s', () => {

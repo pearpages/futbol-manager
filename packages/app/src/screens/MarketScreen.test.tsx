@@ -1,11 +1,13 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   askingPrice,
   bidIsLive,
   fromCivil,
   isTransferWindowOpen,
+  MIN_SQUAD,
   needFor,
+  suggestedTerms,
   surplus,
 } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
@@ -386,6 +388,153 @@ describe('a club with no money', () => {
     expect(useful.length).toBeGreaterThan(20)
     const shown = new Set(rowNames())
     for (const listing of useful) expect(shown.has(listing.player.name)).toBe(true)
+  })
+})
+
+/**
+ * Picking an agreed fee back up from `Your bids`.
+ *
+ * This is where a transfer goes to die. The rail is its own scroll container,
+ * the negotiation panel opens at the top of it and `Your bids` is at the bottom,
+ * so every one of these used to look identical from the manager's chair:
+ * nothing happened.
+ */
+describe('reopening a deal', () => {
+  /** Bid the asking price for one listing, which is always accepted. */
+  function bidAsking(name: string) {
+    const row = screen.getByText(name).closest('tr')
+    if (row === null) throw new Error(`no row for ${name}`)
+    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+  }
+
+  /** Two bids at the asking price, run on until both fees are agreed. */
+  function twoAgreedBids() {
+    openMarket()
+    const listings = listingsFor(game())
+    const [first, second] = listings
+    if (first === undefined || second === undefined) throw new Error('not enough listings')
+
+    bidAsking(first.player.name)
+    bidAsking(second.player.name)
+
+    back()
+    for (let day = 0; day < 5 && game().bids.some((b) => b.status === 'pending'); day++) {
+      advance()
+    }
+    expect(game().bids.filter((b) => b.status === 'accepted')).toHaveLength(2)
+
+    openScreen('nav.market')
+    return { first, second }
+  }
+
+  const wageField = () => screen.getByLabelText(/^Wage/) as HTMLInputElement
+
+  /**
+   * Scoped to `Your bids`: the same man is also a row in the table above, and the
+   * whole point of this panel is that it is a *second* way to reach him.
+   */
+  const openBid = (name: string) => {
+    const outbox = document.querySelector('.market-screen__outbox')
+    if (outbox === null) throw new Error('no outbox')
+    const item = within(outbox as HTMLElement)
+      .getByText(name)
+      .closest('.offer-list__item')
+    if (item === null) throw new Error(`no bid row for ${name}`)
+    fireEvent.click(within(item as HTMLElement).getByRole('button', { name: 'Open' }))
+  }
+
+  it('scrolls the deal into view, because it opens above where you pressed', () => {
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView')
+    const { first } = twoAgreedBids()
+
+    openBid(first.player.name)
+
+    expect(scrollIntoView).toHaveBeenCalled()
+    scrollIntoView.mockRestore()
+  })
+
+  it('marks which bid the panel is showing', () => {
+    const { first, second } = twoAgreedBids()
+
+    openBid(second.player.name)
+
+    const active = [...document.querySelectorAll('.offer-list__item.is-active')]
+    expect(active).toHaveLength(1)
+    expect(active[0]?.textContent).toContain(second.player.name)
+    expect(active[0]?.textContent).not.toContain(first.player.name)
+  })
+
+  /**
+   * The panel's fields are `useState` initialisers, which run once. Without a key
+   * the second player inherited the first one's wage — and offering a wage below
+   * what a man wants is refused with the state untouched, so the deal simply
+   * would not close and nothing said why.
+   */
+  it('carries no numbers over from the deal before it', () => {
+    const { first, second } = twoAgreedBids()
+
+    openBid(first.player.name)
+    const firstWage = wageField().value
+
+    openBid(second.player.name)
+    expect(wageField().value).toBe(
+      String(suggestedTerms(second.player, game().season.currentDate).wage),
+    )
+    // Guard on the guard: if both men wanted the same wage this would pass while
+    // proving nothing.
+    expect(wageField().value).not.toBe(firstWage)
+  })
+
+  /**
+   * A refusal that does not throw. `offerContract` returns `TermsRejected` and
+   * leaves the state alone, so a screen watching only for thrown errors showed a
+   * button that did nothing — and the feed that used to carry the sentence now
+   * lives on the hub, a screen away from the press.
+   */
+  it('says so when he turns the terms down', () => {
+    const { first } = twoAgreedBids()
+    openBid(first.player.name)
+
+    fireEvent.change(wageField(), { target: { value: '0' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Offer terms' }))
+
+    expect(screen.getByRole('alert').textContent).toContain(first.player.name)
+    // A refusal is an outcome, not a mistake: the bid stays live so the terms can
+    // be improved. Only our own — since M4c the clock brings in offers for our
+    // players too, so `bids` runs in both directions.
+    expect(
+      game()
+        .bids.filter((b) => b.from === RICH)
+        .filter(bidIsLive),
+    ).toHaveLength(2)
+  })
+
+  /**
+   * A bid outlives its listing. `listingsFor` is rebuilt from each club's live
+   * `surplus`, and a club at the minimum squad size has none — so the player you
+   * have already agreed a fee for can vanish from the market table while the bid
+   * sits there. Opening it must still work.
+   */
+  it('opens a bid whose player is no longer listed', () => {
+    const { first } = twoAgreedBids()
+
+    // Shrink the seller to the point where nobody is spare, keeping our man.
+    const state = game()
+    const sellerId = first.from
+    if (sellerId === null) throw new Error('expected a listed player, not a free agent')
+    const seller = state.squads[sellerId] ?? []
+    const trimmed = [
+      ...seller.filter((p) => p.id !== first.player.id).slice(0, MIN_SQUAD - 1),
+      first.player,
+    ]
+    useGame.setState({ game: { ...state, squads: { ...state.squads, [sellerId]: trimmed } } })
+
+    expect(listingsFor(game()).some((l) => l.player.id === first.player.id)).toBe(false)
+
+    openBid(first.player.name)
+    expect(screen.getByRole('heading', { name: first.player.name })).toBeDefined()
   })
 })
 

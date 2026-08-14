@@ -10,6 +10,13 @@ import { useGame } from './store.ts'
 afterEach(cleanup)
 
 /**
+ * jsdom has no layout, so it implements no scrolling at all — not even a no-op.
+ * A screen that scrolls a panel into view would throw here rather than in a
+ * browser, which is a test failing for a reason the product does not have.
+ */
+Element.prototype.scrollIntoView ??= function scrollIntoView() {}
+
+/**
  * Every test runs in English.
  *
  * The product default is Catalan, and the suite asserts on copy — headings,

@@ -59,7 +59,17 @@ interface Store {
    */
   readonly needsSetup: boolean
 
-  dispatch(command: Command): void
+  /**
+   * Returns the events the reducer emitted, for the caller that needs to react
+   * to one *now* rather than read it in the feed later.
+   *
+   * Most refusals throw, and a screen catches those. But an outcome is not a
+   * refusal: offering terms a player turns down returns `TermsRejected` and
+   * leaves the state alone, so a screen that only watches for throws sees a
+   * button that did nothing. The news drawer used to cover this and the hub's
+   * panel does not — it is not on the screen where the press happened.
+   */
+  dispatch(command: Command): readonly Event[]
   go(screen: Screen): void
   setLanguage(language: Language): void
   /**
@@ -131,6 +141,7 @@ export const useGame = create<Store>((set, get) => ({
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
     set({ game: state, feed: [...events, ...get().feed].slice(0, 60) })
+    return events
   },
 
   setLanguage(language) {

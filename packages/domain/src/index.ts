@@ -54,7 +54,6 @@ export {
   occupancy,
   positionsFrom,
   prizeMoney,
-  seedCapacity,
   sponsorMoney,
   tvMoney,
   wageBill,

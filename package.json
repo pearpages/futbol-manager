@@ -8,7 +8,7 @@
     "node": ">=24.16.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @fm/app dev",
+    "dev": "pnpm --filter @fm/app dev --host",
     "build": "pnpm --filter @fm/app build",
     "test": "vitest",
     "season": "node scripts/season.ts",

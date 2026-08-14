@@ -1,4 +1,4 @@
-import { type Club, type ClubId, EMPTY_LEDGER, FINANCE, seedCapacity } from '@fm/domain'
+import { type Club, type ClubId, EMPTY_LEDGER, FINANCE } from '@fm/domain'
 
 /**
  * The default league — twenty clubs named after their cities.
@@ -20,7 +20,7 @@ import { type Club, type ClubId, EMPTY_LEDGER, FINANCE, seedCapacity } from '@fm
  */
 
 /**
- * `[id, name, shortName, attack, defence]`.
+ * `[id, name, shortName, attack, defence, capacity]`.
  *
  * Ratings are **provisional and M2-only** — they stand in for squads until players
  * exist at M3, where the rating is derived from the selected XI instead. They were
@@ -31,33 +31,51 @@ import { type Club, type ClubId, EMPTY_LEDGER, FINANCE, seedCapacity } from '@fm
  * the rest, a broad middle where a few rating points separate seventh from
  * fourteenth, and a weak tail. A uniform ramp from 40 to 90 produces a tidy,
  * lifeless table.
+ *
+ * **Capacity is the real seat count of the ground each city plays at**, not a
+ * number derived from the rating. It used to be the latter — `seedCapacity`, a
+ * convex curve on rating — which put 1.20M seats in a league that has 776k, made
+ * Madrid's ground 45% larger than it is, and, worse, made capacity a second copy
+ * of the rating.
+ *
+ * **So capacity deliberately no longer tracks strength, because real grounds do
+ * not.** Heliópolis (rated 66.5) has a bigger stadium than Sevilla (75), and Vigo
+ * has 70% more seats than Girona at the same rating. Those inversions are the
+ * fact, not typos — do not "fix" them, and do not re-derive this column from
+ * anything. A ground is the one thing about a club that is inherited rather than
+ * earned, which is exactly why it makes the gate interesting.
+ *
+ * The ordering warning above governs this column too: these values are keyed by
+ * position in the list, and `TEST_CLUBS` in `@fm/domain` mirrors them index for
+ * index so the harness measures the league the game actually ships. **Change one
+ * and change the other.**
  */
-const CLUBS: readonly (readonly [string, string, string, number, number])[] = [
+const CLUBS: readonly (readonly [string, string, string, number, number, number])[] = [
   // Contenders
-  ['madrid', 'Madrid', 'MAD', 88, 85],
-  ['barcelona', 'Barcelona', 'BAR', 86, 82],
-  ['manzanares', 'Manzanares', 'MZN', 80, 86], // Madrid's second club
+  ['madrid', 'Madrid', 'MAD', 88, 85, 83_186],
+  ['barcelona', 'Barcelona', 'BAR', 86, 82, 105_000],
+  ['manzanares', 'Manzanares', 'MZN', 80, 86, 70_692], // Madrid's second club
   // European places
-  ['sevilla', 'Sevilla', 'SEV', 76, 74],
-  ['bilbao', 'Bilbao', 'BIL', 73, 72],
-  ['san-sebastian', 'San Sebastián', 'SSB', 70, 74],
+  ['sevilla', 'Sevilla', 'SEV', 76, 74, 43_864],
+  ['bilbao', 'Bilbao', 'BIL', 73, 72, 53_331],
+  ['san-sebastian', 'San Sebastián', 'SSB', 70, 74, 40_000],
   // The broad middle — a few points apart, so finishing order here is mostly form
-  ['valencia', 'Valencia', 'VAL', 68, 66],
-  ['villarreal', 'Villarreal', 'VLL', 67, 64],
-  ['heliopolis', 'Heliópolis', 'HEL', 66, 67], // Sevilla's second club
-  ['vigo', 'Vigo', 'VIG', 65, 65],
-  ['girona', 'Girona', 'GIR', 65, 61],
-  ['pamplona', 'Pamplona', 'PAM', 64, 66],
-  ['palma', 'Palma', 'PAL', 63, 64],
-  ['sarria', 'Sarrià', 'SAR', 61, 63], // Barcelona's second club
+  ['valencia', 'Valencia', 'VAL', 68, 66, 49_430],
+  ['villarreal', 'Villarreal', 'VLL', 67, 64, 23_500],
+  ['heliopolis', 'Heliópolis', 'HEL', 66, 67, 60_270], // Sevilla's second club
+  ['vigo', 'Vigo', 'VIG', 65, 65, 24_870],
+  ['girona', 'Girona', 'GIR', 65, 61, 14_624],
+  ['pamplona', 'Pamplona', 'PAM', 64, 66, 23_576],
+  ['palma', 'Palma', 'PAL', 63, 64, 25_736],
+  ['sarria', 'Sarrià', 'SAR', 61, 63, 38_529], // Barcelona's second club
   // Strugglers
-  ['getafe', 'Getafe', 'GET', 59, 60],
-  ['vitoria', 'Vitoria', 'VIT', 58, 58],
-  ['vallecas', 'Vallecas', 'VAS', 57, 56], // Madrid's third club
+  ['getafe', 'Getafe', 'GET', 59, 60, 17_393],
+  ['vitoria', 'Vitoria', 'VIT', 58, 58, 19_840],
+  ['vallecas', 'Vallecas', 'VAS', 57, 56, 14_708], // Madrid's third club
   // The tail
-  ['cadiz', 'Cádiz', 'CAD', 54, 53],
-  ['granada', 'Granada', 'GRA', 52, 51],
-  ['almeria', 'Almería', 'ALM', 49, 50],
+  ['cadiz', 'Cádiz', 'CAD', 54, 53, 25_033],
+  ['granada', 'Granada', 'GRA', 52, 51, 21_600],
+  ['almeria', 'Almería', 'ALM', 49, 50, 21_350],
 ]
 
 /**
@@ -98,14 +116,14 @@ function seedBudget(attack: number, defence: number): number {
 }
 
 export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(
-  ([id, name, shortName, attack, defence]) => ({
+  ([id, name, shortName, attack, defence, capacity]) => ({
     id: id as ClubId,
     name,
     shortName,
     attack,
     defence,
     budget: seedBudget(attack, defence),
-    capacity: seedCapacity(attack, defence),
+    capacity,
     ticketPrice: FINANCE.TICKET,
     expansion: null,
     ledger: EMPTY_LEDGER,

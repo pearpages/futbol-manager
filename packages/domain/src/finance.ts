@@ -91,8 +91,22 @@ export const FINANCE = {
    * sets.** `annualIncome` feeds `debtLimit`; if it followed the slider, raising
    * your own ticket price would raise your own borrowing limit, which is a club
    * lending itself money.
+   *
+   * **Doubled from 0.0069 when the grounds became real.** M5a calibrated this
+   * against a league of 1.20M seats, invented by a curve on rating; real Spanish
+   * grounds hold 776k, and the cut fell hardest on the middle — Girona lost 71% of
+   * its seats, Getafe 59%. Two clubs went into a permanent debt spiral: income
+   * below the wage bill, 12% interest compounding, and the squad degrading too
+   * slowly to catch up. Restoring the league's *aggregate* gate income (1.54×) did
+   * not fix them, because their own grounds fell far further than the average.
+   *
+   * At 2× both arms of the human harness clear their overdrafts with the worst
+   * club at 0.17× its limit, and the league total lands at 2.30× over fifty
+   * seasons against 2.15× before — `WAGE_INFLATION` taxes the extra income back,
+   * which is the brake working as designed. €13.80 a seat is also the more
+   * plausible figure; €6.90 was a number chosen to balance imaginary stadiums.
    */
-  TICKET: 0.0069,
+  TICKET: 0.0138,
   /** How far a manager may move the price, as a multiple of the default. */
   MIN_TICKET_FACTOR: 0.4,
   MAX_TICKET_FACTOR: 2.5,
@@ -116,9 +130,6 @@ export const FINANCE = {
   /** The smallest and largest expansion worth the paperwork. */
   MIN_EXPANSION: 1_000,
   MAX_EXPANSION: 15_000,
-  /** Seats, for a club of exactly average rating. Scaled convexly from there. */
-  BASE_CAPACITY: 26_000,
-  CAPACITY_EXPONENT: 2.8,
   /** Floor and ceiling on how full a ground gets, whatever the form. */
   MIN_OCCUPANCY: 0.45,
   MAX_OCCUPANCY: 0.98,
@@ -166,17 +177,23 @@ export const FINANCE = {
   DEBT_LIMIT: 0.5,
 } as const
 
-/**
- * Seats, seeded from rating on the same convex curve the budget uses.
+/*
+ * There is no `seedCapacity` here any more, and that is deliberate.
  *
- * A big club's ground is not slightly larger than a small one's — it is several
- * times larger — and the gate is the one revenue stream a club can influence, so
- * getting the spread wrong here mutes the whole bottom of the table.
+ * Seats used to be derived from rating on the same convex curve the budget uses.
+ * It was a reasonable guess and it was wrong twice over: it put 1.20M seats in a
+ * league that has 776k, and it made capacity a second copy of the rating, when in
+ * real football a ground is the one thing about a club that is inherited rather
+ * than earned. Capacity is now literal data, carried per club in `CLUBS` in
+ * `@fm/data` and mirrored in `test-clubs.ts`.
+ *
+ * `migrations.ts` keeps its own frozen copy of the old curve (`v6ToV7`), as it must
+ * — a migration records what a version meant when it shipped. Deleting this
+ * function cannot disturb an existing save.
+ *
+ * A second division at M7 may want a generator again. Write it then, against two
+ * real cases; ground rule 5.
  */
-export function seedCapacity(attack: number, defence: number): number {
-  const rating = (attack + defence) / 2
-  return Math.round(FINANCE.BASE_CAPACITY * Math.pow(rating / 50, FINANCE.CAPACITY_EXPONENT))
-}
 
 /**
  * How full the ground gets: quality fills seats, and so does winning.

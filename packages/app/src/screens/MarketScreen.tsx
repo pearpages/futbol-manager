@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { type Ref, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ageOn,
   askingPrice,
@@ -8,6 +8,7 @@ import {
   type ClubId,
   createRng,
   type DayNumber,
+  type Event,
   type GameState,
   isTransferWindowOpen,
   listedForSale,
@@ -25,6 +26,7 @@ import {
 } from '@fm/domain'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { describe as describeEvent, lookupFor } from '../notifications.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import { positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
@@ -168,6 +170,27 @@ export function MarketScreen() {
   /** `null` is market order — the shuffle. A column cycles back to it. */
   const [sort, setSort] = useState<Sort | null>(null)
 
+  const dealRef = useRef<HTMLElement>(null)
+
+  /**
+   * Bring the deal into view when one is opened.
+   *
+   * The rail is its own scroll container and the negotiation panel sits near the
+   * top of it, while `Your bids` — the only way to pick an agreed fee back up —
+   * is at the bottom. Pressing Open inserted the panel above the viewport and
+   * left the scroll offset alone, so the deal you had just asked for was
+   * off-screen and the button read as dead. That is what made a fee you had
+   * already agreed impossible to settle.
+   *
+   * Keyed on the target rather than the panel: reopening the same player should
+   * not fight a manager who has scrolled away deliberately.
+   */
+  useEffect(() => {
+    if (target === null) return
+    // jsdom has no layout and does not implement this at all.
+    dealRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [target])
+
   const managed = game.managedClubId
   const club = game.clubs.find((c) => c.id === managed)
   const budget = club?.budget ?? 0
@@ -239,11 +262,30 @@ export function MarketScreen() {
     ]),
   )
 
-  /** Commands throw when they are refused; that message is the useful one. */
-  function attempt(action: () => void) {
+  /**
+   * Run a command and say what came of it.
+   *
+   * Two different things can go wrong and only one of them throws. A command the
+   * reducer *refuses* throws a `GameError` — a rule you broke, and that message
+   * is the useful one. A command it *accepts* can still not get you what you
+   * wanted: terms a player turns down come back as a `TermsRejected` event with
+   * the state untouched, and nothing is thrown at all.
+   *
+   * Before the shell's news drawer went, that second case at least lit a badge.
+   * Now the only feed is on the hub — a different screen from the one you
+   * pressed the button on — so without this the button reads as broken.
+   */
+  function attempt(action: () => readonly Event[] | void) {
     try {
-      action()
-      setError(null)
+      const events = action() ?? []
+      const outcome = events.find((event) => event.type === 'TermsRejected')
+      // Reuse the feed's own sentence rather than writing a second one for the
+      // same event; `describe` already resolves his name and what he wants.
+      setError(
+        outcome === undefined
+          ? null
+          : (describeEvent(outcome, game, lookupFor(game, translator), translator)?.text ?? null),
+      )
     } catch (thrown) {
       // A refusal carries a code; the sentence it also carries is the fallback
       // for anything that has not been given one.
@@ -257,7 +299,28 @@ export function MarketScreen() {
     }
   }
 
-  const selected = target === null ? null : (all.find((l) => l.player.id === target) ?? null)
+  /**
+   * The deal on the table, if any.
+   *
+   * The listing is the usual source, but a bid outlives it: `listingsFor` is
+   * rebuilt from each club's *live* `surplus`, so a player you have already bid
+   * for can stop being spare — sign someone else from that club and their squad
+   * changes underneath you. The bid still carries everything the panel needs, so
+   * it is the fallback rather than a dead end. Opening a bid must never be a
+   * press that does nothing.
+   */
+  const selected = ((): Listing | null => {
+    if (target === null) return null
+
+    const listed = all.find((l) => l.player.id === target)
+    if (listed !== undefined) return listed
+
+    const bid = outgoing.find((b) => b.playerId === target)
+    const player = byId.get(target)
+    if (bid === undefined || player === undefined) return null
+
+    return { player, from: bid.to, fee: bid.counterFee ?? bid.fee }
+  })()
 
   return (
     <div className="market-screen">
@@ -427,6 +490,13 @@ export function MarketScreen() {
 
         {selected !== null && (
           <NegotiationPanel
+            // Remounts per player. The fee, wage and years are `useState`
+            // initialisers, which run once — without a key, switching from one
+            // bid to another reuses the instance and leaves the previous
+            // player's numbers in the fields, and offering *his* wage to
+            // somebody who wants more is refused with the state untouched.
+            key={selected.player.id}
+            ref={dealRef}
             listing={selected}
             bid={outgoing.find((b) => b.playerId === selected.player.id)}
             date={date}
@@ -525,7 +595,13 @@ export function MarketScreen() {
           ) : (
             <ul className="offer-list">
               {outgoing.map((bid) => (
-                <li key={bid.id} className="offer-list__item">
+                <li
+                  key={bid.id}
+                  // Marks which deal the negotiation panel is showing. The panel
+                  // is at the top of a rail this list sits at the bottom of, so
+                  // the press needs an answer here as well as up there.
+                  className={`offer-list__item${bid.playerId === target ? ' is-active' : ''}`}
+                >
                   <span className="offer-list__name">
                     {byId.get(bid.playerId)?.name ?? t('market.unknownPlayer')}
                   </span>
@@ -541,7 +617,7 @@ export function MarketScreen() {
                         setError(null)
                       }}
                     >
-                      Open
+                      {t('market.openNegotiation')}
                     </button>
                     <button
                       type="button"
@@ -581,7 +657,9 @@ interface NegotiationProps {
   readonly bid: Bid | undefined
   readonly date: DayNumber
   readonly open: boolean
-  onAttempt(action: () => void): void
+  /** So the screen can scroll the deal into view when it opens. */
+  readonly ref?: Ref<HTMLElement>
+  onAttempt(action: () => readonly Event[] | void): void
   onClose(): void
 }
 
@@ -592,7 +670,7 @@ interface NegotiationProps {
  * it with. Everyone else needs a fee agreed first, which is why the two steps are
  * visibly separate rather than one "buy" button.
  */
-function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: NegotiationProps) {
+function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }: NegotiationProps) {
   const dispatch = useGame((s) => s.dispatch)
   const { t, money } = useT()
   const { player } = listing
@@ -605,7 +683,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
   const feeAgreed = listing.from === null || bid?.status === 'accepted'
 
   return (
-    <section className="screen market-screen__panel">
+    <section className="screen market-screen__panel" ref={ref}>
       <h2 className="screen__heading">{player.name}</h2>
 
       <div className="market-screen__deal">

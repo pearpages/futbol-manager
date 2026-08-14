@@ -157,6 +157,18 @@
   font-size: var(--fm-text-sm);
 }
 
+/*
+ * The deal the negotiation panel is currently showing.
+ *
+ * The panel opens at the top of a rail this list sits at the bottom of, so on a
+ * short window the press has no visible answer where it was made. The band is
+ * the same device `.data-table__row.is-you` uses on the table screen.
+ */
+.offer-list__item.is-active {
+  box-shadow: inset 3px 0 0 var(--fm-champion);
+  background: rgb(255 255 255 / 4%);
+}
+
 .offer-list__name {
   font-weight: 700;
 }
