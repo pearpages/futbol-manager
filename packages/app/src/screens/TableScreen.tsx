@@ -47,6 +47,7 @@ export function bandFor(position: number, total: number): Band | null {
 export function TableScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
+  const go = useGame((s) => s.go)
 
   const table = computeTable(game.competition.clubIds, game.season.fixtures)
   const names = new Map(game.clubs.map((c) => [c.id, c]))
@@ -156,6 +157,11 @@ export function TableScreen() {
             </ul>
           )}
         </section>
+        <div className="screen-actions">
+          <button type="button" className="button" onClick={() => go('hub')}>
+            Volver
+          </button>
+        </div>
       </aside>
     </div>
   )

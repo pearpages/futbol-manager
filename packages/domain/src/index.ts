@@ -29,6 +29,7 @@ export {
   FIXTURES_PER_ROUND,
   fixturesOn,
   generateFixtures,
+  nextFixtureFor,
   ROUNDS_PER_HALF,
   TOTAL_ROUNDS,
 } from './fixtures.ts'

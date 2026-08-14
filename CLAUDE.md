@@ -1,6 +1,8 @@
 # futbol-manager
 
-A PC Fútbol 2001-style football management game. No real-time match engine — results are resolved statistically. Fictional clubs and players by default; dataset import is an opt-in layer.
+A football management game in the idiom of Dinamic's PC Fútbol. No real-time match engine — results are resolved statistically. Fictional clubs and players by default; dataset import is an opt-in layer.
+
+**The first delivery targets PC Fútbol 5.0 (1996/97); the depth of the later games is the direction, not the v1 scope** — see [ADR 0008](docs/adr/0008-target-pc-futbol-5.md). M0–M5 is the 5.0-shaped game: one league, squads, tactics, transfers, an economy. M6–M7 is the drift toward 2001. Before adding anything, know which side of that line it sits on.
 
 **Read before working:** [`docs/roadmap.md`](docs/roadmap.md) for what to build and in what order, [`docs/stack.md`](docs/stack.md) for every tool and version, [`docs/attribute-model.md`](docs/attribute-model.md) for the player spec, [`docs/market-model.md`](docs/market-model.md) for what a player is worth and who will sell him, [`docs/adr/`](docs/adr/) for settled decisions. Do not reopen an ADR's question without saying why the ADR is wrong.
 
@@ -58,7 +60,7 @@ pnpm dev                        # app only
 - **Imports:** relative imports use `.ts` / `.tsx` extensions, never `.js`. This is what lets `node scripts/*.ts` run package sources with no extra tooling.
 - **Dates:** never a `Date`. A date is a `DayNumber` — an integer day count — from `packages/domain/src/time.ts`. Add days with `addDays`, compare with `<`, convert for display with `toCivil`/`formatDate`. All calendar arithmetic belongs in `time.ts`, nowhere else.
 - **State changes:** through `reduce(state, command, rng)` only. New commands go in `reduce.ts`; the `AdvanceDay` handler is where M6's day pipeline will hang its pure functions.
-- **Club naming:** a club is its **city** (Madrid, Barcelona, Sevilla). Where a city has more than one club in a division, the second takes its district or ground — Manzanares, Heliópolis, Sarrià, Vallecas — never a crowd nickname, which reads wrong in a table. A city name is not a club trademark; real club names stay a user-supplied import. Follow this when adding a second division rather than inventing composites. **Player** names have no city equivalent, so generate them from Spanish given-name and surname pools — never lift a real squad.
+- **Club naming:** a club is its **city** (Madrid, Barcelona, Sevilla). Where a city has more than one club in a division, the second takes its district or ground — Manzanares, Heliópolis, Sarrià, Vallecas — never a crowd nickname, which reads wrong in a table. A city name is not a club trademark; real club names stay a user-supplied import. Follow this when adding a second division rather than inventing composites. **Player** names have no city equivalent, so generate them from Spanish given-name and surname pools — never lift a real squad. This is a legal constraint, not a stylistic one — see [ADR 0007](docs/adr/0007-intellectual-property.md).
 - **Randomness:** always through the injected `rng`, never a bare call. A function that needs randomness takes it as a parameter.
 - **Determinism:** any headless run must be reproducible from `(seed, commands)`. If a test is flaky, something read the clock or the global RNG — find it, don't retry it.
 - **Balance changes** must keep the N-season statistical harness green. The harness is the regression net for M2, M4 and M5; it exists from M1 onward.
@@ -139,7 +141,7 @@ M0 complete and its exit criterion met: four packages wired, `sfc32` in `package
 
 **Done.** Table, squad, ficha and lineup screens; Zustand store; navigation; the first real `chrome.css`; and IndexedDB save/load, since a game you can't save isn't playable in the sense ground rule 6 means. 202 tests green.
 
-**The visual direction is a 1999 Spanish CD-ROM, not a terminal.** Two materials, and the split is structural: `.panel` is raised bevelled hardware holding controls, `.screen` is a recessed dark display holding data. Every new screen picks one. The position band on table rows is the one real information device — it's how a Spanish classification is read. Tokens and primitives live in `packages/app/src/styles/`; **reach for `chrome.css` before writing screen CSS**, and add a primitive there the _second_ time a screen needs it.
+**The visual direction is a 1996 Spanish CD-ROM, not a terminal.** 5.0 was the series' first Windows 95 entry, which is exactly where this vocabulary comes from. Two materials, and the split is structural: `.panel` is raised bevelled hardware holding controls, `.screen` is a recessed dark display holding data. Every new screen picks one. The position band on table rows is the one real information device — it's how a Spanish classification is read. Tokens and primitives live in `packages/app/src/styles/`; **reach for `chrome.css` before writing screen CSS**, and add a primitive there the _second_ time a screen needs it.
 
 **Decisions a later session should not relitigate:**
 
@@ -285,3 +287,35 @@ A weak club was shown sixty players it could not buy while ~90 useful, affordabl
 - **The harness now knows more than the player does.** `market.human.harness.test.ts` shops with `needFor` directly, so its +4.3 points a season is a perfectly-informed manager — an upper bound, not what a person will get. Recorded in the doc.
 
 `shuffle` moved from `market.ts` to `rng.ts` and is generic: a shuffle is a property of the generator, not of clubs. The market screen was the second case, which is what the house rule waits for.
+
+### 2026-08-14 — the target, and reference material
+
+**Two ADRs, both prompted by asking whether we could just copy PC Fútbol.**
+
+[**ADR 0007**](docs/adr/0007-intellectual-property.md) — the answer is mostly yes, and the premise was wrong. Dinamic went bankrupt in 2001 but the rights were sold on (Planeta DeAgostini → Gaelco → Gamick → Héctor Prats today, with PC Fútbol 8 on Steam); copyright runs to the 2060s. But **mechanics and systems are not protected** — CJEU _SAS Institute v World Programming_ — so the design is free. The name, the assets and their actual screens are not. **The real exposure was never Dinamic's**: club and player identity belongs to the clubs, the league and the players, which is the reason the city-name convention exists. What the data layer may _ship_ is deliberately left open for M3.
+
+[**ADR 0008**](docs/adr/0008-target-pc-futbol-5.md) — **the first delivery targets PC Fútbol 5.0, not 2001.** Every doc said 2001, which is a finished product's feature list rather than a first release. The roadmap already sequenced it correctly — M0–M5 is the 5.0-shaped game, M6–M7 is the drift toward 2001 — so only the label was wrong. **The visual note was dated wrong too:** "a 1999 Spanish CD-ROM" is now 1996/97, and 5.0 being the series' first Windows 95 entry is what makes the bevelled-panel chrome the right idiom rather than a guess.
+
+**"Scalable" here does not mean abstracting early.** Ground rule 5 stands. Growth is additive because of seams already in place — `reduce` as the single door, versioned saves, enforced boundaries, a resolver contract that swapped supplier at M3 without changing signature. The ladder is the plan.
+
+**`assets/` holds 5.0 screenshots for reference, and is gitignored** — `assets/*` with `!assets/README.md`, so the rules are in the repo and no image ever is. Fifteen files, each opened and identified rather than trusted; `assets/pcfutbol-5.0/CONTENTS.md` says what each one is. The useful ones are the Menu Manager hub, "Jugadores a la venta", the squad/formation screen, a classification table and a top-scorers chart. **No player ficha turned up in any source tried** — the one screen most comparable to `PlayerScreen`, and the gap worth filling if a better source appears.
+
+Two things in there worth arguing with later: PC Fútbol navigates from a **four-quadrant hub**, not a sidebar; and it shows player quality as **stars, not a number**.
+
+### 2026-08-14 — hub, news feed, and a deliberate matchday
+
+**Three problems, all "the player cannot see what is going on".** The app dropped you into the classification with a flat rail; everything the game did happened silently; and your own match was a side effect of a button you pressed repeatedly.
+
+**The hub is home, and the rail stays.** `HubScreen` is four quadrants — Seguimiento, Entrenador, Mercado, Finanzas — around a centre carrying identity, next match and news, taken from `assets/pcfutbol-5.0/hub-menu-manager.jpg`. **Unbuilt tiles are shown disabled with the milestone that brings them**, so the hub doubles as a roadmap you can see; only milestones the roadmap actually assigns are named, which is why Calendario says "Not built yet" and promises nothing. Two tiles pointing at one screen (Clasificación/Resultados, Alineación/Tácticas) is deliberate — different questions, one screen for now.
+
+**The news feed was a surfacing problem, not a data one.** The store's `feed` already carried every event; `TableScreen` rendered only `MatchPlayed`. `notifications.ts` turns an `Event` into a sentence with names and money resolved, and returns `null` for the noise — `DayAdvanced` fires every tick, and `LineupChanged`/`TacticsChanged` are your own clicks reported back at you. **A feed that reports your clicks is a feed nobody reads.** Other clubs' results are dropped too: nineteen a week would bury everything, and the table already lists them. `unread` is store-only — a session concern, so saves stay at v6.
+
+**Matchday is now a separate press.** `nextFixtureFor` (domain, pure) plus `matchday.ts` answers the same questions for the shell bar and the hub. The primary button is a three-state machine — `Start 2027/28` / **`Play match v Sevilla (H)`** / `Advance day` + `To matchday`. **Round one is dated on the season start**, so a new career opens on _Play match_, never on _Advance day_ — worth knowing before it looks like a bug.
+
+**The weak-XI warning exists because of M4c.** Signing a player no longer selects him, which is correct and silent; `weakLineup` compares the stored XI against `bestXI` and says so. A warning, never a block.
+
+**Testing note that will bite again:** nine call sites queried the advance button by exact name, and it now has three labels. `src/testing.ts` holds one `ADVANCE` matcher plus `advance()`/`advanceUntil()` — use those rather than a literal. Several tests also assumed the app opens on the table; they click through to it now.
+
+375 tests, `pnpm season` byte-identical. **One flake seen once and not reproduced** — a 5s timeout during a full run while other work was competing for CPU; the suite is 19s clean, and the app project's slowest test is 2.5s. If it returns, it is contention rather than the clock or the rng.
+
+**Still not seen in a browser** — sixth failed extension connection. Verified by a DOM dump: bar reads `Next v Valencia (A) · today`, button reads `Play match v Valencia (A)`; after playing and three days it reads `Advance day` / `Next v Bilbao (H) · in 3d` with an unread badge, and the drawer shows "Cádiz offer €525k for Héctor Bermejo" — exactly the thing that used to pass unnoticed.

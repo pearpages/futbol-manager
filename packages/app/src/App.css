@@ -1,6 +1,10 @@
 .shell {
+  /* Containing block for the news drawer, which overlays rather than reflows. */
+  position: relative;
   display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr);
+  /* One column. Navigation is the hub, not a rail — see ADR 0008 and the
+     reference in assets/pcfutbol-5.0/. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   gap: var(--fm-space-2);
   height: 100%;
@@ -37,8 +41,15 @@
   text-transform: uppercase;
 }
 
-.shell__club-name {
+.shell__title {
+  margin: 0;
+  flex: 1;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
   font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .shell__date {
@@ -46,65 +57,75 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Left rail ───────────────────────────────────────────────────────────── */
-
-.shell__nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fm-space-2);
-  padding: var(--fm-space-2);
-}
-
-.shell__nav-item {
-  width: 100%;
-  text-align: left;
-}
-
-/* The primary action sits apart from navigation and stays at the foot of the
-   rail, where a hand returns to it without looking. */
-.shell__actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--fm-space-2);
-  margin-top: auto;
-  padding-top: var(--fm-space-4);
-  border-top: 1px solid var(--fm-bevel-dark);
-}
-
-.shell__advance {
-  padding-block: var(--fm-space-3);
-}
-
 /* ── Stage ───────────────────────────────────────────────────────────────── */
-
-/* Setup has no left rail — the club picker takes the full width. */
-.shell--setup {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
-}
 
 .shell__stage {
   min-height: 0;
   min-width: 0;
 }
 
-@media (width < 48rem) {
-  .shell {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(0, 1fr);
-  }
+/* ── Matchday and news, in the title bar ─────────────────────────────────── */
 
-  .shell__nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
+.shell__next {
+  color: var(--fm-ink-soft);
+}
 
-  .shell__actions {
-    flex-direction: row;
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
-    margin-left: auto;
-  }
+/* The one state worth a colour: the next press plays the match. */
+.shell__next.is-due {
+  color: var(--fm-accent-ink);
+  font-weight: 700;
+}
+
+.shell__news {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fm-space-1);
+  padding: 2px var(--fm-space-2);
+  font-size: var(--fm-text-xs);
+}
+
+.shell__badge {
+  min-width: 1.4em;
+  padding: 0 3px;
+  background: var(--fm-relegation);
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* An overlay rather than a column, so opening the news never reflows the screen
+   underneath it. */
+.shell__drawer {
+  position: absolute;
+  top: 3.5rem;
+  right: var(--fm-space-4);
+  z-index: 10;
+  width: min(26rem, calc(100vw - 2rem));
+  max-height: 60vh;
+  overflow: auto;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+.shell__drawer-foot {
+  padding: var(--fm-space-3) var(--fm-space-4);
+  border-top: 1px solid var(--fm-screen-rule);
+}
+
+/* Distinct from Advance day: this one is not reversible. */
+.shell__play {
+  background: var(--fm-relegation);
+  color: #fff;
+}
+
+.shell__play:hover {
+  background: #d4594a;
+}
+
+.shell__warning {
+  margin: var(--fm-space-1) 0 0;
+  color: #7a2f26;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
 }

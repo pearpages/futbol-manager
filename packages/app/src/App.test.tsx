@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { bestXI, overall, startersOf, teamRating, worstXI } from '@fm/domain'
 import { App } from './App.tsx'
 import { useGame } from './store.ts'
+import { advance, back, openScreen } from './testing.ts'
 
 /**
  * M3b's exit criterion, at the UI level: you can open the game, look at your
@@ -16,49 +17,78 @@ beforeEach(() => {
   useGame.getState().newGame()
 })
 
+/**
+ * Screens are reached from the rail. The app now opens on the hub, so a test
+ * about the table has to go there — which is what a player does too.
+ */
+const openTable = () => {
+  render(<App />)
+  openScreen('Clasificación')
+}
+
 const managed = () => {
   const { game } = useGame.getState()
   return { game, clubId: game.managedClubId }
 }
 
 describe('the shell', () => {
-  it('opens on the table with the managed club named', () => {
+  it('opens on the hub with the managed club named', () => {
     render(<App />)
     const { game, clubId } = managed()
     const club = game.clubs.find((c) => c.id === clubId)
 
-    expect(screen.getByRole('heading', { name: /Primera División/i })).toBeDefined()
+    // The hub is home since the M4c refactor — four quadrants, not a table.
+    expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
     expect(screen.getAllByText(club?.name ?? '').length).toBeGreaterThan(0)
   })
 
+  it('reaches the table from the rail', () => {
+    openTable()
+    expect(screen.getByRole('heading', { name: /Primera División/i })).toBeDefined()
+  })
+
   it('lists all twenty clubs in the table', () => {
-    render(<App />)
+    openTable()
     const rows = screen.getAllByRole('row')
     // 20 clubs plus the header row.
     expect(rows.length).toBe(21)
   })
 
   it('marks the managed club’s row so it can be found at a glance', () => {
-    render(<App />)
+    openTable()
     expect(document.querySelectorAll('.data-table__row.is-you')).toHaveLength(1)
   })
 
-  it('navigates between sections', () => {
+  it('reaches every live section from the hub, and comes back', () => {
+    // There is no rail: the hub is the only branching point, so every screen is
+    // hub -> tile -> Volver -> hub. If any leg of this breaks, a screen has
+    // become unreachable.
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Squad' }))
-    expect(screen.getByRole('heading', { name: /Squad/i })).toBeDefined()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lineup' }))
-    expect(screen.getByRole('heading', { name: 'Starting XI' })).toBeDefined()
+    for (const [tile, heading] of [
+      ['Clasificación', /Primera División/i],
+      ['Plantilla', /Squad/i],
+      ['Alineación', /Starting XI/],
+      ['Fichar', /Transfer market/],
+    ] as const) {
+      openScreen(tile)
+      expect(screen.getByRole('heading', { name: heading })).toBeDefined()
+      back()
+      expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
+    }
   })
 })
 
 describe('advancing the day', () => {
   it('plays the round and shows the results', () => {
-    render(<App />)
+    // The results list lives on the table screen; the clock lives on the hub. So
+    // this is the round trip a player actually makes.
+    openTable()
     expect(screen.getByText(/Advance the day to play/)).toBeDefined()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Advance day' }))
+    back()
+    advance()
+    openScreen('Clasificación')
 
     const played = useGame.getState().game.season.fixtures.filter((f) => f.result !== null)
     expect(played).toHaveLength(10)
@@ -68,7 +98,7 @@ describe('advancing the day', () => {
   it('moves the clock forward', () => {
     render(<App />)
     const before = useGame.getState().game.season.currentDate
-    fireEvent.click(screen.getByRole('button', { name: 'Advance day' }))
+    advance()
     expect(useGame.getState().game.season.currentDate).toBe(before + 1)
   })
 })
@@ -76,7 +106,7 @@ describe('advancing the day', () => {
 describe('the squad screen', () => {
   it('shows the full squad and opens a player’s ficha', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Squad' }))
+    openScreen('Plantilla')
 
     const { game, clubId } = managed()
     const squad = game.squads[clubId] ?? []
@@ -92,7 +122,7 @@ describe('the squad screen', () => {
 
   it('renders one bar per attribute on the ficha', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Squad' }))
+    openScreen('Plantilla')
     const { game, clubId } = managed()
     const first = (game.squads[clubId] ?? [])[0]
     if (first === undefined) throw new Error('empty squad')
@@ -105,7 +135,7 @@ describe('the squad screen', () => {
 describe('the lineup screen', () => {
   it('changes formation through the reducer', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Lineup' }))
+    openScreen('Alineación')
     fireEvent.click(screen.getByRole('button', { name: '4-3-3' }))
 
     const { game, clubId } = managed()
@@ -115,7 +145,7 @@ describe('the lineup screen', () => {
 
   it('changes the approach through the reducer', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Lineup' }))
+    openScreen('Alineación')
     fireEvent.change(screen.getByLabelText(/Approach/), { target: { value: '100' } })
 
     const { game, clubId } = managed()
@@ -125,7 +155,7 @@ describe('the lineup screen', () => {
 
   it('shows the two numbers the resolver actually reads', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Lineup' }))
+    openScreen('Alineación')
 
     const panel = screen.getByRole('heading', { name: 'This XI' }).parentElement
     if (panel === null) throw new Error('no panel')
@@ -137,7 +167,7 @@ describe('the lineup screen', () => {
     // The exit criterion in miniature: a lineup change the player makes on screen
     // has to move the numbers the match resolver consumes.
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Lineup' }))
+    openScreen('Alineación')
 
     const { game, clubId } = managed()
     const squad = game.squads[clubId] ?? []

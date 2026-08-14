@@ -4,6 +4,7 @@ import { surplus } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { back, openScreen } from '../testing.ts'
 
 /**
  * The sell side, at the UI level.
@@ -24,7 +25,7 @@ const game = () => useGame.getState().game
 
 function openSquad() {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Squad' }))
+  openScreen('Plantilla')
 }
 
 function rowFor(name: string) {
@@ -89,8 +90,10 @@ describe('the squad screen', () => {
     const player = aSpare()
     fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Table' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Squad' }))
+    back()
+    openScreen('Clasificación')
+    back()
+    openScreen('Plantilla')
 
     expect(within(rowFor(player.name)).getByRole('button', { name: 'Listed' })).toBeDefined()
   })
@@ -99,7 +102,7 @@ describe('the squad screen', () => {
 describe('the market screen shows what you have put up', () => {
   it('is explicit that nothing is on the market by default', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    openScreen('Fichar')
     expect(screen.getByText(/Your squad is invisible to other clubs/)).toBeDefined()
   })
 
@@ -108,7 +111,8 @@ describe('the market screen shows what you have put up', () => {
     const player = aSpare()
     fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    back()
+    openScreen('Fichar')
     const panel = screen.getByRole('heading', { name: 'Up for sale' }).closest('section')
     if (panel === null) throw new Error('no panel')
 

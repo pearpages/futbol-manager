@@ -1,8 +1,21 @@
 # Roadmap — PC Fútbol-style Manager
 
-**Scope:** Football management game in the spirit of PC Fútbol 2001. No real-time match engine — results resolved statistically. Fictional clubs/players by default, with dataset import as an opt-in layer.
+**Scope:** Football management game in the idiom of Dinamic's PC Fútbol. No real-time match engine — results resolved statistically. Fictional clubs/players by default, with dataset import as an opt-in layer.
 
 **Estimates** are in _focused weeks_ (~35h). For evenings-and-weekends (~10h/week), multiply by ~3.5.
+
+---
+
+## Target and direction
+
+**The first delivery targets PC Fútbol 5.0 (1996/97). The depth of the later games is the direction, not the v1 scope.** Decided in [ADR 0008](./adr/0008-target-pc-futbol-5.md); 2001 was five years of accumulated depth on a game that was already shipping, which is an ambition rather than a first release.
+
+|                           | Milestones | What it is                                                                                                         |
+| ------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------ |
+| **The 5.0-shaped game**   | M0–M5      | One league. Squads, lineups, tactics, a transfer market, an economy and a board. Playable and coherent on its own. |
+| **The drift toward 2001** | M6–M7      | A living squad — injuries, suspensions, form, training. Then a cup, a second division, Europe, youth and scouting. |
+
+This does not soften ground rule 5. Growth stays additive because of seams already in place — `reduce` as the single door, versioned saves with migrations, enforced package boundaries, and a resolver contract that swapped suppliers at M3 without changing signature — **not** because things were abstracted ahead of a second case. The ladder below is the scalability plan.
 
 ---
 
@@ -115,7 +128,7 @@ Table, squad, ficha and lineup screens; the Zustand store; navigation; the first
 
 **Exit — met.** You can open the game, read the classification, browse the squad, open a player, change formation and approach, advance the day and watch results land. A best-XI vs worst-XI season driven entirely through the UI's own store shows the points gap.
 
-**The look is a 1999 Spanish CD-ROM, not a terminal.** The default retro answer — dark background, acid-green monospace, scanlines — is 1980s BBS and wrong for the subject. Dinamic's visual language was _hardware_: bevelled panels you could press, with data sunk into inset screens. So the chrome has two materials, and the distinction is structural rather than decorative:
+**The look is a 1996 Spanish CD-ROM, not a terminal.** The default retro answer — dark background, acid-green monospace, scanlines — is 1980s BBS and wrong for the subject. Dinamic's visual language was _hardware_: bevelled panels you could press, with data sunk into inset screens. That vocabulary is Windows 95, which is where 5.0 lands — see [ADR 0008](./adr/0008-target-pc-futbol-5.md). So the chrome has two materials, and the distinction is structural rather than decorative:
 
 - `.panel` — raised, bevelled, holds controls and labels
 - `.screen` — recessed, dark, holds data
@@ -279,7 +292,7 @@ Run these alongside, not as separate phases.
 **Data pipeline** _(starts at M3, ~2 weeks total)_
 Derivation layer mapping FBref/StatsBomb per-90 stats onto the eight attributes — skeleton mapping table already in [attribute-model.md](./attribute-model.md#bridge-to-the-data-pipeline). Pure functions, unit-tested. openfootball for club and league structure.
 
-**Ships with unlicensed city names by default** — a club is its city (Madrid, Barcelona, Sevilla), and a city's second club takes the district or ground it is identified with (Manzanares, Heliópolis, Sarrià, Vallecas). A city name is not a club trademark. Real club and player names stay a user-supplied import. Player names are generated from Spanish name pools, never lifted from real squads — there is no city-name equivalent for people.
+**Ships with unlicensed city names by default** — a club is its city (Madrid, Barcelona, Sevilla), and a city's second club takes the district or ground it is identified with (Manzanares, Heliópolis, Sarrià, Vallecas). A city name is not a club trademark. Real club and player names stay a user-supplied import. Player names are generated from Spanish name pools, never lifted from real squads — there is no city-name equivalent for people. Reasoning in [ADR 0007](./adr/0007-intellectual-property.md), which also leaves deliberately open what this layer may _ship_ as opposed to _read_.
 
 **Save migrations** _(continuous)_
 Every schema change gets a migration and a round-trip test against a stored fixture save from the previous version. Keep one fixture save per shipped version in the repo. See [ADR 0005](./adr/0005-persistence.md).
@@ -327,11 +340,13 @@ Listed so they stay decided rather than getting relitigated at 1am:
 
 Locked decisions live in [`docs/adr/`](./adr/). Read them before reopening a settled question.
 
-| ADR                                      | Decision                                                      |
-| ---------------------------------------- | ------------------------------------------------------------- |
-| [0001](./adr/0001-workspace-tooling.md)  | npm workspaces, no Turborepo                                  |
-| [0002](./adr/0002-prng.md)               | `sfc32` seeded PRNG                                           |
-| [0003](./adr/0003-league-format.md)      | 20 clubs, 38 rounds, Spanish tiebreakers                      |
-| [0004](./adr/0004-attribute-model.md)    | Eight attributes, not thirty                                  |
-| [0005](./adr/0005-persistence.md)        | IndexedDB + JSON export, versioned saves                      |
-| [0006](./adr/0006-typescript-6-not-7.md) | TypeScript pinned to 6.x — typescript-eslint caps at `<6.1.0` |
+| ADR                                         | Decision                                                      |
+| ------------------------------------------- | ------------------------------------------------------------- |
+| [0001](./adr/0001-workspace-tooling.md)     | npm workspaces, no Turborepo                                  |
+| [0002](./adr/0002-prng.md)                  | `sfc32` seeded PRNG                                           |
+| [0003](./adr/0003-league-format.md)         | 20 clubs, 38 rounds, Spanish tiebreakers                      |
+| [0004](./adr/0004-attribute-model.md)       | Eight attributes, not thirty                                  |
+| [0005](./adr/0005-persistence.md)           | IndexedDB + JSON export, versioned saves                      |
+| [0006](./adr/0006-typescript-6-not-7.md)    | TypeScript pinned to 6.x — typescript-eslint caps at `<6.1.0` |
+| [0007](./adr/0007-intellectual-property.md) | Copy the design, not the expression or the name               |
+| [0008](./adr/0008-target-pc-futbol-5.md)    | PC Fútbol 5.0 is the v1 target; 2001 is the direction         |

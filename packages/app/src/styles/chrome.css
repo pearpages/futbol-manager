@@ -436,3 +436,53 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── News list ───────────────────────────────────────────────────────────── */
+/*
+ * Shared by the hub's Noticias panel and the drawer, which is why it lives here
+ * rather than in a screen: two callers is exactly when a primitive graduates.
+ */
+.notice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice-list__item {
+  padding: var(--fm-space-2) var(--fm-space-4);
+  border-top: 1px solid var(--fm-screen-rule);
+  border-left: 3px solid transparent;
+  font-size: var(--fm-text-sm);
+}
+
+/* Colour is the whole point — a result you want and one you do not should not
+   read the same at a glance. Tone is never the only signal; the text says it. */
+.notice-list__item.is-good {
+  border-left-color: var(--fm-uecl);
+}
+
+.notice-list__item.is-bad {
+  border-left-color: var(--fm-relegation);
+}
+
+.notice-list__item.is-plain {
+  border-left-color: var(--fm-screen-rule);
+}
+
+/* ── Screen actions ──────────────────────────────────────────────────────── */
+/*
+ * The foot of a screen's own action area, ending in Volver.
+ *
+ * PC Fútbol had no global navigation: the hub was the only branching point, and
+ * every other screen carried its own rail with a way back at the bottom. Four
+ * screens need this block, which is well past the second use that earns a
+ * primitive here rather than a copy in each screen file.
+ */
+.screen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2);
+  justify-content: flex-end;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  border-top: 1px solid var(--fm-screen-rule);
+}

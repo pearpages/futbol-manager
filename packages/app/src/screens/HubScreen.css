@@ -1,0 +1,186 @@
+/*
+ * Four quadrants around a centre column, which is the shape PC Fútbol used and
+ * the reason it reads at a glance: every screen belongs to one of four questions,
+ * and who-you-are sits in the middle where the eye lands first.
+ */
+.hub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.hub__quadrant {
+  min-height: 0;
+}
+
+/* Source order is Seguimiento, Entrenador, Mercado, Finanzas — placed around the
+   centre rather than reordered, so the DOM reads the way the screen does. */
+.hub__quadrant:nth-of-type(1) {
+  grid-column: 1;
+  grid-row: 1;
+}
+.hub__quadrant:nth-of-type(2) {
+  grid-column: 3;
+  grid-row: 1;
+}
+.hub__quadrant:nth-of-type(3) {
+  grid-column: 1;
+  grid-row: 2;
+}
+.hub__quadrant:nth-of-type(4) {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.hub__centre {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  display: grid;
+  /* identity · next match · news · utilities */
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--fm-space-3);
+  min-height: 0;
+}
+
+.hub__tiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.hub__tile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fm-space-2);
+  text-align: left;
+}
+
+.hub__tile-label {
+  flex: 1;
+}
+
+/* A disabled tile says which milestone brings it, so an empty slot reads as
+   "not yet" rather than "broken". */
+.hub__tile-milestone {
+  padding: 0 var(--fm-space-1);
+  border: 1px solid currentcolor;
+  font-size: var(--fm-text-xs);
+  opacity: 0.8;
+}
+
+.hub__identity,
+.hub__next {
+  flex: none;
+}
+
+.hub__vitals {
+  display: flex;
+  gap: var(--fm-space-6);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.hub__date {
+  font-size: var(--fm-text-md);
+}
+
+.hub__next-body {
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.hub__opponent {
+  margin: 0;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hub__when {
+  margin: var(--fm-space-1) 0 0;
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-sm);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+/* The one state worth shouting about: the next press plays the match. */
+.hub__when.is-due {
+  color: var(--fm-champion);
+  font-weight: 700;
+}
+
+.hub__warning {
+  margin: var(--fm-space-3) 0 0;
+  padding-top: var(--fm-space-2);
+  border-top: 1px solid var(--fm-screen-rule);
+  color: #e8a79c;
+  font-size: var(--fm-text-sm);
+}
+
+.hub__news {
+  min-height: 0;
+  overflow: auto;
+}
+
+/* The day controls stack rather than sit in a row: the primary action wants the
+   full width, and "To matchday" is a smaller decision beneath it. */
+.hub__controls {
+  flex-direction: column-reverse;
+  align-items: stretch;
+}
+
+/* Distinct from Advance day, because this one is not reversible. */
+.hub__play {
+  background: var(--fm-relegation);
+  color: #fff;
+}
+
+.hub__play:hover {
+  background: #d4594a;
+}
+
+.hub__utilities {
+  display: flex;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-2);
+}
+
+.hub__utilities .button {
+  flex: 1;
+}
+
+@media (width < 68rem) {
+  .hub {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+  }
+  .hub__centre {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-rows: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hub__quadrant:nth-of-type(1) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .hub__quadrant:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .hub__quadrant:nth-of-type(3) {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .hub__quadrant:nth-of-type(4) {
+    grid-column: 2;
+    grid-row: 3;
+  }
+}

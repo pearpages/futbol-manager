@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { BANDS, bandFor } from './TableScreen.tsx'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { openScreen } from '../testing.ts'
 
 /**
  * The qualification bands were previously an `if` chain, and fifth place fell
@@ -63,6 +64,7 @@ describe('the legend', () => {
   it('explains every band the table can produce', () => {
     useGame.getState().newGame()
     const { container } = render(<App />)
+    openScreen('Clasificación')
 
     // Scoped to the legend: each label also appears as a row's assistive text,
     // which is the point — but it means a document-wide query finds both.
@@ -79,6 +81,7 @@ describe('the legend', () => {
     // Colour alone would say nothing to a reader who cannot see it.
     useGame.getState().newGame()
     render(<App />)
+    openScreen('Clasificación')
 
     const hidden = document.querySelectorAll('.data-table__band .visually-hidden')
     expect(hidden).toHaveLength(9)

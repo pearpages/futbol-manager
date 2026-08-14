@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import {
   type Command,
   createRng,
+  isSeasonComplete,
+  nextFixtureFor,
   type Event,
   type GameState,
   newSeason,
@@ -11,6 +13,7 @@ import {
 } from '@fm/domain'
 import { DEFAULT_CLUBS, PLAYER_NAMES } from '@fm/data'
 import { loadGame, saveGame } from '@fm/persistence'
+import { countNotable } from './notifications.ts'
 
 /**
  * The UI's view of the game.
@@ -24,7 +27,7 @@ import { loadGame, saveGame } from '@fm/persistence'
  * alongside the payload, so a reload resumes the same stream.
  */
 
-export type Screen = 'table' | 'squad' | 'lineup' | 'market' | 'player'
+export type Screen = 'hub' | 'table' | 'squad' | 'lineup' | 'market' | 'player'
 
 interface Store {
   readonly game: GameState
@@ -33,8 +36,14 @@ interface Store {
   readonly inspectedPlayerId: string | null
   /** Which screen the ficha was opened from, so closing it goes back there. */
   readonly inspectedFrom: Screen
-  /** Most recent events, newest first — the match feed on the table screen. */
+  /** Most recent events, newest first — what the news feed reads. */
   readonly feed: readonly Event[]
+  /**
+   * Notable events since you last looked. Session state, not game state: it is
+   * about this sitting rather than this career, so it stays out of the save and
+   * off the schema.
+   */
+  readonly unread: number
   readonly saving: boolean
   /**
    * True until a club has been chosen or a save restored. Distinguishes "no
@@ -45,6 +54,13 @@ interface Store {
 
   dispatch(command: Command): void
   go(screen: Screen): void
+  /** Clears the badge. Called when either news surface is opened. */
+  markRead(): void
+  /**
+   * Run the clock to the day of the next match and stop there, so kicking off
+   * stays a separate, deliberate act.
+   */
+  advanceToMatchday(): void
   inspect(playerId: string | null): void
   save(): Promise<void>
   restore(): Promise<boolean>
@@ -77,16 +93,40 @@ function freshGame(managedClubId?: string): GameState {
 
 export const useGame = create<Store>((set, get) => ({
   game: freshGame(),
-  screen: 'table',
+  screen: 'hub',
   inspectedPlayerId: null,
   inspectedFrom: 'squad',
   feed: [],
+  unread: 0,
   saving: false,
   needsSetup: true,
 
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
-    set({ game: state, feed: [...events, ...get().feed].slice(0, 60) })
+    // Counted against the *new* state, so a notice can name a player who has just
+    // arrived. `countNotable` drops the events nobody wants reported back.
+    set({
+      game: state,
+      feed: [...events, ...get().feed].slice(0, 60),
+      unread: get().unread + countNotable(events, state),
+    })
+  },
+
+  markRead() {
+    set({ unread: 0 })
+  },
+
+  advanceToMatchday() {
+    const target = nextFixtureFor(get().game.season.fixtures, get().game.managedClubId)
+    if (target === null) return
+
+    // Stops *on* the fixture date rather than playing it — the match is a
+    // separate press. The ceiling guards against a scheduling bug spinning here.
+    for (let guard = 0; guard < 400; guard++) {
+      const { game } = get()
+      if (game.season.currentDate >= target.date || isSeasonComplete(game)) return
+      get().dispatch({ type: 'AdvanceDay' })
+    }
   },
 
   go(screen) {
@@ -132,7 +172,7 @@ export const useGame = create<Store>((set, get) => ({
 
     if (loaded === null) return false
     rng = createRng(loaded.rngState as RngState)
-    set({ game: loaded.payload as GameState, feed: [], needsSetup: false })
+    set({ game: loaded.payload as GameState, feed: [], unread: 0, needsSetup: false })
     return true
   },
 
@@ -140,14 +180,15 @@ export const useGame = create<Store>((set, get) => ({
     set({
       game: freshGame(managedClubId),
       feed: [],
-      screen: 'table',
+      unread: 0,
+      screen: 'hub',
       inspectedPlayerId: null,
       needsSetup: false,
     })
   },
 
   restart() {
-    set({ needsSetup: true, screen: 'table', inspectedPlayerId: null, feed: [] })
+    set({ needsSetup: true, screen: 'hub', inspectedPlayerId: null, feed: [], unread: 0 })
   },
 
   startNewSeason() {

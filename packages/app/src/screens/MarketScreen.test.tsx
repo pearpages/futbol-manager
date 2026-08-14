@@ -11,6 +11,7 @@ import {
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { ADVANCE, advance, back, openScreen } from '../testing.ts'
 import { listingsFor, marketSeed } from './MarketScreen.tsx'
 
 /**
@@ -34,7 +35,7 @@ const game = () => useGame.getState().game
 
 function openMarket() {
   render(<App />)
-  fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+  openScreen('Fichar')
 }
 
 const bodyRows = () => [...document.querySelectorAll('.market-screen__main tbody tr')]
@@ -130,18 +131,18 @@ describe('the market screen', () => {
     // what keeps this test honest about cost: the full listing is a few hundred
     // rows, and re-rendering it on every tick measures the table rather than the
     // bid.
-    fireEvent.click(screen.getByRole('button', { name: 'Table' }))
+    back()
 
     // The answer arrives with the clock, which is why bids are saved state.
     for (let day = 0; day < 5 && game().bids.some((b) => b.status === 'pending'); day++) {
-      fireEvent.click(screen.getByRole('button', { name: 'Advance day' }))
+      advance()
     }
     expect(game().bids[0]?.status).toBe('accepted')
 
     // Coming back, the negotiation panel is closed — leaving the screen drops it.
     // "Your bids" is how you pick the deal back up, which is the point of that
     // panel existing.
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    openScreen('Fichar')
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
     fireEvent.click(screen.getByRole('button', { name: 'Offer terms' }))
 
@@ -163,8 +164,10 @@ describe('the market screen', () => {
     fireEvent.click(within(row).getByRole('button', { name: 'Watch' }))
     expect(game().shortlist).toEqual([target.player.id])
 
-    fireEvent.click(screen.getByRole('button', { name: 'Table' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    back()
+    openScreen('Clasificación')
+    back()
+    openScreen('Fichar')
     fireEvent.click(screen.getByRole('button', { name: 'Shortlist only' }))
 
     expect(screen.getByText(target.player.name)).toBeDefined()
@@ -178,7 +181,7 @@ describe('the market screen', () => {
     expect(screen.getByRole('heading', { name: target.player.name })).toBeDefined()
 
     // Closing used to always return to the squad, which loses your place here.
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    back()
     expect(screen.getByRole('heading', { name: 'Transfer market' })).toBeDefined()
   })
 })
@@ -283,8 +286,10 @@ describe('the market does not do your scouting', () => {
     openMarket()
     const first = rowNames()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Table' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    back()
+    openScreen('Clasificación')
+    back()
+    openScreen('Fichar')
 
     expect(rowNames()).toEqual(first)
   })
@@ -393,9 +398,9 @@ describe('the window', () => {
     // Run to October, well past August.
     render(<App />)
     for (let day = 0; day < 60; day++) {
-      fireEvent.click(screen.getByRole('button', { name: 'Advance day' }))
+      advance()
     }
-    fireEvent.click(screen.getByRole('button', { name: 'Market' }))
+    openScreen('Fichar')
 
     expect(screen.getByText(/The window is shut/)).toBeDefined()
     for (const button of screen.getAllByRole('button', { name: 'Bid' })) {
@@ -411,7 +416,7 @@ describe('the end of a season', () => {
     render(<App />)
     const played = () => game().season.fixtures.filter((f) => f.result !== null).length
     for (let day = 0; day < 400 && played() < 380; day++) {
-      fireEvent.click(screen.getByRole('button', { name: /Advance day|Start \d{4}/ }))
+      advance()
     }
 
     const rollover = screen.getByRole('button', { name: /^Start 2027\/28$/ })
@@ -420,6 +425,6 @@ describe('the end of a season', () => {
     fireEvent.click(rollover)
     expect(game().season.startYear).toBe(2027)
     expect(game().season.fixtures.filter((f) => f.result !== null)).toHaveLength(0)
-    expect(screen.getByRole('button', { name: 'Advance day' })).toBeDefined()
+    expect(screen.getByRole('button', { name: ADVANCE })).toBeDefined()
   })
 })

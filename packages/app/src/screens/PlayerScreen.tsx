@@ -49,8 +49,10 @@ export function PlayerScreen() {
           {positionChip(player.position)}
           <h2 className="ficha__name">{player.name}</h2>
         </div>
+        {/* Contextual, not a route home: a ficha opened from a two-hundred-row
+            market list returns to that list, never to the hub. */}
         <button className="button" type="button" onClick={() => inspect(null)}>
-          Back
+          Volver
         </button>
       </header>
 

@@ -5,3 +5,8 @@ coverage/
 .vite/
 .DS_Store
 *.local
+
+# Visual reference material — see assets/README.md and ADR 0007.
+# The rules are tracked; the images never are.
+assets/*
+!assets/README.md

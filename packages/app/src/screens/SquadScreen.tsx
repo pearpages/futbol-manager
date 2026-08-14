@@ -20,6 +20,7 @@ export function SquadScreen() {
   const game = useGame((s) => s.game)
   const inspect = useGame((s) => s.inspect)
   const dispatch = useGame((s) => s.dispatch)
+  const go = useGame((s) => s.go)
 
   const squad = [...(game.squads[game.managedClubId] ?? [])].sort(
     (a, b) => POSITION_ORDER[a.position] - POSITION_ORDER[b.position] || overall(b) - overall(a),
@@ -100,6 +101,11 @@ export function SquadScreen() {
           })}
         </tbody>
       </table>
+      <div className="screen-actions">
+        <button type="button" className="button" onClick={() => go('hub')}>
+          Volver
+        </button>
+      </div>
     </section>
   )
 }

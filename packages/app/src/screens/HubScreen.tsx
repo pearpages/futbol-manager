@@ -1,0 +1,228 @@
+import { useEffect } from 'react'
+import { formatDate, formatMoney, isSeasonComplete } from '@fm/domain'
+import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
+import { noticesFrom } from '../notifications.ts'
+import { type Screen, useGame } from '../store.ts'
+import { NotificationList } from './NotificationList.tsx'
+import './HubScreen.css'
+
+/**
+ * The manager's home.
+ *
+ * PC Fútbol 5.0 navigated from a hub rather than a menu bar — four labelled
+ * quadrants around a centre carrying who you are and when it is. That structure
+ * is worth taking: it groups screens by the *question being asked* rather than
+ * listing them, and it leaves an obvious place for the two things that were
+ * missing entirely — what has happened, and when you next play.
+ *
+ * The rail stays alongside it, so nothing here is the only way anywhere.
+ *
+ * **Unbuilt sections are shown, disabled, with the milestone that brings them.**
+ * An empty quadrant would look broken; a labelled one says the shape of the
+ * finished game out loud and turns the hub into a roadmap you can see. Only
+ * milestones the roadmap actually assigns are named — Calendario has none, so it
+ * promises nothing.
+ */
+
+interface Tile {
+  readonly label: string
+  /** Where it goes, or `null` when it is not built yet. */
+  readonly to: Screen | null
+  /** Shown on a disabled tile. Omitted when nothing has been scheduled. */
+  readonly milestone?: string
+}
+
+interface Quadrant {
+  readonly title: string
+  readonly tiles: readonly Tile[]
+}
+
+/**
+ * Two tiles landing on one screen is deliberate and matches the reference:
+ * "where am I in the league" and "what happened at the weekend" are different
+ * questions, even though one screen currently answers both.
+ */
+export const QUADRANTS: readonly Quadrant[] = [
+  {
+    title: 'Seguimiento',
+    tiles: [
+      { label: 'Clasificación', to: 'table' },
+      { label: 'Resultados', to: 'table' },
+      { label: 'Calendario', to: null },
+    ],
+  },
+  {
+    title: 'Entrenador',
+    tiles: [
+      { label: 'Alineación', to: 'lineup' },
+      { label: 'Tácticas', to: 'lineup' },
+      { label: 'Ver rival', to: null, milestone: 'M7' },
+    ],
+  },
+  {
+    title: 'Mercado',
+    tiles: [
+      { label: 'Fichar', to: 'market' },
+      { label: 'Plantilla', to: 'squad' },
+      { label: 'Cantera', to: null, milestone: 'M7' },
+    ],
+  },
+  {
+    title: 'Finanzas',
+    tiles: [
+      { label: 'Caja', to: null, milestone: 'M5' },
+      { label: 'Decisiones', to: null, milestone: 'M5' },
+      { label: 'Estadio', to: null, milestone: 'M5' },
+    ],
+  },
+]
+
+export function HubScreen() {
+  const game = useGame((s) => s.game)
+  const feed = useGame((s) => s.feed)
+  const go = useGame((s) => s.go)
+  const markRead = useGame((s) => s.markRead)
+  const dispatch = useGame((s) => s.dispatch)
+  const advanceToMatchday = useGame((s) => s.advanceToMatchday)
+  const startNewSeason = useGame((s) => s.startNewSeason)
+  const save = useGame((s) => s.save)
+  const saving = useGame((s) => s.saving)
+  const restart = useGame((s) => s.restart)
+
+  // Landing on the hub *is* reading the news — the panel is right there. Anything
+  // subtler would leave a badge lit above a list you are already looking at.
+  useEffect(() => {
+    markRead()
+  }, [markRead, feed])
+
+  const club = game.clubs.find((c) => c.id === game.managedClubId)
+  const matchday = matchdayFor(game)
+  const weak = weakLineup(game)
+  const finished = isSeasonComplete(game)
+  const nextYearLabel = String(game.season.startYear + 2).slice(2)
+  const notices = noticesFrom(feed, game).slice(0, 12)
+
+  return (
+    <div className="hub">
+      {QUADRANTS.map((quadrant) => (
+        <section key={quadrant.title} className="screen hub__quadrant">
+          <h2 className="screen__heading">{quadrant.title}</h2>
+          <div className="hub__tiles">
+            {quadrant.tiles.map((tile) => (
+              <button
+                key={tile.label}
+                type="button"
+                className="button hub__tile"
+                disabled={tile.to === null}
+                title={
+                  tile.to === null
+                    ? tile.milestone === undefined
+                      ? 'Not built yet'
+                      : `Arrives at ${tile.milestone}`
+                    : undefined
+                }
+                onClick={() => tile.to !== null && go(tile.to)}
+              >
+                <span className="hub__tile-label">{tile.label}</span>
+                {tile.milestone !== undefined && (
+                  <span className="hub__tile-milestone">{tile.milestone}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <aside className="hub__centre">
+        <section className="screen hub__identity">
+          <h2 className="screen__heading">{club?.name ?? '—'}</h2>
+          <div className="hub__vitals">
+            <div className="stat">
+              <span className="stat__label">Date</span>
+              <span className="stat__value hub__date">{formatDate(game.season.currentDate)}</span>
+            </div>
+            <div className="stat">
+              <span className="stat__label">Budget</span>
+              <span className="stat__value hub__date">{formatMoney(club?.budget ?? 0)}</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="screen hub__next">
+          <h2 className="screen__heading">Next match</h2>
+          {matchday === null ? (
+            <p className="screen__note">The season is over.</p>
+          ) : (
+            <div className="hub__next-body">
+              <p className="hub__opponent">{describeOpponent(matchday)}</p>
+              <p className={`hub__when${matchday.due ? ' is-due' : ''}`}>
+                {matchday.due
+                  ? 'Today'
+                  : `in ${matchday.daysAway} day${matchday.daysAway === 1 ? '' : 's'}`}
+              </p>
+              {weak !== null && (
+                <p className="hub__warning" role="status">
+                  Your XI is not your strongest — {weak.current} against {weak.best}. Signing
+                  someone does not pick him.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/*
+            The clock lives here and nowhere else, which is the point: every tick
+            routes you past the news and the fixture above it. Three states, in
+            priority order — the season ending is the door to the summer; a
+            fixture being due makes kicking off a deliberate press rather than a
+            side effect of advancing a day; otherwise the clock just runs.
+          */}
+          <div className="screen-actions hub__controls">
+            {finished ? (
+              <button type="button" className="button is-primary" onClick={() => startNewSeason()}>
+                {`Start ${game.season.startYear + 1}/${nextYearLabel}`}
+              </button>
+            ) : matchday !== null && matchday.due ? (
+              <button
+                type="button"
+                className="button is-primary hub__play"
+                onClick={() => dispatch({ type: 'AdvanceDay' })}
+              >
+                {`Play match ${describeOpponent(matchday)}`}
+              </button>
+            ) : (
+              <>
+                {matchday !== null && (
+                  <button type="button" className="button" onClick={advanceToMatchday}>
+                    To matchday
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="button is-primary"
+                  onClick={() => dispatch({ type: 'AdvanceDay' })}
+                >
+                  Advance day
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+
+        <section className="screen hub__news">
+          <h2 className="screen__heading">Noticias</h2>
+          <NotificationList notices={notices} empty="Nothing has happened yet." />
+        </section>
+
+        {/* Grabar la liga and leaving were hub buttons in the original too. */}
+        <div className="panel hub__utilities">
+          <button type="button" className="button" disabled={saving} onClick={() => void save()}>
+            {saving ? 'Saving…' : 'Grabar'}
+          </button>
+          <button type="button" className="button" onClick={restart}>
+            Nueva carrera
+          </button>
+        </div>
+      </aside>
+    </div>
+  )
+}

@@ -100,3 +100,23 @@ function rotate(carousel: ClubId[]): void {
 export function fixturesOn(fixtures: readonly Fixture[], date: DayNumber): Fixture[] {
   return fixtures.filter((f) => f.date === date)
 }
+
+/**
+ * The next fixture a club has to play, or `null` once its season is done.
+ *
+ * Deliberately takes no "from" date. `advanceDay` resolves everything *due*, so a
+ * fixture the clock has already passed is still owed and is still the next one to
+ * be played — filtering on `date >= today` would hide it and tell a manager his
+ * next match is next week when it is overdue today.
+ */
+export function nextFixtureFor(fixtures: readonly Fixture[], clubId: ClubId): Fixture | null {
+  let next: Fixture | null = null
+
+  for (const fixture of fixtures) {
+    if (fixture.result !== null) continue
+    if (fixture.homeId !== clubId && fixture.awayId !== clubId) continue
+    if (next === null || fixture.date < next.date) next = fixture
+  }
+
+  return next
+}

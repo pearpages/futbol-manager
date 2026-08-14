@@ -152,6 +152,7 @@ export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
   const inspect = useGame((s) => s.inspect)
+  const go = useGame((s) => s.go)
 
   const [target, setTarget] = useState<PlayerId | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -536,6 +537,11 @@ export function MarketScreen() {
             </ul>
           )}
         </section>
+        <div className="screen-actions">
+          <button type="button" className="button" onClick={() => go('hub')}>
+            Volver
+          </button>
+        </div>
       </aside>
     </div>
   )

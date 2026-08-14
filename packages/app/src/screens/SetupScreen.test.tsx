@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { ADVANCE } from '../testing.ts'
 
 /**
  * Until M3c every career started at Almería, because `newSeason` defaulted to the
@@ -19,7 +20,7 @@ describe('choosing a club', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: 'Choose a club' })).toBeDefined()
     // The shell's navigation is meaningless before a club exists.
-    expect(screen.queryByRole('button', { name: 'Advance day' })).toBeNull()
+    expect(screen.queryByRole('button', { name: ADVANCE })).toBeNull()
   })
 
   it('offers every club in the division', () => {
@@ -51,7 +52,7 @@ describe('choosing a club', () => {
 
     expect(useGame.getState().game.managedClubId).toBe(madrid.id)
     expect(useGame.getState().needsSetup).toBe(false)
-    expect(screen.getByRole('button', { name: 'Advance day' })).toBeDefined()
+    expect(screen.getByRole('button', { name: ADVANCE })).toBeDefined()
   })
 
   it('no longer forces the weakest club on you', () => {
@@ -87,7 +88,7 @@ describe('New career', () => {
     render(<App />)
     expect(screen.queryByRole('heading', { name: 'Choose a club' })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'New career' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva carrera' }))
     expect(screen.getByRole('heading', { name: 'Choose a club' })).toBeDefined()
   })
 })
