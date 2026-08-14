@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { formatDate, formatMoney, isSeasonComplete } from '@fm/domain'
+import { isSeasonComplete } from '@fm/domain'
+import { useT } from '../i18n/useT.ts'
 import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
@@ -27,7 +27,14 @@ import './HubScreen.css'
  */
 
 interface Tile {
-  readonly label: string
+  /**
+   * Names the destination for the dictionary *and* for the tests.
+   *
+   * It was a Spanish literal, typed again in `App.tsx`'s title map — so the two
+   * could drift, and every test clicked a tile by a word that only exists in one
+   * language. The key is the stable thing; the label is a rendering of it.
+   */
+  readonly key: string
   /** Where it goes, or `null` when it is not built yet. */
   readonly to: Screen | null
   /** Shown on a disabled tile. Omitted when nothing has been scheduled. */
@@ -45,6 +52,7 @@ export type QuadrantKey = 'seguimiento' | 'entrenador' | 'mercado' | 'finanzas'
 
 interface Quadrant {
   readonly key: QuadrantKey
+  /** Dictionary key, not a word. */
   readonly title: string
   readonly tiles: readonly Tile[]
 }
@@ -57,38 +65,38 @@ interface Quadrant {
 export const QUADRANTS: readonly Quadrant[] = [
   {
     key: 'seguimiento',
-    title: 'Seguimiento',
+    title: 'quadrant.seguimiento',
     tiles: [
-      { label: 'Clasificación', to: 'table', icon: 'table' },
-      { label: 'Resultados', to: 'table', icon: 'results' },
-      { label: 'Calendario', to: null, icon: 'calendar' },
+      { key: 'nav.table', to: 'table', icon: 'table' },
+      { key: 'nav.results', to: 'table', icon: 'results' },
+      { key: 'nav.calendar', to: null, icon: 'calendar' },
     ],
   },
   {
     key: 'entrenador',
-    title: 'Entrenador',
+    title: 'quadrant.entrenador',
     tiles: [
-      { label: 'Alineación', to: 'lineup', icon: 'pitch' },
-      { label: 'Tácticas', to: 'lineup', icon: 'tactics' },
-      { label: 'Ver rival', to: null, milestone: 'M7', icon: 'scout' },
+      { key: 'nav.lineup', to: 'lineup', icon: 'pitch' },
+      { key: 'nav.tactics', to: 'lineup', icon: 'tactics' },
+      { key: 'nav.scout', to: null, milestone: 'M7', icon: 'scout' },
     ],
   },
   {
     key: 'mercado',
-    title: 'Mercado',
+    title: 'quadrant.mercado',
     tiles: [
-      { label: 'Fichar', to: 'market', icon: 'contract' },
-      { label: 'Plantilla', to: 'squad', icon: 'roster' },
-      { label: 'Cantera', to: null, milestone: 'M7', icon: 'youth' },
+      { key: 'nav.market', to: 'market', icon: 'contract' },
+      { key: 'nav.squad', to: 'squad', icon: 'roster' },
+      { key: 'nav.youth', to: null, milestone: 'M7', icon: 'youth' },
     ],
   },
   {
     key: 'finanzas',
-    title: 'Finanzas',
+    title: 'quadrant.finanzas',
     tiles: [
-      { label: 'Caja', to: 'caja', icon: 'safe' },
-      { label: 'Decisiones', to: 'decisiones', icon: 'scales' },
-      { label: 'Estadio', to: 'estadio', icon: 'stadium' },
+      { key: 'nav.caja', to: 'caja', icon: 'safe' },
+      { key: 'nav.decisiones', to: 'decisiones', icon: 'scales' },
+      { key: 'nav.estadio', to: 'estadio', icon: 'stadium' },
     ],
   },
 ]
@@ -97,26 +105,20 @@ export function HubScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
   const go = useGame((s) => s.go)
-  const markRead = useGame((s) => s.markRead)
   const dispatch = useGame((s) => s.dispatch)
   const advanceToMatchday = useGame((s) => s.advanceToMatchday)
   const startNewSeason = useGame((s) => s.startNewSeason)
   const save = useGame((s) => s.save)
   const saving = useGame((s) => s.saving)
   const restart = useGame((s) => s.restart)
-
-  // Landing on the hub *is* reading the news — the panel is right there. Anything
-  // subtler would leave a badge lit above a list you are already looking at.
-  useEffect(() => {
-    markRead()
-  }, [markRead, feed])
+  const translator = useT()
+  const { t, plural, date, money, season } = translator
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
   const weak = weakLineup(game)
   const finished = isSeasonComplete(game)
-  const nextYearLabel = String(game.season.startYear + 2).slice(2)
-  const notices = noticesFrom(feed, game).slice(0, 12)
+  const notices = noticesFrom(feed, game, translator).slice(0, 12)
 
   return (
     <div className="hub">
@@ -126,25 +128,25 @@ export function HubScreen() {
           and a screen reader — find a quadrant. */}
       {QUADRANTS.map((quadrant) => (
         <section key={quadrant.key} className="screen hub__quadrant" data-quadrant={quadrant.key}>
-          <h2 className="screen__heading">{quadrant.title}</h2>
+          <h2 className="screen__heading">{t(quadrant.title)}</h2>
           <div className="hub__tiles">
             {quadrant.tiles.map((tile) => (
               <button
-                key={tile.label}
+                key={tile.key}
                 type="button"
                 className="button hub__tile"
                 disabled={tile.to === null}
                 title={
                   tile.to === null
                     ? tile.milestone === undefined
-                      ? 'Not built yet'
-                      : `Arrives at ${tile.milestone}`
+                      ? t('hub.notBuilt')
+                      : t('hub.arrivesAt', { milestone: tile.milestone })
                     : undefined
                 }
                 onClick={() => tile.to !== null && go(tile.to)}
               >
                 <TileIcon icon={tile.icon} />
-                <span className="hub__tile-label">{tile.label}</span>
+                <span className="hub__tile-label">{t(tile.key)}</span>
                 {tile.milestone !== undefined && (
                   <span className="hub__tile-milestone">{tile.milestone}</span>
                 )}
@@ -162,25 +164,26 @@ export function HubScreen() {
           </h2>
           <div className="hub__vitals">
             <div className="stat">
-              <span className="stat__label">Date</span>
-              <span className="stat__value hub__date">{formatDate(game.season.currentDate)}</span>
+              <span className="stat__label">{t('hub.date')}</span>
+              <span className="stat__value hub__date">{date(game.season.currentDate)}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Budget</span>
-              <span className="stat__value hub__date">{formatMoney(club?.budget ?? 0)}</span>
+              <span className="stat__label">{t('hub.budget')}</span>
+              <span className="stat__value hub__date">{money(club?.budget ?? 0)}</span>
             </div>
           </div>
         </section>
 
         <section className="screen hub__next">
-          <h2 className="screen__heading">Next match</h2>
+          <h2 className="screen__heading">{t('hub.nextMatch')}</h2>
           {game.board.sacked ? (
             <p className="hub__warning" role="status">
-              The board have dismissed you. They wanted {game.board.target}º and did not get it
-              twice running.
+              {t('hub.dismissed', {
+                target: t('shell.position', { position: game.board.target }),
+              })}
             </p>
           ) : matchday === null ? (
-            <p className="screen__note">The season is over.</p>
+            <p className="screen__note">{t('hub.seasonOver')}</p>
           ) : (
             <div className="hub__next-body">
               {/* The badge belongs beside the name, not instead of it — a crest
@@ -190,17 +193,14 @@ export function HubScreen() {
                 {matchday.opponent !== undefined && (
                   <ClubBadge club={matchday.opponent} size="lg" />
                 )}
-                {describeOpponent(matchday)}
+                {describeOpponent(translator, matchday)}
               </p>
               <p className={`hub__when${matchday.due ? ' is-due' : ''}`}>
-                {matchday.due
-                  ? 'Today'
-                  : `in ${matchday.daysAway} day${matchday.daysAway === 1 ? '' : 's'}`}
+                {matchday.due ? t('hub.today') : plural('hub.inDays', matchday.daysAway)}
               </p>
               {weak !== null && (
                 <p className="hub__warning" role="status">
-                  Your XI is not your strongest — {weak.current} against {weak.best}. Signing
-                  someone does not pick him.
+                  {t('hub.weakLineup', { current: weak.current, best: weak.best })}
                 </p>
               )}
             </div>
@@ -218,11 +218,11 @@ export function HubScreen() {
               // The end of the job, and the end of the career. There is no path
               // on from here — the only button left is a new one somewhere else.
               <button type="button" className="button is-primary" onClick={restart}>
-                Nueva carrera
+                {t('action.newCareer')}
               </button>
             ) : finished ? (
               <button type="button" className="button is-primary" onClick={() => startNewSeason()}>
-                {`Start ${game.season.startYear + 1}/${nextYearLabel}`}
+                {t('hub.startSeason', { season: season(game.season.startYear + 1) })}
               </button>
             ) : matchday !== null && matchday.due ? (
               <button
@@ -230,13 +230,13 @@ export function HubScreen() {
                 className="button is-primary hub__play"
                 onClick={() => dispatch({ type: 'AdvanceDay' })}
               >
-                {`Play match ${describeOpponent(matchday)}`}
+                {t('hub.playMatch', { opponent: describeOpponent(translator, matchday) })}
               </button>
             ) : (
               <>
                 {matchday !== null && (
                   <button type="button" className="button" onClick={advanceToMatchday}>
-                    To matchday
+                    {t('hub.toMatchday')}
                   </button>
                 )}
                 <button
@@ -244,7 +244,7 @@ export function HubScreen() {
                   className="button is-primary"
                   onClick={() => dispatch({ type: 'AdvanceDay' })}
                 >
-                  Advance day
+                  {t('hub.advanceDay')}
                 </button>
               </>
             )}
@@ -252,17 +252,17 @@ export function HubScreen() {
         </section>
 
         <section className="screen hub__news">
-          <h2 className="screen__heading">Noticias</h2>
-          <NotificationList notices={notices} empty="Nothing has happened yet." />
+          <h2 className="screen__heading">{t('hub.news')}</h2>
+          <NotificationList notices={notices} empty={t('hub.noNews')} />
         </section>
 
         {/* Grabar la liga and leaving were hub buttons in the original too. */}
         <div className="panel hub__utilities">
           <button type="button" className="button" disabled={saving} onClick={() => void save()}>
-            {saving ? 'Saving…' : 'Grabar'}
+            {saving ? t('action.saving') : t('action.save')}
           </button>
           <button type="button" className="button" onClick={restart}>
-            Nueva carrera
+            {t('action.newCareer')}
           </button>
         </div>
       </aside>

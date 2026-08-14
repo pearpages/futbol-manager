@@ -1,5 +1,6 @@
 import { ageOn, ATTRIBUTE_KEYS, overall, playerAttack, playerDefence } from '@fm/domain'
 import { useGame } from '../store.ts'
+import { useT } from '../i18n/useT.ts'
 import { positionChip } from './SquadScreen.tsx'
 import './PlayerScreen.css'
 
@@ -20,6 +21,7 @@ export function PlayerScreen() {
   const game = useGame((s) => s.game)
   const playerId = useGame((s) => s.inspectedPlayerId)
   const inspect = useGame((s) => s.inspect)
+  const { t } = useT()
 
   const squad = game.squads[game.managedClubId] ?? []
   // The ficha reads anyone in the game, not only your own players — the market
@@ -33,8 +35,8 @@ export function PlayerScreen() {
   if (player === undefined) {
     return (
       <section className="screen">
-        <h2 className="screen__heading">No player selected</h2>
-        <p className="screen__note">Pick someone from the squad list.</p>
+        <h2 className="screen__heading">{t('player.none')}</h2>
+        <p className="screen__note">{t('player.pickOne')}</p>
       </section>
     )
   }
@@ -46,32 +48,32 @@ export function PlayerScreen() {
     <section className="screen ficha">
       <header className="ficha__head">
         <div className="ficha__identity">
-          {positionChip(player.position)}
+          {positionChip(player.position, t(`position.${player.position}`))}
           <h2 className="ficha__name">{player.name}</h2>
         </div>
         {/* Contextual, not a route home: a ficha opened from a two-hundred-row
             market list returns to that list, never to the hub. */}
         <button className="button" type="button" onClick={() => inspect(null)}>
-          Volver
+          {t('action.back')}
         </button>
       </header>
 
       <div className="ficha__body">
         <dl className="ficha__vitals">
           <div className="stat">
-            <dt className="stat__label">Overall</dt>
+            <dt className="stat__label">{t('player.overall')}</dt>
             <dd className="stat__value">{overall(player)}</dd>
           </div>
           <div className="stat">
-            <dt className="stat__label">Age</dt>
+            <dt className="stat__label">{t('player.age')}</dt>
             <dd className="stat__value">{ageOn(player, game.season.currentDate)}</dd>
           </div>
           <div className="stat">
-            <dt className="stat__label">Attack</dt>
+            <dt className="stat__label">{t('player.attack')}</dt>
             <dd className="stat__value">{Math.round(playerAttack(player))}</dd>
           </div>
           <div className="stat">
-            <dt className="stat__label">Defence</dt>
+            <dt className="stat__label">{t('player.defence')}</dt>
             <dd className="stat__value">{Math.round(playerDefence(player))}</dd>
           </div>
         </dl>
@@ -81,7 +83,7 @@ export function PlayerScreen() {
             const value = player.attributes[key]
             return (
               <div key={key} className="attr">
-                <span className="attr__label">{key}</span>
+                <span className="attr__label">{t(`attribute.${key}`)}</span>
                 <span className="attr__track">
                   {/* Width comes from a bucketed data attribute rather than an
                       inline style: the convention keeps every styling decision in
@@ -95,9 +97,7 @@ export function PlayerScreen() {
         </div>
       </div>
 
-      <p className="ficha__status">
-        {isStarting ? 'In the starting XI.' : 'On the bench. Change the lineup to start them.'}
-      </p>
+      <p className="ficha__status">{t(isStarting ? 'player.inXI' : 'player.onBench')}</p>
     </section>
   )
 }

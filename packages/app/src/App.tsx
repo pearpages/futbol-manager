@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react'
-import { computeTable, formatDate } from '@fm/domain'
+import { useEffect, useMemo } from 'react'
+import { computeTable } from '@fm/domain'
+import { LOCALE_TAGS } from './i18n/format.ts'
+import { useT } from './i18n/useT.ts'
 import { describeOpponent, matchdayFor } from './matchday.ts'
-import { noticesFrom } from './notifications.ts'
 import { type Screen, useGame } from './store.ts'
 import { BadgeDefs, ClubBadge } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
-import { NotificationList } from './screens/NotificationList.tsx'
+import { SettingsMenu } from './screens/SettingsMenu.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
@@ -28,21 +29,21 @@ import './App.css'
 /**
  * What the bar calls the screen you are on.
  *
- * The same words as the hub tile that got you here, so what you clicked is what
- * the bar says. This matters more than it sounds now the rail is gone: with no
- * persistent list of sections, the title is the only thing telling you where
- * you are.
+ * **The same key the hub tile uses**, not the same string typed twice. The two
+ * were separate literals in separate files, which is how "the bar says what you
+ * clicked" quietly stops being true — and with three languages it would have
+ * stopped being true three times over.
  */
 const SCREEN_TITLES: Record<Screen, string> = {
-  hub: 'Menu Manager',
-  table: 'Clasificación',
-  squad: 'Plantilla',
-  lineup: 'Alineación',
-  market: 'Fichar',
-  player: 'Ficha',
-  caja: 'Caja',
-  decisiones: 'Decisiones',
-  estadio: 'Estadio',
+  hub: 'nav.hub',
+  table: 'nav.table',
+  squad: 'nav.squad',
+  lineup: 'nav.lineup',
+  market: 'nav.market',
+  player: 'nav.player',
+  caja: 'nav.caja',
+  decisiones: 'nav.decisiones',
+  estadio: 'nav.estadio',
 }
 
 const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
@@ -62,16 +63,20 @@ export function App() {
   const screen = useGame((s) => s.screen)
   const restore = useGame((s) => s.restore)
   const needsSetup = useGame((s) => s.needsSetup)
-  const feed = useGame((s) => s.feed)
-  const unread = useGame((s) => s.unread)
-  const markRead = useGame((s) => s.markRead)
-  const [newsOpen, setNewsOpen] = useState(false)
+  const translator = useT()
+  const { t, date, season, language } = translator
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
   useEffect(() => {
     void restore()
   }, [restore])
+
+  // `index.html` ships `lang="en"`, which is a lie in two languages out of three
+  // and the first thing assistive technology reads.
+  useEffect(() => {
+    document.documentElement.lang = LOCALE_TAGS[language]
+  }, [language])
 
   const Current = SCREENS[screen]
   const matchday = matchdayFor(game)
@@ -91,9 +96,12 @@ export function App() {
       <div className="shell shell--setup">
         <BadgeDefs />
         <header className="panel shell__bar">
-          <h1 className="shell__wordmark">Fútbol Manager</h1>
+          <h1 className="shell__wordmark">{t('shell.wordmark')}</h1>
           <p className="shell__club">
-            <span className="shell__date">Primera División · 2026/27</span>
+            <span className="shell__date">
+              {game.competition.name} · {season(game.season.startYear)}
+            </span>
+            <SettingsMenu />
           </p>
         </header>
         <main className="shell__stage">
@@ -111,52 +119,40 @@ export function App() {
             and the hub states it with a crest; what a title bar is for is the
             situation — which competition, which matchday, what position. Left a
             `<p>` deliberately: the heading of the page is the screen you are on,
-            and the table screen already owns "Primera División" as a heading. */}
+            and the table screen already owns the competition name as a heading. */}
         <p className="shell__where">
           <span className="shell__competition">{game.competition.name}</span>
           {/* No next fixture means the season is done, so there is no matchday
               to be on — better absent than pinned at 38. */}
           {matchday !== null && (
-            <span className="shell__matchday">Jornada {matchday.fixture.round}</span>
-          )}
-          {position > 0 && <span className="shell__position">{position}º</span>}
-        </p>
-        <h1 className="shell__title">{SCREEN_TITLES[screen]}</h1>
-        <p className="shell__club">
-          <span className="shell__date">{formatDate(game.season.currentDate)}</span>
-          {/* Always visible, because sleepwalking past your own fixture was the
-              whole complaint — and the controls that act on it now live on the
-              hub, so this is what tells you to go back there. */}
-          {matchday !== null && (
-            <span className={`shell__next${matchday.due ? ' is-due' : ''}`}>
-              Next {matchday.opponent !== undefined && <ClubBadge club={matchday.opponent} />}{' '}
-              {describeOpponent(matchday)} · {matchday.due ? 'today' : `in ${matchday.daysAway}d`}
+            <span className="shell__matchday">
+              {t('shell.matchday', { round: matchday.fixture.round })}
             </span>
           )}
-          <button
-            type="button"
-            className="button shell__news"
-            onClick={() => {
-              setNewsOpen(!newsOpen)
-              markRead()
-            }}
-          >
-            Noticias{unread > 0 && <span className="shell__badge">{unread}</span>}
-          </button>
+          {position > 0 && (
+            <span className="shell__position">{t('shell.position', { position })}</span>
+          )}
+        </p>
+        <h1 className="shell__title">{t(SCREEN_TITLES[screen])}</h1>
+        <p className="shell__club">
+          <span className="shell__date">{date(game.season.currentDate)}</span>
+          {/* Always visible, because sleepwalking past your own fixture was the
+              whole complaint — and the controls that act on it live on the hub,
+              so this is what tells you to go back there. */}
+          {matchday !== null && (
+            <span className={`shell__next${matchday.due ? ' is-due' : ''}`}>
+              {matchday.opponent !== undefined && <ClubBadge club={matchday.opponent} />}{' '}
+              {t('shell.next', {
+                opponent: describeOpponent(translator, matchday),
+                when: matchday.due
+                  ? t('shell.today')
+                  : t('shell.inDays', { days: matchday.daysAway }),
+              })}
+            </span>
+          )}
+          <SettingsMenu />
         </p>
       </header>
-
-      {newsOpen && (
-        <aside className="screen shell__drawer" aria-label="Noticias">
-          <h2 className="screen__heading">Noticias</h2>
-          <NotificationList notices={noticesFrom(feed, game)} empty="Nothing has happened yet." />
-          <div className="shell__drawer-foot">
-            <button type="button" className="button" onClick={() => setNewsOpen(false)}>
-              Close
-            </button>
-          </div>
-        </aside>
-      )}
 
       <main className="shell__stage">
         <Current />

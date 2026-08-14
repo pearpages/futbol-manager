@@ -1,11 +1,5 @@
-import {
-  debtLimit,
-  formatMoney,
-  type Ledger,
-  ledgerNet,
-  ROUNDS_PER_HALF,
-  wageBill,
-} from '@fm/domain'
+import { debtLimit, type Ledger, ledgerNet, ROUNDS_PER_HALF, wageBill } from '@fm/domain'
+import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import './CajaScreen.css'
 
@@ -33,15 +27,15 @@ interface Line {
  * cannot be added to the domain and quietly go unshown here.
  */
 export const LINES: readonly Line[] = [
-  { key: 'gate', label: 'Gate', out: false },
-  { key: 'tv', label: 'Televisión', out: false },
-  { key: 'sponsor', label: 'Patrocinio', out: false },
-  { key: 'prize', label: 'Premios', out: false },
-  { key: 'transfers', label: 'Traspasos', out: false },
-  { key: 'wages', label: 'Salarios', out: true },
-  { key: 'bonuses', label: 'Primas de fichaje', out: true },
-  { key: 'interest', label: 'Intereses', out: true },
-  { key: 'stadium', label: 'Obras', out: true },
+  { key: 'gate', label: 'caja.line.gate', out: false },
+  { key: 'tv', label: 'caja.line.tv', out: false },
+  { key: 'sponsor', label: 'caja.line.sponsor', out: false },
+  { key: 'prize', label: 'caja.line.prize', out: false },
+  { key: 'transfers', label: 'caja.line.transfers', out: false },
+  { key: 'wages', label: 'caja.line.wages', out: true },
+  { key: 'bonuses', label: 'caja.line.bonuses', out: true },
+  { key: 'interest', label: 'caja.line.interest', out: true },
+  { key: 'stadium', label: 'caja.line.stadium', out: true },
 ]
 
 /** What a line is worth to the balance — negative for an outgoing. */
@@ -52,6 +46,7 @@ export function signed(ledger: Ledger, line: Line): number {
 export function CajaScreen() {
   const game = useGame((s) => s.game)
   const go = useGame((s) => s.go)
+  const { t, money } = useT()
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   if (club === undefined) return null
@@ -63,13 +58,13 @@ export function CajaScreen() {
   return (
     <div className="caja-screen">
       <section className="screen caja-screen__main">
-        <h2 className="screen__heading">Cuentas</h2>
+        <h2 className="screen__heading">{t('caja.heading')}</h2>
         <table className="data-table">
           <thead className="data-table__head">
             <tr>
-              <th className="is-text">Concepto</th>
-              <th>Esta temporada</th>
-              <th>Anterior</th>
+              <th className="is-text">{t('caja.column.line')}</th>
+              <th>{t('caja.column.thisSeason')}</th>
+              <th>{t('caja.column.lastSeason')}</th>
             </tr>
           </thead>
           <tbody>
@@ -78,74 +73,63 @@ export function CajaScreen() {
               const then = signed(club.lastLedger, line)
               return (
                 <tr key={line.key} className="data-table__row">
-                  <td className="is-text">{line.label}</td>
-                  <td className={amountClass(now)}>{formatMoney(now)}</td>
-                  <td className={`data-table__num ${amountClass(then)}`}>{formatMoney(then)}</td>
+                  <td className="is-text">{t(line.label)}</td>
+                  <td className={amountClass(now)}>{money(now)}</td>
+                  <td className={`data-table__num ${amountClass(then)}`}>{money(then)}</td>
                 </tr>
               )
             })}
             <tr className="data-table__row caja-screen__total">
               <td className="is-text">
-                <strong>Resultado</strong>
+                <strong>{t('caja.result')}</strong>
               </td>
               <td className={amountClass(net)}>
-                <strong>{formatMoney(net)}</strong>
+                <strong>{money(net)}</strong>
               </td>
               <td className={amountClass(ledgerNet(club.lastLedger))}>
-                <strong>{formatMoney(ledgerNet(club.lastLedger))}</strong>
+                <strong>{money(ledgerNet(club.lastLedger))}</strong>
               </td>
             </tr>
           </tbody>
         </table>
-        <p className="screen__note">
-          Every movement of your balance is one of these lines and nothing else. The season&rsquo;s
-          books start again each August, once the prize money has landed.
-        </p>
+        <p className="screen__note">{t('caja.note')}</p>
       </section>
 
       <aside className="caja-screen__side">
         <section className="screen caja-screen__panel">
           <div className="caja-screen__stats">
             <div className="stat">
-              <span className="stat__label">Saldo</span>
+              <span className="stat__label">{t('caja.balance')}</span>
               <span className={`stat__value caja-screen__figure ${amountClass(club.budget)}`}>
-                {formatMoney(club.budget)}
+                {money(club.budget)}
               </span>
             </div>
             <div className="stat">
-              <span className="stat__label">Descubierto</span>
-              <span className="stat__value caja-screen__figure">{formatMoney(-limit)}</span>
+              <span className="stat__label">{t('caja.overdraft')}</span>
+              <span className="stat__value caja-screen__figure">{money(-limit)}</span>
             </div>
           </div>
-          <p className="screen__note">
-            You may spend into the red as far as your overdraft, and pay interest while you are
-            there. The board does not judge you on it.
-          </p>
+          <p className="screen__note">{t('caja.overdraftNote')}</p>
         </section>
 
         <section className="screen caja-screen__panel">
-          <h2 className="screen__heading">Salarios</h2>
+          <h2 className="screen__heading">{t('caja.wages')}</h2>
           <div className="caja-screen__stats">
             <div className="stat">
-              <span className="stat__label">Anual</span>
-              <span className="stat__value caja-screen__figure">
-                {formatMoney(wageBill(squad))}
-              </span>
+              <span className="stat__label">{t('caja.annual')}</span>
+              <span className="stat__value caja-screen__figure">{money(wageBill(squad))}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Plantilla</span>
+              <span className="stat__label">{t('caja.squad')}</span>
               <span className="stat__value caja-screen__figure">{squad.length}</span>
             </div>
           </div>
-          <p className="screen__note">
-            Paid monthly. A club sitting on money pays over the odds, so a large balance costs you
-            more than it earns.
-          </p>
+          <p className="screen__note">{t('caja.wagesNote')}</p>
         </section>
 
         <div className="screen-actions">
           <button type="button" className="button" onClick={() => go('hub')}>
-            Volver
+            {t('action.back')}
           </button>
         </div>
       </aside>

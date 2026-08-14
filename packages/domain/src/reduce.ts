@@ -19,6 +19,7 @@ import {
   type TeamRating,
 } from './entities.ts'
 import { judge } from './board.ts'
+import { GameError } from './errors.ts'
 import {
   canAfford,
   credit,
@@ -352,7 +353,10 @@ function setLineup(state: GameState, command: SetLineup): ReduceResult {
 function setTactics(state: GameState, command: SetTactics): ReduceResult {
   const attacking = command.tactics.attacking
   if (!Number.isFinite(attacking) || attacking < 0 || attacking > 100) {
-    throw new Error(`Tactics must sit between 0 and 100, got ${attacking}`)
+    throw new GameError(
+      'error.tactics.range',
+      `Tactics must sit between 0 and 100, got ${attacking}`,
+    )
   }
 
   return {
@@ -370,7 +374,7 @@ function setTactics(state: GameState, command: SetTactics): ReduceResult {
  */
 function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): ReduceResult {
   if (!isSeasonComplete(state)) {
-    throw new Error('The season is not over yet')
+    throw new GameError('error.season.notOver', 'The season is not over yet')
   }
 
   const rolled = rolloverSeason(state, rng, { names: command.names })
@@ -434,36 +438,46 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
   /* c8 ignore next */
   if (buyer === undefined) throw new Error('No managed club')
 
-  if (!isTransferWindowOpen(date)) throw new Error('The transfer window is closed')
+  if (!isTransferWindowOpen(date))
+    throw new GameError('error.window.closed', 'The transfer window is closed')
 
   const found = findPlayer(state, command.playerId)
-  if (found === null) throw new Error(`No such player: ${command.playerId}`)
+  if (found === null)
+    throw new GameError('error.player.unknown', `No such player: ${command.playerId}`)
   if (found.club === null) {
-    throw new Error('A free agent costs no fee — offer him a contract instead')
+    throw new GameError(
+      'error.player.freeAgent',
+      'A free agent costs no fee — offer him a contract instead',
+    )
   }
-  if (found.club === state.managedClubId) throw new Error('He is already yours')
+  if (found.club === state.managedClubId)
+    throw new GameError('error.player.yours', 'He is already yours')
 
   // Only what the selling club has actually listed. `surplus` is the whole rule:
   // a club will not sell a player its XI depends on, at any price.
   const forSale = surplus(state.squads[found.club] ?? [])
   if (!forSale.some((p) => p.id === command.playerId)) {
-    throw new Error(`${found.player.name} is not for sale`)
+    throw new GameError('error.player.notForSale', `${found.player.name} is not for sale`, {
+      player: found.player.name,
+    })
   }
 
   if (!Number.isFinite(command.fee) || command.fee <= 0) {
-    throw new Error(`A bid must be a positive fee, got ${command.fee}`)
+    throw new GameError('error.bid.positive', `A bid must be a positive fee, got ${command.fee}`)
   }
   // Checked against the overdraft, not the balance: a manager may spend into
   // debt, which is the whole point of the limit existing. The AI may not — see
   // `runTransferWindow`.
   if (!affordable(state, buyer, command.fee)) {
-    throw new Error('That would take you past your overdraft limit')
+    throw new GameError('error.bid.overdraft', 'That would take you past your overdraft limit')
   }
   if ((state.squads[state.managedClubId] ?? []).length >= MAX_SQUAD) {
-    throw new Error('Your squad is full')
+    throw new GameError('error.squad.full', 'Your squad is full')
   }
   if (liveBidFor(state, command.playerId) !== undefined) {
-    throw new Error(`There is already a live bid for ${found.player.name}`)
+    throw new GameError('error.bid.live', `There is already a live bid for ${found.player.name}`, {
+      player: found.player.name,
+    })
   }
 
   const bid: Bid = {
@@ -488,8 +502,9 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
 
 function withdrawBid(state: GameState, command: WithdrawBid): ReduceResult {
   const bid = state.bids.find((b) => b.id === command.bidId)
-  if (bid === undefined) throw new Error(`No such bid: ${command.bidId}`)
-  if (bid.from !== state.managedClubId) throw new Error('That is not your bid')
+  if (bid === undefined) throw new GameError('error.bid.unknown', `No such bid: ${command.bidId}`)
+  if (bid.from !== state.managedClubId)
+    throw new GameError('error.bid.notYours', 'That is not your bid')
 
   return {
     state: {
@@ -516,30 +531,43 @@ function withdrawBid(state: GameState, command: WithdrawBid): ReduceResult {
  */
 function offerContract(state: GameState, command: OfferContract): ReduceResult {
   const date = state.season.currentDate
-  if (!isTransferWindowOpen(date)) throw new Error('The transfer window is closed')
+  if (!isTransferWindowOpen(date))
+    throw new GameError('error.window.closed', 'The transfer window is closed')
 
   const found = findPlayer(state, command.playerId)
-  if (found === null) throw new Error(`No such player: ${command.playerId}`)
+  if (found === null)
+    throw new GameError('error.player.unknown', `No such player: ${command.playerId}`)
 
   const bid = found.club === null ? undefined : liveBidFor(state, command.playerId)
   if (found.club !== null && (bid === undefined || bid.status !== 'accepted')) {
-    throw new Error(`No agreed fee for ${found.player.name}`)
+    throw new GameError('error.contract.noFee', `No agreed fee for ${found.player.name}`, {
+      player: found.player.name,
+    })
   }
-  if (found.club === state.managedClubId) throw new Error('He is already yours')
+  if (found.club === state.managedClubId)
+    throw new GameError('error.player.yours', 'He is already yours')
 
   if (!Number.isInteger(command.years)) {
-    throw new Error(`Contract length must be whole years, got ${command.years}`)
+    throw new GameError(
+      'error.contract.wholeYears',
+      `Contract length must be whole years, got ${command.years}`,
+    )
   }
   if (command.years < MIN_CONTRACT_YEARS || command.years > MAX_CONTRACT_YEARS) {
-    throw new Error(
+    throw new GameError(
+      'error.contract.range',
       `A contract runs ${MIN_CONTRACT_YEARS}–${MAX_CONTRACT_YEARS} years, got ${command.years}`,
+      { min: MIN_CONTRACT_YEARS, max: MAX_CONTRACT_YEARS },
     )
   }
   if (!Number.isFinite(command.wage) || command.wage < 0) {
-    throw new Error(`A wage cannot be negative, got ${command.wage}`)
+    throw new GameError(
+      'error.contract.negativeWage',
+      `A wage cannot be negative, got ${command.wage}`,
+    )
   }
   if ((state.squads[state.managedClubId] ?? []).length >= MAX_SQUAD) {
-    throw new Error('Your squad is full')
+    throw new GameError('error.squad.full', 'Your squad is full')
   }
 
   const fee = bid?.fee ?? 0
@@ -547,7 +575,7 @@ function offerContract(state: GameState, command: OfferContract): ReduceResult {
   /* c8 ignore next */
   if (buyer === undefined) throw new Error('No managed club')
   if (!affordable(state, buyer, fee)) {
-    throw new Error('That would take you past your overdraft limit')
+    throw new GameError('error.bid.overdraft', 'That would take you past your overdraft limit')
   }
 
   const verdict = offerTerms(found.player, { wage: command.wage, years: command.years }, date)
@@ -602,9 +630,11 @@ function offerContract(state: GameState, command: OfferContract): ReduceResult {
 /** Accept or reject an AI club's offer for one of yours. */
 function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult {
   const bid = state.bids.find((b) => b.id === command.bidId)
-  if (bid === undefined) throw new Error(`No such bid: ${command.bidId}`)
-  if (bid.to !== state.managedClubId) throw new Error('That offer is not yours to answer')
-  if (!bidIsLive(bid)) throw new Error('That offer has already been settled')
+  if (bid === undefined) throw new GameError('error.bid.unknown', `No such bid: ${command.bidId}`)
+  if (bid.to !== state.managedClubId)
+    throw new GameError('error.offer.notYours', 'That offer is not yours to answer')
+  if (!bidIsLive(bid))
+    throw new GameError('error.offer.settled', 'That offer has already been settled')
 
   const bids = state.bids.filter((b) => b.id !== command.bidId)
 
@@ -628,7 +658,7 @@ function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult
   // a team unable to field an XI.
   const squad = state.squads[state.managedClubId] ?? []
   if (!surplus(squad).some((p) => p.id === bid.playerId)) {
-    throw new Error('You can no longer spare him')
+    throw new GameError('error.offer.cannotSpare', 'You can no longer spare him')
   }
 
   const moved = applyTransfers(state, [
@@ -674,9 +704,14 @@ function listPlayer(state: GameState, command: ListPlayer): ReduceResult {
   }
 
   const player = squad.find((p) => p.id === command.playerId)
-  if (player === undefined) throw new Error('You can only list your own players')
+  if (player === undefined)
+    throw new GameError('error.list.notYours', 'You can only list your own players')
   if (!surplus(squad).some((p) => p.id === command.playerId)) {
-    throw new Error(`${player.name} is in your first team — you cannot list him`)
+    throw new GameError(
+      'error.list.firstTeam',
+      `${player.name} is in your first team — you cannot list him`,
+      { player: player.name },
+    )
   }
 
   return {
@@ -866,7 +901,11 @@ function setTicketPrice(state: GameState, command: SetTicketPrice): ReduceResult
   const high = FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR
 
   if (!Number.isFinite(command.price) || command.price < low || command.price > high) {
-    throw new Error(`A ticket must be priced between ${String(low)} and ${String(high)}`)
+    throw new GameError(
+      'error.ticket.range',
+      `A ticket must be priced between ${String(low)} and ${String(high)}`,
+      { low: String(low), high: String(high) },
+    )
   }
 
   return {
@@ -893,20 +932,23 @@ function startExpansion(state: GameState, command: StartExpansion): ReduceResult
   /* c8 ignore next */
   if (club === undefined) throw new Error('No managed club')
 
-  if (club.expansion !== null) throw new Error('Building work is already under way')
+  if (club.expansion !== null)
+    throw new GameError('error.expansion.underWay', 'Building work is already under way')
   if (
     !Number.isFinite(command.seats) ||
     command.seats < FINANCE.MIN_EXPANSION ||
     command.seats > FINANCE.MAX_EXPANSION
   ) {
-    throw new Error(
+    throw new GameError(
+      'error.expansion.range',
       `An expansion runs from ${String(FINANCE.MIN_EXPANSION)} to ${String(FINANCE.MAX_EXPANSION)} seats`,
+      { min: FINANCE.MIN_EXPANSION, max: FINANCE.MAX_EXPANSION },
     )
   }
 
   const cost = expansionCost(command.seats)
   if (!affordable(state, club, cost)) {
-    throw new Error('That would take you past your overdraft limit')
+    throw new GameError('error.bid.overdraft', 'That would take you past your overdraft limit')
   }
 
   // Seats are ready for the season after this one.

@@ -1,5 +1,6 @@
 import type { Club } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
+import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import './SetupScreen.css'
@@ -20,12 +21,14 @@ interface Tier {
 }
 
 /** Keyed off the club's own rating, so it stays honest if the ratings change. */
+// Dictionary keys. `TIERS` is module-level, so it cannot reach a hook — which is
+// exactly why it holds keys and the component does the translating.
 const TIERS: readonly Tier[] = [
-  { label: 'Contender', note: 'Expected to win it. Anything less is a failure.', min: 80 },
-  { label: 'European', note: 'Should finish top six. A title needs luck.', min: 70 },
-  { label: 'Mid-table', note: 'Safe most years. Europe is a good season.', min: 62 },
-  { label: 'Struggler', note: 'Survival is the job.', min: 55 },
-  { label: 'Relegation favourite', note: 'Staying up would be an achievement.', min: 0 },
+  { label: 'tier.contender', note: 'tier.contender.note', min: 80 },
+  { label: 'tier.european', note: 'tier.european.note', min: 70 },
+  { label: 'tier.midTable', note: 'tier.midTable.note', min: 62 },
+  { label: 'tier.struggler', note: 'tier.struggler.note', min: 55 },
+  { label: 'tier.relegation', note: 'tier.relegation.note', min: 0 },
 ]
 
 function tierFor(club: Club): Tier {
@@ -36,22 +39,21 @@ function tierFor(club: Club): Tier {
 
 export function SetupScreen() {
   const newGame = useGame((s) => s.newGame)
+  const { t } = useT()
 
   return (
     <div className="setup">
       <section className="screen setup__panel">
-        <h2 className="screen__heading">Choose a club</h2>
-        <p className="screen__note">
-          You manage one club for the season. The rest are run by the game.
-        </p>
+        <h2 className="screen__heading">{t('setup.heading')}</h2>
+        <p className="screen__note">{t('setup.note')}</p>
 
         <table className="data-table">
           <thead className="data-table__head">
             <tr>
-              <th className="is-text">Club</th>
-              <th>Att</th>
-              <th>Def</th>
-              <th className="is-text">Prospects</th>
+              <th className="is-text">{t('setup.column.club')}</th>
+              <th>{t('setup.column.attack')}</th>
+              <th>{t('setup.column.defence')}</th>
+              <th className="is-text">{t('setup.column.prospects')}</th>
               <th />
             </tr>
           </thead>
@@ -69,7 +71,7 @@ export function SetupScreen() {
                   <td>{club.attack}</td>
                   <td>{club.defence}</td>
                   <td className="is-text setup__tier">
-                    <strong>{tier.label}</strong> <span>{tier.note}</span>
+                    <strong>{t(tier.label)}</strong> <span>{t(tier.note)}</span>
                   </td>
                   <td>
                     <button
@@ -77,7 +79,7 @@ export function SetupScreen() {
                       className="button is-primary"
                       onClick={() => newGame(club.id)}
                     >
-                      Take charge
+                      {t('setup.takeCharge')}
                     </button>
                   </td>
                 </tr>

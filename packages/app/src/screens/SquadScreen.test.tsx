@@ -25,7 +25,7 @@ const game = () => useGame.getState().game
 
 function openSquad() {
   render(<App />)
-  openScreen('Plantilla')
+  openScreen('nav.squad')
 }
 
 function rowFor(name: string) {
@@ -106,9 +106,9 @@ describe('the squad screen', () => {
     fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
 
     back()
-    openScreen('Clasificación')
+    openScreen('nav.table')
     back()
-    openScreen('Plantilla')
+    openScreen('nav.squad')
 
     expect(within(rowFor(player.name)).getByRole('button', { name: 'Listed' })).toBeDefined()
   })
@@ -117,7 +117,7 @@ describe('the squad screen', () => {
 describe('the market screen shows what you have put up', () => {
   it('is explicit that nothing is on the market by default', () => {
     render(<App />)
-    openScreen('Fichar')
+    openScreen('nav.market')
     expect(screen.getByText(/Your squad is invisible to other clubs/)).toBeDefined()
   })
 
@@ -127,7 +127,7 @@ describe('the market screen shows what you have put up', () => {
     fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
 
     back()
-    openScreen('Fichar')
+    openScreen('nav.market')
     const panel = screen.getByRole('heading', { name: 'Up for sale' }).closest('section')
     if (panel === null) throw new Error('no panel')
 

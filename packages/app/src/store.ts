@@ -13,7 +13,7 @@ import {
 } from '@fm/domain'
 import { DEFAULT_CLUBS, PLAYER_NAMES } from '@fm/data'
 import { loadGame, saveGame } from '@fm/persistence'
-import { countNotable } from './notifications.ts'
+import { DEFAULT_LANGUAGE, isLanguage, type Language } from './i18n/index.ts'
 
 /**
  * The UI's view of the game.
@@ -37,14 +37,20 @@ interface Store {
   readonly inspectedPlayerId: string | null
   /** Which screen the ficha was opened from, so closing it goes back there. */
   readonly inspectedFrom: Screen
-  /** Most recent events, newest first — what the news feed reads. */
+  /** Most recent events, newest first — what the hub's news panel reads. */
   readonly feed: readonly Event[]
   /**
-   * Notable events since you last looked. Session state, not game state: it is
-   * about this sitting rather than this career, so it stays out of the save and
-   * off the schema.
+   * The interface language.
+   *
+   * A third category of state, and the store had only two. `game` belongs to a
+   * career and is saved; `screen` and `feed` belong to this sitting and are not.
+   * A language belongs to the **player**, across every career — so it outlives
+   * both, and lives in `localStorage` rather than the save. Putting it in the
+   * envelope would mean deleting a career reset your language, importing a
+   * friend's save changed it, and a schema migration for a value with no bearing
+   * on the rules.
    */
-  readonly unread: number
+  readonly language: Language
   readonly saving: boolean
   /**
    * True until a club has been chosen or a save restored. Distinguishes "no
@@ -55,8 +61,7 @@ interface Store {
 
   dispatch(command: Command): void
   go(screen: Screen): void
-  /** Clears the badge. Called when either news surface is opened. */
-  markRead(): void
+  setLanguage(language: Language): void
   /**
    * Run the clock to the day of the next match and stop there, so kicking off
    * stays a separate, deliberate act.
@@ -74,6 +79,27 @@ interface Store {
    * `@fm/data` is already in scope.
    */
   startNewSeason(): void
+}
+
+/**
+ * Where the language is kept.
+ *
+ * `localStorage` rather than IndexedDB precisely because it is synchronous: read
+ * at module load, before first paint, so nobody sees a flash of the wrong
+ * language. That is the one thing the save store cannot do — `loadGame` is async
+ * by construction.
+ */
+const LANGUAGE_KEY = 'fm.language'
+
+function storedLanguage(): Language {
+  try {
+    const saved: unknown = globalThis.localStorage?.getItem(LANGUAGE_KEY)
+    return isLanguage(saved) ? saved : DEFAULT_LANGUAGE
+  } catch {
+    // Private browsing, a blocked origin, or a test environment with no storage.
+    // A missing preference is a normal state, exactly as a missing save is.
+    return DEFAULT_LANGUAGE
+  }
 }
 
 const START_SEED = 20260813
@@ -98,23 +124,22 @@ export const useGame = create<Store>((set, get) => ({
   inspectedPlayerId: null,
   inspectedFrom: 'squad',
   feed: [],
-  unread: 0,
+  language: storedLanguage(),
   saving: false,
   needsSetup: true,
 
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
-    // Counted against the *new* state, so a notice can name a player who has just
-    // arrived. `countNotable` drops the events nobody wants reported back.
-    set({
-      game: state,
-      feed: [...events, ...get().feed].slice(0, 60),
-      unread: get().unread + countNotable(events, state),
-    })
+    set({ game: state, feed: [...events, ...get().feed].slice(0, 60) })
   },
 
-  markRead() {
-    set({ unread: 0 })
+  setLanguage(language) {
+    set({ language })
+    try {
+      globalThis.localStorage?.setItem(LANGUAGE_KEY, language)
+    } catch {
+      // Unavailable storage costs you the preference next time, not this time.
+    }
   },
 
   advanceToMatchday() {
@@ -173,7 +198,7 @@ export const useGame = create<Store>((set, get) => ({
 
     if (loaded === null) return false
     rng = createRng(loaded.rngState as RngState)
-    set({ game: loaded.payload as GameState, feed: [], unread: 0, needsSetup: false })
+    set({ game: loaded.payload as GameState, feed: [], needsSetup: false })
     return true
   },
 
@@ -181,7 +206,6 @@ export const useGame = create<Store>((set, get) => ({
     set({
       game: freshGame(managedClubId),
       feed: [],
-      unread: 0,
       screen: 'hub',
       inspectedPlayerId: null,
       needsSetup: false,
@@ -189,7 +213,7 @@ export const useGame = create<Store>((set, get) => ({
   },
 
   restart() {
-    set({ needsSetup: true, screen: 'hub', inspectedPlayerId: null, feed: [], unread: 0 })
+    set({ needsSetup: true, screen: 'hub', inspectedPlayerId: null, feed: [] })
   },
 
   startNewSeason() {

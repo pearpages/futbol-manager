@@ -5,6 +5,7 @@ import { render, screen } from '@testing-library/react'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { translatorFor } from '../i18n/useT.ts'
 import { QUADRANTS } from './HubScreen.tsx'
 import { ICON_KEYS } from './TileIcon.tsx'
 
@@ -23,6 +24,7 @@ beforeEach(() => {
   useGame.getState().newGame(MID)
 })
 
+const { t } = translatorFor('en')
 const TILES = QUADRANTS.flatMap((quadrant) => quadrant.tiles)
 
 describe('every tile has an icon', () => {
@@ -30,7 +32,7 @@ describe('every tile has an icon', () => {
     // A thirteenth tile should fail here rather than render a blank square.
     const declared = new Set<string>(ICON_KEYS)
     for (const tile of TILES) {
-      expect(declared.has(tile.icon), tile.label).toBe(true)
+      expect(declared.has(tile.icon), tile.key).toBe(true)
     }
   })
 
@@ -72,7 +74,8 @@ describe('the tiles are still findable by name', () => {
     // is nothing.
     render(<App />)
     for (const tile of TILES) {
-      const name = tile.milestone === undefined ? tile.label : `${tile.label}${tile.milestone}`
+      const label = t(tile.key)
+      const name = tile.milestone === undefined ? label : `${label}${tile.milestone}`
       expect(screen.getByRole('button', { name }), name).toBeDefined()
     }
   })
@@ -82,7 +85,7 @@ describe('the tiles are still findable by name', () => {
     // heading to `closest('section')`. Both halves of that are load-bearing.
     render(<App />)
     for (const { title, key } of QUADRANTS) {
-      const section = screen.getByRole('heading', { name: title }).closest('section')
+      const section = screen.getByRole('heading', { name: t(title) }).closest('section')
       expect(section, title).not.toBeNull()
       expect(section?.getAttribute('data-quadrant')).toBe(key)
     }

@@ -3,8 +3,9 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expansionCost, FINANCE, ledgerNet, STRIKES_ALLOWED } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
+import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advanceUntil, back, openScreen } from '../testing.ts'
+import { advanceUntil, back, labelStem, openScreen } from '../testing.ts'
 import { LINES, signed } from './CajaScreen.tsx'
 import { fillFor } from './EstadioScreen.tsx'
 
@@ -23,6 +24,7 @@ beforeEach(() => {
   useGame.getState().newGame(MID)
 })
 
+const { t } = translatorFor('en')
 const game = () => useGame.getState().game
 const club = () => game().clubs.find((c) => c.id === game().managedClubId)
 
@@ -32,7 +34,7 @@ describe('Caja', () => {
     // ADR 0009 makes adding a line to the domain deliberate; this is what makes
     // failing to *show* it deliberate too.
     render(<App />)
-    openScreen('Caja')
+    openScreen('nav.caja')
 
     // Scoped to the accounts table: "Salarios" is also the wage panel's heading,
     // so a document-wide query finds both.
@@ -41,13 +43,13 @@ describe('Caja', () => {
     if (table === null) throw new Error('no accounts table')
 
     for (const line of LINES) {
-      expect(within(table as HTMLElement).getByText(line.label), line.label).toBeDefined()
+      expect(within(table as HTMLElement).getByText(t(line.label)), line.label).toBeDefined()
     }
   })
 
   it('agrees with the balance the hub shows', () => {
     render(<App />)
-    openScreen('Caja')
+    openScreen('nav.caja')
 
     const before = club()
     /* c8 ignore next */
@@ -60,19 +62,19 @@ describe('Caja', () => {
 
   it('comes back to the hub', () => {
     render(<App />)
-    openScreen('Caja')
+    openScreen('nav.caja')
     back()
-    expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
   })
 })
 
 describe('Decisiones', () => {
   it('says what the board wants and how much rope is left', () => {
     render(<App />)
-    openScreen('Decisiones')
+    openScreen('nav.decisiones')
 
     const target = game().board.target
-    expect(screen.getAllByText(`${String(target)}º`).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(t('shell.position', { position: target })).length).toBeGreaterThan(0)
     expect(document.querySelectorAll('.decisiones-screen__strike')).toHaveLength(STRIKES_ALLOWED)
   })
 
@@ -83,16 +85,16 @@ describe('Decisiones', () => {
 
     advanceUntil(() => game().board.strikes > 0, 420)
 
-    openScreen('Decisiones')
+    openScreen('nav.decisiones')
     expect(document.querySelectorAll('.decisiones-screen__strike.is-spent')).toHaveLength(1)
-    expect(screen.getByText(/warned once/)).toBeDefined()
+    expect(screen.getByText(t('board.warned'))).toBeDefined()
   })
 
   it('is explicit that only the table is judged', () => {
     // The natural assumption is that the money counts too, and it does not.
     render(<App />)
-    openScreen('Decisiones')
-    expect(screen.getByText(/does not look at your balance/)).toBeDefined()
+    openScreen('nav.decisiones')
+    expect(screen.getByText(t('board.whatCountsNote'))).toBeDefined()
   })
 })
 
@@ -107,43 +109,53 @@ describe('Estadio', () => {
     expect(fillFor(-1)).toBe(0)
 
     render(<App />)
-    openScreen('Estadio')
+    openScreen('nav.estadio')
     const fill = document.querySelector('.estadio-screen__gauge .attr__fill')
     expect(Number(fill?.getAttribute('data-fill'))).toBeGreaterThan(0)
   })
 
   it('moves the ticket price through the reducer', () => {
     render(<App />)
-    openScreen('Estadio')
+    openScreen('nav.estadio')
 
     const dearer = FINANCE.TICKET * 1.5
-    fireEvent.change(screen.getByLabelText(/Precio/), { target: { value: String(dearer) } })
+    fireEvent.change(screen.getByLabelText(labelStem(t('estadio.price', { price: '' }))), {
+      target: { value: String(dearer) },
+    })
 
     expect(club()?.ticketPrice).toBeCloseTo(dearer, 6)
   })
 
   it('takes the money now and the seats next season', () => {
     render(<App />)
-    openScreen('Estadio')
+    openScreen('nav.estadio')
 
     const before = club()
     /* c8 ignore next */
     if (before === undefined) throw new Error('no club')
     const seats = 4000
-    fireEvent.change(screen.getByLabelText(/Asientos/), { target: { value: String(seats) } })
-    fireEvent.click(screen.getByRole('button', { name: 'Comenzar obras' }))
+    fireEvent.change(screen.getByLabelText(labelStem(t('estadio.seats', { cost: '' }))), {
+      target: { value: String(seats) },
+    })
+    fireEvent.click(screen.getByRole('button', { name: t('estadio.begin') }))
 
     expect(club()?.budget).toBe(before.budget - expansionCost(seats))
     expect(club()?.capacity).toBe(before.capacity)
-    expect(screen.getByText(/new seats are being built/)).toBeDefined()
+    expect(
+      screen.getByText(
+        new RegExp(t('estadio.underWay.other', { seats: '\\d[\\d,.]*', season: '.*' })),
+      ),
+    ).toBeDefined()
   })
 
   it('shows a refusal rather than crashing', () => {
     render(<App />)
-    openScreen('Estadio')
+    openScreen('nav.estadio')
 
-    fireEvent.change(screen.getByLabelText(/Asientos/), { target: { value: '999999' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Comenzar obras' }))
+    fireEvent.change(screen.getByLabelText(labelStem(t('estadio.seats', { cost: '' }))), {
+      target: { value: '999999' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: t('estadio.begin') }))
 
     expect(screen.getByRole('alert').textContent).toMatch(/runs from/)
     expect(club()?.expansion).toBeNull()
@@ -161,11 +173,17 @@ describe('the sack', () => {
 
     // Said twice on purpose: the panel where the fixture used to be, and the
     // news feed. A dismissal is not something to find out by accident.
-    expect(screen.getAllByText(/have dismissed you/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/dismissed you/).length).toBeGreaterThan(0)
     // No way to press on: the season-rollover button is gone.
-    expect(screen.queryByRole('button', { name: /^Start \d{4}/ })).toBeNull()
+    expect(
+      screen.queryByRole('button', {
+        name: new RegExp(`^${t('hub.startSeason', { season: '' }).trim()}`),
+      }),
+    ).toBeNull()
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Nueva carrera' })[0] as HTMLElement)
+    fireEvent.click(
+      screen.getAllByRole('button', { name: t('action.newCareer') })[0] as HTMLElement,
+    )
     expect(useGame.getState().needsSetup).toBe(true)
   })
 
@@ -176,7 +194,11 @@ describe('the sack', () => {
     advanceUntil(() => game().board.strikes > 0, 420)
 
     expect(game().board.sacked).toBe(false)
-    expect(screen.getByRole('button', { name: /^Start \d{4}/ })).toBeDefined()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(`^${t('hub.startSeason', { season: '' }).trim()}`),
+      }),
+    ).toBeDefined()
   })
 })
 
@@ -185,11 +207,11 @@ describe('the verdict reaches the feed', () => {
     render(<App />)
     advanceUntil(() => useGame.getState().game.board.strikes > 0 || seasonJudged(), 420)
 
-    const drawer = screen.getByRole('button', { name: /^Noticias/ })
-    fireEvent.click(drawer)
-    expect(within(screen.getByLabelText('Noticias')).getAllByText(/board/i).length).toBeGreaterThan(
-      0,
-    )
+    // Retargeted from the title bar's drawer, which the cog replaced, to the
+    // hub's own news panel — the surface that survived.
+    const panel = screen.getByRole('heading', { name: t('hub.news') }).closest('section')
+    expect(panel).not.toBeNull()
+    expect(within(panel as HTMLElement).getAllByText(/board/i).length).toBeGreaterThan(0)
   })
 })
 

@@ -5,6 +5,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { advance, advanceUntil, back, openScreen } from '../testing.ts'
+import { translatorFor } from '../i18n/useT.ts'
 import { QUADRANTS } from './HubScreen.tsx'
 
 /**
@@ -20,6 +21,7 @@ beforeEach(() => {
   useGame.getState().newGame(MID)
 })
 
+const { t } = translatorFor('en')
 const game = () => useGame.getState().game
 const quadrant = (title: string) =>
   screen.getByRole('heading', { name: title }).closest('section') as HTMLElement
@@ -28,14 +30,16 @@ describe('the hub', () => {
   it('is where the app opens', () => {
     render(<App />)
     for (const { title } of QUADRANTS) {
-      expect(screen.getByRole('heading', { name: title })).toBeDefined()
+      expect(screen.getByRole('heading', { name: t(title) })).toBeDefined()
     }
   })
 
   it('navigates from a live tile', () => {
     render(<App />)
-    fireEvent.click(within(quadrant('Mercado')).getByRole('button', { name: 'Fichar' }))
-    expect(screen.getByRole('heading', { name: 'Transfer market' })).toBeDefined()
+    fireEvent.click(
+      within(quadrant(t('quadrant.mercado'))).getByRole('button', { name: t('nav.market') }),
+    )
+    expect(screen.getByRole('heading', { name: t('market.heading') })).toBeDefined()
   })
 
   it('shows what is not built yet, disabled and dated', () => {
@@ -46,7 +50,9 @@ describe('the hub', () => {
     // example — and having to move it is the test doing its job: a tile going
     // live should not be able to pass silently as one that has not.
     render(<App />)
-    const cantera = within(quadrant('Mercado')).getByRole('button', { name: /Cantera/ })
+    const cantera = within(quadrant(t('quadrant.mercado'))).getByRole('button', {
+      name: `${t('nav.youth')}M7`,
+    })
 
     expect(cantera.hasAttribute('disabled')).toBe(true)
     expect(cantera.getAttribute('title')).toMatch(/M7/)
@@ -54,17 +60,19 @@ describe('the hub', () => {
 
   it('opens the three finance screens M5b built', () => {
     render(<App />)
-    for (const tile of ['Caja', 'Decisiones', 'Estadio'] as const) {
-      const button = within(quadrant('Finanzas')).getByRole('button', { name: tile })
+    for (const tile of ['nav.caja', 'nav.decisiones', 'nav.estadio'] as const) {
+      const button = within(quadrant(t('quadrant.finanzas'))).getByRole('button', { name: t(tile) })
       expect(button.hasAttribute('disabled'), tile).toBe(false)
     }
   })
 
   it('promises nothing for what has no milestone', () => {
     render(<App />)
-    const calendario = within(quadrant('Seguimiento')).getByRole('button', { name: /Calendario/ })
-    expect(calendario.hasAttribute('disabled')).toBe(true)
-    expect(calendario.getAttribute('title')).toBe('Not built yet')
+    const calendar = within(quadrant(t('quadrant.seguimiento'))).getByRole('button', {
+      name: t('nav.calendar'),
+    })
+    expect(calendar.hasAttribute('disabled')).toBe(true)
+    expect(calendar.getAttribute('title')).toBe(t('hub.notBuilt'))
   })
 })
 
@@ -97,8 +105,12 @@ describe('knowing when you play', () => {
     // Round one is dated on the season start, so kicking off is the first thing
     // asked of you — and it is a distinct button, not Advance day.
     render(<App />)
-    expect(screen.getByRole('button', { name: /^Play match/ })).toBeDefined()
-    expect(screen.queryByRole('button', { name: 'Advance day' })).toBeNull()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(`^${t('hub.playMatch', { opponent: '' }).trim()}`),
+      }),
+    ).toBeDefined()
+    expect(screen.queryByRole('button', { name: t('hub.advanceDay') })).toBeNull()
   })
 
   it('plays only when you press play', () => {
@@ -106,7 +118,11 @@ describe('knowing when you play', () => {
     const played = () => game().season.fixtures.filter((f) => f.result !== null).length
     expect(played()).toBe(0)
 
-    fireEvent.click(screen.getByRole('button', { name: /^Play match/ }))
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: new RegExp(`^${t('hub.playMatch', { opponent: '' }).trim()}`),
+      }),
+    )
     expect(played()).toBe(10)
   })
 
@@ -119,12 +135,16 @@ describe('knowing when you play', () => {
     if (target === null) throw new Error('no fixture')
     expect(game().season.currentDate).toBeLessThan(target.date)
 
-    fireEvent.click(screen.getByRole('button', { name: 'To matchday' }))
+    fireEvent.click(screen.getByRole('button', { name: t('hub.toMatchday') }))
 
     expect(game().season.currentDate).toBe(target.date)
     // Stopped *on* it: the fixture is still unplayed and the button now offers it.
     expect(game().season.fixtures.find((f) => f.id === target.id)?.result).toBeNull()
-    expect(screen.getByRole('button', { name: /^Play match/ })).toBeDefined()
+    expect(
+      screen.getByRole('button', {
+        name: new RegExp(`^${t('hub.playMatch', { opponent: '' }).trim()}`),
+      }),
+    ).toBeDefined()
   })
 })
 
@@ -162,46 +182,32 @@ describe('the weak-XI warning', () => {
 describe('the news feed', () => {
   it('says nothing before anything has happened', () => {
     render(<App />)
-    expect(screen.getByText('Nothing has happened yet.')).toBeDefined()
+    expect(screen.getByText(t('hub.noNews'))).toBeDefined()
   })
 
   it('reports your own result in words', () => {
     render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: /^Play match/ }))
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: new RegExp(`^${t('hub.playMatch', { opponent: '' }).trim()}`),
+      }),
+    )
     expect(screen.getAllByText(/(Beat|Lost to|Drew with)/).length).toBeGreaterThan(0)
   })
 
   it('reports a transfer you would otherwise have missed', () => {
     render(<App />)
-    openScreen('Fichar')
+    openScreen('nav.market')
 
     // Bid at the asking price, then wait somewhere else — which is exactly the
     // situation where an answer used to arrive silently.
     const row = document.querySelector('.market-screen__main tbody tr') as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: t('market.bid') }))
+    fireEvent.click(screen.getByRole('button', { name: t('market.makeBid') }))
 
     back()
     advanceUntil(() => screen.queryAllByText(/Fee agreed|was rejected|Counter-offer/).length > 0, 8)
 
     expect(screen.getAllByText(/Fee agreed|was rejected|Counter-offer/).length).toBeGreaterThan(0)
-  })
-
-  it('badges what happens away from the hub, and clears when you look', () => {
-    // The badge's job narrowed when the day controls moved to the hub: advancing
-    // now always happens with the news panel in view, which clears it on sight.
-    // What is left is everything that fires *off* the hub — a bid, an offer, a
-    // listing — and that is exactly what the bell is for.
-    render(<App />)
-    openScreen('Fichar')
-
-    const row = document.querySelector('.market-screen__main tbody tr') as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
-
-    expect(useGame.getState().unread).toBeGreaterThan(0)
-    // The bell lives in the bar, so it is reachable without going home first.
-    fireEvent.click(screen.getByRole('button', { name: /^Noticias/ }))
-    expect(useGame.getState().unread).toBe(0)
   })
 })

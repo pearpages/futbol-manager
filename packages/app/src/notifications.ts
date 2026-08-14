@@ -1,22 +1,18 @@
-import {
-  type Event,
-  formatMoney,
-  type GameState,
-  type Player,
-  type PlayerId,
-  type ClubId,
-} from '@fm/domain'
+import type { ClubId, Event, GameState, Player, PlayerId } from '@fm/domain'
+import type { Translator } from './i18n/useT.ts'
 
 /**
  * Turning events into something a manager can read.
  *
- * Every command already emits events, and the store already keeps them — but
- * until now only `MatchPlayed` was ever rendered, on the table screen. A bid
- * answered three days after you made it, an offer for one of your players, a
- * transfer completing: all of it happened silently. This is the missing half.
+ * Every command emits events and the store keeps them; this is what makes them
+ * sentences. Kept as a pure function rather than built inside a component so it
+ * can be tested without rendering, the same way `bandFor` and `listingsFor` are.
  *
- * Kept as a pure function rather than built inside a component so it can be
- * tested without rendering, the same way `bandFor` and `listingsFor` are.
+ * **Every sentence is whole.** The English version used to pick a verb — `Beat`,
+ * `Lost to`, `Drew with` — and glue it in front of the opponent and the score.
+ * That works in English and nowhere else: Catalan and Spanish put the result
+ * first and the club after a preposition that agrees with it. So each outcome is
+ * its own key, and nothing here concatenates translated fragments.
  */
 
 export type NoticeTone = 'good' | 'bad' | 'plain'
@@ -34,7 +30,7 @@ export interface NameLookup {
   club(id: ClubId | null): string
 }
 
-export function lookupFor(game: GameState): NameLookup {
+export function lookupFor(game: GameState, { t }: Translator): NameLookup {
   const players = new Map<PlayerId, Player>()
   for (const club of game.clubs) {
     for (const player of game.squads[club.id] ?? []) players.set(player.id, player)
@@ -44,21 +40,28 @@ export function lookupFor(game: GameState): NameLookup {
   const clubs = new Map(game.clubs.map((club) => [club.id, club]))
 
   return {
-    player: (id) => players.get(id)?.name ?? 'a player',
+    player: (id) => players.get(id)?.name ?? t('news.unknownPlayer'),
     // `null` is the free-agent pool, which belongs to nobody.
-    club: (id) => (id === null ? 'free agents' : (clubs.get(id)?.name ?? 'another club')),
+    club: (id) =>
+      id === null ? t('news.freeAgents') : (clubs.get(id)?.name ?? t('news.unknownClub')),
   }
 }
 
 /**
  * One event as one line, or `null` when it is not worth interrupting for.
  *
- * The silent ones are deliberate. `DayAdvanced` fires every single tick,
- * `LineupChanged` and `TacticsChanged` fire because *you* just did that — a feed
- * that reports your own clicks back to you is noise, and noise is what makes a
- * player stop reading the thing.
+ * The silent ones are deliberate. `DayAdvanced` fires every single tick, and
+ * `LineupChanged`, `TacticsChanged` and `TicketPriceSet` fire because *you* just
+ * did that — a feed that reports your own clicks back to you is noise, and noise
+ * is what makes a player stop reading the thing.
  */
-export function describe(event: Event, game: GameState, names: NameLookup): Notice | null {
+export function describe(
+  event: Event,
+  game: GameState,
+  names: NameLookup,
+  translator: Translator,
+): Notice | null {
+  const { t, plural, money, count, season } = translator
   const you = game.managedClubId
   const day = game.season.currentDate
 
@@ -66,6 +69,7 @@ export function describe(event: Event, game: GameState, names: NameLookup): Noti
     case 'DayAdvanced':
     case 'LineupChanged':
     case 'TacticsChanged':
+    case 'TicketPriceSet':
       return null
 
     case 'MatchPlayed': {
@@ -77,37 +81,34 @@ export function describe(event: Event, game: GameState, names: NameLookup): Noti
       const [ours, theirs] = home
         ? [event.score.home, event.score.away]
         : [event.score.away, event.score.home]
+
+      const key = ours > theirs ? 'news.won' : ours < theirs ? 'news.lost' : 'news.drew'
       const tone: NoticeTone = ours > theirs ? 'good' : ours < theirs ? 'bad' : 'plain'
-      const verb = ours > theirs ? 'Beat' : ours < theirs ? 'Lost to' : 'Drew with'
-      return {
-        key: `${event.fixtureId}`,
-        text: `${verb} ${opponent} ${ours}–${theirs}`,
-        tone,
-      }
+      return { key: `${event.fixtureId}`, text: t(key, { opponent, ours, theirs }), tone }
     }
 
     case 'BidMade':
       return {
         key: `bid-${event.bidId}-${day}`,
-        text: `Bid ${formatMoney(event.fee)} for ${names.player(event.playerId)}`,
+        text: t('news.bidMade', { fee: money(event.fee), player: names.player(event.playerId) }),
         tone: 'plain',
       }
 
     case 'BidAnswered': {
-      const who = names.player(event.playerId)
+      const player = names.player(event.playerId)
       const key = `answer-${event.bidId}-${event.status}-${day}`
       if (event.status === 'accepted') {
-        return { key, text: `Fee agreed for ${who} — now agree terms`, tone: 'good' }
+        return { key, text: t('news.bidAccepted', { player }), tone: 'good' }
       }
       if (event.status === 'countered') {
         return {
           key,
-          text: `Counter-offer for ${who}: they want ${formatMoney(event.counterFee ?? 0)}`,
+          text: t('news.bidCountered', { player, fee: money(event.counterFee ?? 0) }),
           tone: 'plain',
         }
       }
       if (event.status === 'rejected') {
-        return { key, text: `Your bid for ${who} was rejected`, tone: 'bad' }
+        return { key, text: t('news.bidRejected', { player }), tone: 'bad' }
       }
       return null // withdrawn — you did that yourself
     }
@@ -115,32 +116,42 @@ export function describe(event: Event, game: GameState, names: NameLookup): Noti
     case 'OfferReceived':
       return {
         key: `offer-${event.bidId}-${day}`,
-        text: `${names.club(event.from)} offer ${formatMoney(event.fee)} for ${names.player(event.playerId)}`,
+        text: t('news.offerReceived', {
+          club: names.club(event.from),
+          fee: money(event.fee),
+          player: names.player(event.playerId),
+        }),
         tone: 'plain',
       }
 
-    case 'TermsRejected': {
-      const reason =
-        event.reason === 'wage'
-          ? `he wants ${formatMoney(event.wanted)} a season`
-          : 'he will not sign for that long'
+    case 'TermsRejected':
       return {
         key: `terms-${event.playerId}-${day}`,
-        text: `${names.player(event.playerId)} refused your terms — ${reason}`,
+        text: t(event.reason === 'wage' ? 'news.termsRejectedWage' : 'news.termsRejectedLength', {
+          player: names.player(event.playerId),
+          wage: money(event.wanted),
+        }),
         tone: 'bad',
       }
-    }
 
     case 'TransferCompleted': {
-      const who = names.player(event.playerId)
-      const fee = event.fee === 0 ? 'on a free' : `for ${formatMoney(event.fee)}`
+      const player = names.player(event.playerId)
+      const free = event.fee === 0
       if (event.to === you) {
-        return { key: `in-${event.playerId}-${day}`, text: `Signed ${who} ${fee}`, tone: 'good' }
+        return {
+          key: `in-${event.playerId}-${day}`,
+          text: t(free ? 'news.signedFree' : 'news.signed', { player, fee: money(event.fee) }),
+          tone: 'good',
+        }
       }
       if (event.from === you) {
         return {
           key: `out-${event.playerId}-${day}`,
-          text: `Sold ${who} to ${names.club(event.to)} ${fee}`,
+          text: t(free ? 'news.soldFree' : 'news.sold', {
+            player,
+            club: names.club(event.to),
+            fee: money(event.fee),
+          }),
           tone: 'plain',
         }
       }
@@ -151,85 +162,65 @@ export function describe(event: Event, game: GameState, names: NameLookup): Noti
 
     case 'PlayerListed':
       return {
-        key: `listed-${event.playerId}-${event.on}-${day}`,
-        text: event.on
-          ? `${names.player(event.playerId)} is up for sale`
-          : `${names.player(event.playerId)} is off the market`,
+        key: `listed-${event.playerId}-${String(event.on)}-${day}`,
+        text: t(event.on ? 'news.listed' : 'news.unlisted', {
+          player: names.player(event.playerId),
+        }),
         tone: 'plain',
       }
 
     case 'SeasonEnded':
-      return { key: `end-${event.startYear}`, text: `The season is over`, tone: 'plain' }
+      return { key: `end-${event.startYear}`, text: t('news.seasonEnded'), tone: 'plain' }
 
     case 'SeasonStarted':
       return {
         key: `start-${event.startYear}`,
-        text: `${event.startYear}/${String(event.startYear + 1).slice(2)} begins`,
+        text: t('news.seasonStarted', { season: season(event.startYear) }),
         tone: 'plain',
       }
 
-    case 'TicketPriceSet':
-      // Your own hand on the slider, reported back at you. Same reason
-      // `TacticsChanged` is silent.
-      return null
-
     case 'BoardVerdict': {
       const key = `board-${event.startYear}`
-      if (event.dismissed) {
-        return {
-          key,
-          text: `The board have dismissed you. ${ordinal(event.finish)} against a target of ${ordinal(event.target)}.`,
-          tone: 'bad',
-        }
+      const params = {
+        finish: t('shell.position', { position: event.finish }),
+        target: t('shell.position', { position: event.target }),
       }
-      if (!event.met) {
-        return {
-          key,
-          text: `The board wanted ${ordinal(event.target)} and you finished ${ordinal(event.finish)}. They expect better.`,
-          tone: 'bad',
-        }
-      }
-      return {
-        key,
-        text: `${ordinal(event.finish)}, against a target of ${ordinal(event.target)}. The board are satisfied.`,
-        tone: 'good',
-      }
+      if (event.dismissed) return { key, text: t('news.boardSacked', params), tone: 'bad' }
+      if (!event.met) return { key, text: t('news.boardWarned', params), tone: 'bad' }
+      return { key, text: t('news.boardHappy', params), tone: 'good' }
     }
 
     case 'ExpansionStarted':
       return {
         key: `build-${event.readyYear}`,
-        text: `Work begins on ${event.seats.toLocaleString('en')} new seats — ${formatMoney(event.cost)}, ready for ${String(event.readyYear)}/${String(event.readyYear + 1).slice(2)}`,
+        text: plural('news.expansionStarted', event.seats, {
+          seats: count(event.seats),
+          cost: money(event.cost),
+          season: season(event.readyYear),
+        }),
         tone: 'plain',
       }
 
     case 'ExpansionOpened':
       return {
         key: `built-${event.capacity}`,
-        text: `The new stand is open — ${event.capacity.toLocaleString('en')} seats`,
+        text: t('news.expansionOpened', { capacity: count(event.capacity) }),
         tone: 'good',
       }
   }
 }
 
-/** `12` → `12º`. Spanish, like the rest of the chrome. */
-function ordinal(position: number): string {
-  return `${String(position)}º`
-}
-
 /** Every notice worth showing, newest first — the order the feed is already in. */
-export function noticesFrom(feed: readonly Event[], game: GameState): Notice[] {
-  const names = lookupFor(game)
+export function noticesFrom(
+  feed: readonly Event[],
+  game: GameState,
+  translator: Translator,
+): Notice[] {
+  const names = lookupFor(game, translator)
   const notices: Notice[] = []
   for (const event of feed) {
-    const notice = describe(event, game, names)
+    const notice = describe(event, game, names, translator)
     if (notice !== null) notices.push(notice)
   }
   return notices
-}
-
-/** How many of a batch of events would actually be shown — the unread count. */
-export function countNotable(events: readonly Event[], game: GameState): number {
-  const names = lookupFor(game)
-  return events.reduce((n, event) => n + (describe(event, game, names) === null ? 0 : 1), 0)
 }

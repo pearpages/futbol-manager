@@ -7,6 +7,7 @@ import {
   startersOf,
   teamRating,
 } from '@fm/domain'
+import type { Translator } from './i18n/useT.ts'
 
 /**
  * What the manager needs to know about his next match, in one place.
@@ -42,9 +43,17 @@ export function matchdayFor(game: GameState): Matchday | null {
   }
 }
 
-/** "v Sevilla (H)" — the shortest way to say who and where. */
-export function describeOpponent(matchday: Matchday): string {
-  return `v ${matchday.opponent?.name ?? '???'} (${matchday.home ? 'H' : 'A'})`
+/**
+ * "contra el Sevilla (L)" — the shortest way to say who and where.
+ *
+ * Home and away are whole phrases per language rather than a letter chosen here
+ * and dropped into brackets: `(H)`/`(A)` abbreviate English words, and the words
+ * differ — Catalan local/visitant, Spanish casa/fuera.
+ */
+export function describeOpponent({ t }: Translator, matchday: Matchday): string {
+  return t(matchday.home ? 'fixture.home' : 'fixture.away', {
+    club: matchday.opponent?.name ?? t('fixture.unknownClub'),
+  })
 }
 
 export interface WeakLineup {

@@ -3,7 +3,10 @@ import { render } from '@testing-library/react'
 import { BANDS, bandFor } from './TableScreen.tsx'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
+import { translatorFor } from '../i18n/useT.ts'
 import { openScreen } from '../testing.ts'
+
+const { t } = translatorFor('en')
 
 /**
  * The qualification bands were previously an `if` chain, and fifth place fell
@@ -16,15 +19,15 @@ const LEAGUE = 20
 
 describe('bandFor', () => {
   it.each([
-    [1, 'Champion'],
-    [2, 'Champions League'],
-    [3, 'Champions League'],
-    [4, 'Champions League'],
-    [5, 'Europa League'],
-    [6, 'Conference League'],
-    [18, 'Relegated'],
-    [19, 'Relegated'],
-    [20, 'Relegated'],
+    [1, 'table.band.champion'],
+    [2, 'table.band.ucl'],
+    [3, 'table.band.ucl'],
+    [4, 'table.band.ucl'],
+    [5, 'table.band.uel'],
+    [6, 'table.band.uecl'],
+    [18, 'table.band.relegation'],
+    [19, 'table.band.relegation'],
+    [20, 'table.band.relegation'],
   ])('gives position %i the %s band', (position, label) => {
     expect(bandFor(position, LEAGUE)?.label).toBe(label)
   })
@@ -50,13 +53,13 @@ describe('bandFor', () => {
   it('anchors relegation to the bottom, whatever the league size', () => {
     // Negative ranges count from the foot of the table, so M7's second division
     // will not need this rewritten for a different number of clubs.
-    expect(bandFor(18, 20)?.label).toBe('Relegated')
+    expect(bandFor(18, 20)?.label).toBe('table.band.relegation')
     expect(bandFor(17, 20)).toBeNull()
 
     // In a 22-club league the drop is 20th–22nd, not 18th.
     expect(bandFor(19, 22)).toBeNull()
-    expect(bandFor(20, 22)?.label).toBe('Relegated')
-    expect(bandFor(22, 22)?.label).toBe('Relegated')
+    expect(bandFor(20, 22)?.label).toBe('table.band.relegation')
+    expect(bandFor(22, 22)?.label).toBe('table.band.relegation')
   })
 })
 
@@ -64,7 +67,7 @@ describe('the legend', () => {
   it('explains every band the table can produce', () => {
     useGame.getState().newGame()
     const { container } = render(<App />)
-    openScreen('Clasificación')
+    openScreen('nav.table')
 
     // Scoped to the legend: each label also appears as a row's assistive text,
     // which is the point — but it means a document-wide query finds both.
@@ -74,14 +77,14 @@ describe('the legend', () => {
     const entries = [...(legend?.querySelectorAll('.table-legend__item') ?? [])].map((el) =>
       el.textContent?.trim(),
     )
-    expect(entries).toEqual(BANDS.map((b) => b.label))
+    expect(entries).toEqual(BANDS.map((b) => t(b.label)))
   })
 
   it('gives each banded row text an assistive reader can use', () => {
     // Colour alone would say nothing to a reader who cannot see it.
     useGame.getState().newGame()
     render(<App />)
-    openScreen('Clasificación')
+    openScreen('nav.table')
 
     const hidden = document.querySelectorAll('.data-table__band .visually-hidden')
     expect(hidden).toHaveLength(9)

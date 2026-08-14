@@ -439,8 +439,10 @@
 
 /* ── News list ───────────────────────────────────────────────────────────── */
 /*
- * Shared by the hub's Noticias panel and the drawer, which is why it lives here
- * rather than in a screen: two callers is exactly when a primitive graduates.
+ * Lived here from the moment two surfaces rendered it — the hub's news panel and
+ * a drawer in the title bar. The drawer went when the cog took its corner, so
+ * there is one caller again; the block stays because splitting a primitive back
+ * into a screen the moment its second user leaves is churn, not tidiness.
  */
 .notice-list {
   margin: 0;

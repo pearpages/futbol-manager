@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
+import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+
+const { t } = translatorFor('en')
 import { ADVANCE } from '../testing.ts'
 
 /**
@@ -18,9 +21,9 @@ beforeEach(() => {
 describe('choosing a club', () => {
   it('is what you see when there is no career', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { name: 'Choose a club' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
     // The shell's navigation is meaningless before a club exists.
-    expect(screen.queryByRole('button', { name: ADVANCE })).toBeNull()
+    expect(screen.queryByRole('button', { name: ADVANCE() })).toBeNull()
   })
 
   it('offers every club in the division', () => {
@@ -28,7 +31,7 @@ describe('choosing a club', () => {
     for (const club of DEFAULT_CLUBS) {
       expect(screen.getByText(club.name)).toBeDefined()
     }
-    expect(screen.getAllByRole('button', { name: 'Take charge' })).toHaveLength(20)
+    expect(screen.getAllByRole('button', { name: t('setup.takeCharge') })).toHaveLength(20)
   })
 
   it('says what you are taking on, so the choice is informed', () => {
@@ -48,11 +51,11 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(madrid.name).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: 'Take charge' }))
+    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
     expect(useGame.getState().game.managedClubId).toBe(madrid.id)
     expect(useGame.getState().needsSetup).toBe(false)
-    expect(screen.getByRole('button', { name: ADVANCE })).toBeDefined()
+    expect(screen.getByRole('button', { name: ADVANCE() })).toBeDefined()
   })
 
   it('no longer forces the weakest club on you', () => {
@@ -62,7 +65,7 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(mid.name).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: 'Take charge' }))
+    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
     expect(useGame.getState().game.managedClubId).not.toBe(DEFAULT_CLUBS.at(-1)?.id)
   })
@@ -74,7 +77,7 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(club.name).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: 'Take charge' }))
+    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
     const { game } = useGame.getState()
     expect(game.squads[game.managedClubId]?.length).toBeGreaterThan(20)
@@ -86,9 +89,9 @@ describe('New career', () => {
   it('returns to the picker from an in-progress season', () => {
     useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
     render(<App />)
-    expect(screen.queryByRole('heading', { name: 'Choose a club' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Nueva carrera' }))
-    expect(screen.getByRole('heading', { name: 'Choose a club' })).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
   })
 })

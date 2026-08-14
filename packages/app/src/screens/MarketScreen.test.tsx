@@ -35,7 +35,7 @@ const game = () => useGame.getState().game
 
 function openMarket() {
   render(<App />)
-  openScreen('Fichar')
+  openScreen('nav.market')
 }
 
 const bodyRows = () => [...document.querySelectorAll('.market-screen__main tbody tr')]
@@ -142,7 +142,7 @@ describe('the market screen', () => {
     // Coming back, the negotiation panel is closed — leaving the screen drops it.
     // "Your bids" is how you pick the deal back up, which is the point of that
     // panel existing.
-    openScreen('Fichar')
+    openScreen('nav.market')
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
     fireEvent.click(screen.getByRole('button', { name: 'Offer terms' }))
 
@@ -165,9 +165,9 @@ describe('the market screen', () => {
     expect(game().shortlist).toEqual([target.player.id])
 
     back()
-    openScreen('Clasificación')
+    openScreen('nav.table')
     back()
-    openScreen('Fichar')
+    openScreen('nav.market')
     fireEvent.click(screen.getByRole('button', { name: 'Shortlist only' }))
 
     expect(screen.getByText(target.player.name)).toBeDefined()
@@ -287,9 +287,9 @@ describe('the market does not do your scouting', () => {
     const first = rowNames()
 
     back()
-    openScreen('Clasificación')
+    openScreen('nav.table')
     back()
-    openScreen('Fichar')
+    openScreen('nav.market')
 
     expect(rowNames()).toEqual(first)
   })
@@ -400,7 +400,7 @@ describe('the window', () => {
     for (let day = 0; day < 60; day++) {
       advance()
     }
-    openScreen('Fichar')
+    openScreen('nav.market')
 
     expect(screen.getByText(/The window is shut/)).toBeDefined()
     for (const button of screen.getAllByRole('button', { name: 'Bid' })) {
@@ -425,6 +425,6 @@ describe('the end of a season', () => {
     fireEvent.click(rollover)
     expect(game().season.startYear).toBe(2027)
     expect(game().season.fixtures.filter((f) => f.result !== null)).toHaveLength(0)
-    expect(screen.getByRole('button', { name: ADVANCE })).toBeDefined()
+    expect(screen.getByRole('button', { name: ADVANCE() })).toBeDefined()
   })
 })

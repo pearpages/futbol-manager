@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createRng, type Event, newSeason, type PlayerId } from '@fm/domain'
 import { DEFAULT_CLUBS, PLAYER_NAMES } from '@fm/data'
-import { countNotable, describe as describeEvent, lookupFor, noticesFrom } from './notifications.ts'
+import { translatorFor } from './i18n/useT.ts'
+import { describe as describeEvent, lookupFor, noticesFrom } from './notifications.ts'
 
 /**
  * The event-to-sentence layer, tested without rendering — the same pattern
@@ -17,7 +18,10 @@ const game = newSeason(DEFAULT_CLUBS, 2026, {
   managedClubId: MID,
 })
 
-const names = lookupFor(game)
+// Tested in English: these assert on wording, and pinning a language is what
+// makes that possible without the test becoming a second copy of a dictionary.
+const t = translatorFor('en')
+const names = lookupFor(game, t)
 const somebody = (game.squads[MID] ?? [])[0]
 if (somebody === undefined) throw new Error('no squad')
 
@@ -26,7 +30,7 @@ describe('what is worth reporting', () => {
     // `DayAdvanced` fires on every single tick. A feed carrying it is a feed
     // nobody reads.
     const event: Event = { type: 'DayAdvanced', date: game.season.currentDate }
-    expect(describeEvent(event, game, names)).toBeNull()
+    expect(describeEvent(event, game, names, t)).toBeNull()
   })
 
   it('says nothing about your own clicks', () => {
@@ -34,7 +38,7 @@ describe('what is worth reporting', () => {
       { type: 'LineupChanged', clubId: MID },
       { type: 'TacticsChanged', clubId: MID },
     ] as Event[]) {
-      expect(describeEvent(event, game, names)).toBeNull()
+      expect(describeEvent(event, game, names, t)).toBeNull()
     }
   })
 
@@ -53,7 +57,7 @@ describe('what is worth reporting', () => {
       score: { home: 1, away: 0 },
     } as unknown as Event
 
-    expect(describeEvent(event, game, names)).toBeNull()
+    expect(describeEvent(event, game, names, t)).toBeNull()
   })
 })
 
@@ -70,6 +74,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
 
   it('tells a win from a defeat, in words and in tone', () => {
@@ -92,6 +97,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
 
     expect(notice?.text).toContain(somebody.name)
@@ -109,6 +115,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
     expect(notice?.text).toMatch(/agree terms/)
     expect(notice?.tone).toBe('good')
@@ -124,6 +131,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
     expect(notice?.text).toContain('€1.1M')
     expect(notice?.tone).toBe('bad')
@@ -140,6 +148,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
     expect(incoming?.text).toMatch(/^Signed .* on a free$/)
 
@@ -153,6 +162,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
     expect(outgoing?.text).toMatch(/^Sold /)
     expect(outgoing?.text).toContain('€900k')
@@ -169,6 +179,7 @@ describe('how it reads', () => {
       } as unknown as Event,
       game,
       names,
+      t,
     )
     expect(between).toBeNull()
   })
@@ -181,12 +192,8 @@ describe('counting and collecting', () => {
     { type: 'BidMade', bidId: 'b1', playerId: somebody.id, fee: 500 },
   ] as unknown as Event[]
 
-  it('counts only what would be shown', () => {
-    expect(countNotable(batch, game)).toBe(1)
-  })
-
   it('drops the silent ones when building the list', () => {
-    const notices = noticesFrom(batch, game)
+    const notices = noticesFrom(batch, game, t)
     expect(notices).toHaveLength(1)
     expect(notices[0]?.text).toContain(somebody.name)
   })
@@ -196,6 +203,7 @@ describe('counting and collecting', () => {
       { type: 'BidMade', bidId: 'b1', playerId: 'ghost' as PlayerId, fee: 100 } as Event,
       game,
       names,
+      t,
     )
     expect(notice?.text).toContain('a player')
   })

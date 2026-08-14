@@ -26,6 +26,8 @@ export {
   type TeamRating,
 } from './entities.ts'
 
+export { GameError, isGameError } from './errors.ts'
+
 export {
   type Board,
   judge,

@@ -1,9 +1,10 @@
 import { type Notice } from '../notifications.ts'
 
 /**
- * One implementation, rendered in two places: the hub's news panel and the
- * drawer that opens from the shell bar. Writing it twice would guarantee they
- * drifted.
+ * The hub's news panel. It was rendered in two places until the title bar's
+ * drawer made way for the cog — kept as its own component because the empty
+ * state is a real branch and inlining it would put a conditional in the middle
+ * of the hub's layout.
  */
 export function NotificationList({ notices, empty }: { notices: Notice[]; empty: string }) {
   if (notices.length === 0) return <p className="screen__note">{empty}</p>

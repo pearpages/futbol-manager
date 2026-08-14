@@ -1,4 +1,5 @@
-import { computeTable, formatDate } from '@fm/domain'
+import { computeTable } from '@fm/domain'
+import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import './TableScreen.css'
@@ -27,11 +28,11 @@ export interface Band {
 }
 
 export const BANDS: readonly Band[] = [
-  { className: 'is-champion', label: 'Champion', from: 1, to: 1 },
-  { className: 'is-ucl', label: 'Champions League', from: 2, to: 4 },
-  { className: 'is-uel', label: 'Europa League', from: 5, to: 5 },
-  { className: 'is-uecl', label: 'Conference League', from: 6, to: 6 },
-  { className: 'is-relegation', label: 'Relegated', from: -3, to: -1 },
+  { className: 'is-champion', label: 'table.band.champion', from: 1, to: 1 },
+  { className: 'is-ucl', label: 'table.band.ucl', from: 2, to: 4 },
+  { className: 'is-uel', label: 'table.band.uel', from: 5, to: 5 },
+  { className: 'is-uecl', label: 'table.band.uecl', from: 6, to: 6 },
+  { className: 'is-relegation', label: 'table.band.relegation', from: -3, to: -1 },
 ]
 
 export function bandFor(position: number, total: number): Band | null {
@@ -49,6 +50,7 @@ export function TableScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
   const go = useGame((s) => s.go)
+  const { t, date } = useT()
 
   const table = computeTable(game.competition.clubIds, game.season.fixtures)
   const names = new Map(game.clubs.map((c) => [c.id, c]))
@@ -68,21 +70,21 @@ export function TableScreen() {
   return (
     <div className="table-screen">
       <section className="screen table-screen__main">
-        <h2 className="screen__heading">Primera División</h2>
+        <h2 className="screen__heading">{game.competition.name}</h2>
         <table className="data-table">
           <thead className="data-table__head">
             <tr>
-              <th aria-label="Qualification" />
-              <th>#</th>
-              <th className="is-text">Club</th>
-              <th>P</th>
-              <th>W</th>
-              <th>D</th>
-              <th>L</th>
-              <th>GF</th>
-              <th>GA</th>
-              <th>GD</th>
-              <th>Pts</th>
+              <th aria-label={t('table.qualification')} />
+              <th>{t('table.column.position')}</th>
+              <th className="is-text">{t('table.column.club')}</th>
+              <th>{t('table.column.played')}</th>
+              <th>{t('table.column.won')}</th>
+              <th>{t('table.column.drawn')}</th>
+              <th>{t('table.column.lost')}</th>
+              <th>{t('table.column.goalsFor')}</th>
+              <th>{t('table.column.goalsAgainst')}</th>
+              <th>{t('table.column.goalDifference')}</th>
+              <th>{t('table.column.points')}</th>
             </tr>
           </thead>
           <tbody>
@@ -92,10 +94,13 @@ export function TableScreen() {
               const band = bandFor(index + 1, table.length)
               return (
                 <tr key={row.clubId} className={`data-table__row${isYou ? ' is-you' : ''}`}>
-                  <td className={`data-table__band ${band?.className ?? ''}`} title={band?.label}>
+                  <td
+                    className={`data-table__band ${band?.className ?? ''}`}
+                    title={band === null ? undefined : t(band.label)}
+                  >
                     {/* The band is colour; this is what it says to a reader who
                         cannot use colour. Mid-table is genuinely nothing. */}
-                    {band !== null && <span className="visually-hidden">{band.label}</span>}
+                    {band !== null && <span className="visually-hidden">{t(band.label)}</span>}
                   </td>
                   <td className="data-table__num">{index + 1}</td>
                   <td className="is-text">
@@ -125,7 +130,7 @@ export function TableScreen() {
           {BANDS.map((band) => (
             <li key={band.className} className="table-legend__item">
               <span className={`swatch ${band.className}`} />
-              {band.label}
+              {t(band.label)}
             </li>
           ))}
         </ul>
@@ -135,22 +140,22 @@ export function TableScreen() {
         <section className="screen table-screen__meta">
           <div className="table-screen__stats">
             <div className="stat">
-              <span className="stat__label">Matchday</span>
+              <span className="stat__label">{t('table.matchday')}</span>
               <span className="stat__value">{round}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Date</span>
+              <span className="stat__label">{t('table.date')}</span>
               <span className="stat__value table-screen__date">
-                {formatDate(game.season.currentDate)}
+                {date(game.season.currentDate)}
               </span>
             </div>
           </div>
         </section>
 
         <section className="screen table-screen__results">
-          <h2 className="screen__heading">Latest results</h2>
+          <h2 className="screen__heading">{t('table.latestResults')}</h2>
           {results.length === 0 ? (
-            <p className="screen__note">Advance the day to play the next round.</p>
+            <p className="screen__note">{t('table.noResults')}</p>
           ) : (
             <ul className="result-list">
               {results.map((r) => (
@@ -165,7 +170,7 @@ export function TableScreen() {
         </section>
         <div className="screen-actions">
           <button type="button" className="button" onClick={() => go('hub')}>
-            Volver
+            {t('action.back')}
           </button>
         </div>
       </aside>

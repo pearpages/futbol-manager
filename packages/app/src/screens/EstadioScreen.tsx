@@ -3,11 +3,12 @@ import {
   computeTable,
   expansionCost,
   FINANCE,
-  formatMoney,
   gateReceipts,
+  isGameError,
   occupancy,
   ROUNDS_PER_HALF,
 } from '@fm/domain'
+import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import './EstadioScreen.css'
 
@@ -23,17 +24,6 @@ import './EstadioScreen.css'
  * is supporters who resent being gouged, and that needs morale, which is M6.
  */
 
-/**
- * A ticket, in euros.
- *
- * `formatMoney` works in thousands, which is right for every other figure in the
- * game and useless here — a seat at 0.0069 thousands renders as "€0k". This is
- * the one price a supporter would recognise, so it is shown as one.
- */
-export function formatTicket(price: number): string {
-  return `€${(price * 1000).toFixed(2)}`
-}
-
 /** The bar primitive wants a 0–20 bucket, not a percentage. */
 export function fillFor(fraction: number): number {
   return Math.max(0, Math.min(20, Math.round(fraction * 20)))
@@ -43,6 +33,7 @@ export function EstadioScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
   const go = useGame((s) => s.go)
+  const { t, plural, money, ticket, count, season } = useT()
 
   const [seats, setSeats] = useState(4000)
   const [error, setError] = useState<string | null>(null)
@@ -69,35 +60,39 @@ export function EstadioScreen() {
       action()
       setError(null)
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : 'That is not allowed')
+      setError(
+        isGameError(thrown)
+          ? t(thrown.code, thrown.params)
+          : thrown instanceof Error
+            ? thrown.message
+            : t('error.unknown'),
+      )
     }
   }
 
   return (
     <div className="estadio-screen">
       <section className="screen estadio-screen__main">
-        <h2 className="screen__heading">El campo</h2>
+        <h2 className="screen__heading">{t('estadio.heading')}</h2>
 
         <div className="estadio-screen__body">
           <div className="estadio-screen__stats">
             <div className="stat">
-              <span className="stat__label">Aforo</span>
-              <span className="stat__value estadio-screen__figure">
-                {club.capacity.toLocaleString('en')}
-              </span>
+              <span className="stat__label">{t('estadio.capacity')}</span>
+              <span className="stat__value estadio-screen__figure">{count(club.capacity)}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Ocupación</span>
+              <span className="stat__label">{t('estadio.occupancy')}</span>
               <span className="stat__value estadio-screen__figure">{Math.round(full * 100)}%</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Por partido</span>
-              <span className="stat__value estadio-screen__figure">{formatMoney(perMatch)}</span>
+              <span className="stat__label">{t('estadio.perMatch')}</span>
+              <span className="stat__value estadio-screen__figure">{money(perMatch)}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Temporada</span>
+              <span className="stat__label">{t('estadio.season')}</span>
               <span className="stat__value estadio-screen__figure">
-                {formatMoney(perMatch * ROUNDS_PER_HALF)}
+                {money(perMatch * ROUNDS_PER_HALF)}
               </span>
             </div>
           </div>
@@ -105,7 +100,7 @@ export function EstadioScreen() {
           {/* The ficha's bar primitive, reused. Width comes from a bucketed
               `data-fill`, never a JSX style prop. */}
           <div className="attr estadio-screen__gauge">
-            <span className="attr__label">Lleno</span>
+            <span className="attr__label">{t('estadio.full')}</span>
             <span className="attr__track">
               <span className="attr__fill" data-fill={fillFor(full)} />
             </span>
@@ -114,7 +109,7 @@ export function EstadioScreen() {
 
           <div className="field estadio-screen__field">
             <label className="field__label" htmlFor="ticket">
-              Precio · {formatTicket(club.ticketPrice)} por asiento
+              {t('estadio.price', { price: ticket(club.ticketPrice) })}
             </label>
             <input
               id="ticket"
@@ -130,28 +125,26 @@ export function EstadioScreen() {
                 })
               }
             />
-            <p className="estadio-screen__hint">
-              Charging more takes more per head and leaves seats empty. There is a best price, and
-              it moves with how good you are and where you sit.
-            </p>
+            <p className="estadio-screen__hint">{t('estadio.priceHint')}</p>
           </div>
         </div>
       </section>
 
       <aside className="estadio-screen__side">
         <section className="screen estadio-screen__panel">
-          <h2 className="screen__heading">Obras</h2>
+          <h2 className="screen__heading">{t('estadio.works')}</h2>
           {club.expansion !== null ? (
             <p className="screen__note">
-              {club.expansion.seats.toLocaleString('en')} new seats are being built, ready for{' '}
-              {club.expansion.readyYear}/{String(club.expansion.readyYear + 1).slice(2)}. One job at
-              a time.
+              {plural('estadio.underWay', club.expansion.seats, {
+                seats: count(club.expansion.seats),
+                season: season(club.expansion.readyYear),
+              })}
             </p>
           ) : (
             <div className="estadio-screen__body">
               <div className="field">
                 <label className="field__label" htmlFor="seats">
-                  Asientos · {formatMoney(cost)}
+                  {t('estadio.seats', { cost: money(cost) })}
                 </label>
                 <input
                   id="seats"
@@ -164,10 +157,7 @@ export function EstadioScreen() {
                   onChange={(event) => setSeats(Number(event.target.value))}
                 />
               </div>
-              <p className="estadio-screen__hint">
-                Paid now, ready next season. Seats are only worth building if you are filling the
-                ones you have.
-              </p>
+              <p className="estadio-screen__hint">{t('estadio.seatsHint')}</p>
               <div className="screen-actions estadio-screen__build">
                 <button
                   type="button"
@@ -178,7 +168,7 @@ export function EstadioScreen() {
                     })
                   }
                 >
-                  Comenzar obras
+                  {t('estadio.begin')}
                 </button>
               </div>
             </div>
@@ -195,7 +185,7 @@ export function EstadioScreen() {
 
         <div className="screen-actions">
           <button type="button" className="button" onClick={() => go('hub')}>
-            Volver
+            {t('action.back')}
           </button>
         </div>
       </aside>

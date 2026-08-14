@@ -465,3 +465,35 @@ Two contrast problems caught by reasoning about the materials rather than by a t
 **Still not seen in a browser** — ninth failed extension connection. Verified by 488 tests and a DOM dump of all three screens: Estadio reads `Aforo 47,485 · Ocupación 56% · Por partido €184k`, Decisiones reads `Sarrià expect 12º or better · Ahora 14º`, and Caja's first season at Sarrià shows gate €3.4M, TV €2M, patrocinio €1.8M against salarios €6.4M for a €933k result. **The appearance is unverified.**
 
 **M0–M5 is complete — the 5.0-shaped game of [ADR 0008](docs/adr/0008-target-pc-futbol-5.md) is done.** Next is **M6**, the living squad: injuries, suspensions, form, morale and training, hung off the day pipeline `advanceDay` was built to grow into.
+
+### 2026-08-14 — three languages, and a cog where the news was
+
+**The app was bilingual by accident.** Navigation was Spanish (`Clasificación`, `Volver`, `Grabar`), body copy was English (`Starting XI`, `Advance day`, every notification), and Caja managed both in one table — `Gate · Televisión · Patrocinio · Salarios`. Nobody chose that; it accumulated a milestone at a time. Measured before starting: **295 string occurrences, ~253 distinct**, plus eight attribute names and ~28 refusals living in `domain`.
+
+**Done.** Catalan, Spanish and English, switchable from a cog in the top corner. **Catalan is the default.** The Noticias button, its badge and its drawer are gone with everything behind them. 514 tests, `pnpm season` byte-identical to `7282b36`, no domain behaviour change.
+
+**No i18n dependency.** `stack.md` is emphatic and a flat dictionary with `{name}` substitution is forty lines — the same call as hand-writing `sfc32`. `i18n/index.ts` plus three dictionaries and `useT()`.
+
+**Keys are the source of truth, not English.** Using the English sentence as the key looks tidier and rots the first time the wording changes. **`dictionaries.test.ts` is the guard that makes three languages maintainable** — identical key sets _in both directions_, no blanks, and **the same `{parameters}` in every language**, because a `{player}` translated to `{jugador}` renders the brace literally on a screen nobody opened.
+
+**Every sentence is whole; nothing is assembled from fragments.** The feed used to pick a verb — `Beat` / `Lost to` / `Drew with` — and glue it in front of the opponent and the score. That works in English and nowhere else: Catalan and Spanish put the result first and the club behind a preposition. Same for `(H)`/`(A)`, which abbreviate _English words_ — Catalan wants `(L)`/`(V)`, Spanish `(C)`/`(F)`.
+
+**The reducer throws codes and keeps its English sentence.** `GameError` carries `code` and `params`; `message` is byte-for-byte what it always was. That bought three things at once: the app translates from the code, anything untranslated still says something sensible, and **all ~12 tests matching on error text passed unchanged** — the whole conversion was additive. Only the ~28 reachable refusals in `reduce.ts` converted; the invariant throws elsewhere are bugs nobody is shown.
+
+**`formatMoney` was the bigger problem than the errors, and it was not obvious.** It hard-coded `€` as a _prefix_, a `.` decimal via `toFixed`, and a `/\.0$/` regex that assumed the separator — across ~25 call sites. Catalan and Spanish postfix: **`12,4 M€`, not `€12.4M`.** `domain` still decides the _unit_ (its own comment argues that correctly) and `i18n/format.ts` decides the presentation. `toLocaleString('en')` was hard-coded in four places, forcing `45,000` where ca/es want `45.000`.
+
+**Dates are numeric, deliberately.** `formatDate` was already locale-free ISO, and `toCivil` hands back `{y,m,d}` — so `15/08/2026` for ca/es costs nothing, where month names would have been **thirty-six more entries to say what two slashes already say**.
+
+**Language lives in `localStorage`, not the save.** It is a third category the store did not have: `game` belongs to a career and is saved, `screen`/`feed` belong to a sitting and are not, a language belongs to the **player across every career**. In the envelope it would mean deleting a career reset your language, importing a friend's save changed it, and a migration for a value with no bearing on the rules — and `loadGame` being async would guarantee a flash of the wrong language before first paint.
+
+**The removal was total.** `unread` became write-only the moment the badge went, so the whole chain went with it — the field, its five reset sites, `markRead`, and `countNotable`, whose only production caller was the store. `grep` for `shell__news|shell__badge|shell__drawer|unread|markRead|countNotable` returns nothing. **The hub keeps its own Noticias panel**, which is where you actually read the news, since every tick of the clock routes you past it.
+
+**35 test call sites hard-coded Spanish tile labels.** Retyping them in Catalan would have broken again on the next wording change, so **each `Tile` gained a `key` and `openScreen` takes that**, resolving through the same dictionary the UI renders from — the same move the quadrants got at M5b. `back()` and `ADVANCE` resolve the same way.
+
+**The suite runs pinned to English** (`test-setup.ts`), which is the same discipline as pinning the rng seed: a behaviour test that is also a translation test fails twice for one reason and tells you neither. `dictionaries.test.ts` covers the other two and `language.test.tsx` covers the switching.
+
+**Two collisions worth knowing.** `nav.caja` was 'Finances' in English and so was its own quadrant heading — renamed to 'Accounts'. And `App.test.tsx` broke on `/Squad/i` matching _two_ headings, because the bar title and the screen heading are now the same English word where they were `Plantilla` and `Squad` before; the query is scoped to `.shell__stage`.
+
+**Club and competition names are not translated.** Clubs are their cities per ADR 0007 and `Girona`/`Sarrià` are already the local forms; `Competition.name` is baked into every save through `GameState`, so changing it is a migration rather than a render.
+
+**Still not seen in a browser** — tenth failed extension connection. Verified by 514 tests and a DOM dump of all three: `Jornada 1 · 14è | Menú Mànager | 15/08/2026 · Següent contra Valencia (V)`, `Jornada 1 · 14º | Menú Manager`, `Matchday 1 · 14th | Menu Manager | 2026-08-15`. Budgets read `5,7 M€` in ca/es and `€5.7M` in en.

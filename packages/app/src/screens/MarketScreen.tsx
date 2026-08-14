@@ -3,11 +3,11 @@ import {
   ageOn,
   askingPrice,
   type Bid,
+  isGameError,
   bidIsLive,
   type ClubId,
   createRng,
   type DayNumber,
-  formatMoney,
   type GameState,
   isTransferWindowOpen,
   listedForSale,
@@ -25,6 +25,7 @@ import {
 } from '@fm/domain'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { type Translator, useT } from '../i18n/useT.ts'
 import { positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
 
@@ -130,7 +131,7 @@ const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
  * `Asking` is how a club with no money finds what it can afford — but none of
  * them tells you whether a player would actually get into your team.
  */
-export function comparatorFor(sort: Sort, date: DayNumber) {
+export function comparatorFor(sort: Sort, date: DayNumber, locale: string) {
   const direction = sort.desc ? -1 : 1
   return (a: Listing, b: Listing): number => {
     const by = (value: number) => value * direction
@@ -142,9 +143,9 @@ export function comparatorFor(sort: Sort, date: DayNumber) {
       case 'age':
         return by(ageOn(a.player, date) - ageOn(b.player, date))
       case 'name':
-        return by(a.player.name.localeCompare(b.player.name))
+        return by(a.player.name.localeCompare(b.player.name, locale))
       case 'club':
-        return by(String(a.from ?? '').localeCompare(String(b.from ?? '')))
+        return by(String(a.from ?? '').localeCompare(String(b.from ?? ''), locale))
     }
   }
 }
@@ -154,6 +155,8 @@ export function MarketScreen() {
   const dispatch = useGame((s) => s.dispatch)
   const inspect = useGame((s) => s.inspect)
   const go = useGame((s) => s.go)
+  const translator = useT()
+  const { t, money, locale } = translator
 
   const [target, setTarget] = useState<PlayerId | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -188,7 +191,7 @@ export function MarketScreen() {
     .filter((l) => !onlyAffordable || l.fee <= budget)
     .filter((l) => positions.length === 0 || positions.includes(l.player.position))
 
-  const listings = sort === null ? filtered : filtered.sort(comparatorFor(sort, date))
+  const listings = sort === null ? filtered : filtered.sort(comparatorFor(sort, date, locale))
 
   function toggle<T>(list: readonly T[], value: T): T[] {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
@@ -242,7 +245,15 @@ export function MarketScreen() {
       action()
       setError(null)
     } catch (thrown) {
-      setError(thrown instanceof Error ? thrown.message : 'That is not allowed')
+      // A refusal carries a code; the sentence it also carries is the fallback
+      // for anything that has not been given one.
+      setError(
+        isGameError(thrown)
+          ? t(thrown.code, thrown.params)
+          : thrown instanceof Error
+            ? thrown.message
+            : t('error.unknown'),
+      )
     }
   }
 
@@ -251,13 +262,9 @@ export function MarketScreen() {
   return (
     <div className="market-screen">
       <section className="screen market-screen__main">
-        <h2 className="screen__heading">Transfer market</h2>
+        <h2 className="screen__heading">{t('market.heading')}</h2>
 
-        {!open && (
-          <p className="screen__note">
-            The window is shut. It opens in July and August, and again in January.
-          </p>
-        )}
+        {!open && <p className="screen__note">{t('market.windowShut')}</p>}
 
         {/* Every control is a toggle labelled with the mode it turns on, with
             `aria-pressed` carrying whether it is active. Labelling one with its
@@ -283,7 +290,7 @@ export function MarketScreen() {
             aria-pressed={onlyAffordable}
             onClick={() => setOnlyAffordable(!onlyAffordable)}
           >
-            Within budget
+            {t('market.withinBudget')}
           </button>
           <button
             type="button"
@@ -291,7 +298,7 @@ export function MarketScreen() {
             aria-pressed={onlyFree}
             onClick={() => setOnlyFree(!onlyFree)}
           >
-            Free agents
+            {t('market.freeAgents')}
           </button>
           <button
             type="button"
@@ -299,15 +306,15 @@ export function MarketScreen() {
             aria-pressed={onlyShortlist}
             onClick={() => setOnlyShortlist(!onlyShortlist)}
           >
-            Shortlist only
+            {t('market.shortlistOnly')}
           </button>
           <span className="market-screen__count">
-            Showing {listings.length} of {all.length}
+            {t('market.showing', { shown: listings.length, total: all.length })}
           </span>
         </div>
 
         {listings.length === 0 ? (
-          <p className="screen__note">Nobody matches those filters.</p>
+          <p className="screen__note">{t('market.noMatches')}</p>
         ) : (
           <table className="data-table">
             <thead className="data-table__head">
@@ -330,7 +337,9 @@ export function MarketScreen() {
                     key={player.id}
                     className={`data-table__row is-clickable${isTarget ? ' is-you' : ''}`}
                   >
-                    <td className="is-text">{positionChip(player.position)}</td>
+                    <td className="is-text">
+                      {positionChip(player.position, t(`position.${player.position}`))}
+                    </td>
                     <td className="is-text">
                       <button
                         type="button"
@@ -342,7 +351,7 @@ export function MarketScreen() {
                     </td>
                     <td className="is-text">
                       {listing.from === null ? (
-                        <span className="market-screen__free">Free agent</span>
+                        <span className="market-screen__free">{t('market.freeAgent')}</span>
                       ) : (
                         (() => {
                           // The badge carries the three-letter code already —
@@ -356,7 +365,7 @@ export function MarketScreen() {
                     <td>
                       <strong>{overall(player)}</strong>
                     </td>
-                    <td>{listing.fee === 0 ? 'Free' : formatMoney(listing.fee)}</td>
+                    <td>{listing.fee === 0 ? t('market.free') : money(listing.fee)}</td>
                     <td className="is-text market-screen__actions">
                       <button
                         type="button"
@@ -370,7 +379,7 @@ export function MarketScreen() {
                           })
                         }
                       >
-                        {shortlisted.has(player.id) ? 'Listed' : 'Watch'}
+                        {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
                       </button>
                       <button
                         type="button"
@@ -381,7 +390,7 @@ export function MarketScreen() {
                           setError(null)
                         }}
                       >
-                        {listing.from === null ? 'Sign' : 'Bid'}
+                        {listing.from === null ? t('market.sign') : t('market.bid')}
                       </button>
                     </td>
                   </tr>
@@ -396,12 +405,14 @@ export function MarketScreen() {
         <section className="screen market-screen__panel">
           <div className="market-screen__money">
             <div className="stat">
-              <span className="stat__label">Budget</span>
-              <span className="stat__value">{formatMoney(club?.budget ?? 0)}</span>
+              <span className="stat__label">{t('market.budget')}</span>
+              <span className="stat__value">{money(club?.budget ?? 0)}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">Window</span>
-              <span className="stat__value market-screen__window">{open ? 'Open' : 'Shut'}</span>
+              <span className="stat__label">{t('market.window')}</span>
+              <span className="stat__value market-screen__window">
+                {open ? t('market.windowOpen') : t('market.windowClosed')}
+              </span>
             </div>
           </div>
         </section>
@@ -426,19 +437,19 @@ export function MarketScreen() {
         )}
 
         <section className="screen market-screen__panel">
-          <h2 className="screen__heading">Up for sale</h2>
+          <h2 className="screen__heading">{t('market.upForSale')}</h2>
           {onSale.length === 0 ? (
-            <p className="screen__note">
-              Nobody listed. Your squad is invisible to other clubs until you put someone on the
-              market — list them from the squad screen.
-            </p>
+            <p className="screen__note">{t('market.nobodyListed')}</p>
           ) : (
             <ul className="offer-list">
               {onSale.map((player) => (
                 <li key={player.id} className="offer-list__item">
                   <span className="offer-list__name">{player.name}</span>
                   <span className="offer-list__detail">
-                    {player.position} · asking {formatMoney(askingPrice(player, date))}
+                    {t('market.askingLine', {
+                      position: t(`position.${player.position}`),
+                      fee: money(askingPrice(player, date)),
+                    })}
                   </span>
                   <span className="offer-list__actions">
                     <button
@@ -450,7 +461,7 @@ export function MarketScreen() {
                         )
                       }
                     >
-                      Take off
+                      {t('market.takeOff')}
                     </button>
                   </span>
                 </li>
@@ -460,22 +471,22 @@ export function MarketScreen() {
         </section>
 
         <section className="screen market-screen__panel market-screen__inbox">
-          <h2 className="screen__heading">Offers for your players</h2>
+          <h2 className="screen__heading">{t('market.offersForYours')}</h2>
           {incoming.length === 0 ? (
-            <p className="screen__note">Nothing on the table.</p>
+            <p className="screen__note">{t('market.noOffers')}</p>
           ) : (
             <ul className="offer-list">
               {incoming.map((bid) => (
                 <li key={bid.id} className="offer-list__item">
                   <span className="offer-list__name">
-                    {byId.get(bid.playerId)?.name ?? 'Unknown'}
+                    {byId.get(bid.playerId)?.name ?? t('market.unknownPlayer')}
                   </span>
                   <span className="offer-list__detail club-cell">
                     {(() => {
                       const bidder = names.get(bid.from)
                       return bidder === undefined ? '???' : <ClubBadge club={bidder} labelled />
                     })()}
-                    {formatMoney(bid.fee)}
+                    {money(bid.fee)}
                   </span>
                   <span className="offer-list__actions">
                     <button
@@ -487,7 +498,7 @@ export function MarketScreen() {
                         )
                       }
                     >
-                      Accept
+                      {t('market.accept')}
                     </button>
                     <button
                       type="button"
@@ -498,7 +509,7 @@ export function MarketScreen() {
                         )
                       }
                     >
-                      Reject
+                      {t('market.reject')}
                     </button>
                   </span>
                 </li>
@@ -508,18 +519,18 @@ export function MarketScreen() {
         </section>
 
         <section className="screen market-screen__panel market-screen__outbox">
-          <h2 className="screen__heading">Your bids</h2>
+          <h2 className="screen__heading">{t('market.yourBids')}</h2>
           {outgoing.length === 0 ? (
-            <p className="screen__note">No bids outstanding.</p>
+            <p className="screen__note">{t('market.noBids')}</p>
           ) : (
             <ul className="offer-list">
               {outgoing.map((bid) => (
                 <li key={bid.id} className="offer-list__item">
                   <span className="offer-list__name">
-                    {byId.get(bid.playerId)?.name ?? 'Unknown'}
+                    {byId.get(bid.playerId)?.name ?? t('market.unknownPlayer')}
                   </span>
                   <span className="offer-list__detail">
-                    {formatMoney(bid.fee)} · {describeBid(bid)}
+                    {money(bid.fee)} · {describeBid(bid, translator)}
                   </span>
                   <span className="offer-list__actions">
                     <button
@@ -539,7 +550,7 @@ export function MarketScreen() {
                         attempt(() => dispatch({ type: 'WithdrawBid', bidId: bid.id }))
                       }
                     >
-                      Withdraw
+                      {t('market.withdraw')}
                     </button>
                   </span>
                 </li>
@@ -549,7 +560,7 @@ export function MarketScreen() {
         </section>
         <div className="screen-actions">
           <button type="button" className="button" onClick={() => go('hub')}>
-            Volver
+            {t('action.back')}
           </button>
         </div>
       </aside>
@@ -557,10 +568,12 @@ export function MarketScreen() {
   )
 }
 
-function describeBid(bid: Bid): string {
-  if (bid.status === 'accepted') return 'Fee agreed — settle terms'
-  if (bid.status === 'countered') return `They want ${formatMoney(bid.counterFee ?? bid.fee)}`
-  return 'Awaiting an answer'
+/** Module-level, so the translator arrives as an argument rather than a hook. */
+function describeBid(bid: Bid, { t, money }: Translator): string {
+  if (bid.status === 'accepted') return t('market.feeAgreed')
+  if (bid.status === 'countered')
+    return t('market.theyWant', { fee: money(bid.counterFee ?? bid.fee) })
+  return t('market.awaiting')
 }
 
 interface NegotiationProps {
@@ -581,6 +594,7 @@ interface NegotiationProps {
  */
 function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: NegotiationProps) {
   const dispatch = useGame((s) => s.dispatch)
+  const { t, money } = useT()
   const { player } = listing
   const wanted = suggestedTerms(player, date)
 
@@ -599,7 +613,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
           <>
             <div className="field">
               <label className="field__label" htmlFor="fee">
-                Fee (thousands) · they ask {formatMoney(bid?.counterFee ?? listing.fee)}
+                {t('market.feeField', { fee: money(bid?.counterFee ?? listing.fee) })}
               </label>
               <input
                 id="fee"
@@ -622,12 +636,9 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
                 })
               }
             >
-              {bid === undefined ? 'Make bid' : 'Bid again'}
+              {t(bid === undefined ? 'market.makeBid' : 'market.bidAgain')}
             </button>
-            <p className="screen__note market-screen__hint">
-              A bid at or above the asking price is accepted. Below it they may name their own. An
-              answer takes a couple of days.
-            </p>
+            <p className="screen__note market-screen__hint">{t('market.bidHint')}</p>
           </>
         )}
 
@@ -635,7 +646,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
           <>
             <div className="field">
               <label className="field__label" htmlFor="wage">
-                Wage a season (thousands) · he wants {formatMoney(wanted.wage)}
+                {t('market.wageField', { wage: money(wanted.wage) })}
               </label>
               <input
                 id="wage"
@@ -649,7 +660,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
             </div>
             <div className="field">
               <label className="field__label" htmlFor="years">
-                Contract length in years
+                {t('market.yearsField')}
               </label>
               <input
                 id="years"
@@ -677,16 +688,14 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
                 )
               }
             >
-              {listing.from === null ? 'Sign him' : 'Offer terms'}
+              {t(listing.from === null ? 'market.signHim' : 'market.offerTerms')}
             </button>
-            <p className="screen__note market-screen__hint">
-              A fee buys the right to talk to him. He still has to want to come.
-            </p>
+            <p className="screen__note market-screen__hint">{t('market.termsHint')}</p>
           </>
         )}
 
         <button type="button" className="button" onClick={onClose}>
-          Close
+          {t('action.close')}
         </button>
       </div>
     </section>

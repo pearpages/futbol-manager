@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { bestXI, computeTable, overall, startersOf, teamRating, worstXI } from '@fm/domain'
 import { App } from './App.tsx'
+import { translatorFor } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
 import { useGame } from './store.ts'
 import { advance, back, openScreen } from './testing.ts'
@@ -24,8 +25,10 @@ beforeEach(() => {
  */
 const openTable = () => {
   render(<App />)
-  openScreen('Clasificación')
+  openScreen('nav.table')
 }
+
+const { t } = translatorFor('en')
 
 const managed = () => {
   const { game } = useGame.getState()
@@ -39,7 +42,7 @@ describe('the shell', () => {
     const club = game.clubs.find((c) => c.id === clubId)
 
     // The hub is home since the M4c refactor — four quadrants, not a table.
-    expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
     expect(screen.getAllByText(club?.name ?? '').length).toBeGreaterThan(0)
   })
 
@@ -67,15 +70,19 @@ describe('the shell', () => {
     render(<App />)
 
     for (const [tile, heading] of [
-      ['Clasificación', /Primera División/i],
-      ['Plantilla', /Squad/i],
-      ['Alineación', /Starting XI/],
-      ['Fichar', /Transfer market/],
+      ['nav.table', /Primera División/i],
+      ['nav.squad', /Squad/i],
+      ['nav.lineup', /Starting XI/],
+      ['nav.market', /Transfer market/],
     ] as const) {
       openScreen(tile)
-      expect(screen.getByRole('heading', { name: heading })).toBeDefined()
+      // Scoped to the stage: the bar's title and a screen's own heading are now
+      // the same word in English for some screens, which they were not while the
+      // bar spoke Spanish and the screens spoke English.
+      const stage = document.querySelector('.shell__stage') as HTMLElement
+      expect(within(stage).getByRole('heading', { name: heading })).toBeDefined()
       back()
-      expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
+      expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
     }
   })
 })
@@ -101,10 +108,10 @@ describe('the title bar says where you stand', () => {
 
   it('shows the round you are about to play, not the one just finished', () => {
     render(<App />)
-    expect(within(bar()).getByText('Jornada 1')).toBeDefined()
+    expect(within(bar()).getByText(t('shell.matchday', { round: 1 }))).toBeDefined()
 
     advance() // round one is dated on the season start, so this plays it
-    expect(within(bar()).getByText('Jornada 2')).toBeDefined()
+    expect(within(bar()).getByText(t('shell.matchday', { round: 2 }))).toBeDefined()
   })
 
   it('shows the position the classification gives you', () => {
@@ -116,7 +123,7 @@ describe('the title bar says where you stand', () => {
     const place = table.findIndex((row) => row.clubId === clubId) + 1
 
     expect(place).toBeGreaterThan(0)
-    expect(within(bar()).getByText(`${place}º`)).toBeDefined()
+    expect(within(bar()).getByText(t('shell.position', { position: place }))).toBeDefined()
   })
 
   it('carries the next opponent’s badge', () => {
@@ -138,7 +145,7 @@ describe('advancing the day', () => {
 
     back()
     advance()
-    openScreen('Clasificación')
+    openScreen('nav.table')
 
     const played = useGame.getState().game.season.fixtures.filter((f) => f.result !== null)
     expect(played).toHaveLength(10)
@@ -156,7 +163,7 @@ describe('advancing the day', () => {
 describe('the squad screen', () => {
   it('shows the full squad and opens a player’s ficha', () => {
     render(<App />)
-    openScreen('Plantilla')
+    openScreen('nav.squad')
 
     const { game, clubId } = managed()
     const squad = game.squads[clubId] ?? []
@@ -172,7 +179,7 @@ describe('the squad screen', () => {
 
   it('renders one bar per attribute on the ficha', () => {
     render(<App />)
-    openScreen('Plantilla')
+    openScreen('nav.squad')
     const { game, clubId } = managed()
     const first = (game.squads[clubId] ?? [])[0]
     if (first === undefined) throw new Error('empty squad')
@@ -185,7 +192,7 @@ describe('the squad screen', () => {
 describe('the lineup screen', () => {
   it('changes formation through the reducer', () => {
     render(<App />)
-    openScreen('Alineación')
+    openScreen('nav.lineup')
     fireEvent.click(screen.getByRole('button', { name: '4-3-3' }))
 
     const { game, clubId } = managed()
@@ -195,7 +202,7 @@ describe('the lineup screen', () => {
 
   it('changes the approach through the reducer', () => {
     render(<App />)
-    openScreen('Alineación')
+    openScreen('nav.lineup')
     fireEvent.change(screen.getByLabelText(/Approach/), { target: { value: '100' } })
 
     const { game, clubId } = managed()
@@ -205,7 +212,7 @@ describe('the lineup screen', () => {
 
   it('shows the two numbers the resolver actually reads', () => {
     render(<App />)
-    openScreen('Alineación')
+    openScreen('nav.lineup')
 
     const panel = screen.getByRole('heading', { name: 'This XI' }).parentElement
     if (panel === null) throw new Error('no panel')
@@ -217,7 +224,7 @@ describe('the lineup screen', () => {
     // The exit criterion in miniature: a lineup change the player makes on screen
     // has to move the numbers the match resolver consumes.
     render(<App />)
-    openScreen('Alineación')
+    openScreen('nav.lineup')
 
     const { game, clubId } = managed()
     const squad = game.squads[clubId] ?? []

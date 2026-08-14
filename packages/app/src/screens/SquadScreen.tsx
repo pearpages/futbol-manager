@@ -1,19 +1,19 @@
-import {
-  ageOn,
-  askingPrice,
-  formatMoney,
-  overall,
-  type Player,
-  type Position,
-  surplus,
-} from '@fm/domain'
+import { ageOn, askingPrice, overall, type Player, type Position, surplus } from '@fm/domain'
+import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import './SquadScreen.css'
 
 const POSITION_ORDER: Record<Position, number> = { GK: 0, DF: 1, MF: 2, FW: 3 }
 
-export function positionChip(position: Position) {
-  return <span className={`chip is-${position.toLowerCase()}`}>{position}</span>
+/**
+ * The position, as a coloured tag.
+ *
+ * `GK`/`DF`/`MF`/`FW` are identifiers in `domain` — they key `FORMATIONS` and
+ * `POSITION_WEIGHTS` — so they are translated here at the one place they are
+ * rendered, and nowhere near the data.
+ */
+export function positionChip(position: Position, label: string) {
+  return <span className={`chip is-${position.toLowerCase()}`}>{label}</span>
 }
 
 export function SquadScreen() {
@@ -21,6 +21,7 @@ export function SquadScreen() {
   const inspect = useGame((s) => s.inspect)
   const dispatch = useGame((s) => s.dispatch)
   const go = useGame((s) => s.go)
+  const { t, money } = useT()
 
   const squad = [...(game.squads[game.managedClubId] ?? [])].sort(
     (a, b) => POSITION_ORDER[a.position] - POSITION_ORDER[b.position] || overall(b) - overall(a),
@@ -38,21 +39,21 @@ export function SquadScreen() {
 
   return (
     <section className="screen squad-screen">
-      <h2 className="screen__heading">{club?.name ?? 'Squad'} · Squad</h2>
+      <h2 className="screen__heading">{t('squad.heading', { club: club?.name ?? '' })}</h2>
       <table className="data-table">
         <thead className="data-table__head">
           <tr>
             {/* A running count, not a shirt number. Squad size is load-bearing —
                 you cannot buy at MAX_SQUAD and cannot sell at MIN_SQUAD — so the
                 last row tells you where you sit between 18 and 30. */}
-            <th>#</th>
-            <th className="is-text">Pos</th>
-            <th className="is-text">Player</th>
-            <th>Age</th>
-            <th>Ovr</th>
-            <th>Worth</th>
-            <th className="is-text">Selected</th>
-            <th className="is-text">Sale</th>
+            <th>{t('squad.column.number')}</th>
+            <th className="is-text">{t('squad.column.position')}</th>
+            <th className="is-text">{t('squad.column.player')}</th>
+            <th>{t('squad.column.age')}</th>
+            <th>{t('squad.column.overall')}</th>
+            <th>{t('squad.column.worth')}</th>
+            <th className="is-text">{t('squad.column.selected')}</th>
+            <th className="is-text">{t('squad.column.sale')}</th>
           </tr>
         </thead>
         <tbody>
@@ -62,7 +63,9 @@ export function SquadScreen() {
             return (
               <tr key={player.id} className="data-table__row">
                 <td className="data-table__num">{index + 1}</td>
-                <td className="is-text">{positionChip(player.position)}</td>
+                <td className="is-text">
+                  {positionChip(player.position, t(`position.${player.position}`))}
+                </td>
                 <td className="is-text">
                   <button
                     type="button"
@@ -76,9 +79,9 @@ export function SquadScreen() {
                 <td>
                   <strong>{overall(player)}</strong>
                 </td>
-                <td>{formatMoney(askingPrice(player, date))}</td>
+                <td>{money(askingPrice(player, date))}</td>
                 <td className="is-text squad-screen__selected">
-                  {starting.has(player.id) ? 'Starting XI' : '—'}
+                  {starting.has(player.id) ? t('squad.starting') : t('squad.notSelected')}
                 </td>
                 <td className="is-text squad-screen__sale">
                   <button
@@ -89,16 +92,12 @@ export function SquadScreen() {
                     // otherwise a listed player who wins his place back is stuck on
                     // a list you cannot clear.
                     disabled={!canSell && !onSale}
-                    title={
-                      canSell || onSale
-                        ? undefined
-                        : 'He is in your first team — you cannot list him'
-                    }
+                    title={canSell || onSale ? undefined : t('squad.cannotList')}
                     onClick={() =>
                       dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })
                     }
                   >
-                    {onSale ? 'Listed' : 'List'}
+                    {onSale ? t('squad.listed') : t('squad.list')}
                   </button>
                 </td>
               </tr>
@@ -108,7 +107,7 @@ export function SquadScreen() {
       </table>
       <div className="screen-actions">
         <button type="button" className="button" onClick={() => go('hub')}>
-          Volver
+          {t('action.back')}
         </button>
       </div>
     </section>
