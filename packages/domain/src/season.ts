@@ -129,7 +129,7 @@ export interface RolloverOptions {
  * A season with nothing played awards nothing. That is not a guard against a bug
  * so much as the honest answer for a career resumed mid-summer.
  */
-function settleSeason(state: GameState): readonly Club[] {
+function settleSeason(state: GameState, nextYear: number): readonly Club[] {
   const positions = positionsFrom(state.competition.clubIds, state.season.fixtures)
   const clubCount = state.competition.clubIds.length
 
@@ -137,8 +137,13 @@ function settleSeason(state: GameState): readonly Club[] {
     const position = positions?.get(club.id)
     const prize = position === undefined ? 0 : prizeMoney(position, clubCount)
     const closed = credit(club.ledger, 'prize', prize)
+    // Seats commissioned last season open now. The money left when the work was
+    // ordered, so this moves capacity and nothing else.
+    const opening = club.expansion !== null && club.expansion.readyYear <= nextYear
     return {
       ...club,
+      capacity: opening ? club.capacity + (club.expansion?.seats ?? 0) : club.capacity,
+      expansion: opening ? null : club.expansion,
       // The balance moves by what the whole season's ledger nets, and the ledger
       // then starts again from nothing. Computing the delta any other way is how
       // the identity in ADR 0009 drifts.
@@ -244,7 +249,7 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
 
   return {
     ...state,
-    clubs: settleSeason(state),
+    clubs: settleSeason(state, nextYear),
     squads,
     lineups,
     freeAgents,

@@ -1,0 +1,74 @@
+.decisiones-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.decisiones-screen__main {
+  min-height: 0;
+}
+
+.decisiones-screen__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  min-height: 0;
+}
+
+.decisiones-screen__panel {
+  flex: none;
+}
+
+.decisiones-screen__body {
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.decisiones-screen__demand {
+  margin: 0 0 var(--fm-space-4);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+}
+
+.decisiones-screen__stats {
+  display: flex;
+  gap: var(--fm-space-6);
+}
+
+.decisiones-screen__verdict {
+  margin: var(--fm-space-4) 0 0;
+  padding-top: var(--fm-space-3);
+  border-top: 1px solid var(--fm-screen-rule);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-sm);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+/* Warnings as marks: a count means nothing until you can see how many there are
+   to spend. Decorative — the prose beneath says the same thing in words. */
+.decisiones-screen__strikes {
+  display: flex;
+  gap: var(--fm-space-2);
+  margin: 0 0 var(--fm-space-3);
+}
+
+.decisiones-screen__strike {
+  width: 2rem;
+  height: 0.6rem;
+  background: var(--fm-screen-raised);
+  border: 1px solid var(--fm-screen-rule);
+}
+
+.decisiones-screen__strike.is-spent {
+  background: var(--fm-relegation);
+  border-color: var(--fm-relegation);
+}
+
+@media (width < 60rem) {
+  .decisiones-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}

@@ -34,11 +34,6 @@
   gap: var(--fm-space-2);
 }
 
-.lineup-screen__slider {
-  width: 100%;
-  accent-color: var(--fm-accent);
-}
-
 .lineup-screen__hint {
   color: var(--fm-screen-ink-soft);
   font-size: var(--fm-text-xs);

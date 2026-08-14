@@ -41,11 +41,23 @@ describe('the hub', () => {
   it('shows what is not built yet, disabled and dated', () => {
     // An empty quadrant reads as broken; a labelled one reads as "not yet" and
     // doubles as a roadmap you can see.
+    //
+    // This used to point at Caja, which M5b built. Cantera is the remaining
+    // example — and having to move it is the test doing its job: a tile going
+    // live should not be able to pass silently as one that has not.
     render(<App />)
-    const caja = within(quadrant('Finanzas')).getByRole('button', { name: /Caja/ })
+    const cantera = within(quadrant('Mercado')).getByRole('button', { name: /Cantera/ })
 
-    expect(caja.hasAttribute('disabled')).toBe(true)
-    expect(caja.getAttribute('title')).toMatch(/M5/)
+    expect(cantera.hasAttribute('disabled')).toBe(true)
+    expect(cantera.getAttribute('title')).toMatch(/M7/)
+  })
+
+  it('opens the three finance screens M5b built', () => {
+    render(<App />)
+    for (const tile of ['Caja', 'Decisiones', 'Estadio'] as const) {
+      const button = within(quadrant('Finanzas')).getByRole('button', { name: tile })
+      expect(button.hasAttribute('disabled'), tile).toBe(false)
+    }
   })
 
   it('promises nothing for what has no milestone', () => {

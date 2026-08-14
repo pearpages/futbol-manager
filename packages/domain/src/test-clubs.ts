@@ -1,5 +1,5 @@
 import type { Club, ClubId } from './entities.ts'
-import { EMPTY_LEDGER, seedCapacity } from './finance.ts'
+import { EMPTY_LEDGER, FINANCE, seedCapacity } from './finance.ts'
 
 /**
  * A 20-club league for tests. Not exported from the package index — `domain` must
@@ -49,6 +49,8 @@ export const TEST_CLUBS: readonly Club[] = RATINGS.map(([attack, defence], i) =>
   // that a signing which improves the XI is reachable at all.
   budget: Math.round(2400 * Math.pow((attack + defence) / 100, 4)),
   capacity: seedCapacity(attack, defence),
+  ticketPrice: FINANCE.TICKET,
+  expansion: null,
   ledger: EMPTY_LEDGER,
   lastLedger: EMPTY_LEDGER,
 }))

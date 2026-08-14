@@ -68,6 +68,22 @@ export interface Club {
    */
   readonly capacity: number
   /**
+   * What a seat costs, per home match. Added at M5b as the manager's lever.
+   *
+   * Seeded to `FINANCE.TICKET` — the league default — so an AI club simply keeps
+   * it and nothing about M5a's calibration moves. Only the managed club ever
+   * changes it.
+   */
+  readonly ticketPrice: number
+  /**
+   * Building work paid for and not yet delivered, or `null`.
+   *
+   * The seats arrive at the rollover rather than the moment you pay, which is
+   * the only thing that makes expansion a decision: you commit the money a
+   * season before you find out whether you needed it.
+   */
+  readonly expansion: Expansion | null
+  /**
    * What the club has earned and spent **this season**. Reset at rollover, after
    * the season's prize money lands.
    *
@@ -107,10 +123,19 @@ export interface Ledger {
   readonly bonuses: number
   /** Charged only while the balance is negative. */
   readonly interest: number
+  /** Building work. Leaves the league entirely, like a signing bonus. */
+  readonly stadium: number
 }
 
 export function clubRating(club: Club): TeamRating {
   return { attack: club.attack, defence: club.defence, tempo: 0 }
+}
+
+/** Seats bought, and the season they open. */
+export interface Expansion {
+  readonly seats: number
+  /** The `startYear` of the season the seats are ready for. */
+  readonly readyYear: number
 }
 
 export interface Score {

@@ -27,7 +27,8 @@ import { countNotable } from './notifications.ts'
  * alongside the payload, so a reload resumes the same stream.
  */
 
-export type Screen = 'hub' | 'table' | 'squad' | 'lineup' | 'market' | 'player'
+export type Screen =
+  'hub' | 'table' | 'squad' | 'lineup' | 'market' | 'player' | 'caja' | 'decisiones' | 'estadio'
 
 interface Store {
   readonly game: GameState

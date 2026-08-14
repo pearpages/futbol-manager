@@ -12,6 +12,9 @@ import { PlayerScreen } from './screens/PlayerScreen.tsx'
 import { LineupScreen } from './screens/LineupScreen.tsx'
 import { MarketScreen } from './screens/MarketScreen.tsx'
 import { SetupScreen } from './screens/SetupScreen.tsx'
+import { CajaScreen } from './screens/CajaScreen.tsx'
+import { DecisionesScreen } from './screens/DecisionesScreen.tsx'
+import { EstadioScreen } from './screens/EstadioScreen.tsx'
 import './App.css'
 
 /**
@@ -37,6 +40,9 @@ const SCREEN_TITLES: Record<Screen, string> = {
   lineup: 'Alineación',
   market: 'Fichar',
   player: 'Ficha',
+  caja: 'Caja',
+  decisiones: 'Decisiones',
+  estadio: 'Estadio',
 }
 
 const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
@@ -46,6 +52,9 @@ const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
   lineup: LineupScreen,
   market: MarketScreen,
   player: PlayerScreen,
+  caja: CajaScreen,
+  decisiones: DecisionesScreen,
+  estadio: EstadioScreen,
 }
 
 export function App() {

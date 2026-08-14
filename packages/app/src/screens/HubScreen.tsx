@@ -86,9 +86,9 @@ export const QUADRANTS: readonly Quadrant[] = [
     key: 'finanzas',
     title: 'Finanzas',
     tiles: [
-      { label: 'Caja', to: null, milestone: 'M5', icon: 'safe' },
-      { label: 'Decisiones', to: null, milestone: 'M5', icon: 'scales' },
-      { label: 'Estadio', to: null, milestone: 'M5', icon: 'stadium' },
+      { label: 'Caja', to: 'caja', icon: 'safe' },
+      { label: 'Decisiones', to: 'decisiones', icon: 'scales' },
+      { label: 'Estadio', to: 'estadio', icon: 'stadium' },
     ],
   },
 ]
@@ -174,7 +174,12 @@ export function HubScreen() {
 
         <section className="screen hub__next">
           <h2 className="screen__heading">Next match</h2>
-          {matchday === null ? (
+          {game.board.sacked ? (
+            <p className="hub__warning" role="status">
+              The board have dismissed you. They wanted {game.board.target}º and did not get it
+              twice running.
+            </p>
+          ) : matchday === null ? (
             <p className="screen__note">The season is over.</p>
           ) : (
             <div className="hub__next-body">
@@ -209,7 +214,13 @@ export function HubScreen() {
             side effect of advancing a day; otherwise the clock just runs.
           */}
           <div className="screen-actions hub__controls">
-            {finished ? (
+            {game.board.sacked ? (
+              // The end of the job, and the end of the career. There is no path
+              // on from here — the only button left is a new one somewhere else.
+              <button type="button" className="button is-primary" onClick={restart}>
+                Nueva carrera
+              </button>
+            ) : finished ? (
               <button type="button" className="button is-primary" onClick={() => startNewSeason()}>
                 {`Start ${game.season.startYear + 1}/${nextYearLabel}`}
               </button>

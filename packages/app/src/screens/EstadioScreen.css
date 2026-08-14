@@ -1,0 +1,67 @@
+.estadio-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.estadio-screen__main {
+  min-height: 0;
+}
+
+.estadio-screen__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  min-height: 0;
+}
+
+.estadio-screen__panel {
+  flex: none;
+}
+
+.estadio-screen__body {
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.estadio-screen__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-6);
+}
+
+/* `.stat__value` is --fm-text-xl and overflows on a money string. */
+.estadio-screen__figure {
+  font-size: var(--fm-text-md);
+}
+
+.estadio-screen__gauge {
+  margin: var(--fm-space-4) 0;
+}
+
+.estadio-screen__field {
+  padding-top: var(--fm-space-3);
+  border-top: 1px solid var(--fm-screen-rule);
+}
+
+.estadio-screen__hint {
+  margin: var(--fm-space-2) 0 0;
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-xs);
+  line-height: 1.4;
+}
+
+/* The action sits inside the panel body rather than at the foot of the rail,
+   which is reserved for Volver. */
+.estadio-screen__build {
+  padding: var(--fm-space-3) 0 0;
+  border-top: 0;
+}
+
+@media (width < 60rem) {
+  .estadio-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+}

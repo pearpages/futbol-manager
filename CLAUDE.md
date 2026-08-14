@@ -432,3 +432,36 @@ Two contrast problems caught by reasoning about the materials rather than by a t
 **Ordering trap, survived:** `pnpm fixture` must run **before** the new migration exists, because the script stamps the version from the live chain. `v6.json` did not exist on disk and would have been unobtainable once `v6ToV7` landed.
 
 **Pending: M5b** — ticket pricing, stadium capacity as a decision, board objectives and the sack. The three `Finanzas` tiles are already there, disabled and badged.
+
+### 2026-08-14 — M5b ✅ (the board, and somewhere for the money to go)
+
+**Done.** `board.ts` — a target scaled to the club's standing, a warning, and dismissal on the second consecutive miss. Ticket pricing and stadium expansion. The three `Finanzas` tiles are live: **Caja**, **Decisiones**, **Estadio**. Schema v8. 488 tests, `pnpm season` byte-identical to `7282b36`, every M2/M3/M5a band untouched.
+
+**Exit met:** the board sets a target, warns you, and ends the career at the club picker on the second miss. Caja states every ledger line against last season's, so the money M5a made move is money you can now account for.
+
+**The board judges league position and nothing else** — a deliberate choice with a cost worth recording rather than discovering: **the overdraft M5a built still has no teeth.** A club may run to its limit and nobody mentions it. The Decisiones screen says so out loud, because the natural assumption is that money counts and it does not.
+
+**Two defects found by rendering it, not by reasoning about it:**
+
+- **A ticket rendered as "€0k".** `formatMoney` works in thousands — right for every other figure in the game and useless for the one price a supporter would recognise. `formatTicket` shows euros.
+- **Charging the maximum was strictly best** — measured at €184k a match rising to €299k for slamming the slider — because the price was folded in _before_ `MIN_OCCUPANCY`, so the floor absorbed the damage. **This is the M3a tactics-slider exploit arriving by a different route**, and it is the second time this project has built a lever whose right answer was an end stop. Price is now a multiplier applied _after_ the clamp, and `PRICE_SENSITIVITY` is set from the algebra: takings are `p × (1 − s(p/p₀ − 1))`, peaking at `(1+s)/2s`, so **s = 0.5 puts the best price at 1.5× the default** rather than beyond the maximum. A test walks the whole range and asserts the peak is interior.
+
+**What makes Estadio a decision is the pair of levers, not either one.** At the revenue-optimal price the ground is 42% full and expanding is worthless; at 0.7× it is 65% full and seats pay. Price alone remains an optimisation — what would make it a dilemma is supporters who resent being gouged, and that needs morale at M6.
+
+**Where the board is evaluated, and why it differs from M5a's `settleSeason`.** On the `SeasonEnded` transition inside `advanceDay`, so the hub shows the verdict _before_ you press into the summer. M5a's prize money had to live in `rolloverSeason` because `simulateCareer` calls it directly and money changes how clubs behave; **the board changes nothing about how anybody plays**, so a headless career that is never judged still measures the same football.
+
+**The target self-corrects on purpose.** It blends the club's standing with last season's finish, so overachieving tightens it and a bad season loosens it, clamped between winning it and surviving. A target that only ever tightened would become impossible — **it is the strike count that ends a job, not the arithmetic.** Strikes are consecutive, so meeting the target clears the slate; that is what makes a warning a warning rather than a countdown.
+
+**The safety nets did their jobs, all three:**
+
+- `notifications.ts`'s exhaustive switch **refused to compile** until every new event was handled — the price slider returns `null` (your own hand, like `TacticsChanged`), the verdict returns a real notice.
+- `LEDGER_KEYS` plus the "every declared line is income or outgoing" test made the ninth line (`stadium`) impossible to add silently. ADR 0009's rule working as designed.
+- `HubScreen.test.tsx`'s "shows what is not built yet" test **broke by design** when Caja went live, which is the point: a tile going live must not be able to pass as one that has not. Repointed at `Cantera`/`M7`.
+
+**Two chrome primitives graduated on their second use**, as the `chrome.css` rule waits for: `.slider` (from the lineup screen) and `.number-input` (from the market). The occupancy gauge reuses the ficha's `.attr__track`/`.attr__fill` with a bucketed `data-fill` — never a JSX `style` prop.
+
+**Trap survived again:** `pnpm fixture` must run **before** the new migration exists. `v7.json` would have been unobtainable once `v7ToV8` landed.
+
+**Still not seen in a browser** — ninth failed extension connection. Verified by 488 tests and a DOM dump of all three screens: Estadio reads `Aforo 47,485 · Ocupación 56% · Por partido €184k`, Decisiones reads `Sarrià expect 12º or better · Ahora 14º`, and Caja's first season at Sarrià shows gate €3.4M, TV €2M, patrocinio €1.8M against salarios €6.4M for a €933k result. **The appearance is unverified.**
+
+**M0–M5 is complete — the 5.0-shaped game of [ADR 0008](docs/adr/0008-target-pc-futbol-5.md) is done.** Next is **M6**, the living squad: injuries, suspensions, form, morale and training, hung off the day pipeline `advanceDay` was built to grow into.

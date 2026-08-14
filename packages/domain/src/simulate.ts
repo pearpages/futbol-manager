@@ -1,4 +1,5 @@
 import type { Club, ClubId, Competition } from './entities.ts'
+import { openingBoard } from './board.ts'
 import { generateFixtures } from './fixtures.ts'
 import { BALANCED, bestXI, type Formation, type Lineup, type Tactics } from './lineup.ts'
 import type { Player } from './player.ts'
@@ -62,6 +63,8 @@ export function newSeason(
     tactics[club.id] = BALANCED
   }
 
+  const managedClubId = options.managedClubId ?? clubs.at(-1)?.id ?? (ids[0] as ClubId)
+
   return {
     clubs,
     competition,
@@ -73,13 +76,16 @@ export function newSeason(
     squads,
     lineups,
     tactics,
-    managedClubId: options.managedClubId ?? clubs.at(-1)?.id ?? (ids[0] as ClubId),
+    managedClubId,
     // A new league has nobody out of contract and no business done yet. Both fill
     // from the first rollover onward.
     freeAgents: [],
     bids: [],
     shortlist: [],
     transferList: [],
+    // The board's first target is the club's own standing, softened — there is
+    // no last season to blend with yet.
+    board: openingBoard(managedClubId, clubs),
   }
 }
 

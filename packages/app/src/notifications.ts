@@ -167,7 +167,54 @@ export function describe(event: Event, game: GameState, names: NameLookup): Noti
         text: `${event.startYear}/${String(event.startYear + 1).slice(2)} begins`,
         tone: 'plain',
       }
+
+    case 'TicketPriceSet':
+      // Your own hand on the slider, reported back at you. Same reason
+      // `TacticsChanged` is silent.
+      return null
+
+    case 'BoardVerdict': {
+      const key = `board-${event.startYear}`
+      if (event.dismissed) {
+        return {
+          key,
+          text: `The board have dismissed you. ${ordinal(event.finish)} against a target of ${ordinal(event.target)}.`,
+          tone: 'bad',
+        }
+      }
+      if (!event.met) {
+        return {
+          key,
+          text: `The board wanted ${ordinal(event.target)} and you finished ${ordinal(event.finish)}. They expect better.`,
+          tone: 'bad',
+        }
+      }
+      return {
+        key,
+        text: `${ordinal(event.finish)}, against a target of ${ordinal(event.target)}. The board are satisfied.`,
+        tone: 'good',
+      }
+    }
+
+    case 'ExpansionStarted':
+      return {
+        key: `build-${event.readyYear}`,
+        text: `Work begins on ${event.seats.toLocaleString('en')} new seats — ${formatMoney(event.cost)}, ready for ${String(event.readyYear)}/${String(event.readyYear + 1).slice(2)}`,
+        tone: 'plain',
+      }
+
+    case 'ExpansionOpened':
+      return {
+        key: `built-${event.capacity}`,
+        text: `The new stand is open — ${event.capacity.toLocaleString('en')} seats`,
+        tone: 'good',
+      }
   }
+}
+
+/** `12` → `12º`. Spanish, like the rest of the chrome. */
+function ordinal(position: number): string {
+  return `${String(position)}º`
 }
 
 /** Every notice worth showing, newest first — the order the feed is already in. */

@@ -18,9 +18,11 @@ import {
   type Score,
   type TeamRating,
 } from './entities.ts'
+import { judge } from './board.ts'
 import {
   canAfford,
   credit,
+  expansionCost,
   FINANCE,
   gateReceipts,
   isSettlementDay,
@@ -138,6 +140,26 @@ export interface ListPlayer {
   readonly on: boolean
 }
 
+/**
+ * What a seat costs at your ground. Managed club only — the AI charges the
+ * league default and never touches it.
+ */
+export interface SetTicketPrice {
+  readonly type: 'SetTicketPrice'
+  readonly price: number
+}
+
+/**
+ * Buy seats. Paid for now, delivered at the rollover.
+ *
+ * The delay is the decision: you commit the money a season before you find out
+ * whether you needed the room.
+ */
+export interface StartExpansion {
+  readonly type: 'StartExpansion'
+  readonly seats: number
+}
+
 export type Command =
   | AdvanceDay
   | SetLineup
@@ -149,6 +171,8 @@ export type Command =
   | RespondToOffer
   | Shortlist
   | ListPlayer
+  | SetTicketPrice
+  | StartExpansion
 
 export interface MatchPlayed {
   readonly type: 'MatchPlayed'
@@ -231,6 +255,37 @@ export interface TransferCompleted {
   readonly fee: number
 }
 
+/** The board's verdict on a finished season. */
+export interface BoardVerdict {
+  readonly type: 'BoardVerdict'
+  readonly startYear: number
+  readonly target: number
+  readonly finish: number
+  readonly met: boolean
+  readonly strikes: number
+  /** True on the season the job ends. */
+  readonly dismissed: boolean
+}
+
+export interface TicketPriceSet {
+  readonly type: 'TicketPriceSet'
+  readonly price: number
+}
+
+export interface ExpansionStarted {
+  readonly type: 'ExpansionStarted'
+  readonly seats: number
+  readonly cost: number
+  readonly readyYear: number
+}
+
+/** The seats opened. Emitted at the rollover that delivers them. */
+export interface ExpansionOpened {
+  readonly type: 'ExpansionOpened'
+  readonly seats: number
+  readonly capacity: number
+}
+
 export type Event =
   | MatchPlayed
   | DayAdvanced
@@ -244,6 +299,10 @@ export type Event =
   | TermsRejected
   | PlayerListed
   | TransferCompleted
+  | BoardVerdict
+  | TicketPriceSet
+  | ExpansionStarted
+  | ExpansionOpened
 
 export interface ReduceResult {
   readonly state: GameState
@@ -272,6 +331,10 @@ export function reduce(state: GameState, command: Command, rng: Rng): ReduceResu
       return shortlist(state, command)
     case 'ListPlayer':
       return listPlayer(state, command)
+    case 'SetTicketPrice':
+      return setTicketPrice(state, command)
+    case 'StartExpansion':
+      return startExpansion(state, command)
   }
 }
 
@@ -315,6 +378,20 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
   const next = applyTransfers(rolled, transfers)
 
   const events: Event[] = [{ type: 'SeasonStarted', startYear: next.season.startYear }]
+
+  // Seats commissioned a season ago open now. Detected by comparing the ground
+  // either side of the rollover rather than by re-deriving the rule, so there is
+  // one place that decides when work is delivered.
+  const before = state.clubs.find((c) => c.id === state.managedClubId)
+  const after = next.clubs.find((c) => c.id === next.managedClubId)
+  if (before !== undefined && after !== undefined && after.capacity > before.capacity) {
+    events.push({
+      type: 'ExpansionOpened',
+      seats: after.capacity - before.capacity,
+      capacity: after.capacity,
+    })
+  }
+
   for (const transfer of transfers) {
     events.push({
       type: 'TransferCompleted',
@@ -779,6 +856,83 @@ const OFFER_NEED_THRESHOLD = 1.5
 const LISTED_NEED_THRESHOLD = 0.4
 
 /**
+ * What you charge at the gate.
+ *
+ * Managed club only. Range-checked here rather than in the screen for the same
+ * reason `SetTactics` is: a screen can forget a rule, and this cannot.
+ */
+function setTicketPrice(state: GameState, command: SetTicketPrice): ReduceResult {
+  const low = FINANCE.TICKET * FINANCE.MIN_TICKET_FACTOR
+  const high = FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR
+
+  if (!Number.isFinite(command.price) || command.price < low || command.price > high) {
+    throw new Error(`A ticket must be priced between ${String(low)} and ${String(high)}`)
+  }
+
+  return {
+    state: {
+      ...state,
+      clubs: state.clubs.map((club) =>
+        club.id === state.managedClubId ? { ...club, ticketPrice: command.price } : club,
+      ),
+    },
+    events: [{ type: 'TicketPriceSet', price: command.price }],
+  }
+}
+
+/**
+ * Commission building work.
+ *
+ * Paid immediately and delivered at the rollover, which is the whole point — the
+ * money leaves before you know whether the seats were needed. One job at a time:
+ * a club stacking three expansions would be spending its way out of the decision
+ * rather than making it.
+ */
+function startExpansion(state: GameState, command: StartExpansion): ReduceResult {
+  const club = state.clubs.find((c) => c.id === state.managedClubId)
+  /* c8 ignore next */
+  if (club === undefined) throw new Error('No managed club')
+
+  if (club.expansion !== null) throw new Error('Building work is already under way')
+  if (
+    !Number.isFinite(command.seats) ||
+    command.seats < FINANCE.MIN_EXPANSION ||
+    command.seats > FINANCE.MAX_EXPANSION
+  ) {
+    throw new Error(
+      `An expansion runs from ${String(FINANCE.MIN_EXPANSION)} to ${String(FINANCE.MAX_EXPANSION)} seats`,
+    )
+  }
+
+  const cost = expansionCost(command.seats)
+  if (!affordable(state, club, cost)) {
+    throw new Error('That would take you past your overdraft limit')
+  }
+
+  // Seats are ready for the season after this one.
+  const readyYear = state.season.startYear + 1
+
+  return {
+    state: {
+      ...state,
+      clubs: state.clubs.map((c) =>
+        c.id !== club.id
+          ? c
+          : {
+              ...c,
+              // Building money leaves the league, like a signing bonus — so it is
+              // a ledger line, and the balance moves by exactly that line.
+              budget: c.budget - cost,
+              ledger: credit(c.ledger, 'stadium', cost),
+              expansion: { seats: command.seats, readyYear },
+            },
+      ),
+    },
+    events: [{ type: 'ExpansionStarted', seats: command.seats, cost, readyYear }],
+  }
+}
+
+/**
  * Whether a club can commit to an outlay, counting the signing bonus.
  *
  * Home games per club is `ROUNDS_PER_HALF` — nineteen in a twenty-club league —
@@ -925,7 +1079,42 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   // Emitted once, on the transition — not on every subsequent day.
   if (!wasComplete && isSeasonComplete(next)) {
     events.push({ type: 'SeasonEnded', startYear: next.season.startYear })
+    return { state: closeWithBoard(next, events), events }
   }
 
   return { state: next, events }
+}
+
+/**
+ * The board's verdict, on the day the season ends.
+ *
+ * Here rather than in `StartNewSeason` because this is the moment the season
+ * actually finishes — which means the hub can show you the judgement *before*
+ * you press on into the summer, and a dismissal is not something you discover by
+ * clicking "start next season".
+ *
+ * **Deliberately placed differently from M5a's `settleSeason`**, which had to
+ * live in `rolloverSeason` so the headless career ran the same economy the game
+ * does. Money changes how clubs behave; the board changes nothing about how
+ * anybody plays, so a harness career that is never judged still measures exactly
+ * the same football. It draws no randomness, for the usual reason.
+ */
+function closeWithBoard(state: GameState, events: Event[]): GameState {
+  const positions = positionsFrom(state.competition.clubIds, state.season.fixtures)
+  const finish = positions?.get(state.managedClubId)
+  /* c8 ignore next */
+  if (finish === undefined) return state
+
+  const verdict = judge(state.board, finish, state.managedClubId, state.clubs)
+  events.push({
+    type: 'BoardVerdict',
+    startYear: state.season.startYear,
+    target: state.board.target,
+    finish,
+    met: verdict.met,
+    strikes: verdict.board.strikes,
+    dismissed: verdict.dismissed,
+  })
+
+  return { ...state, board: verdict.board }
 }

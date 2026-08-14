@@ -134,23 +134,6 @@
   padding: var(--fm-space-3) var(--fm-space-4);
 }
 
-/*
- * First number input in the project. Kept local per the chrome.css rule — a
- * primitive is promoted on its second use, not its first.
- */
-.market-screen__input {
-  padding: var(--fm-space-1) var(--fm-space-2);
-  background: var(--fm-void);
-  border-top: 1px solid var(--fm-bevel-dark);
-  border-left: 1px solid var(--fm-bevel-dark);
-  border-right: 1px solid var(--fm-bevel-light);
-  border-bottom: 1px solid var(--fm-bevel-light);
-  color: var(--fm-screen-ink);
-  font-family: var(--fm-font);
-  font-size: var(--fm-text-md);
-  font-variant-numeric: tabular-nums;
-}
-
 .market-screen__hint {
   padding: 0;
 }

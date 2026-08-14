@@ -3,6 +3,7 @@ import {
   credit,
   debtLimit,
   EMPTY_LEDGER,
+  expansionCost,
   FINANCE,
   gateReceipts,
   isSettlementDay,
@@ -19,7 +20,7 @@ import {
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { reduce } from './reduce.ts'
 import { createRng } from './rng.ts'
-import { newSeason } from './simulate.ts'
+import { newSeason, simulateSeason } from './simulate.ts'
 import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { fromCivil } from './time.ts'
 
@@ -145,6 +146,115 @@ describe('debt', () => {
     // which would make "nobody goes bankrupt" a statement about one club.
     expect(debtLimit(BIG, CLUBS, ROUNDS_PER_HALF)).toBeGreaterThan(
       debtLimit(SMALL, CLUBS, ROUNDS_PER_HALF) * 2,
+    )
+  })
+})
+
+describe('the ticket price', () => {
+  const at = (price: number) => ({ ...BIG, ticketPrice: price })
+
+  it('changes nothing at all when left at the default', () => {
+    // The property that let this be added to a calibrated model without moving a
+    // band — the same reason M3c's tempo is algebraically zero at balanced
+    // tactics. `pnpm season` staying byte-identical is the proof.
+    expect(occupancy(at(FINANCE.TICKET), 5, CLUBS)).toBe(occupancy(BIG, 5, CLUBS))
+  })
+
+  it('empties the ground when you charge more', () => {
+    expect(occupancy(at(FINANCE.TICKET * 2), 5, CLUBS)).toBeLessThan(occupancy(BIG, 5, CLUBS))
+  })
+
+  it('fills it when you charge less', () => {
+    expect(occupancy(at(FINANCE.TICKET * 0.5), 5, CLUBS)).toBeGreaterThan(occupancy(BIG, 5, CLUBS))
+  })
+
+  it('has its best price inside the range, not at the end stop', () => {
+    // **The exploit this guards against.** With the price folded in before the
+    // occupancy floor, `MIN_OCCUPANCY` absorbed the damage and charging the
+    // maximum was strictly best — measured at €184k a match rising to €299k for
+    // simply slamming the slider. A lever with one right answer at its end stop
+    // is a button, and this project has made that mistake once already with the
+    // tactics slider at M3a.
+    let best = 0
+    let bestAt = 0
+    for (let step = 0; step <= 40; step++) {
+      const price =
+        FINANCE.TICKET *
+        (FINANCE.MIN_TICKET_FACTOR +
+          ((FINANCE.MAX_TICKET_FACTOR - FINANCE.MIN_TICKET_FACTOR) * step) / 40)
+      const taken = gateReceipts(at(price), 10, CLUBS)
+      if (taken > best) {
+        best = taken
+        bestAt = price / FINANCE.TICKET
+      }
+    }
+
+    expect(bestAt).toBeGreaterThan(FINANCE.MIN_TICKET_FACTOR + 0.1)
+    expect(bestAt).toBeLessThan(FINANCE.MAX_TICKET_FACTOR - 0.1)
+  })
+
+  it('empties the ground rather than being caught by the floor', () => {
+    // The floor bounds what quality and form can do, not what a price can.
+    expect(occupancy(at(FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR), 10, CLUBS)).toBeLessThan(
+      FINANCE.MIN_OCCUPANCY,
+    )
+  })
+
+  it('does not move the overdraft', () => {
+    // The exploit this guards against: `annualIncome` feeds `debtLimit`, so a
+    // price-sensitive income would let a manager raise his own borrowing limit
+    // by moving a slider. The limit is a property of the club, not of the slider.
+    const dear = debtLimit(at(FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR), CLUBS, ROUNDS_PER_HALF)
+    const cheap = debtLimit(at(FINANCE.TICKET * FINANCE.MIN_TICKET_FACTOR), CLUBS, ROUNDS_PER_HALF)
+    expect(dear).toBe(debtLimit(BIG, CLUBS, ROUNDS_PER_HALF))
+    expect(cheap).toBe(dear)
+  })
+})
+
+describe('building work', () => {
+  it('charges by the seat', () => {
+    expect(expansionCost(2000)).toBe(expansionCost(1000) * 2)
+    expect(expansionCost(FINANCE.MIN_EXPANSION)).toBeGreaterThan(0)
+  })
+
+  it('is paid now and delivered at the rollover', () => {
+    const rng = createRng(20260814)
+    let state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng })
+    const me = state.managedClubId
+    const mine = () => state.clubs.find((c) => c.id === me)
+
+    const before = mine()
+    /* c8 ignore next */
+    if (before === undefined) throw new Error('no club')
+    const seats = 4000
+    const cost = expansionCost(seats)
+
+    state = reduce(state, { type: 'StartExpansion', seats }, rng).state
+
+    // Money gone, ledger written, seats not yet.
+    expect(mine()?.budget).toBe(before.budget - cost)
+    expect(mine()?.ledger.stadium).toBe(cost)
+    expect(mine()?.capacity).toBe(before.capacity)
+    expect(mine()?.expansion?.seats).toBe(seats)
+
+    // One job at a time — otherwise a rich club spends its way out of the choice.
+    expect(() => reduce(state, { type: 'StartExpansion', seats: 2000 }, rng)).toThrow(
+      /already under way/,
+    )
+
+    state = simulateSeason(state, rng)
+    state = reduce(state, { type: 'StartNewSeason', names: TEST_NAMES }, rng).state
+
+    expect(mine()?.capacity).toBe(before.capacity + seats)
+    expect(mine()?.expansion).toBeNull()
+  })
+
+  it('refuses a job outside the sensible range', () => {
+    const rng = createRng(20260814)
+    const state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng })
+    expect(() => reduce(state, { type: 'StartExpansion', seats: 10 }, rng)).toThrow(/runs from/)
+    expect(() => reduce(state, { type: 'StartExpansion', seats: 999_999 }, rng)).toThrow(
+      /runs from/,
     )
   })
 })

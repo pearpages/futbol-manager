@@ -603,7 +603,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
               </label>
               <input
                 id="fee"
-                className="market-screen__input"
+                className="number-input"
                 type="number"
                 min={1}
                 step={50}
@@ -639,7 +639,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
               </label>
               <input
                 id="wage"
-                className="market-screen__input"
+                className="number-input"
                 type="number"
                 min={0}
                 step={50}
@@ -653,7 +653,7 @@ function NegotiationPanel({ listing, bid, date, open, onAttempt, onClose }: Nego
               </label>
               <input
                 id="years"
-                className="market-screen__input"
+                className="number-input"
                 type="number"
                 min={MIN_CONTRACT_YEARS}
                 max={MAX_CONTRACT_YEARS}

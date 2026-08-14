@@ -39,9 +39,10 @@ export const LEDGER_KEYS = [
   'wages',
   'bonuses',
   'interest',
+  'stadium',
 ] as const
 
-const OUTGOINGS = new Set<keyof Ledger>(['wages', 'bonuses', 'interest'])
+const OUTGOINGS = new Set<keyof Ledger>(['wages', 'bonuses', 'interest', 'stadium'])
 
 export const EMPTY_LEDGER: Ledger = {
   gate: 0,
@@ -52,6 +53,7 @@ export const EMPTY_LEDGER: Ledger = {
   wages: 0,
   bonuses: 0,
   interest: 0,
+  stadium: 0,
 }
 
 /**
@@ -81,8 +83,39 @@ export function credit(ledger: Ledger, key: keyof Ledger, amount: number): Ledge
  * cannot tune.
  */
 export const FINANCE = {
-  /** Per seat, per home match. Ticket *pricing* is the M5b decision; this is the default. */
+  /**
+   * Per seat, per home match — the league default, and what every AI club
+   * charges. M5b made it a `Club` field the manager can move.
+   *
+   * **The overdraft is still sized on this figure, never on the price a manager
+   * sets.** `annualIncome` feeds `debtLimit`; if it followed the slider, raising
+   * your own ticket price would raise your own borrowing limit, which is a club
+   * lending itself money.
+   */
   TICKET: 0.0069,
+  /** How far a manager may move the price, as a multiple of the default. */
+  MIN_TICKET_FACTOR: 0.4,
+  MAX_TICKET_FACTOR: 2.5,
+  /**
+   * How much a dearer ticket empties the ground.
+   *
+   * Applied to the ratio against the default, so charging the default changes
+   * nothing at all — the same "inert when unused" property that let M3c's tempo
+   * and M5a's finance extend a calibrated model without moving a band.
+   *
+   * **The value is what puts the best price inside the range rather than at the
+   * end of it.** Gate takings are `price × (1 − s(price/default − 1))`, which
+   * peaks at `(1 + s) / 2s` times the default — 1.5× here. Any weaker and the
+   * peak sits beyond `MAX_TICKET_FACTOR`, which makes "charge the maximum"
+   * strictly correct and the slider a button. That is the same exploit the
+   * tactics slider had at M3a, arriving by a different route.
+   */
+  PRICE_SENSITIVITY: 0.5,
+  /** What a seat costs to build. */
+  SEAT_COST: 0.55,
+  /** The smallest and largest expansion worth the paperwork. */
+  MIN_EXPANSION: 1_000,
+  MAX_EXPANSION: 15_000,
   /** Seats, for a club of exactly average rating. Scaled convexly from there. */
   BASE_CAPACITY: 26_000,
   CAPACITY_EXPONENT: 2.8,
@@ -160,13 +193,30 @@ export function occupancy(club: Club, position: number | null, clubCount: number
   // a big club with a bad season still draws a bigger crowd than a small one.
   const fromForm =
     position === null || clubCount <= 1 ? 0 : 0.16 * (1 - (2 * (position - 1)) / (clubCount - 1))
+  // The floor and ceiling bound how much *quality and form* can do. Price is
+  // applied afterwards, as a multiplier, and deliberately not floored with them:
+  // folding it in let `MIN_OCCUPANCY` absorb the damage, so charging the maximum
+  // came out strictly best and the slider had one right answer at its end stop.
+  const base = Math.min(
+    FINANCE.MAX_OCCUPANCY,
+    Math.max(FINANCE.MIN_OCCUPANCY, fromQuality + fromForm),
+  )
 
-  return Math.min(FINANCE.MAX_OCCUPANCY, Math.max(FINANCE.MIN_OCCUPANCY, fromQuality + fromForm))
+  // One at the default price, by construction — a club that never touches the
+  // slider gets exactly the M5a model back, which is why no band moved.
+  const priced = 1 - FINANCE.PRICE_SENSITIVITY * (club.ticketPrice / FINANCE.TICKET - 1)
+
+  return base * Math.max(0.05, priced)
 }
 
 /** What one home match takes at the gate. */
 export function gateReceipts(club: Club, position: number | null, clubCount: number): number {
-  return Math.round(club.capacity * occupancy(club, position, clubCount) * FINANCE.TICKET)
+  return Math.round(club.capacity * occupancy(club, position, clubCount) * club.ticketPrice)
+}
+
+/** What buying this many seats costs. */
+export function expansionCost(seats: number): number {
+  return Math.round(seats * FINANCE.SEAT_COST)
 }
 
 /**
@@ -225,7 +275,11 @@ export function wageBill(squad: readonly Player[]): number {
  * tighten exactly when a club could least afford it.
  */
 export function annualIncome(club: Club, clubCount: number, homeGames: number): number {
-  const gate = gateReceipts(club, Math.ceil(clubCount / 2), clubCount) * homeGames
+  // Priced at the league default rather than at this club's own ticket price —
+  // see `FINANCE.TICKET`. A manager must not be able to widen his overdraft by
+  // moving a slider.
+  const atDefault = { ...club, ticketPrice: FINANCE.TICKET }
+  const gate = gateReceipts(atDefault, Math.ceil(clubCount / 2), clubCount) * homeGames
   return gate + tvMoney(null, clubCount) + sponsorMoney(club)
 }
 

@@ -257,15 +257,20 @@ Gate receipts, TV, sponsorship, prize money, the wage bill, and the signing bonu
 
 ---
 
-## M5b — The board
+## M5b — The board ✅
 
-**~1.5 weeks**
+Ticket pricing, stadium expansion, board objectives and the sack. The three `Finanzas` tiles are live. Schema v8.
 
-Ticket pricing, stadium capacity as a decision, board objectives and the sack mechanic. The three `Finanzas` hub tiles — Caja, Decisiones, Estadio — are already in place, disabled and badged M5.
+**Exit met.** The board sets a target scaled to the club's standing, warns you when you miss it and dismisses you the second time running — which ends the career at the club picker. Caja states every ledger line against last season's, so the money that M5a made move is now money you can account for.
 
-The data is built: `Club.ledger` holds the running season and `Club.lastLedger` the one just closed, which is what a finance screen means by "this season" and "last season".
+**The board judges league position and nothing else**, which was a deliberate choice with a cost worth recording: **the overdraft M5a built still has no teeth.** A club may run to its limit and nobody will mention it. Debt becomes a consequence when there is something to attach it to.
 
-**Exit:** a board that can set you a target, notice you missed it, and sack you for it — and a manager who can see why his money went.
+**Two findings, both from rendering it rather than reasoning about it:**
+
+- **A ticket priced at 0.0069 thousands rendered as "€0k".** `formatMoney` is right for every other figure in the game and useless for the one price a supporter would recognise.
+- **Charging the maximum was strictly best** — €184k a match rising to €299k for slamming the slider — because the price was folded in _before_ `MIN_OCCUPANCY`, so the floor absorbed the damage. **This is the M3a tactics-slider exploit arriving by a different route.** Price is now a multiplier applied after the clamp, and `PRICE_SENSITIVITY` is set so the best price falls at 1.5× the default rather than at an end stop. There is a test that walks the range and asserts the peak is interior.
+
+**What makes Estadio a decision is the pair, not either lever.** At the revenue-optimal price the ground is 42% full, so expanding is worthless; drop the price to 0.7× and it is 65% full and seats start to pay. Price alone is still an optimisation — what would make it a dilemma is supporters who resent being gouged, and that needs morale at M6.
 
 ---
 

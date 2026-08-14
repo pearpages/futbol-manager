@@ -1,4 +1,5 @@
 import type { Bid } from './bids.ts'
+import type { Board } from './board.ts'
 import type { Club, ClubId, Competition, Fixture, Season } from './entities.ts'
 import type { Lineup, Tactics } from './lineup.ts'
 import type { Player, PlayerId } from './player.ts'
@@ -53,6 +54,14 @@ export interface GameState {
    * without a further prompt; the bid inbox is for unsolicited offers.
    */
   readonly transferList: readonly PlayerId[]
+  /**
+   * The board's target and its patience, added at M5b.
+   *
+   * About the managed club only — the AI answers to nobody, which is why this is
+   * one object rather than a per-club record. A headless career carries one too
+   * and simply never reads it, so the harness measures the same football.
+   */
+  readonly board: Board
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {

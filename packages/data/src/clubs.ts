@@ -1,4 +1,4 @@
-import { type Club, type ClubId, EMPTY_LEDGER, seedCapacity } from '@fm/domain'
+import { type Club, type ClubId, EMPTY_LEDGER, FINANCE, seedCapacity } from '@fm/domain'
 
 /**
  * The default league — twenty clubs named after their cities.
@@ -106,6 +106,8 @@ export const DEFAULT_CLUBS: readonly Club[] = CLUBS.map(
     defence,
     budget: seedBudget(attack, defence),
     capacity: seedCapacity(attack, defence),
+    ticketPrice: FINANCE.TICKET,
+    expansion: null,
     ledger: EMPTY_LEDGER,
     lastLedger: EMPTY_LEDGER,
   }),

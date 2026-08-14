@@ -16,6 +16,7 @@ export {
   type ClubId,
   clubRating,
   type Competition,
+  type Expansion,
   type Fixture,
   type FixtureId,
   isPlayed,
@@ -26,11 +27,22 @@ export {
 } from './entities.ts'
 
 export {
+  type Board,
+  judge,
+  openingBoard,
+  standingOf,
+  STRIKES_ALLOWED,
+  targetFor,
+  type Verdict,
+} from './board.ts'
+
+export {
   annualIncome,
   canAfford,
   credit,
   debtLimit,
   EMPTY_LEDGER,
+  expansionCost,
   FINANCE,
   gateReceipts,
   isSettlementDay,
@@ -69,6 +81,9 @@ export {
   type DayAdvanced,
   type Event,
   type LineupChanged,
+  type BoardVerdict,
+  type ExpansionOpened,
+  type ExpansionStarted,
   type ListPlayer,
   type MakeBid,
   type MatchPlayed,
@@ -79,7 +94,10 @@ export {
   type RespondToOffer,
   type SetLineup,
   type SetTactics,
+  type SetTicketPrice,
   type Shortlist,
+  type StartExpansion,
+  type TicketPriceSet,
   type StartNewSeason,
   type TacticsChanged,
   type TermsRejected,

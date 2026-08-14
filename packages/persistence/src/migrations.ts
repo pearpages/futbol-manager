@@ -208,6 +208,48 @@ const v6ToV7: Migration = {
 }
 
 /**
+ * v7 → v8: the board, and a ground you can do something with.
+ *
+ * A v7 career answered to nobody and charged what the league charged. From M5b
+ * the manager sets a ticket price, can commission building work, and has a board
+ * with a target and a supply of patience.
+ *
+ * **The seeded price is frozen here as a literal**, exactly as `v3ToV4` freezes
+ * the old 400 budget base and `v6ToV7` freezes the capacity curve. A migration
+ * records what a version meant when it shipped; tracking the live `FINANCE`
+ * constant would let a later rebalance silently reprice every old save.
+ *
+ * The board opens with a mid-table target and no strikes. Reconstructing what a
+ * board *would* have asked for across seasons already played is not possible and
+ * would be a fiction; starting clean is the honest answer, and it is generous
+ * rather than punishing.
+ */
+const v7ToV8: Migration = {
+  from: 7,
+  to: 8,
+  describe: 'ticket prices, stadium expansion and a board with a target',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v7 save payload is not an object')
+    }
+    const { clubs } = payload as { clubs?: unknown }
+    if (!Array.isArray(clubs)) throw new Error('v7 save has no clubs')
+
+    return {
+      ...payload,
+      clubs: clubs.map((club: unknown) => ({
+        ...(club as object),
+        ticketPrice: 0.0069,
+        expansion: null,
+        ledger: { ...((club as { ledger?: object }).ledger ?? {}), stadium: 0 },
+        lastLedger: { ...((club as { lastLedger?: object }).lastLedger ?? {}), stadium: 0 },
+      })),
+      board: { target: Math.ceil(clubs.length / 2), strikes: 0, sacked: false },
+    }
+  },
+}
+
+/**
  * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
  *
  * `persistence` must not import `domain` for this: a migration has to keep
@@ -224,7 +266,15 @@ function daysFromCivil(y: number, m: number, d: number): number {
 }
 
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
-export const MIGRATIONS: readonly Migration[] = [v1ToV2, v2ToV3, v3ToV4, v4ToV5, v5ToV6, v6ToV7]
+export const MIGRATIONS: readonly Migration[] = [
+  v1ToV2,
+  v2ToV3,
+  v3ToV4,
+  v4ToV5,
+  v5ToV6,
+  v6ToV7,
+  v7ToV8,
+]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)
 

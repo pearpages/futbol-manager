@@ -113,7 +113,7 @@ export function LineupScreen() {
               </label>
               <input
                 id="attacking"
-                className="lineup-screen__slider"
+                className="slider"
                 type="range"
                 min={0}
                 max={100}

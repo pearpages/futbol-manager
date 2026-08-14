@@ -469,6 +469,30 @@
   border-left-color: var(--fm-screen-rule);
 }
 
+/* ── Form controls ───────────────────────────────────────────────────────── */
+/*
+ * Both of these started life screen-local — the slider on the lineup screen, the
+ * number input on the market screen — each with a comment saying it would move
+ * here on its second use. The stadium screen is that second use for both.
+ */
+.slider {
+  width: 100%;
+  accent-color: var(--fm-accent);
+}
+
+.number-input {
+  padding: var(--fm-space-1) var(--fm-space-2);
+  background: var(--fm-void);
+  border-top: 1px solid var(--fm-bevel-dark);
+  border-left: 1px solid var(--fm-bevel-dark);
+  border-right: 1px solid var(--fm-bevel-light);
+  border-bottom: 1px solid var(--fm-bevel-light);
+  color: var(--fm-screen-ink);
+  font-family: var(--fm-font);
+  font-size: var(--fm-text-md);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Screen actions ──────────────────────────────────────────────────────── */
 /*
  * The foot of a screen's own action area, ending in Volver.

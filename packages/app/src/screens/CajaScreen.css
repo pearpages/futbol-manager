@@ -1,0 +1,57 @@
+/* Same main-plus-rail shape as the table screen. */
+.caja-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+  min-height: 0;
+}
+
+.caja-screen__main {
+  min-height: 0;
+}
+
+.caja-screen__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  min-height: 0;
+}
+
+.caja-screen__panel {
+  flex: none;
+}
+
+.caja-screen__stats {
+  display: flex;
+  gap: var(--fm-space-6);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+/* `.stat__value` is set at --fm-text-xl, which overflows on a money string like
+   "€24.5M". Same local override the table screen and the hub already carry. */
+.caja-screen__figure {
+  font-size: var(--fm-text-md);
+}
+
+/* The result line closes the column, so it is ruled off rather than striped. */
+.caja-screen__total td {
+  border-top: 2px solid var(--fm-screen-rule);
+}
+
+/* Money in and money out. The sign is on the number as well, so a reader who
+   cannot use colour loses nothing — the same rule the position bands follow. */
+.is-in {
+  color: var(--fm-uecl);
+}
+
+.is-out {
+  color: var(--fm-relegation);
+}
+
+@media (width < 60rem) {
+  .caja-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
+  }
+}
