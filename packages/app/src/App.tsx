@@ -1,5 +1,5 @@
-import { useEffect, useMemo } from 'react'
-import { computeTable, transferWindowDaysLeft } from '@fm/domain'
+import { useEffect } from 'react'
+import { transferWindowDaysLeft } from '@fm/domain'
 import { LOCALE_TAGS } from './i18n/format.ts'
 import { useT } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
@@ -85,14 +85,6 @@ export function App() {
   // one call rather than asking the predicate and then the count.
   const windowDaysLeft = transferWindowDaysLeft(game.season.currentDate)
 
-  // Where you stand, for the bar. Memoised because the bar re-renders on every
-  // tick of the clock and this walks all 380 fixtures; `game` is replaced
-  // wholesale by the reducer, so identity is the right dependency.
-  const position = useMemo(() => {
-    const table = computeTable(game.competition.clubIds, game.season.fixtures)
-    return table.findIndex((row) => row.clubId === game.managedClubId) + 1
-  }, [game])
-
   // No career yet: the club picker replaces the whole shell rather than sitting
   // inside it, because none of the navigation means anything before a club exists.
   if (needsSetup) {
@@ -119,9 +111,10 @@ export function App() {
     <div className="shell">
       <BadgeDefs />
       <header className="panel shell__bar">
-        {/* Where you stand, not who you are. The club you manage never changes
-            and the hub states it with a crest; what a title bar is for is the
-            situation — which competition, which matchday, what position. Left a
+        {/* When you are, not who you are. The club you manage never changes and the
+            hub states it with a crest; what a title bar is for is the situation —
+            which competition and which matchday. Position used to sit here too and
+            now lives on the hub, where it is looked at rather than passed. Left a
             `<p>` deliberately: the heading of the page is the screen you are on,
             and the table screen already owns the competition name as a heading. */}
         <p className="shell__where">
@@ -132,9 +125,6 @@ export function App() {
             <span className="shell__matchday">
               {t('shell.matchday', { round: matchday.fixture.round })}
             </span>
-          )}
-          {position > 0 && (
-            <span className="shell__position">{t('shell.position', { position })}</span>
           )}
         </p>
         <h1 className="shell__title">{t(SCREEN_TITLES[screen])}</h1>

@@ -49,14 +49,13 @@
   font-weight: 700;
 }
 
-.shell__matchday,
-.shell__position {
+.shell__matchday {
   color: var(--fm-ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
-/* The wordmark survives only on the setup screen, where there is no club, no
-   competition and no position to put here yet. */
+/* The wordmark survives only on the setup screen, where there is no club and no
+   competition to put here yet. */
 .shell--setup .shell__wordmark {
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-lg);

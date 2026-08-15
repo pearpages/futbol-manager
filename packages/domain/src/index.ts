@@ -65,10 +65,13 @@ export {
 
 export {
   CLUB_COUNT,
+  type ClubResult,
   FIXTURES_PER_ROUND,
   fixturesOn,
   generateFixtures,
   nextFixtureFor,
+  type Outcome,
+  recentResultsFor,
   ROUNDS_PER_HALF,
   TOTAL_ROUNDS,
 } from './fixtures.ts'

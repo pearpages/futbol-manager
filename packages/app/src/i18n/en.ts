@@ -43,7 +43,6 @@ export const en: Dictionary = {
   // ── The shell ────────────────────────────────────────────────────────────
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Matchday {round}',
-  'shell.position': '{position}th',
   'shell.windowOpen.one': 'Transfer window open · {count} day',
   'shell.windowOpen.other': 'Transfer window open · {count} days',
 
@@ -59,13 +58,14 @@ export const en: Dictionary = {
   'hub.arrivesAt': 'Arrives at {milestone}',
   'hub.date': 'Date',
   'hub.budget': 'Budget',
+  'hub.position': 'Position',
   'hub.nextMatch': 'Next match',
   'hub.seasonOver': 'The season is over.',
   'hub.today': 'Today',
   'hub.inDays.one': 'in {count} day',
   'hub.inDays.other': 'in {count} days',
   'hub.dismissed':
-    'The board have dismissed you. They wanted {target} and did not get it twice running.',
+    'The board have dismissed you. They wanted position {target} and did not get it twice running.',
   'hub.weakLineup':
     'Your XI is not your strongest — {current} against {best}. Signing someone does not pick him.',
   'hub.startSeason': 'Start {season}',
@@ -96,6 +96,7 @@ export const en: Dictionary = {
   'table.date': 'Date',
   'table.latestResults': 'Latest results',
   'table.noResults': 'Advance the day to play the next round.',
+  'form.notPlayed': 'Not played yet',
 
   // ── Squad ────────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Squad',
@@ -287,7 +288,7 @@ export const en: Dictionary = {
     'Available is what you can commit — your balance plus the overdraft. You pay interest while you are in the red, and the board does not judge you on it.',
   'caja.projection': 'Forecast',
   'caja.projectionNote':
-    'A whole season at today’s squad, ticket price and {position}th place. Not what you have banked — the accounts say that. Transfers are your own doing, so they are left out.',
+    'A whole season at today’s squad, ticket price and position {position}. Not what you have banked — the accounts say that. Transfers are your own doing, so they are left out.',
   'caja.projectionNoteEarly':
     'A whole season at today’s squad and ticket price, assuming a mid-table finish until there is a table to read. Transfers are your own doing, so they are left out.',
   'caja.wages': 'Wages',
@@ -299,7 +300,7 @@ export const en: Dictionary = {
   // ── The board ────────────────────────────────────────────────────────────
   'board.heading': 'The objective',
   'board.fallbackName': 'The board',
-  'board.demand': '{club} expect {target} or better.',
+  'board.demand': '{club} expect to finish in position {target} or better.',
   'board.target': 'Target',
   'board.now': 'Now',
   'board.played': 'Played',
@@ -357,9 +358,12 @@ export const en: Dictionary = {
   'news.unlisted': '{player} is off the market',
   'news.seasonEnded': 'The season is over',
   'news.seasonStarted': '{season} begins',
-  'news.boardSacked': 'The board have dismissed you. {finish} against a target of {target}.',
-  'news.boardWarned': 'The board wanted {target} and you finished {finish}. They expect better.',
-  'news.boardHappy': '{finish}, against a target of {target}. The board are satisfied.',
+  'news.boardSacked':
+    'The board have dismissed you. You finished in position {finish}, against a target of {target}.',
+  'news.boardWarned':
+    'The board wanted position {target} and you finished {finish}. They expect better.',
+  'news.boardHappy':
+    'Finished in position {finish}, against a target of {target}. The board are satisfied.',
   'news.expansionStarted.one': 'Work begins on {seats} new seat — {cost}, ready for {season}',
   'news.expansionStarted.other': 'Work begins on {seats} new seats — {cost}, ready for {season}',
   'news.expansionOpened': 'The new stand is open — {capacity} seats',

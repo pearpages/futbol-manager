@@ -34,7 +34,6 @@ export const es: Dictionary = {
   // ── El marco ─────────────────────────────────────────────────────────────
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Jornada {round}',
-  'shell.position': '{position}º',
   'shell.windowOpen.one': 'Mercado abierto · {count} día',
   'shell.windowOpen.other': 'Mercado abierto · {count} días',
 
@@ -48,13 +47,14 @@ export const es: Dictionary = {
   'hub.arrivesAt': 'Llega en {milestone}',
   'hub.date': 'Fecha',
   'hub.budget': 'Presupuesto',
+  'hub.position': 'Posición',
   'hub.nextMatch': 'Próximo partido',
   'hub.seasonOver': 'La temporada ha terminado.',
   'hub.today': 'Hoy',
   'hub.inDays.one': 'en {count} día',
   'hub.inDays.other': 'en {count} días',
   'hub.dismissed':
-    'La directiva te ha destituido. Querían {target} y no lo consiguieron dos temporadas seguidas.',
+    'La directiva te ha destituido. Querían la posición {target} y no lo consiguieron dos temporadas seguidas.',
   'hub.weakLineup':
     'Tu once no es el más fuerte — {current} frente a {best}. Fichar a alguien no lo hace titular.',
   'hub.startSeason': 'Empezar {season}',
@@ -85,6 +85,7 @@ export const es: Dictionary = {
   'table.date': 'Fecha',
   'table.latestResults': 'Últimos resultados',
   'table.noResults': 'Avanza el día para jugar la próxima jornada.',
+  'form.notPlayed': 'Aún no jugado',
 
   // ── Plantilla ────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Plantilla',
@@ -274,7 +275,7 @@ export const es: Dictionary = {
     'Disponible es lo que puedes comprometer: tu saldo más el descubierto. Pagas intereses mientras estés en números rojos, y la directiva no te lo tiene en cuenta.',
   'caja.projection': 'Previsión',
   'caja.projectionNote':
-    'Una temporada entera con la plantilla, el precio de la entrada y el {position}º puesto de hoy. No es lo ingresado — eso lo dicen las cuentas. Los traspasos son cosa tuya, así que quedan fuera.',
+    'Una temporada entera con la plantilla, el precio de la entrada y la posición {position} de hoy. No es lo ingresado — eso lo dicen las cuentas. Los traspasos son cosa tuya, así que quedan fuera.',
   'caja.projectionNoteEarly':
     'Una temporada entera con la plantilla y el precio de la entrada de hoy, suponiendo un puesto de media tabla mientras no haya clasificación. Los traspasos son cosa tuya, así que quedan fuera.',
   'caja.wages': 'Salarios',
@@ -286,7 +287,7 @@ export const es: Dictionary = {
   // ── La directiva ─────────────────────────────────────────────────────────
   'board.heading': 'El objetivo',
   'board.fallbackName': 'La directiva',
-  'board.demand': 'El {club} espera {target} o mejor.',
+  'board.demand': 'El {club} espera acabar en la posición {target} o mejor.',
   'board.target': 'Objetivo',
   'board.now': 'Ahora',
   'board.played': 'Jugadas',
@@ -343,9 +344,12 @@ export const es: Dictionary = {
   'news.unlisted': '{player} ya no está en venta',
   'news.seasonEnded': 'La temporada ha terminado',
   'news.seasonStarted': 'Empieza la {season}',
-  'news.boardSacked': 'La directiva te ha destituido. {finish} frente a un objetivo de {target}.',
-  'news.boardWarned': 'La directiva quería {target} y has acabado {finish}. Esperan más.',
-  'news.boardHappy': '{finish}, frente a un objetivo de {target}. La directiva está satisfecha.',
+  'news.boardSacked':
+    'La directiva te ha destituido. Acabaste en la posición {finish}, con un objetivo de {target}.',
+  'news.boardWarned':
+    'La directiva quería la posición {target} y acabaste en la {finish}. Esperan más.',
+  'news.boardHappy':
+    'Acabaste en la posición {finish}, con un objetivo de {target}. La directiva está satisfecha.',
   'news.expansionStarted.one':
     'Empiezan las obras de {seats} asiento nuevo — {cost}, listo para la {season}',
   'news.expansionStarted.other':

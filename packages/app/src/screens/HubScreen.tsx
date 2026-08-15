@@ -1,9 +1,12 @@
-import { isSeasonComplete } from '@fm/domain'
+import { useMemo } from 'react'
+import { type ClubId, computeTable, isSeasonComplete, recentResultsFor } from '@fm/domain'
+import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import { HubFigure } from './HubFigure.tsx'
 import { NotificationList } from './NotificationList.tsx'
 import { type FigureKey } from './sprites.ts'
@@ -131,6 +134,21 @@ export function HubScreen() {
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
+  const form = recentResultsFor(game.season.fixtures, game.managedClubId, FORM_MATCHES)
+  const clubName = (id: ClubId) => game.clubs.find((c) => c.id === id)?.name ?? '???'
+
+  // Where you stand. Memoised because the hub re-renders on every tick of the clock
+  // and this walks all 380 fixtures; the reducer replaces `game` wholesale, so identity
+  // is the right dependency. The table is kept, not just the index — `bandFor` needs
+  // the league size to know where the relegation zone starts.
+  const standing = useMemo(() => {
+    const table = computeTable(game.competition.clubIds, game.season.fixtures)
+    return {
+      position: table.findIndex((row) => row.clubId === game.managedClubId) + 1,
+      total: table.length,
+    }
+  }, [game])
+  const band = bandFor(standing.position, standing.total)
   const weak = weakLineup(game)
   const finished = isSeasonComplete(game)
   const notices = noticesFrom(feed, game, translator).slice(0, 12)
@@ -184,19 +202,37 @@ export function HubScreen() {
               <span className="stat__value hub__date">{date(game.season.currentDate)}</span>
             </div>
             <div className="stat">
+              <span className="stat__label">{t('hub.position')}</span>
+              {/* Colour is never the only signal — the band's name is on the element
+                  and available to a screen reader, exactly as the table's rows do it. */}
+              <span
+                className={`stat__value hub__position ${band?.className ?? ''}`}
+                title={band === null ? undefined : t(band.label)}
+              >
+                {standing.position > 0 ? standing.position : '—'}
+                {/* The leading space is load-bearing: without it the accessible name
+                    runs together as "20Relegated", the same wart a disabled hub tile
+                    has with its milestone badge. */}
+                {band !== null && <span className="visually-hidden"> {t(band.label)}</span>}
+              </span>
+            </div>
+            <div className="stat">
               <span className="stat__label">{t('hub.budget')}</span>
               <span className="stat__value hub__date">{money(club?.budget ?? 0)}</span>
             </div>
           </div>
+          {/* How the team is actually going, which the hub said nothing about — the
+              classification answered it in a table you had to go and read. Derived
+              from the fixtures rather than the news feed: the feed is session-only
+              and capped, so a strip built on it would blank after a reload. */}
+          <FormStrip results={form} names={clubName} translator={translator} />
         </section>
 
         <section className="screen hub__next">
           <h2 className="screen__heading">{t('hub.nextMatch')}</h2>
           {game.board.sacked ? (
             <p className="hub__warning" role="status">
-              {t('hub.dismissed', {
-                target: t('shell.position', { position: game.board.target }),
-              })}
+              {t('hub.dismissed', { target: game.board.target })}
             </p>
           ) : matchday === null ? (
             <p className="screen__note">{t('hub.seasonOver')}</p>

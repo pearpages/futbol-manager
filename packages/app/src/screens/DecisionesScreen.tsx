@@ -16,7 +16,6 @@ export function DecisionesScreen() {
   const game = useGame((s) => s.game)
   const go = useGame((s) => s.go)
   const { t } = useT()
-  const ordinal = (position: number) => t('shell.position', { position })
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const table = computeTable(game.competition.clubIds, game.season.fixtures)
@@ -36,19 +35,19 @@ export function DecisionesScreen() {
           <p className="decisiones-screen__demand">
             {t('board.demand', {
               club: club?.name ?? t('board.fallbackName'),
-              target: ordinal(target),
+              target,
             })}
           </p>
 
           <div className="decisiones-screen__stats">
             <div className="stat">
               <span className="stat__label">{t('board.target')}</span>
-              <span className="stat__value">{ordinal(target)}</span>
+              <span className="stat__value">{target}</span>
             </div>
             <div className="stat">
               <span className="stat__label">{t('board.now')}</span>
               <span className={`stat__value${onCourse ? ' is-in' : ' is-out'}`}>
-                {standing > 0 ? ordinal(standing) : t('squad.notSelected')}
+                {standing > 0 ? standing : t('squad.notSelected')}
               </span>
             </div>
             <div className="stat">

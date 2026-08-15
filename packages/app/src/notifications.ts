@@ -181,10 +181,7 @@ export function describe(
 
     case 'BoardVerdict': {
       const key = `board-${event.startYear}`
-      const params = {
-        finish: t('shell.position', { position: event.finish }),
-        target: t('shell.position', { position: event.target }),
-      }
+      const params = { finish: event.finish, target: event.target }
       if (event.dismissed) return { key, text: t('news.boardSacked', params), tone: 'bad' }
       if (!event.met) return { key, text: t('news.boardWarned', params), tone: 'bad' }
       return { key, text: t('news.boardHappy', params), tone: 'good' }

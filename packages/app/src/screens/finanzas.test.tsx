@@ -160,7 +160,7 @@ describe('Decisiones', () => {
     openScreen('nav.decisiones')
 
     const target = game().board.target
-    expect(screen.getAllByText(t('shell.position', { position: target })).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(String(target)).length).toBeGreaterThan(0)
     expect(document.querySelectorAll('.decisiones-screen__strike')).toHaveLength(STRIKES_ALLOWED)
   })
 

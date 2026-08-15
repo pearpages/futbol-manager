@@ -51,6 +51,15 @@
   --fm-series-a: var(--fm-champion);
   --fm-series-b: var(--fm-ucl);
 
+  /* ── Results ──────────────────────────────────────────────────────────────
+     A form guide reads by colour, and the palette above has no green, red or
+     blue *named for what they mean here*. Aliases rather than new colours, for
+     the reason the bands comment gives: writing `--fm-uecl` to mean "won" is
+     exactly the ambiguity that cost a position once already. */
+  --fm-win: var(--fm-uecl);
+  --fm-draw: var(--fm-ucl);
+  --fm-loss: var(--fm-relegation);
+
   /* Brass — the one interactive accent, picked up from the trophy. */
   --fm-accent: #e8b33a;
   --fm-accent-ink: #201704;

@@ -34,7 +34,6 @@ export const ca: Dictionary = {
   // ── El marc ──────────────────────────────────────────────────────────────
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Jornada {round}',
-  'shell.position': '{position}è',
   'shell.windowOpen.one': 'Mercat obert · {count} dia',
   'shell.windowOpen.other': 'Mercat obert · {count} dies',
 
@@ -48,13 +47,14 @@ export const ca: Dictionary = {
   'hub.arrivesAt': 'Arriba a {milestone}',
   'hub.date': 'Data',
   'hub.budget': 'Pressupost',
+  'hub.position': 'Posició',
   'hub.nextMatch': 'Proper partit',
   'hub.seasonOver': 'La temporada s’ha acabat.',
   'hub.today': 'Avui',
   'hub.inDays.one': 'en {count} dia',
   'hub.inDays.other': 'en {count} dies',
   'hub.dismissed':
-    'La junta t’ha destituït. En volien {target} i no ho van aconseguir dues temporades seguides.',
+    'La junta t’ha destituït. Volien la posició {target} i no ho van aconseguir dues temporades seguides.',
   'hub.weakLineup':
     'El teu onze no és el més fort — {current} contra {best}. Fitxar algú no el fa titular.',
   'hub.startSeason': 'Començar {season}',
@@ -85,6 +85,7 @@ export const ca: Dictionary = {
   'table.date': 'Data',
   'table.latestResults': 'Últims resultats',
   'table.noResults': 'Avança el dia per jugar la propera jornada.',
+  'form.notPlayed': 'Encara no jugat',
 
   // ── Plantilla ────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Plantilla',
@@ -274,7 +275,7 @@ export const ca: Dictionary = {
     'Disponible és el que pots comprometre: el teu saldo més el descobert. Pagues interessos mentre siguis en números vermells, i la junta no t’ho té en compte.',
   'caja.projection': 'Previsió',
   'caja.projectionNote':
-    'Una temporada sencera amb la plantilla, el preu de l’entrada i el {position}è lloc d’avui. No és el que has ingressat — això ho diuen els comptes. Els traspassos són cosa teva, així que queden fora.',
+    'Una temporada sencera amb la plantilla, el preu de l’entrada i la posició {position} d’avui. No és el que has ingressat — això ho diuen els comptes. Els traspassos són cosa teva, així que queden fora.',
   'caja.projectionNoteEarly':
     'Una temporada sencera amb la plantilla i el preu de l’entrada d’avui, suposant un lloc de mitja taula mentre no hi hagi classificació. Els traspassos són cosa teva, així que queden fora.',
   'caja.wages': 'Sous',
@@ -286,7 +287,7 @@ export const ca: Dictionary = {
   // ── La junta ─────────────────────────────────────────────────────────────
   'board.heading': 'L’objectiu',
   'board.fallbackName': 'La junta',
-  'board.demand': 'El {club} espera {target} o millor.',
+  'board.demand': 'El {club} espera acabar en la posició {target} o millor.',
   'board.target': 'Objectiu',
   'board.now': 'Ara',
   'board.played': 'Jugades',
@@ -344,9 +345,12 @@ export const ca: Dictionary = {
   'news.unlisted': '{player} ja no està en venda',
   'news.seasonEnded': 'La temporada s’ha acabat',
   'news.seasonStarted': 'Comença la {season}',
-  'news.boardSacked': 'La junta t’ha destituït. {finish} contra un objectiu de {target}.',
-  'news.boardWarned': 'La junta en volia {target} i has acabat {finish}. N’esperen més.',
-  'news.boardHappy': '{finish}, contra un objectiu de {target}. La junta n’està satisfeta.',
+  'news.boardSacked':
+    'La junta t’ha destituït. Vas acabar en la posició {finish}, amb un objectiu de {target}.',
+  'news.boardWarned':
+    'La junta volia la posició {target} i vas acabar en la {finish}. N’esperen més.',
+  'news.boardHappy':
+    'Vas acabar en la posició {finish}, amb un objectiu de {target}. La junta n’està satisfeta.',
   'news.expansionStarted.one':
     'Comencen les obres d’{seats} seient nou — {cost}, a punt per a la {season}',
   'news.expansionStarted.other':

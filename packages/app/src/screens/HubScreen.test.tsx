@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { nextFixtureFor } from '@fm/domain'
+import { computeTable, nextFixtureFor, recentResultsFor } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
+import { bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { advance, advanceUntil, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
+import { FORM_MATCHES } from './FormStrip.tsx'
 import { QUADRANTS } from './HubScreen.tsx'
 
 /**
@@ -209,5 +211,114 @@ describe('the news feed', () => {
     advanceUntil(() => screen.queryAllByText(/Fee agreed|was rejected|Counter-offer/).length > 0, 8)
 
     expect(screen.getAllByText(/Fee agreed|was rejected|Counter-offer/).length).toBeGreaterThan(0)
+  })
+})
+
+describe('the form strip', () => {
+  const pips = () => [...document.querySelectorAll('.form-strip__pip')]
+  const outcomeOf = (pip: Element) =>
+    ['win', 'draw', 'loss'].find((o) => pip.classList.contains(`is-${o}`)) ?? null
+
+  it('always shows ten cells, grey before a ball is kicked', () => {
+    render(<App />)
+
+    expect(pips()).toHaveLength(FORM_MATCHES)
+    expect(pips().map(outcomeOf)).toEqual(Array.from({ length: FORM_MATCHES }, () => null))
+    // Colour is never the only signal.
+    expect(pips()[0]?.textContent).toBe(t('form.notPlayed'))
+  })
+
+  it('fills from the right, so the newest result is the last square', () => {
+    render(<App />)
+    advance() // round one is dated on the season start, so this plays it
+
+    const results = recentResultsFor(game().season.fixtures, MID, FORM_MATCHES)
+    expect(results).toHaveLength(1)
+
+    expect(pips()).toHaveLength(FORM_MATCHES)
+    expect(
+      pips()
+        .slice(0, FORM_MATCHES - 1)
+        .map(outcomeOf),
+    ).toEqual(Array.from({ length: FORM_MATCHES - 1 }, () => null))
+    expect(outcomeOf(pips().at(-1) as Element)).toBe(results[0]?.outcome)
+  })
+
+  /**
+   * Recomputed from the fixtures rather than asserted against a fixed list: the
+   * claim is that the strip agrees with what was actually played, in order.
+   */
+  it('agrees with the fixtures once ten are in the books', () => {
+    render(<App />)
+    advanceUntil(
+      () => recentResultsFor(game().season.fixtures, MID, FORM_MATCHES).length === FORM_MATCHES,
+      // A round is a week, so filling ten squares takes ~70 ticks. Sized well clear
+      // of that: too low fails as "still not done after N presses", which reads as a
+      // broken strip rather than a short guard.
+      120,
+    )
+
+    const results = recentResultsFor(game().season.fixtures, MID, FORM_MATCHES)
+    expect(pips().map(outcomeOf)).toEqual(results.map((r) => r.outcome))
+    // Every square now carries a real sentence naming the opponent.
+    const opponent = game().clubs.find((c) => c.id === results.at(-1)?.opponentId)?.name
+    expect(pips().at(-1)?.textContent).toContain(opponent)
+  })
+
+  it('survives a reload, because it is built from fixtures and not the feed', () => {
+    render(<App />)
+    advanceUntil(() => recentResultsFor(game().season.fixtures, MID, FORM_MATCHES).length >= 2, 30)
+    const before = pips().map(outcomeOf)
+
+    // The feed is session-only and is cleared on load; the fixtures are not.
+    useGame.setState({ feed: [] })
+    expect(pips().map(outcomeOf)).toEqual(before)
+    expect(before.filter(Boolean).length).toBeGreaterThanOrEqual(2)
+  })
+})
+
+describe('the position stat', () => {
+  const stat = () => document.querySelector('.hub__position')
+  const placeOf = (clubId: typeof MID) => {
+    const table = computeTable(game().competition.clubIds, game().season.fixtures)
+    return { position: table.findIndex((r) => r.clubId === clubId) + 1, total: table.length }
+  }
+
+  it('shows the place the classification gives you', () => {
+    render(<App />)
+    advance()
+
+    const { position } = placeOf(MID)
+    expect(position).toBeGreaterThan(0)
+    expect(stat()?.textContent).toContain(String(position))
+  })
+
+  it('takes the band colour, and names it for anyone who cannot see colour', () => {
+    // Drive to a club that is actually in a band rather than hoping the managed one
+    // lands in one — a test that only passes on a lucky table proves nothing.
+    render(<App />)
+    advanceUntil(() => placeOf(MID).position > 0, 5)
+
+    const { position, total } = placeOf(MID)
+    const band = bandFor(position, total)
+    if (band === null) {
+      expect(stat()?.className).not.toMatch(/is-(champion|ucl|uel|uecl|relegation)/)
+    } else {
+      expect(stat()?.className).toContain(band.className)
+      expect(stat()?.textContent).toContain(t(band.label))
+      expect(stat()?.getAttribute('title')).toBe(t(band.label))
+    }
+  })
+
+  it('leaves mid-table uncoloured, which is what mid-table means', () => {
+    // The guard on the guard: a rule that painted every position would satisfy the
+    // test above whenever the managed club happened to sit in a band.
+    render(<App />)
+    for (const position of [7, 8, 12, 17]) {
+      expect(bandFor(position, 20), `position ${String(position)}`).toBeNull()
+    }
+    // And a banded one still resolves, so the check above is not vacuous.
+    expect(bandFor(1, 20)?.className).toBe('is-champion')
+    expect(bandFor(20, 20)?.className).toBe('is-relegation')
   })
 })

@@ -663,3 +663,47 @@ Watching the tick alone would have announced January every year and never a summ
 **Both emission rules were checked by breaking them independently** — the naive month rule fails only the July test, the `<=` variant fails only the once-per-window test. The App test asserts the number **falling** (17 → 16 → 15 → 14) rather than one static figure, because a hardcoded string would satisfy a single assertion perfectly.
 
 **Not seen in a browser this time** — the extension connected for yesterday's entry and was gone again by this one (`list_connected_browsers` → `[]`), so the figures above are a headless dump. **The appearance is unverified:** nothing here proves `Transfer window open · 17 days` fits the corner beside the cog at the narrow breakpoint, and English is the longest of the three.
+
+### 2026-08-15 (b) — the form strip
+
+**Five squares under the hub's `DATA` / `PRESSUPOST` row**: green won, blue drew, red lost, grey not yet played, running **oldest → newest** so the most recent result is the rightmost. The hub said who you are, when it is and what you have, and nothing at all about how the team is going — the classification answered that in a table you had to go and read. 624 tests, `pnpm season` byte-identical, no reducer change, no event, no schema bump.
+
+**Built from `game.season.fixtures`, never from the feed — and that is not a preference.** `TableScreen`'s "Últims resultats" reads `feed`, which is session-only and capped at 60 (`store.ts`), cleared on load and on new game. A form strip built the same way would go blank after every save/reload, which is the one place a _form_ guide must not. There is a test that empties the feed and asserts the strip is unmoved.
+
+**`recentResultsFor` is new domain code — nothing existed.** No form, streak or recent-results function anywhere. It lives in `fixtures.ts` beside `nextFixtureFor`, which is its exact mirror image: that one drops played fixtures and takes the earliest, this one keeps them and takes the latest few.
+
+**The perspective flip is the whole risk, and it is the kind that looks fine.** An away 0–2 is a _win_, so `ours`/`theirs` swap on venue. Reading them straight off the score inverts **every away result** — a strip that is wrong exactly half the time and entirely plausible either way, because nobody checks a colour against a scoreline. Two tests fail when the flip is removed, one of them asserting the same fixture is a win for the away club and a loss for the home one.
+
+**`table.ts` does the same flip and was deliberately not refactored to share it.** Its `record`/`tally` are module-private and it feeds every calibrated band in the project; a tidy-up there buys nothing and risks all of it. Duplication was the cheap side of that trade.
+
+**Three colour tokens were added rather than reaching for the band palette.** `tokens.css` says explicitly that band colours are named for the _competition, not the role_ — the earlier `--fm-europe` was ambiguous enough to lose a whole position through the mapping. So writing `--fm-uecl` to mean "won" is precisely the mistake that comment is a monument to. `--fm-win` / `--fm-draw` / `--fm-loss` are aliases onto the existing colours, following the `--fm-series-a: var(--fm-champion)` precedent already in the file. **No new colour was invented.**
+
+**The strip needed exactly one new dictionary key.** `form.notPlayed` for the grey cells; every played square carries the _feed's own sentence_ — `news.won` / `news.lost` / `news.drew` already existed in all three languages with `{opponent}`, `{ours}`, `{theirs}`. One fact, worded once. The cost, accepted: rewording the feed rewords the tooltips.
+
+**Colour is not the only signal**, per the rule stated beside the notice tones — each square carries that sentence as a `title` and as `visually-hidden` text, the same shape `TableScreen`'s position bands use.
+
+**Blanks pad the left, not the right**, so the newest result is always the rightmost cell and the row does not shuffle sideways as a season fills. Moving the blanks to the other end fails exactly one test, which is what that test is for. Measured at Sarrià: `. . . . .` → `. . . . L` → `. . . L D` → `. . L D L` → `. L D L W` → `L D L W D`.
+
+**Not `.swatch`, and not `chrome.css` yet.** The swatch exists so a position band always has a legend and its modifiers are competition names — sharing it would muddy that. The new `.form-strip` lives in `HubScreen.css` because the house rule graduates a primitive on its _second_ use; the classification sidebar is the obvious second customer.
+
+**Not seen in a browser** — the extension connected once yesterday and has been `[]` ever since. Verified by 624 tests and a throwaway rendered-DOM dump. **Unverified:** whether 14px squares read at that size against the dark screen material, and whether green/blue/red separate at a glance for a colour-blind player — the sentences are there for assistive technology but a red/green pair is the classic hazard, and adding a letter to each square would fix it if it turns out to matter. The dump's language arm also did not re-render (no `act`), so ca/es were not seen rendered here; the sentences are covered by `language.test.tsx` and the new key by the dictionaries parity test.
+
+### 2026-08-15 (c) — position moves to the hub, and stops being an ordinal
+
+**Four changes to what the identity panel says.** The form strip is centred and runs **ten** matches; **position moved from the title bar into `.hub__identity`**, between DATA and PRESSUPOST, sized above its neighbours and coloured by qualification band; and **`shell.position` is deleted outright**. 627 tests, `pnpm season` byte-identical, no domain change at all.
+
+**A real bug went out with the key.** English `shell.position` was `'{position}th'`, so first, second and third rendered as **"1th"**, **"2th"**, **"3th"** — in the title bar, on Decisiones and in every board verdict. Deleting the key removed it rather than patching it, which is the better outcome of the two.
+
+**Removing an ordinal is not free, and the prose is where it bites.** Position was not only a _value_: it was interpolated into six sentences. A bare number dropped into the old wording gives `"El Barça espera 6 o millor"` — six points? — and `"Querían 6"`, six of what. So **the sentences were reworded rather than the parameter swapped**: `board.demand`, `hub.dismissed`, the three `news.board*` keys and `caja.projectionNote`, in all three languages. `caja.projectionNote` had the `è`/`º`/`th` **baked into the string literal**, so it could not have been fixed at the call site at all.
+
+**Position on the hub is band-coloured, and `bandFor` graduated to get there.** `Band`/`BANDS`/`bandFor` moved from `TableScreen.tsx` to **`packages/app/src/bands.ts`** — the hub is the second caller, and the alternative was one screen importing from another. Same graduation `shuffle` made from `market.ts` to `rng.ts`. Gold champion, blue for the Champions League places, red in the relegation zone; **mid-table gets the size and no colour, because mid-table is genuinely nothing** — and there is a test asserting that, since a rule painting every position would satisfy the positive case whenever the managed club happened to sit in a band.
+
+**A wart the DOM dump caught and reasoning had not.** The band's `visually-hidden` label sits inside the same span as the number, so the accessible name read **`20Relegated`** — the same defect a disabled hub tile has with its milestone badge (`"CajaM5"`). Fixed with a leading space in the hidden text. Worth knowing: **`visually-hidden` inside a text-bearing element needs its own separator**, because nothing in the DOM supplies one.
+
+**The bar's separators needed no change at all.** Interpuncts are drawn by `.shell__where > * + *::before` — every child _but the first_ — so removing the position leaves no dangling `·`. That is exactly the case the rule's comment was written for, and there is now a test asserting the bar does not end in one.
+
+**Measured at Sarrià over twelve rounds:** the strip fills right-to-left and slides (`. . . . . . . . . L` → `L W D D L D D L W L`), and the position tracks the classification exactly — 18th of 20 with `is-relegation`, confirmed against `computeTable` at the end of the run.
+
+**Two limits worth knowing.** The hub centre column is **18rem**, so three stats plus a ten-square strip is close to the edge: ten pips at 14px with `--fm-space-1` gaps is 176px inside ~256px of usable width, and if a fourth vital ever lands there the gap is what should give, not the position. And the `advanceUntil` guard in the strip test had to go 60 → 120: ten rounds is ~70 ticks, and too low fails as a confusing "still not done after N presses" rather than as a wrong assertion.
+
+**Not seen in a browser** — `list_connected_browsers` empty again. Verified by 627 tests and a throwaway DOM dump. **Unverified:** whether three vitals actually fit 18rem at the rendered font sizes without wrapping, and whether `--fm-text-lg` reads as "highlighted" beside two `--fm-text-md` neighbours.

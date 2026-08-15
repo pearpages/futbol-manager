@@ -122,7 +122,9 @@ describe('the title bar says where you stand', () => {
     expect(within(bar()).getByText(t('shell.matchday', { round: 2 }))).toBeDefined()
   })
 
-  it('shows the position the classification gives you', () => {
+  // Position moved to the hub, where it is looked at rather than passed. Asserted
+  // here so it cannot drift back into a bar that has no room to spare.
+  it('leaves the position to the hub', () => {
     render(<App />)
     advance()
 
@@ -131,7 +133,10 @@ describe('the title bar says where you stand', () => {
     const place = table.findIndex((row) => row.clubId === clubId) + 1
 
     expect(place).toBeGreaterThan(0)
-    expect(within(bar()).getByText(t('shell.position', { position: place }))).toBeDefined()
+    expect(bar().querySelector('.shell__position')).toBeNull()
+    // And no dangling interpunct where it used to be — the separators are drawn
+    // on every child but the first, so the bar ends at the matchday.
+    expect(bar().querySelector('.shell__where')?.textContent?.trim().endsWith('·')).toBe(false)
   })
 
   // The date and the next fixture were a weaker copy of what the hub shows, and the

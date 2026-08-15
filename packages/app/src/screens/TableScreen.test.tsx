@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { render } from '@testing-library/react'
-import { BANDS, bandFor } from './TableScreen.tsx'
+import { BANDS, bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { translatorFor } from '../i18n/useT.ts'

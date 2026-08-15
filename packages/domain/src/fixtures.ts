@@ -120,3 +120,55 @@ export function nextFixtureFor(fixtures: readonly Fixture[], clubId: ClubId): Fi
 
   return next
 }
+
+export type Outcome = 'win' | 'draw' | 'loss'
+
+/** A played fixture from one club's point of view. */
+export interface ClubResult {
+  readonly fixtureId: FixtureId
+  readonly opponentId: ClubId
+  readonly home: boolean
+  readonly ours: number
+  readonly theirs: number
+  readonly outcome: Outcome
+}
+
+/**
+ * A club's last `count` results, **oldest first** — form-guide order, so the most
+ * recent match is the last element.
+ *
+ * The mirror image of {@link nextFixtureFor}: that one drops played fixtures and takes
+ * the earliest, this one keeps them and takes the latest few.
+ *
+ * **The perspective flip is the whole risk here.** An away 0–2 is a win, so `ours` and
+ * `theirs` swap on `home` — reading them straight off the score inverts every away
+ * result and still looks plausible. `table.ts` does the same flip by argument order and
+ * keeps its version private; that file feeds every calibrated band in the project, so
+ * it is deliberately left alone rather than refactored to share this.
+ */
+export function recentResultsFor(
+  fixtures: readonly Fixture[],
+  clubId: ClubId,
+  count: number,
+): ClubResult[] {
+  return fixtures
+    .filter((f) => f.result !== null && (f.homeId === clubId || f.awayId === clubId))
+    .sort((a, b) => a.date - b.date)
+    .slice(-count)
+    .map((fixture) => {
+      const home = fixture.homeId === clubId
+      /* c8 ignore next */
+      if (fixture.result === null) throw new Error('unplayed fixture survived the filter')
+      const ours = home ? fixture.result.home : fixture.result.away
+      const theirs = home ? fixture.result.away : fixture.result.home
+
+      return {
+        fixtureId: fixture.id,
+        opponentId: home ? fixture.awayId : fixture.homeId,
+        home,
+        ours,
+        theirs,
+        outcome: ours > theirs ? 'win' : ours < theirs ? 'loss' : 'draw',
+      }
+    })
+}
