@@ -47,3 +47,33 @@ describe('the attribute bar actually paints', () => {
     }
   })
 })
+
+describe('the sortable column header', () => {
+  it('inherits the header type, or it renders in the browser default font', () => {
+    // `.data-table__sort` is a `<button>` inside a `<th>`, and a button does not
+    // inherit `font` from its parent — UA stylesheets set their own. Without
+    // `font: inherit` the condensed uppercase header silently becomes 13px system
+    // sans, on every sortable table at once. jsdom performs no layout and the app
+    // project runs `css: false`, so nothing in the suite could see it.
+    const rule = ruleFor('.data-table__sort')
+    expect(rule, '.data-table__sort has no rule').not.toBeNull()
+    expect(rule).toMatch(/font:\s*inherit/)
+    expect(rule).toMatch(/letter-spacing:\s*inherit/)
+    expect(rule).toMatch(/text-transform:\s*inherit/)
+  })
+
+  it('reads as a control when pointed at, and shows which column is active', () => {
+    expect(ruleFor('.data-table__sort')).toMatch(/cursor:\s*pointer/)
+    expect(ruleFor('.data-table__sort.is-active')).toMatch(/var\(--fm-champion\)/)
+  })
+
+  it('left the screen it was graduated from', () => {
+    // The house rule promotes a primitive on its second use, and the market's own
+    // stylesheet named this move. A copy left behind is how two of them drift.
+    const market = readFileSync(
+      resolve(process.cwd(), 'packages/app/src/screens/MarketScreen.css'),
+      'utf8',
+    )
+    expect(market).not.toContain('market-screen__sort')
+  })
+})

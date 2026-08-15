@@ -130,6 +130,34 @@
   color: var(--fm-screen-ink-soft);
 }
 
+/*
+ * A sortable column header. Inherits the header's own type so it reads as a label
+ * rather than a control until you hover it — which is why it declares no weight,
+ * size or alignment of its own and must keep `font: inherit`.
+ *
+ * Graduated from `.market-screen__sort`, whose comment promised this move: the
+ * market was the first sortable table, and the classification, the squad and the
+ * club picker are the second use.
+ */
+.data-table__sort {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.data-table__sort:hover {
+  color: var(--fm-screen-ink);
+}
+
+.data-table__sort.is-active {
+  color: var(--fm-champion);
+}
+
 /* The position band — how a Spanish classification is actually read. */
 .data-table__band {
   width: 3px;

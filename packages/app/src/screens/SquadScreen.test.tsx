@@ -170,3 +170,94 @@ describe('what the squad costs', () => {
     expect(row.getAllByText(String(toCivil(player.contract.until).y)).length).toBeGreaterThan(0)
   })
 })
+
+describe('sorting the squad', () => {
+  const { t } = translatorFor('en')
+
+  /** The rendered rows as `[number, position chip, name]`, in order. */
+  function rendered() {
+    return [...document.querySelectorAll('.squad-screen tbody tr')].map((tr) => {
+      const cells = tr.querySelectorAll('td')
+      return {
+        number: Number(cells[0]?.textContent),
+        position: cells[1]?.textContent?.trim() ?? '',
+        name: cells[2]?.textContent?.trim() ?? '',
+      }
+    })
+  }
+
+  const header = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) })
+
+  /** Which players currently offer a usable List button. */
+  function listable() {
+    return rendered()
+      .filter(({ name }) => {
+        const button = within(rowFor(name)).getByRole('button', { name: /^(List|Listed)$/ })
+        return !(button as HTMLButtonElement).disabled
+      })
+      .map((r) => r.name)
+      .sort()
+  }
+
+  it('sorts by wage, dearest first', () => {
+    // The question the wage column was added to answer, and it could not be asked.
+    openSquad()
+    fireEvent.click(header(t('squad.column.wage')))
+
+    const squad = game().squads[game().managedClubId] ?? []
+    const wageOf = new Map(squad.map((p) => [p.name, p.contract.wage]))
+    const shown = rendered().map((r) => wageOf.get(r.name) ?? 0)
+
+    expect(shown).toEqual([...shown].sort((a, b) => b - a))
+    expect(shown[0]).toBe(Math.max(...squad.map((p) => p.contract.wage)))
+  })
+
+  it('still numbers the rows 1..N once sorted', () => {
+    // The `#` column counts the rows as rendered, so it renumbers rather than
+    // travelling with a player. Its existing invariant has to survive the feature.
+    openSquad()
+    fireEvent.click(header(t('squad.column.age')))
+
+    const numbers = rendered().map((r) => r.number)
+    const size = (game().squads[game().managedClubId] ?? []).length
+    expect(numbers).toEqual(Array.from({ length: size }, (_, i) => i + 1))
+  })
+
+  it('sorts positions by the team sheet, not by the alphabet of the label', () => {
+    // Sorting the rendered chip would order Catalan `POR/DEF/MIG/DAV` as
+    // DAV→DEF→MIG→POR and English `GK/DF/MF/FW` as DF→FW→GK→MF — the same squad
+    // reading differently in each language. The domain's own order is language-free.
+    openSquad()
+    fireEvent.click(header(t('squad.column.position')))
+    fireEvent.click(header(t('squad.column.position'))) // ascending: keepers first
+
+    const order = ['GK', 'DF', 'MF', 'FW']
+    const ranks = rendered().map((r) => order.indexOf(r.position))
+    expect(ranks).not.toContain(-1)
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b))
+  })
+
+  it('does not change who is sellable when you sort the table', () => {
+    // `surplus` runs `bestXI`, which orders on `overall` alone — and `Array.sort` is
+    // stable, so among players level on overall in a position, whoever comes first in
+    // the input takes the shirt. Feed it the *displayed* order and a manager's click
+    // silently decides which players he is allowed to sell.
+    //
+    // San Sebastián, specifically: at the opening seed a wage sort moves four players
+    // in and out of its surplus. Written at the default mid-table club this passed
+    // with the bug in place — that squad happens to have no tie at an XI boundary, so
+    // it proved nothing. Measured across the division, 8 of 20 clubs are affected.
+    useGame.getState().newGame('san-sebastian')
+    render(<App />)
+    openScreen('nav.squad')
+
+    const before = listable()
+    expect(before.length).toBeGreaterThan(0)
+
+    fireEvent.click(header(t('squad.column.wage')))
+    expect(listable()).toEqual(before)
+
+    fireEvent.click(header(t('squad.column.player')))
+    expect(listable()).toEqual(before)
+  })
+})

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { render } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { computeTable } from '@fm/domain'
 import { BANDS, bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { translatorFor } from '../i18n/useT.ts'
-import { openScreen } from '../testing.ts'
+import { advance, back, openScreen } from '../testing.ts'
 
 const { t } = translatorFor('en')
 
@@ -88,5 +89,106 @@ describe('the legend', () => {
 
     const hidden = document.querySelectorAll('.data-table__band .visually-hidden')
     expect(hidden).toHaveLength(9)
+  })
+})
+
+describe('sorting the classification', () => {
+  /** Every row as `[position, club, goalsFor]`, in the order rendered. */
+  function rows() {
+    return [...document.querySelectorAll('.table-screen__main tbody tr')].map((tr) => {
+      const cells = tr.querySelectorAll('td')
+      return {
+        position: Number(cells[1]?.textContent),
+        // The badge sits in the same cell and carries the three-letter code, so the
+        // cell's own text reads `BARBarcelona`. The name is the trailing text node.
+        club:
+          cells[1]?.nextElementSibling?.querySelector('.club-cell')?.lastChild?.textContent ?? '',
+        lost: Number(cells[6]?.textContent),
+        band: cells[0]?.className ?? '',
+      }
+    })
+  }
+
+  /** A part-played season, so the clubs are not all level on nothing. */
+  function openPlayedTable() {
+    useGame.getState().newGame()
+    render(<App />)
+    advance(40)
+    openScreen('nav.table')
+  }
+
+  const header = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) })
+
+  it('keeps the real league position on the row when sorted by something else', () => {
+    // The headline risk, and the reason `Standing` bakes position and band in before
+    // sorting. Read off the render index instead, the league's most-beaten club would
+    // show as 1st wearing the champion's colours — a screen stating something false.
+    //
+    // Sorted on *defeats*, descending: the leader has among the fewest, so he is
+    // driven far down the list. Written first against goals scored, this test passed
+    // with the bug in place — the leader happened to be the top scorer too, so row 1
+    // was the right answer for the wrong reason. Hence the guard below.
+    openPlayedTable()
+    const leader = rows()[0]
+    expect(leader?.position).toBe(1)
+
+    fireEvent.click(header(t('table.column.lost')))
+    const sorted = rows()
+
+    // Genuinely reordered, and sorted by the column asked for.
+    const lost = sorted.map((r) => r.lost)
+    expect(lost).toEqual([...lost].sort((a, b) => b - a))
+
+    // Guard on the guard: if the leader were still on the top row, everything below
+    // would hold under the very bug this exists to catch.
+    const movedTo = sorted.findIndex((r) => r.club === leader?.club)
+    expect(movedTo).toBeGreaterThan(0)
+
+    // The champion's band and the number 1 travelled with the club, not with the
+    // row — and nobody else acquired them.
+    expect(sorted[movedTo]?.position).toBe(1)
+    expect(sorted[movedTo]?.band).toMatch(/is-champion/)
+    expect(sorted.filter((r) => r.band.includes('is-champion'))).toHaveLength(1)
+
+    // And whoever is on the top row is wearing his own position, not a 1.
+    expect(sorted[0]?.position).not.toBe(1)
+
+    // Positions are a permutation of 1..20, not a re-count of the rows.
+    expect([...sorted.map((r) => r.position)].sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 20 }, (_, i) => i + 1),
+    )
+  })
+
+  it('cycles back to the classification, not to some other order', () => {
+    // The home state of every other table is arbitrary; here it is the league itself.
+    openPlayedTable()
+    const original = rows().map((r) => r.club)
+
+    const points = () => header(t('table.column.points'))
+    fireEvent.click(points())
+    fireEvent.click(points())
+    fireEvent.click(points())
+
+    expect(rows().map((r) => r.club)).toEqual(original)
+    expect(rows().map((r) => r.position)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1))
+  })
+
+  it('sorts the club column by name, and survives a trip to the hub', () => {
+    openPlayedTable()
+    fireEvent.click(header(t('table.column.club')))
+    fireEvent.click(header(t('table.column.club')))
+
+    const names = rows().map((r) => r.club)
+    expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en')))
+
+    // Sorting is a sitting concern: leaving the screen forgets it, which is the
+    // same contract the market has always had.
+    back()
+    openScreen('nav.table')
+    const table = computeTable(
+      useGame.getState().game.competition.clubIds,
+      useGame.getState().game.season.fixtures,
+    )
+    expect(rows().map((r) => r.position)).toEqual(table.map((_, i) => i + 1))
   })
 })

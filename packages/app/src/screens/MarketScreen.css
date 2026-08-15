@@ -42,33 +42,6 @@
   gap: 2px;
 }
 
-/*
- * A sortable column header. Inherits the header's own type so it reads as a label
- * rather than a control until you hover it.
- *
- * Local, not in chrome.css: this is the project's first sortable table, and the
- * house rule promotes a primitive on its *second* use. The next screen that needs
- * sorting is the one that moves it.
- */
-.market-screen__sort {
-  padding: 0;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-}
-
-.market-screen__sort:hover {
-  color: var(--fm-screen-ink);
-}
-
-.market-screen__sort.is-active {
-  color: var(--fm-champion);
-}
-
 .market-screen__count {
   color: var(--fm-screen-ink-soft);
   font-family: var(--fm-font-condensed);

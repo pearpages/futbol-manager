@@ -33,6 +33,8 @@ import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { describe as describeEvent, lookupFor } from '../notifications.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
+import { type Sort, sortedBy } from '../sorting.ts'
+import { SortHeader } from './SortHeader.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
 
@@ -116,11 +118,6 @@ export function listingsFor(game: GameState): Listing[] {
 
 export type SortKey = 'overall' | 'fee' | 'age' | 'name' | 'club'
 
-export interface Sort {
-  readonly key: SortKey
-  readonly desc: boolean
-}
-
 /** Text columns read left, numbers read right — the `data-table` convention. */
 const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
   name: 'is-text',
@@ -131,29 +128,41 @@ const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
 }
 
 /**
- * Ordering for one sort setting.
+ * What a column sorts on.
  *
- * There is no default: unsorted means market order. These exist because a list of
- * two hundred is only navigable if you can take an angle on it — sorting by
- * `Asking` is how a club with no money finds what it can afford — but none of
- * them tells you whether a player would actually get into your team.
+ * Unsorted means market order — the shuffle. These exist because a list of two
+ * hundred is only navigable if you can take an angle on it — sorting by `Asking` is
+ * how a club with no money finds what it can afford — but none of them tells you
+ * whether a player would actually get into your team.
+ *
+ * `club` sorts on the seller's **name**, not his id. It used to sort on the id, which
+ * is an ASCII slug — `a-coruna` for `A Coruña`, `malaga` for `Málaga`. On today's
+ * twenty clubs the two orderings happen to coincide exactly, so nothing was visibly
+ * wrong; it sorted a column by a key the column does not show and got away with it.
+ * The name is what the reader is comparing, and it is what the locale collation
+ * threaded through this screen was obtained for.
+ *
+ * A free agent has no seller and sorts as the empty string, which keeps the free
+ * agents together instead of scattering them through whatever `market.freeAgent`
+ * happens to translate to.
  */
-export function comparatorFor(sort: Sort, date: DayNumber, locale: string) {
-  const direction = sort.desc ? -1 : 1
-  return (a: Listing, b: Listing): number => {
-    const by = (value: number) => value * direction
-    switch (sort.key) {
-      case 'overall':
-        return by(overall(a.player) - overall(b.player))
-      case 'fee':
-        return by(a.fee - b.fee)
-      case 'age':
-        return by(ageOn(a.player, date) - ageOn(b.player, date))
-      case 'name':
-        return by(a.player.name.localeCompare(b.player.name, locale))
-      case 'club':
-        return by(String(a.from ?? '').localeCompare(String(b.from ?? ''), locale))
-    }
+export function listingValue(
+  listing: Listing,
+  key: SortKey,
+  date: DayNumber,
+  nameOf: (id: ClubId) => string,
+): number | string {
+  switch (key) {
+    case 'overall':
+      return overall(listing.player)
+    case 'fee':
+      return listing.fee
+    case 'age':
+      return ageOn(listing.player, date)
+    case 'name':
+      return listing.player.name
+    case 'club':
+      return listing.from === null ? '' : nameOf(listing.from)
   }
 }
 
@@ -173,7 +182,7 @@ export function MarketScreen() {
   /** Empty means every position, so the default is unfiltered. */
   const [positions, setPositions] = useState<readonly Position[]>([])
   /** `null` is market order — the shuffle. A column cycles back to it. */
-  const [sort, setSort] = useState<Sort | null>(null)
+  const [sort, setSort] = useState<Sort<SortKey> | null>(null)
 
   const dealRef = useRef<HTMLElement>(null)
 
@@ -231,38 +240,21 @@ export function MarketScreen() {
     .filter((l) => !onlyAffordable || affordable(l.fee))
     .filter((l) => positions.length === 0 || positions.includes(l.player.position))
 
-  const listings = sort === null ? filtered : filtered.sort(comparatorFor(sort, date, locale))
+  const listings = sortedBy(
+    filtered,
+    sort,
+    (listing, key) => listingValue(listing, key, date, (id) => names.get(id)?.name ?? ''),
+    locale,
+  )
 
   function toggle<T>(list: readonly T[], value: T): T[] {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
   }
 
-  /**
-   * A column header that sorts, cycling descending → ascending → market order.
-   *
-   * The third click matters: without a way back, one click would lose the shuffle
-   * for the rest of the session.
-   */
-  function SortHeader({ column, label }: { column: SortKey; label: string }) {
-    const active = sort !== null && sort.key === column
-    const next = (): Sort | null => {
-      if (!active) return { key: column, desc: true }
-      return sort.desc ? { key: column, desc: false } : null
-    }
+  /** The shared header, bound to this screen's sort state. */
+  function column(key: SortKey, label: string) {
     return (
-      <th
-        className={SORT_ALIGN[column]}
-        aria-sort={active ? (sort.desc ? 'descending' : 'ascending') : 'none'}
-      >
-        <button
-          type="button"
-          className={`market-screen__sort${active ? ' is-active' : ''}`}
-          onClick={() => setSort(next())}
-        >
-          {label}
-          {active && <span aria-hidden="true">{sort.desc ? ' ▾' : ' ▴'}</span>}
-        </button>
-      </th>
+      <SortHeader column={key} label={label} sort={sort} onSort={setSort} align={SORT_ALIGN[key]} />
     )
   }
 
@@ -399,13 +391,13 @@ export function MarketScreen() {
           <table className="data-table">
             <thead className="data-table__head">
               <tr>
-                <th className="is-text">Pos</th>
-                <SortHeader column="name" label="Player" />
-                <SortHeader column="club" label="Club" />
-                <SortHeader column="age" label="Age" />
-                <SortHeader column="overall" label="Ovr" />
-                <SortHeader column="fee" label="Asking" />
-                <th className="is-text">Act</th>
+                <th className="is-text">{t('market.column.position')}</th>
+                {column('name', t('market.column.player'))}
+                {column('club', t('market.column.club'))}
+                {column('age', t('market.column.age'))}
+                {column('overall', t('market.column.overall'))}
+                {column('fee', t('market.column.asking'))}
+                <th className="is-text">{t('market.column.action')}</th>
               </tr>
             </thead>
             <tbody>

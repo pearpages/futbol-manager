@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import type { Club } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { useT } from '../i18n/useT.ts'
+import { type Sort, sortedBy } from '../sorting.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { SortHeader } from './SortHeader.tsx'
 import './SetupScreen.css'
 
 /**
@@ -50,9 +53,52 @@ function tierFor(club: Club): Tier {
   return TIERS.find((t) => rating >= t.min) ?? TIERS[TIERS.length - 1]!
 }
 
+type SortKey = 'club' | 'attack' | 'defence' | 'prospects'
+
+/** Text columns read left, numbers read right — the `data-table` convention. */
+const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
+  club: 'is-text',
+  attack: '',
+  defence: '',
+  prospects: 'is-text',
+}
+
 export function SetupScreen() {
   const newGame = useGame((s) => s.newGame)
-  const { t } = useT()
+  const { t, locale } = useT()
+
+  /** `null` is the order `DEFAULT_CLUBS` is authored in — strongest first. */
+  const [sort, setSort] = useState<Sort<SortKey> | null>(null)
+
+  // `sortedBy` copies, which matters here more than anywhere: `DEFAULT_CLUBS` is a
+  // module constant shared with the rest of the app, and sorting it in place would
+  // reorder the league for everyone.
+  const clubs = sortedBy(
+    DEFAULT_CLUBS,
+    sort,
+    (club, key) => {
+      switch (key) {
+        case 'club':
+          return club.name
+        case 'attack':
+          return club.attack
+        case 'defence':
+          return club.defence
+        case 'prospects':
+          // What `tierFor` itself reads, so the tiers come out contiguous rather
+          // than in the alphabetical order of their translated labels.
+          return (club.attack + club.defence) / 2
+      }
+    },
+    locale,
+  )
+
+  /** The shared header, bound to this screen's sort state. */
+  function column(key: SortKey, label: string) {
+    return (
+      <SortHeader column={key} label={label} sort={sort} onSort={setSort} align={SORT_ALIGN[key]} />
+    )
+  }
 
   return (
     <div className="setup">
@@ -63,15 +109,16 @@ export function SetupScreen() {
         <table className="data-table">
           <thead className="data-table__head">
             <tr>
-              <th className="is-text">{t('setup.column.club')}</th>
-              <th>{t('setup.column.attack')}</th>
-              <th>{t('setup.column.defence')}</th>
-              <th className="is-text">{t('setup.column.prospects')}</th>
+              {column('club', t('setup.column.club'))}
+              {column('attack', t('setup.column.attack'))}
+              {column('defence', t('setup.column.defence'))}
+              {column('prospects', t('setup.column.prospects'))}
+              {/* A column of buttons — nothing to sort on. */}
               <th />
             </tr>
           </thead>
           <tbody>
-            {DEFAULT_CLUBS.map((club) => {
+            {clubs.map((club) => {
               const tier = tierFor(club)
               return (
                 <tr key={club.id} className="data-table__row">

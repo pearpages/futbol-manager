@@ -19,7 +19,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { ADVANCE, advance, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
-import { listingsFor, marketSeed } from './MarketScreen.tsx'
+import { listingsFor, listingValue, marketSeed } from './MarketScreen.tsx'
 
 /**
  * The market screen, driving the real store and the real reducer.
@@ -640,5 +640,35 @@ describe('what a bid really costs', () => {
     // the loop above without discriminating at all.
     expect(shown.size).toBeGreaterThan(0)
     expect(shown.size).toBeLessThan(all.length)
+  })
+})
+
+describe('what a market column sorts on', () => {
+  const { t } = translatorFor('en')
+
+  it('sorts the club column on the name shown, not on the club id', () => {
+    // It sorted on `listing.from`, an ASCII slug — `a-coruna` for `A Coruña`. On
+    // today's twenty clubs slug order and name order coincide exactly, so nothing
+    // looked wrong; the column was simply keyed on something it does not display.
+    // Asserted on the accessor rather than on the rendered order, because an order
+    // that is currently identical either way would prove nothing.
+    const seller = DEFAULT_CLUBS.find((c) => c.id === 'a-coruna')
+    if (seller === undefined) throw new Error('no club')
+
+    const listing = { player: {} as never, from: seller.id, fee: 0 }
+    expect(listingValue(listing, 'club', fromCivil(2026, 8, 15), () => seller.name)).toBe(
+      seller.name,
+    )
+    expect(listingValue(listing, 'club', fromCivil(2026, 8, 15), () => seller.name)).not.toBe(
+      seller.id,
+    )
+  })
+
+  it('leaves a free agent with no club to sort by, so they stay together', () => {
+    const listing = { player: {} as never, from: null, fee: 0 }
+    expect(listingValue(listing, 'club', fromCivil(2026, 8, 15), () => 'unused')).toBe('')
+    expect(listingValue(listing, 'club', fromCivil(2026, 8, 15), () => 'unused')).not.toBe(
+      t('market.freeAgent'),
+    )
   })
 })

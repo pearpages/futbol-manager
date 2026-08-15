@@ -95,3 +95,49 @@ describe('New career', () => {
     expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
   })
 })
+
+describe('sorting the club picker', () => {
+  /** Club names in rendered order, and the array the screen sorts from. */
+  const rendered = () =>
+    [...document.querySelectorAll('.setup__panel tbody tr')].map(
+      (tr) => tr.querySelector('.club-cell')?.lastChild?.textContent ?? '',
+    )
+
+  const header = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) })
+
+  it('lines the division up by attack', () => {
+    render(<App />)
+    fireEvent.click(header(t('setup.column.attack')))
+
+    const attackOf = new Map(DEFAULT_CLUBS.map((c) => [c.name, c.attack]))
+    const shown = rendered().map((name) => attackOf.get(name) ?? 0)
+    expect(shown).toEqual([...shown].sort((a, b) => b - a))
+  })
+
+  it('never reorders DEFAULT_CLUBS itself', () => {
+    // The picker renders a module constant shared with the whole app. Sorted in
+    // place, one click would reorder the league for every screen and every new
+    // career — which is why `sortedBy` copies unconditionally.
+    const before = DEFAULT_CLUBS.map((c) => c.id)
+    render(<App />)
+    fireEvent.click(header(t('setup.column.club')))
+    fireEvent.click(header(t('setup.column.defence')))
+
+    expect(DEFAULT_CLUBS.map((c) => c.id)).toEqual(before)
+  })
+
+  it('still takes you to the club on the row you press, once sorted', () => {
+    // Rows are looked up by name everywhere else in this file; this is the one that
+    // would catch a sort that reordered the labels but not the click handlers.
+    render(<App />)
+    fireEvent.click(header(t('setup.column.club')))
+
+    const first = rendered()[0] ?? ''
+    const row = screen.getByText(first).closest('tr')
+    if (row === null) throw new Error('no row')
+    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+
+    const chosen = DEFAULT_CLUBS.find((c) => c.name === first)
+    expect(useGame.getState().game.managedClubId).toBe(chosen?.id)
+  })
+})
