@@ -29,6 +29,23 @@ export function isTransferWindowOpen(date: DayNumber): boolean {
   return m === 7 || m === 8 || m === 1
 }
 
+/**
+ * The window opening or closing between two dates, or null if nothing changed.
+ *
+ * The window is a predicate over the date rather than a stored flag, so an opening
+ * is a *change across two dates* — there is no moment the market itself fires.
+ *
+ * Both callers matter. The day tick crosses 31 Dec → 1 Jan and 31 Jan → 1 Feb; the
+ * **summer opening is only ever reached by `StartNewSeason`**, which jumps from the
+ * end of the season straight to 15 August and never sets foot in July. Watching only
+ * the tick would announce January and silently miss every summer — the same trap the
+ * `toCivil(today).d === 1` gate fell into at M4c.
+ */
+export function transferWindowChange(from: DayNumber, to: DayNumber): boolean | null {
+  const open = isTransferWindowOpen(to)
+  return open === isTransferWindowOpen(from) ? null : open
+}
+
 /** Squad floor. A club will not sell below this. */
 export const MIN_SQUAD = 18
 /** Above this a club stops buying regardless — a backstop, not the mechanism. */

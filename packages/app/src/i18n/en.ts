@@ -44,9 +44,7 @@ export const en: Dictionary = {
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Matchday {round}',
   'shell.position': '{position}th',
-  'shell.next': 'Next {opponent} · {when}',
-  'shell.today': 'today',
-  'shell.inDays': 'in {days}d',
+  'shell.windowOpen': 'Transfer window open',
 
   // ── Fixtures ─────────────────────────────────────────────────────────────
   // Home and away as whole phrases: the letter in brackets is an abbreviation of
@@ -353,6 +351,8 @@ export const en: Dictionary = {
   'news.expansionStarted.one': 'Work begins on {seats} new seat — {cost}, ready for {season}',
   'news.expansionStarted.other': 'Work begins on {seats} new seats — {cost}, ready for {season}',
   'news.expansionOpened': 'The new stand is open — {capacity} seats',
+  'news.windowOpened': 'The transfer window is open.',
+  'news.windowClosed': 'The transfer window has closed.',
   'news.unknownPlayer': 'a player',
   'news.freeAgents': 'free agents',
   'news.unknownClub': 'another club',

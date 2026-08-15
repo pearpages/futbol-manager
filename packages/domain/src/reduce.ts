@@ -40,6 +40,7 @@ import {
   needFor,
   runTransferWindow,
   surplus,
+  transferWindowChange,
 } from './market.ts'
 import { contractExpiry, type Player, type PlayerId } from './player.ts'
 import { resolveFixture } from './resolve.ts'
@@ -287,6 +288,18 @@ export interface ExpansionOpened {
   readonly capacity: number
 }
 
+/**
+ * The transfer window opened or closed.
+ *
+ * Emitted wherever the date moves — the day tick and the season rollover both — because
+ * the window is a predicate over the date and the rollover jumps clean over July.
+ */
+export interface TransferWindowChanged {
+  readonly type: 'TransferWindowChanged'
+  readonly open: boolean
+  readonly date: DayNumber
+}
+
 export type Event =
   | MatchPlayed
   | DayAdvanced
@@ -304,6 +317,7 @@ export type Event =
   | TicketPriceSet
   | ExpansionStarted
   | ExpansionOpened
+  | TransferWindowChanged
 
 export interface ReduceResult {
   readonly state: GameState
@@ -382,6 +396,15 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
   const next = applyTransfers(rolled, transfers)
 
   const events: Event[] = [{ type: 'SeasonStarted', startYear: next.season.startYear }]
+
+  // The rollover jumps from the end of one season to 15 August of the next, so it
+  // steps clean over July — this is the *only* path on which the summer window is
+  // ever seen to open. Watching the day tick alone would announce January and
+  // nothing else.
+  const summer = transferWindowChange(state.season.currentDate, next.season.currentDate)
+  if (summer !== null) {
+    events.push({ type: 'TransferWindowChanged', open: summer, date: next.season.currentDate })
+  }
 
   // Seats commissioned a season ago open now. Detected by comparing the ground
   // either side of the rollover rather than by re-deriving the rule, so there is
@@ -1117,6 +1140,13 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   )
 
   events.push({ type: 'DayAdvanced', date: next.season.currentDate })
+
+  // The tick crosses 31 Dec → 1 Jan and 31 Jan → 1 Feb. It never crosses into July,
+  // which is why `StartNewSeason` watches for the same change across its jump.
+  const window = transferWindowChange(today, next.season.currentDate)
+  if (window !== null) {
+    events.push({ type: 'TransferWindowChanged', open: window, date: next.season.currentDate })
+  }
 
   // Emitted once, on the transition — not on every subsequent day.
   if (!wasComplete && isSeasonComplete(next)) {

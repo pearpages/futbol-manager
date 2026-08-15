@@ -12,10 +12,7 @@ import { describe, expect, it } from 'vitest'
  */
 
 // `import.meta.url` is not a file URL under vite-node, so resolve from the root.
-const css = readFileSync(
-  resolve(process.cwd(), 'packages/app/src/styles/chrome.css'),
-  'utf8',
-)
+const css = readFileSync(resolve(process.cwd(), 'packages/app/src/styles/chrome.css'), 'utf8')
 
 /** The declaration block for a selector, or `null` if there is no such rule. */
 function ruleFor(selector: string): string | null {

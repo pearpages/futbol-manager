@@ -208,3 +208,24 @@ describe('counting and collecting', () => {
     expect(notice?.text).toContain('a player')
   })
 })
+
+describe('the transfer window', () => {
+  const change = (open: boolean): Event =>
+    ({ type: 'TransferWindowChanged', open, date: game.season.currentDate }) as Event
+
+  it('says which way it turned, as a whole sentence either way', () => {
+    expect(describeEvent(change(true), game, names, t)?.text).toBe('The transfer window is open.')
+    expect(describeEvent(change(false), game, names, t)?.text).toBe(
+      'The transfer window has closed.',
+    )
+  })
+
+  it('keys the two apart, so a rollover cannot swallow one', () => {
+    // The rollover can emit an opening on the same date a season's last tick
+    // reports a closing, and the feed keys on the pair.
+    const opened = describeEvent(change(true), game, names, t)
+    const closed = describeEvent(change(false), game, names, t)
+    expect(opened?.key).not.toBe(closed?.key)
+    expect(noticesFrom([change(true), change(false)], game, t)).toHaveLength(2)
+  })
+})

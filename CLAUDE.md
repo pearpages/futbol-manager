@@ -568,3 +568,32 @@ And `Open` at the outbox was the last untranslated string on the screen; `market
 **`formatPercent` is new in `i18n/format.ts`** — `22.7%` in English, `22,7 %` in ca/es. The same presentation split `formatMoney` already owns; there was no formatter for it, and one decimal is needed because a forward's share of the defence rounds to nothing whole.
 
 **Still not seen in a browser** — thirteenth failed extension connection; `list_connected_browsers` returned `[]`. Verified by 547 tests and a rendered-DOM dump of a keeper and of a forward compared against his understudy (`+5 / 0 / +9 / +4 / +8 / +14 / −11 / +2` across the eight rows, correctly signed and coloured). **The appearance is unverified:** nothing here proves eight labels fit an octagon at 7px, that gold separates from blue on the dark screen, or that the three model groups sit well at 60rem.
+
+### 2026-08-15 — the corner stops telling the time, and **the game is finally seen in a browser**
+
+**Fourteenth attempt at the Chrome extension, and the first that connected.** Everything below the first paragraph was verified by driving the real app, not by a DOM dump — which is a first for this project, and the reason this entry can say the appearance is right rather than unverified.
+
+**The bar's right corner is now the transfer window and nothing else.** The date and the next fixture were deleted from it. They were a weaker second copy: `HubScreen` already renders the date (`hub__date`) and the whole **Proper partit** panel with the opponent, his badge, the countdown _and_ the controls that act on it — and since `76a8518` the hub is the only place the day can be advanced, so **every tick routes you past the real ones**. The `shell__next` comment defending it ("sleepwalking past your own fixture was the whole complaint") stayed true without the bar's copy; that complaint is answered by where the day controls live, not by the badge.
+
+**What went in its place is the one deadline the game enforces and never announced.** `isTransferWindowOpen` has been a pure predicate over the date since M4b with **no event on either side of it**, so the only way to learn the market had opened was to walk to `MarketScreen` and read a stat — which is to say, by already suspecting. Now `TransferWindowChanged` is emitted, the feed carries a sentence each way, and the corner carries `Mercat obert` **only while it is open**. A badge that is always there is furniture.
+
+**The trap this feature is built around, and the reason it is wired in two places.** The window is a _predicate_, so an opening is a **change across two dates**, and the two date-moving paths are not equivalent:
+
+- `advanceDay` crosses 31 Aug → 1 Sep, 31 Dec → 1 Jan and 31 Jan → 1 Feb.
+- **`startNewSeason` jumps from the end of a season straight to 15 August, stepping clean over July** — so the summer opening is _only ever_ reachable there.
+
+Watching the tick alone would have announced January every year and never a summer. **This is M4c's `toCivil(today).d === 1` bug wearing different clothes** — the same "1 July and 1 August are never reached" fact, arriving a second time by a different route. `transferWindowChange(from, to)` in `market.ts` is the shared predicate; both call sites push from it, and each has a test that fails when only that site is removed.
+
+**Verified in the browser across a full career**, Sarrià, one season and into the next: badge clears on **01/09/2026** with _"El mercat de fitxatges s'ha tancat."_; returns **01/01/2027**; clears **01/02/2027**; and returns **15/08/2027 via the rollover** — the case the day clock cannot reach, confirmed with the rollover flag set. All three languages read correctly in the corner (`Mercat obert` / `Mercado abierto` / `Transfer window open`).
+
+**A dead-key sweep came free with it.** Removing the next-fixture block orphaned `shell.next`, `shell.today` and `shell.inDays` in all three dictionaries — the hub has always used its own `hub.*` set. Deleted. **`dictionaries.test.ts` enforces key _parity_ and cannot see a key nobody uses**, which is exactly how `market.openNegotiation` sat unused from the i18n pass until the negotiation bug found it. Worth a periodic grep; parity is not coverage.
+
+**The safety nets fired as designed, again.** `notifications.ts`'s exhaustive switch refused to compile until `TransferWindowChanged` was handled. Every existing event assertion in the suite is type-filtered, so a new union member perturbed none of them.
+
+**No rng was drawn, and that is the whole reason this was cheap.** Events are not state and are not persisted: `SCHEMA_VERSION` stays at **8**, no migration, no fixture, and `pnpm season` is **byte-identical to `1ef1470`**. Same discipline as M3c's `tempo` vanishing at balanced tactics and M4b's bid subsystem drawing nothing — extend a calibrated model only in ways that are inert when the new feature is unused.
+
+**Every new test was checked against the unbuilt code**, and the two that matter were checked _independently_: breaking the tick emission leaves the rollover test green and vice versa. The badge test was also checked against an unconditional badge, so its second arm genuinely constrains the condition rather than passing on the first.
+
+556 tests, typecheck / lint / format clean.
+
+**One wart this did not touch:** `TableScreen`'s "Matchday" stat is `ceil(played / 10)` — _rounds completed_ — while the bar shows the round you are _about to play_, so the two still disagree by one for most of a season. Flagged in the 2026-08-14 title-bar entry, still a one-line fix, still not what the session was asked for.

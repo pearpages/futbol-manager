@@ -3,9 +3,9 @@ import { suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
 import { bidIsLive } from './bids.ts'
 import { FINANCE } from './finance.ts'
-import { MAX_SQUAD, MIN_SQUAD, surplus, totalBudget } from './market.ts'
+import { MAX_SQUAD, MIN_SQUAD, surplus, totalBudget, transferWindowChange } from './market.ts'
 import { contractMonthsLeft, type Player, type PlayerId } from './player.ts'
-import { addDays } from './time.ts'
+import { addDays, fromCivil, toCivil } from './time.ts'
 import { type Command, type Event, reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
@@ -602,5 +602,55 @@ describe('the shortlist', () => {
 
     dispatch({ type: 'Shortlist', playerId: player.id, on: false })
     expect(state.shortlist).toEqual([])
+  })
+})
+
+/**
+ * The window is a predicate over the date, so nothing used to mark the moment it
+ * turned. You learned it had opened by walking to the market screen and reading a
+ * stat — which is to say, by already suspecting.
+ */
+describe('the window announces itself', () => {
+  it('reports a change and only a change', () => {
+    expect(transferWindowChange(fromCivil(2026, 12, 31), fromCivil(2027, 1, 1))).toBe(true)
+    expect(transferWindowChange(fromCivil(2027, 1, 31), fromCivil(2027, 2, 1))).toBe(false)
+    expect(transferWindowChange(fromCivil(2027, 8, 30), fromCivil(2027, 8, 31))).toBe(null)
+    expect(transferWindowChange(fromCivil(2027, 3, 4), fromCivil(2027, 3, 5))).toBe(null)
+  })
+
+  it('marks the closing and the January opening as the clock passes them', () => {
+    const changes: { open: boolean; month: number }[] = []
+
+    // A season opens on 15 August with the window already open, so the two turns
+    // the day clock can reach are 31 Aug → 1 Sep and 31 Dec → 1 Jan.
+    while (toCivil(state.season.currentDate).m !== 1) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'TransferWindowChanged') {
+          changes.push({ open: event.open, month: toCivil(event.date).m })
+        }
+      }
+    }
+
+    expect(changes).toEqual([
+      { open: false, month: 9 },
+      { open: true, month: 1 },
+    ])
+  })
+
+  /**
+   * The one the day clock cannot see. `StartNewSeason` jumps from the end of a
+   * season straight to 15 August, stepping clean over July — so a tick-only
+   * implementation announces January every year and never a summer.
+   */
+  it('marks the summer opening across the rollover, which no tick crosses', () => {
+    state = simulateSeason(state, rng)
+    expect(toCivil(state.season.currentDate).m).not.toBe(8)
+
+    const events = dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+    const changes = events.filter((e) => e.type === 'TransferWindowChanged')
+
+    expect(changes).toHaveLength(1)
+    expect(changes[0]?.open).toBe(true)
+    expect(toCivil(state.season.currentDate).m).toBe(8)
   })
 })

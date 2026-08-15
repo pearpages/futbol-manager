@@ -187,6 +187,7 @@ export {
   surplus,
   totalBudget,
   type Transfer,
+  transferWindowChange,
   type TransferWindowOptions,
 } from './market.ts'
 

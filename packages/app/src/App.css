@@ -86,6 +86,8 @@
   text-transform: uppercase;
 }
 
+/* Only the setup bar still uses this — there it holds the competition and the
+   season, never a date. */
 .shell__date {
   color: var(--fm-ink-soft);
   font-variant-numeric: tabular-nums;
@@ -98,17 +100,11 @@
   min-width: 0;
 }
 
-/* ── Matchday and news, in the title bar ─────────────────────────────────── */
+/* ── The transfer window, in the title bar ───────────────────────────────── */
 
-.shell__next {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3em;
-  color: var(--fm-ink-soft);
-}
-
-/* The one state worth a colour: the next press plays the match. */
-.shell__next.is-due {
+/* The only live state left in the corner, and it renders solely while the window
+   is open — so it takes the colour outright rather than through a modifier. */
+.shell__window {
   color: var(--fm-accent-ink);
   font-weight: 700;
 }

@@ -1,11 +1,19 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { bestXI, computeTable, overall, startersOf, teamRating, worstXI } from '@fm/domain'
+import {
+  bestXI,
+  computeTable,
+  isTransferWindowOpen,
+  overall,
+  startersOf,
+  teamRating,
+  worstXI,
+} from '@fm/domain'
 import { App } from './App.tsx'
 import { translatorFor } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
 import { useGame } from './store.ts'
-import { advance, back, openScreen } from './testing.ts'
+import { advance, advanceUntil, back, openScreen } from './testing.ts'
 
 /**
  * M3b's exit criterion, at the UI level: you can open the game, look at your
@@ -126,13 +134,27 @@ describe('the title bar says where you stand', () => {
     expect(within(bar()).getByText(t('shell.position', { position: place }))).toBeDefined()
   })
 
-  it('carries the next opponent’s badge', () => {
+  // The date and the next fixture were a weaker copy of what the hub shows, and the
+  // hub is the only place the day can be advanced — so you pass the real ones every
+  // tick. The corner is worth more spent on the one deadline the game enforces.
+  it('leaves the date and the next fixture to the hub', () => {
     render(<App />)
-    const { game } = managed()
-    const opponent = matchdayFor(game)?.opponent
+    const opponent = matchdayFor(managed().game)?.opponent
 
-    const code = bar().querySelector('.shell__next .club-badge__code')
-    expect(code?.textContent).toBe(opponent?.shortName)
+    expect(bar().querySelector('.shell__date')).toBeNull()
+    expect(bar().querySelector('.shell__next')).toBeNull()
+    expect(within(bar()).queryByText(opponent?.name ?? 'no opponent')).toBeNull()
+  })
+
+  it('flags the transfer window, and only while it is open', () => {
+    render(<App />)
+
+    // A career opens on 15 August, inside the summer window.
+    expect(within(bar()).getByText(t('shell.windowOpen'))).toBeDefined()
+
+    // Out the far side of it: a badge that is always there is furniture.
+    advanceUntil(() => !isTransferWindowOpen(managed().game.season.currentDate))
+    expect(within(bar()).queryByText(t('shell.windowOpen'))).toBeNull()
   })
 })
 

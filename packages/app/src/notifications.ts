@@ -207,6 +207,15 @@ export function describe(
         text: t('news.expansionOpened', { capacity: count(event.capacity) }),
         tone: 'good',
       }
+
+    // The opening is the invitation and the closing is the deadline, so both are
+    // worth a line. Two whole sentences rather than one with the state glued in.
+    case 'TransferWindowChanged':
+      return {
+        key: `window-${event.open ? 'open' : 'shut'}-${String(event.date)}`,
+        text: t(event.open ? 'news.windowOpened' : 'news.windowClosed'),
+        tone: 'plain',
+      }
   }
 }
 

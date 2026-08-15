@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react'
-import { computeTable } from '@fm/domain'
+import { computeTable, isTransferWindowOpen } from '@fm/domain'
 import { LOCALE_TAGS } from './i18n/format.ts'
 import { useT } from './i18n/useT.ts'
-import { describeOpponent, matchdayFor } from './matchday.ts'
+import { matchdayFor } from './matchday.ts'
 import { type Screen, useGame } from './store.ts'
-import { BadgeDefs, ClubBadge } from './screens/ClubBadge.tsx'
+import { BadgeDefs } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { SettingsMenu } from './screens/SettingsMenu.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
@@ -64,7 +64,7 @@ export function App() {
   const restore = useGame((s) => s.restore)
   const needsSetup = useGame((s) => s.needsSetup)
   const translator = useT()
-  const { t, date, season, language } = translator
+  const { t, season, language } = translator
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
@@ -135,20 +135,15 @@ export function App() {
         </p>
         <h1 className="shell__title">{t(SCREEN_TITLES[screen])}</h1>
         <p className="shell__club">
-          <span className="shell__date">{date(game.season.currentDate)}</span>
-          {/* Always visible, because sleepwalking past your own fixture was the
-              whole complaint — and the controls that act on it live on the hub,
-              so this is what tells you to go back there. */}
-          {matchday !== null && (
-            <span className={`shell__next${matchday.due ? ' is-due' : ''}`}>
-              {matchday.opponent !== undefined && <ClubBadge club={matchday.opponent} />}{' '}
-              {t('shell.next', {
-                opponent: describeOpponent(translator, matchday),
-                when: matchday.due
-                  ? t('shell.today')
-                  : t('shell.inDays', { days: matchday.daysAway }),
-              })}
-            </span>
+          {/* The date and the next fixture used to sit here and were a weaker copy
+              of what the hub already shows — and the hub is the only place the day
+              can be advanced, so you pass the real ones every tick.
+
+              What the game never announced is the one deadline it enforces. Shown
+              only while the window is open: a badge that is always there is
+              furniture, and this one is meant to be read. */}
+          {isTransferWindowOpen(game.season.currentDate) && (
+            <span className="shell__window">{t('shell.windowOpen')}</span>
           )}
           <SettingsMenu />
         </p>
