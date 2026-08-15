@@ -1,0 +1,117 @@
+/*
+ * The hub's four figures.
+ *
+ * Same arrangement as `club-badges.css` and `radar.css`: **a variant selector
+ * sets custom properties and nothing else**, every rule that paints reads a
+ * property, and `sprites.ts` holds no colour at all. A fifth figure would be one
+ * five-line block, not a new set of painting rules.
+ *
+ * ## Independent palettes, derived shading
+ *
+ * Unlike the quadrant tiles, these do *not* take `--quad-face`. A person is not
+ * a tint of his department, and a skin tone is not derivable from a section hue,
+ * so each figure carries its own naturalistic colours.
+ *
+ * What is still derived is the *shading*. `--sprite-shade` and `--sprite-seam`
+ * are mixed from the skin and the garment rather than picked, so a figure
+ * declares five base colours and no more. That is the lesson the badge rim
+ * already paid for: six hand-chosen neutrals looked fine and were wrong, and the
+ * fix was computing them from a colour that was already right.
+ *
+ * ## The constraint every palette here answers to
+ *
+ * These sit on `.screen`, which is near-black. A charcoal suit would have no
+ * silhouette at all — so the two suited figures take a mid slate and a warm
+ * grey-brown, each over a light shirt, and no figure is left without some light
+ * mass. Darkening any of these is how you make a figure disappear.
+ */
+
+.hub-figure {
+  /* Shared by all four: the dark used for eyes, shoes and ruled lines. It reads
+     against skin and paper, never against the panel, so it can be genuinely
+     dark where the garments cannot. */
+  --sprite-ink: #14100c;
+
+  /* Derived, never declared per figure — see the note above. */
+  --sprite-shade: color-mix(in srgb, var(--sprite-skin), #000 22%);
+  --sprite-seam: color-mix(in srgb, var(--sprite-garment), #000 30%);
+
+  display: block;
+  /* Shrinks rather than pushing the panel into scroll. The SVG has an intrinsic
+     ratio from its viewBox, so `width: auto` keeps the figure in proportion as
+     the height gives way. */
+  flex: 0 1 auto;
+  width: auto;
+  height: 8rem;
+  min-height: 0;
+}
+
+/* Seguiment — the assistant. Slate-blue tracksuit, steel clip on the board. */
+.hub-figure[data-figure='assistant'] {
+  --sprite-hair: #3b2a1e;
+  --sprite-skin: #c8905f;
+  --sprite-garment: #4a6f9e;
+  --sprite-trouser: #3f5670;
+  --sprite-light: #e6ebef;
+  --sprite-accent: #9fb0bd;
+}
+
+/* Entrenador — the trainer. Green tracksuit, and the ball at his feet, which is
+   the only `accent` in the set that is not a prop he is holding. */
+.hub-figure[data-figure='trainer'] {
+  --sprite-hair: #241a14;
+  --sprite-skin: #d8a878;
+  --sprite-garment: #3f8f52;
+  --sprite-trouser: #46554b;
+  --sprite-light: #eef2ec;
+  --sprite-accent: #f7f4ec;
+}
+
+/* Mercat — the agent. Mid slate suit, red tie, a seal on the contract. */
+.hub-figure[data-figure='agent'] {
+  --sprite-hair: #1f1a17;
+  --sprite-skin: #bd8557;
+  --sprite-garment: #6c7a8c;
+  --sprite-trouser: #5d6a7a;
+  --sprite-light: #f0f2f4;
+  --sprite-accent: #b8443c;
+}
+
+/* Finances — the director. Warm grey-brown suit, tan briefcase. His `light` is
+   doing two jobs: the shirt, and the grey at his temples. */
+.hub-figure[data-figure='director'] {
+  --sprite-hair: #4a4038;
+  --sprite-skin: #c19267;
+  --sprite-garment: #8a7a63;
+  --sprite-trouser: #6b5d4a;
+  --sprite-light: #f2eee4;
+  --sprite-accent: #a5673a;
+}
+
+.hub-figure [data-ink='hair'] {
+  fill: var(--sprite-hair);
+}
+.hub-figure [data-ink='skin'] {
+  fill: var(--sprite-skin);
+}
+.hub-figure [data-ink='shade'] {
+  fill: var(--sprite-shade);
+}
+.hub-figure [data-ink='ink'] {
+  fill: var(--sprite-ink);
+}
+.hub-figure [data-ink='garment'] {
+  fill: var(--sprite-garment);
+}
+.hub-figure [data-ink='seam'] {
+  fill: var(--sprite-seam);
+}
+.hub-figure [data-ink='trouser'] {
+  fill: var(--sprite-trouser);
+}
+.hub-figure [data-ink='light'] {
+  fill: var(--sprite-light);
+}
+.hub-figure [data-ink='accent'] {
+  fill: var(--sprite-accent);
+}

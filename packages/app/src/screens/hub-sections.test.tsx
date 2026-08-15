@@ -7,6 +7,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { QUADRANTS } from './HubScreen.tsx'
+import { FIGURE_KEYS } from './sprites.ts'
 import { ICON_KEYS } from './TileIcon.tsx'
 
 /**
@@ -58,6 +59,37 @@ describe('every tile has an icon', () => {
     expect(icons).toHaveLength(TILES.length)
     for (const icon of icons) {
       expect(icon.getAttribute('aria-hidden')).toBe('true')
+    }
+  })
+})
+
+describe('every section has its figure', () => {
+  it('stands one at the foot of each quadrant, and none of them speak', () => {
+    // Same reason the tile icons are hidden: two dozen assertions across five
+    // files find a tile by its exact accessible name. A figure sits outside the
+    // button so it could not rename one — this is what proves it did not.
+    render(<App />)
+
+    for (const { key, figure } of QUADRANTS) {
+      const section = document.querySelector(`.hub__quadrant[data-quadrant='${key}']`)
+      const art = section?.querySelector('.hub-figure')
+      expect(art, `${key} has no figure`).not.toBeNull()
+      expect(art?.getAttribute('data-figure')).toBe(figure)
+      expect(art?.getAttribute('aria-hidden')).toBe('true')
+    }
+    expect(document.querySelectorAll('.hub-figure')).toHaveLength(QUADRANTS.length)
+  })
+
+  it('gives every section its own, so no two hire the same person', () => {
+    const cast = QUADRANTS.map((quadrant) => quadrant.figure)
+    expect(new Set(cast).size).toBe(cast.length)
+  })
+
+  it('draws one the sprite set defines', () => {
+    // A fifth quadrant should fail here rather than render an empty box.
+    const declared = new Set<string>(FIGURE_KEYS)
+    for (const { key, figure } of QUADRANTS) {
+      expect(declared.has(figure), key).toBe(true)
     }
   })
 })

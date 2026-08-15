@@ -4,7 +4,9 @@ import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { HubFigure } from './HubFigure.tsx'
 import { NotificationList } from './NotificationList.tsx'
+import { type FigureKey } from './sprites.ts'
 import { type IconKey, TileIcon } from './TileIcon.tsx'
 import './HubScreen.css'
 
@@ -55,6 +57,15 @@ interface Quadrant {
   /** Dictionary key, not a word. */
   readonly title: string
   readonly tiles: readonly Tile[]
+  /**
+   * The person who stands at the foot of the section.
+   *
+   * Decoration, and the reference's other half: PC Fútbol drew every quadrant as
+   * an illustrated vignette, and two of its four carried human figures. Named
+   * here rather than derived from `key` so a section and its figure stay
+   * separable — the same reason a tile names its icon.
+   */
+  readonly figure: FigureKey
 }
 
 /**
@@ -71,6 +82,7 @@ export const QUADRANTS: readonly Quadrant[] = [
       { key: 'nav.results', to: 'table', icon: 'results' },
       { key: 'nav.calendar', to: null, icon: 'calendar' },
     ],
+    figure: 'assistant',
   },
   {
     key: 'entrenador',
@@ -80,6 +92,7 @@ export const QUADRANTS: readonly Quadrant[] = [
       { key: 'nav.tactics', to: 'lineup', icon: 'tactics' },
       { key: 'nav.scout', to: null, milestone: 'M7', icon: 'scout' },
     ],
+    figure: 'trainer',
   },
   {
     key: 'mercado',
@@ -89,6 +102,7 @@ export const QUADRANTS: readonly Quadrant[] = [
       { key: 'nav.squad', to: 'squad', icon: 'roster' },
       { key: 'nav.youth', to: null, milestone: 'M7', icon: 'youth' },
     ],
+    figure: 'agent',
   },
   {
     key: 'finanzas',
@@ -98,6 +112,7 @@ export const QUADRANTS: readonly Quadrant[] = [
       { key: 'nav.decisiones', to: 'decisiones', icon: 'scales' },
       { key: 'nav.estadio', to: 'estadio', icon: 'stadium' },
     ],
+    figure: 'director',
   },
 ]
 
@@ -153,6 +168,7 @@ export function HubScreen() {
               </button>
             ))}
           </div>
+          <HubFigure figure={quadrant.figure} />
         </section>
       ))}
 

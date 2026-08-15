@@ -32,7 +32,12 @@
  * competition rather than the colour's role — and lending them to a section
  * would give one colour two jobs.
  */
+/* A column so the figure can be pushed to the foot of the panel with
+   `margin-top: auto`. `.screen` already carries `overflow: auto`, which is what
+   keeps a short window from clipping the tiles rather than the art. */
 .hub__quadrant {
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   border-top: 3px solid var(--quad-face);
 }
@@ -105,9 +110,26 @@
 
 .hub__tiles {
   display: flex;
+  flex: none;
   flex-direction: column;
   gap: var(--fm-space-2);
   padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+/* ── The figure at the foot of each section ──────────────────────────────────
+ *
+ * PC Fútbol's hub was illustrated, and this is the half of it we had not taken —
+ * we copied the section colours at M5b and left the artwork behind.
+ *
+ * **It costs no layout height.** `.hub` is `height: 100%` over two `1fr` rows and
+ * a quadrant holds a heading plus three tiles, so there is slack below the tiles
+ * on a normal window and the figure fills what is already there. `margin-top:
+ * auto` puts it on the floor of the panel; the sizing that lets it give way
+ * first lives in `hub-figures.css` beside the palettes. */
+.hub__quadrant .hub-figure {
+  margin-top: auto;
+  margin-left: auto;
+  margin-right: var(--fm-space-4);
 }
 
 /* The tile wears the section's colour. Bevels are mixed from the face rather
@@ -286,5 +308,12 @@
   .hub__quadrant[data-quadrant='finanzas'] {
     grid-column: 2;
     grid-row: 3;
+  }
+
+  /* The rows go `auto` here, which is exactly the slack the figures were sitting
+     in. Keeping them would make the hub taller rather than fuller, and the hub
+     is the one screen that has to be reachable in a glance. */
+  .hub-figure {
+    display: none;
   }
 }
