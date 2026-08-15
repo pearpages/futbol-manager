@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Club } from './entities.ts'
-import { bestXI, startersOf, teamRating, worstXI } from './lineup.ts'
+import { bestXI, FORMATION_NAMES, startersOf, teamRating, worstXI } from './lineup.ts'
 import { ageOn, overall } from './player.ts'
 import { createRng } from './rng.ts'
 import { generateSquad, SQUAD_SIZE } from './squad.ts'
@@ -37,7 +37,9 @@ describe('generateSquad', () => {
 
   it('supports every formation', () => {
     const squad = squadFor(strongest)
-    for (const formation of ['4-4-2', '4-3-3', '5-3-2', '3-5-2'] as const) {
+    // `FORMATION_NAMES`, never a literal list — a hardcoded four is how a new
+    // shape gets added and silently never tested here.
+    for (const formation of FORMATION_NAMES) {
       expect(() => startersOf(squad, bestXI(squad, formation))).not.toThrow()
     }
   })

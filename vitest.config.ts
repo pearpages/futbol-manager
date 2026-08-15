@@ -14,6 +14,18 @@ export default defineConfig({
           name: 'domain',
           root: 'packages/domain',
           environment: 'node',
+          /*
+           * Same reasoning as the app project below, for a different cause. The
+           * statistical harnesses simulate hundreds of seasons; `determinism at
+           * scale` alone runs 50 twice and measures ~5.5s under load against the
+           * 5s default, which `CLAUDE.md` had already recorded as a one-off flake.
+           * A second harness file — the formation sweep — makes that contention
+           * likelier, so the budget is stated rather than left to luck.
+           *
+           * The whole project is ~18s on its own. Anything here approaching 30s is
+           * a real problem, not a scheduling one.
+           */
+          testTimeout: 30_000,
         },
       },
       {

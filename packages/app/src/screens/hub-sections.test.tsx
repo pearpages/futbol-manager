@@ -80,6 +80,20 @@ describe('every section has its figure', () => {
     expect(document.querySelectorAll('.hub-figure')).toHaveLength(QUADRANTS.length)
   })
 
+  it('renders the prop as its own group, which is what the hover moves', () => {
+    // The stylesheet guards cover the selectors and `sprites.test.ts` covers the
+    // decode, but neither can see the markup in between: drop the outer `<g>`
+    // from `HubFigure` and both still pass while nothing on the hub ever moves.
+    render(<App />)
+
+    for (const { key } of QUADRANTS) {
+      const art = document.querySelector(`.hub__quadrant[data-quadrant='${key}'] .hub-figure`)
+      const prop = art?.querySelector(`[data-part='prop']`)
+      expect(prop, `${key} has no prop to animate`).not.toBeNull()
+      expect(prop?.querySelectorAll('rect').length, `${key} draws an empty prop`).toBeGreaterThan(0)
+    }
+  })
+
   it('gives every section its own, so no two hire the same person', () => {
     const cast = QUADRANTS.map((quadrant) => quadrant.figure)
     expect(new Set(cast).size).toBe(cast.length)

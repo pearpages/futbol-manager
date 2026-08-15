@@ -129,17 +129,22 @@ export const en: Dictionary = {
   'lineup.shape': 'Shape',
   'lineup.formation': 'Formation',
   'lineup.formationHint': 'Changing shape picks the best XI for it.',
+  'lineup.cannotField': 'Your squad cannot fill this shape',
   'lineup.approach': 'Approach · {approach}',
   'lineup.approachHint':
     'Pushing either way costs more than it gives. Attack suits a strong side; a weaker one is punished for it.',
   'lineup.thisXI': 'This XI',
   'lineup.attack': 'Attack',
+  'lineup.tempo': 'Tempo',
   'lineup.defence': 'Defence',
-  'lineup.ratingHint': 'These two numbers are all the match resolver sees.',
+  'lineup.ratingHint': 'These three numbers are all the match resolver sees.',
   'approach.allOut': 'All-out attack',
   'approach.attacking': 'Attacking',
   'approach.balanced': 'Balanced',
   'approach.defensive': 'Defensive',
+  'tempo.open': 'Open',
+  'tempo.balanced': 'Balanced',
+  'tempo.tight': 'Tight',
   'approach.parkTheBus': 'Park the bus',
 
   // ── Player ───────────────────────────────────────────────────────────────

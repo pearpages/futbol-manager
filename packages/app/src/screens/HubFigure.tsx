@@ -19,9 +19,14 @@ import '../styles/hub-figures.css'
  *
  * The runs are decoded once at module load in `sprites.ts`; this component only
  * reads them, because the hub re-renders on every tick of the day clock.
+ *
+ * **Two levels of `<g>`, and the outer one earns its keep.** `data-part` is what
+ * the hover animation moves — one element per part, so a prop drawn in three
+ * inks cannot drift out of step with itself. The nine fill rules are descendant
+ * selectors, so `data-ink` keeps painting through the extra nesting.
  */
 export function HubFigure({ figure }: { readonly figure: FigureKey }) {
-  const { width, height, runs } = FIGURES[figure]
+  const { width, height, parts } = FIGURES[figure]
 
   return (
     <svg
@@ -30,10 +35,14 @@ export function HubFigure({ figure }: { readonly figure: FigureKey }) {
       viewBox={`0 0 ${width} ${height}`}
       aria-hidden="true"
     >
-      {runs.map(([ink, list]) => (
-        <g key={ink} data-ink={ink}>
-          {list.map((run) => (
-            <rect key={`${run.x}-${run.y}`} x={run.x} y={run.y} width={run.w} height={1} />
+      {parts.map(({ part, inks }) => (
+        <g key={part} data-part={part}>
+          {inks.map(({ ink, runs }) => (
+            <g key={ink} data-ink={ink}>
+              {runs.map((run) => (
+                <rect key={`${run.x}-${run.y}`} x={run.x} y={run.y} width={run.w} height={1} />
+              ))}
+            </g>
           ))}
         </g>
       ))}

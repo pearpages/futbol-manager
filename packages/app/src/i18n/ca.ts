@@ -118,17 +118,22 @@ export const ca: Dictionary = {
   'lineup.shape': 'Sistema',
   'lineup.formation': 'Formació',
   'lineup.formationHint': 'Canviar de sistema tria el millor onze possible.',
+  'lineup.cannotField': 'La teva plantilla no pot cobrir aquest sistema',
   'lineup.approach': 'Plantejament · {approach}',
   'lineup.approachHint':
     'Forçar cap als extrems costa més del que dóna. Atacar li va bé a un equip fort; un de fluix ho paga.',
   'lineup.thisXI': 'Aquest onze',
   'lineup.attack': 'Atac',
+  'lineup.tempo': 'Ritme',
   'lineup.defence': 'Defensa',
-  'lineup.ratingHint': 'Aquests dos números són tot el que veu el simulador.',
+  'lineup.ratingHint': 'Aquests tres números són tot el que veu el simulador.',
   'approach.allOut': 'Atac total',
   'approach.attacking': 'Ofensiu',
   'approach.balanced': 'Equilibrat',
   'approach.defensive': 'Defensiu',
+  'tempo.open': 'Obert',
+  'tempo.balanced': 'Equilibrat',
+  'tempo.tight': 'Tancat',
   'approach.parkTheBus': 'Tancar-se al darrere',
 
   // ── Fitxa ────────────────────────────────────────────────────────────────

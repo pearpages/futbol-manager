@@ -67,7 +67,9 @@ The market screen carried an "Improves" column until M4c. It made squad-building
 
 ## What a club will sell
 
-`surplus(squad)` — everyone who is not in the best XI **and** can be spared, meaning that removing him still leaves at least one cover at every position (`shape + 1` in the 4-4-2 reference, which happens to satisfy every other formation too). A club at or below `MIN_SQUAD` (18) sells nobody.
+`surplus(squad)` — everyone who is not in the best XI **and** can be spared, meaning that removing him still leaves at least one cover at every position. A club at or below `MIN_SQUAD` (18) sells nobody.
+
+The floor is the deeper of two numbers: `shape + 1` in the 4-4-2 reference, which is the "one cover beyond the XI" intent, and `DEEPEST_BANK` from `lineup.ts`, which is the most any formation asks for at that position. Until the second batch of formations arrived the first alone happened to satisfy every shape, and this file said so; 4-2-4 wants a fourth forward, which made that quietly false and put 19 of 200 squad-seasons out of reach of a formation the screen was offering. **`DEEPEST_BANK` is derived from `FORMATIONS`, so adding a shape cannot break this again.**
 
 Starters are never for sale, at any price. That is the whole rule; there is no separate "not for sale" flag.
 

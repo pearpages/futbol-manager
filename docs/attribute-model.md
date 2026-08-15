@@ -91,9 +91,10 @@ Applied to `teamAttack` / `teamDefence` after step 3, in this order, so each mil
 1. **The tactical slider** (M3) — one control, 0–100, doing two things at once:
    - **Split.** Trades attack against defence, with both extremes surrendering 1.6× what they gain. The asymmetry exists because a symmetric trade was strictly exploitable: under three-points-for-a-win, converting a draw into a 50/50 result is worth +0.5 points, so all-out attack was a free +2.1 points a season until M3a fixed it.
    - **Tempo.** `(attacking − 50) / 50`, so −1 at a full low block and +1 at all-out attack. This is how open the game is, and it is the half that makes the slider a decision rather than a cost.
-2. **Home advantage** (M2) — lives in the resolver, not here.
-3. **Form, morale, fatigue** (M6) — multipliers in roughly 0.9–1.1.
-4. **Missing players** (M6) — injuries and suspensions change the XI, so they change these numbers by construction. No separate penalty term.
+2. **The formation's own tempo** — `FORMATION_TEMPO` in `lineup.ts`, **added to** the slider's. 4-4-2 and 3-5-2 are exactly zero; the range is +0.4 at 4-2-4 to −0.7 at 5-4-1. Without it the containment shapes were dead buttons — 4-5-1 measured −1.6 points and was optimal at none of the twenty clubs — because a midfielder is a half-contributor to both weighted means, so trading forwards _and_ defenders for midfielders dilutes both. The asymmetric range is deliberate: an attacking shape is already paid by bank concentration, a defensive one has to clear that debt first. **The shape is read off the players on the pitch, not off the lineup's `formation` label**, which cannot disagree with itself.
+3. **Home advantage** (M2) — lives in the resolver, not here.
+4. **Form, morale, fatigue** (M6) — multipliers in roughly 0.9–1.1.
+5. **Missing players** (M6) — injuries and suspensions change the XI, so they change these numbers by construction. No separate penalty term.
 
 **How tempo reaches the scoreline.** Both sides shape a game, so the resolver averages them and applies the result to _both_ expected-goal figures:
 
@@ -105,7 +106,7 @@ combined = (home.tempo + away.tempo) / 2
 
 Lower tempo means fewer goals for everybody, which means more draws — and a draw is worth far more to the weaker side than the stronger one. That is the whole mechanism: **a low block is the underdog's weapon, and it costs the favourite.** It also means tempo is not free for either party; you cannot smother a game without giving up your own chances.
 
-**At balanced tactics `combined` is 0 and the term vanishes**, so the M2 calibration is untouched by construction. Only deviation from balanced changes anything.
+**At balanced tactics in 4-4-2 `combined` is 0 and the term vanishes**, so the M2 calibration is untouched by construction. Only deviation from balanced — on either lever — changes anything. That is the property every modifier here has to keep, and `pnpm season` staying byte-identical is how it is checked.
 
 Result: two integers plus a tempo in −1…+1, which is all M2 needs to know about players. `teamRatingRaw` returns them **unrounded**, which is what `needFor` scores against — rounding a difference of two rounded numbers is what once made four separately-written market thresholds all mean the same thing.
 
@@ -123,12 +124,14 @@ Measured 2026-08-14, Almería (the weakest club), 20 seasons per row.
 
 The steps above are weights; these are what a person can reason with. Every column is the share of that team number the position owns.
 
-|        | Attack (4-4-2) | Defence (4-4-2) | Attack (4-3-3) | Defence (5-3-2) |
-| ------ | -------------- | --------------- | -------------- | --------------- |
-| **GK** | 0%             | **35%**         | 0%             | 35%             |
-| **DF** | 14%            | 41%             | 12%            | **48%**         |
-| **MF** | 41%            | 21%             | 27%            | 14%             |
-| **FW** | **45%**        | 3%              | **61%**        | 3%              |
+Illustrative, not an enumeration — eight formations would make sixteen columns say what these six do. The last two are the extremes of the set.
+
+|        | Attack (4-4-2) | Defence (4-4-2) | Attack (4-3-3) | Defence (5-3-2) | Attack (4-2-4) | Defence (5-4-1) |
+| ------ | -------------- | --------------- | -------------- | --------------- | -------------- | --------------- |
+| **GK** | 0%             | **35%**         | 0%             | 35%             | 0%             | 35%             |
+| **DF** | 14%            | 41%             | 12%            | **48%**         | 11%            | 45%             |
+| **MF** | 41%            | 21%             | 27%            | 14%             | 16%            | 18%             |
+| **FW** | **45%**        | 3%              | **61%**        | 3%              | **73%**        | 1%              |
 
 ### Leverage, in league points
 
@@ -141,11 +144,27 @@ One starter replaced by a 90-rated player, everything else unchanged:
 | 2 forwards    | +7.6          | +3.8       |
 | 4 midfielders | +11.5         | +2.9       |
 
+### Formation, which used to be on the other list
+
+Measured 2026-08-15, real rosters, 10–16 paired seasons per club.
+
+This section said for a long time that formation did not matter — "under 1.5 points across all four" — and added that it "becomes a real decision once M4 lets a squad become unbalanced." M4 shipped, real rosters shipped, and nobody re-measured. **The claim was stale: the spread across the original four is 5.4 points at Villarreal and at least 2.0 at eight of the twenty clubs**, with the per-club best already split three ways. The old figure was measured on generated squads, which scale every position from one club rating and so cannot be lopsided by construction — the harness still runs on those, which is why it never saw this.
+
+Since the second batch of shapes, formation also feeds `tempo` (`FORMATION_TEMPO` in `lineup.ts`), and the best shape runs with club strength the way the slider does:
+
+| Club            | 4-4-2 | 5-4-1 | 4-2-4    | Best  |
+| --------------- | ----- | ----- | -------- | ----- |
+| Madrid (88)     | 87.8  | 83.0  | **88.9** | 4-2-4 |
+| Villarreal (81) | 62.4  | 60.8  | **65.2** | 4-2-4 |
+| Getafe (74)     | 45.7  | 41.3  | 42.4     | 4-4-2 |
+| Málaga (70)     | 31.0  | 34.0  | 29.0     | 5-4-1 |
+
+Mid-table is punished either way, exactly as it is by the slider. **Still small next to a signing** — a keeper is +10.5 — which remains the point.
+
 **The goalkeeper is worth ~2.5× any other single signing.** That follows directly from 35% of the defensive rating resting on one player — a deliberate choice made so "a great keeper behind a poor back four should visibly matter", and this is the size of that decision. If a keeper being the most valuable player in a squad ever feels wrong, `KEEPER_WEIGHT` in `lineup.ts` is the dial, and the harness bands are what would have to stay green.
 
 ### What turns out not to matter
 
-- **Formation, currently.** It only re-weights the shares. Generated squads scale every position from a single club rating, so nothing is lopsided enough for a shape to exploit — measured spread across all four formations is under 1.5 points. This becomes a real decision once M4 lets a squad become unbalanced.
 - **Cleverness about lineup selection.** `bestXI` ranks by `overall`, which uses different weights than the resolver does, so in principle it could leave points on the table. An XI picked by actual contribution to `attack`/`defence` instead changes 0–1 slots and gains ~0.1 points.
 - **Tactics — until M3c.** The upside used to be 0–3 points against a −4 to −9 downside, with balanced optimal at every club. Adding `tempo` fixed that: the best approach now runs with club strength. **Madrid gains +3.5 attacking, Almería +2.9 with a low block, and mid-table clubs are punished either way.** Still small next to a signing, which is the point — a manager wins by building a squad, not by nudging a slider.
 

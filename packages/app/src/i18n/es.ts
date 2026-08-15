@@ -118,17 +118,22 @@ export const es: Dictionary = {
   'lineup.shape': 'Sistema',
   'lineup.formation': 'Formación',
   'lineup.formationHint': 'Cambiar de sistema elige el mejor once posible.',
+  'lineup.cannotField': 'Tu plantilla no puede cubrir este sistema',
   'lineup.approach': 'Planteamiento · {approach}',
   'lineup.approachHint':
     'Forzar hacia cualquier extremo cuesta más de lo que da. Atacar le va bien a un equipo fuerte; uno flojo lo paga.',
   'lineup.thisXI': 'Este once',
   'lineup.attack': 'Ataque',
+  'lineup.tempo': 'Ritmo',
   'lineup.defence': 'Defensa',
-  'lineup.ratingHint': 'Estos dos números son todo lo que ve el simulador.',
+  'lineup.ratingHint': 'Estos tres números son todo lo que ve el simulador.',
   'approach.allOut': 'Ataque total',
   'approach.attacking': 'Ofensivo',
   'approach.balanced': 'Equilibrado',
   'approach.defensive': 'Defensivo',
+  'tempo.open': 'Abierto',
+  'tempo.balanced': 'Equilibrado',
+  'tempo.tight': 'Cerrado',
   'approach.parkTheBus': 'Encerrarse atrás',
 
   // ── Ficha ────────────────────────────────────────────────────────────────

@@ -146,6 +146,11 @@ describe('positionShare', () => {
 
     expect(pct(group('FW', '4-3-3').attack)).toBe(61)
     expect(pct(group('DF', '5-3-2').defence)).toBe(48)
+
+    // The two extremes of the second batch — the most attacking shape's forward
+    // line and the most defensive one's back line.
+    expect(pct(group('FW', '4-2-4').attack)).toBe(73)
+    expect(pct(group('DF', '5-4-1').defence)).toBe(45)
   })
 
   it('gives one goalkeeper more of the defence than any other single player', () => {

@@ -6,6 +6,7 @@ import {
   type Player,
   type PlayerId,
   type Position,
+  POSITIONS,
 } from './player.ts'
 
 /**
@@ -20,17 +21,130 @@ import {
  * calibration silently stops holding.
  */
 
-export type Formation = '4-4-2' | '4-3-3' | '5-3-2' | '3-5-2'
+export type Formation =
+  '4-4-2' | '4-3-3' | '5-3-2' | '3-5-2' | '4-5-1' | '5-4-1' | '3-4-3' | '4-2-4'
 
-/** Outfield shape by formation. Every formation implies exactly one goalkeeper. */
+/**
+ * Outfield shape by formation. Every formation implies exactly one goalkeeper.
+ *
+ * A formation here is *only* its bank counts, which is why 4-2-3-1 and 4-1-4-1
+ * are absent: both are DF 4 / MF 5 / FW 1, indistinguishable from 4-5-1 without a
+ * fifth bank. That absence is period-correct for the 1996/97 target — those shapes
+ * belong to the 2000s — so the three banks are not costing anything yet.
+ *
+ * The original four come first: `FORMATION_NAMES` is `Object.keys`, and that order
+ * is what the lineup screen renders, so the familiar shapes stay in the first row.
+ */
 export const FORMATIONS: Readonly<Record<Formation, Readonly<Record<Position, number>>>> = {
   '4-4-2': { GK: 1, DF: 4, MF: 4, FW: 2 },
   '4-3-3': { GK: 1, DF: 4, MF: 3, FW: 3 },
   '5-3-2': { GK: 1, DF: 5, MF: 3, FW: 2 },
   '3-5-2': { GK: 1, DF: 3, MF: 5, FW: 2 },
+  '4-5-1': { GK: 1, DF: 4, MF: 5, FW: 1 },
+  '5-4-1': { GK: 1, DF: 5, MF: 4, FW: 1 },
+  '3-4-3': { GK: 1, DF: 3, MF: 4, FW: 3 },
+  '4-2-4': { GK: 1, DF: 4, MF: 2, FW: 4 },
 }
 
 export const FORMATION_NAMES = Object.keys(FORMATIONS) as Formation[]
+
+/**
+ * How open each shape makes the game, on the same scale as the slider's tempo.
+ *
+ * **Why formation needs this at all.** Without it the defensive shapes are dead
+ * buttons, and measurably so: over the real rosters 4-5-1 averaged −1.6 points and
+ * was optimal at *none* of the twenty clubs, 5-4-1 −1.0. The cause is structural
+ * rather than tuning — `ATTACK_SHARE.MF` is 0.45 and `DEFENCE_SHARE.MF` is 0.5, so
+ * a midfielder is a half-contributor to both weighted means, and a shape that
+ * trades forwards *and* defenders for midfielders dilutes both numbers at once.
+ * Real football's 4-5-1 pays for that dilution by controlling the tempo, and until
+ * now formation could not touch tempo.
+ *
+ * This is the M3a slider problem in a third costume — a lever whose defensive end
+ * is strictly wrong — and M3c's fix is the one that applies: the resolver averages
+ * both sides' tempo, so smothering the game is worth far more to the side that
+ * would otherwise lose. That is what makes a low block a *choice* and not a cost.
+ *
+ * **4-4-2 is exactly zero**, which is what keeps every calibrated band and
+ * `pnpm season` untouched — the same property M3c relied on. 3-5-2 is zero too:
+ * five in midfield with two up front is the neutral shape it has always been.
+ *
+ * **The scale is asymmetric on purpose**, and it is not a fudge. An attacking
+ * shape is already rewarded by bank concentration — more forwards is more attack
+ * straight out of `ATTACK_SHARE` — so it needs only a nudge. A defensive shape is
+ * *punished* by the same mechanism, so its tempo has to clear that debt before it
+ * buys anything. Hence +0.4 at the attacking end against −0.7 at the defensive.
+ *
+ * Calibrated by measurement, over the real rosters at the default slider. At −0.3
+ * the defensive end was still dominated — 4-5-1 stayed negative at all twenty
+ * clubs, i.e. the term was decoration. At the values below the best shape runs
+ * with club strength, which is the criterion:
+ *
+ *     Madrid (88)     4-4-2 87.8   5-4-1 83.0   4-2-4 88.9   -> attacks
+ *     Villarreal (81) 4-4-2 62.4   5-4-1 60.8   4-2-4 65.2   -> attacks
+ *     Getafe (74)     4-4-2 45.7   5-4-1 41.3   4-2-4 42.4   -> neither
+ *     Málaga (70)     4-4-2 31.0   5-4-1 34.0   4-2-4 29.0   -> contains
+ *
+ * **The end-stop check that matters**, since formation and the slider now share
+ * this channel and can stack: the full low block corner (5-4-1 at slider 0) is
+ * best for *nobody*, Málaga included. Re-run that sweep if these move.
+ *
+ * 4-5-1 is the milder containment and is rarely the argmax — 5-4-1 gets both more
+ * defence and more smothering. It is a live choice rather than a dead button now
+ * (Málaga +1.3 on it against 4-4-2, where it was negative everywhere before), but
+ * do not expect it to win a sweep.
+ */
+const FORMATION_TEMPO: Readonly<Record<Formation, number>> = {
+  '4-4-2': 0,
+  '3-5-2': 0,
+  '4-3-3': 0.15,
+  '3-4-3': 0.25,
+  '4-2-4': 0.4,
+  '5-3-2': -0.25,
+  '4-5-1': -0.6,
+  '5-4-1': -0.7,
+}
+
+/**
+ * Packs a shape's outfield banks into one integer — `4-4-2` is 442.
+ *
+ * The shape is read off the players actually on the pitch rather than the
+ * `formation` label on the lineup, for two reasons. `teamRatingRaw` takes starters
+ * and tactics and has never taken the formation, so the label is not in scope; and
+ * a `Lineup` can carry a label its banks do not match, because `setLineup` checks
+ * the XI is legal but never that it matches its own declared shape. Deriving means
+ * the tempo follows what is on the pitch, which is the honest answer either way.
+ *
+ * An integer key, not a template string: this is on the hot path that once pushed
+ * the tactics harness past its timeout through allocation alone.
+ */
+const bankKey = (df: number, mf: number, fw: number) => df * 100 + mf * 10 + fw
+
+const FORMATION_TEMPO_BY_BANKS: ReadonlyMap<number, number> = new Map(
+  FORMATION_NAMES.map((name) => {
+    const shape = FORMATIONS[name]
+    return [bankKey(shape.DF, shape.MF, shape.FW), FORMATION_TEMPO[name]]
+  }),
+)
+
+/**
+ * The deepest requirement at each position across every formation.
+ *
+ * Derived rather than written out, so adding a formation cannot silently
+ * invalidate it. Two subsystems depend on that: `canRelease` in `season.ts`, so a
+ * club never releases its way out of a shape it might want, and `canSpare` in
+ * `market.ts`, so it never sells its way out of one either. `canSpare` used to
+ * assert its own floor by hand as `4-4-2 + 1` and claim that covered the rest —
+ * true until 4-2-4 asked for a fourth forward, and false silently.
+ */
+export const DEEPEST_BANK: Readonly<Record<Position, number>> = Object.freeze(
+  Object.fromEntries(
+    POSITIONS.map((position) => [
+      position,
+      Math.max(...Object.values(FORMATIONS).map((shape) => shape[position])),
+    ]),
+  ) as Record<Position, number>,
+)
 
 export interface Lineup {
   readonly formation: Formation
@@ -183,6 +297,12 @@ export function teamRatingRaw(
   let defenceWeighted = 0
   let defenceShares = 0
 
+  // Bank counts are tallied in the same pass. They are what identifies the shape
+  // for `FORMATION_TEMPO` below — see `bankKey`.
+  let df = 0
+  let mf = 0
+  let fw = 0
+
   for (const player of outfield) {
     const attackShare = ATTACK_SHARE[player.position]
     const defenceShare = DEFENCE_SHARE[player.position]
@@ -190,6 +310,10 @@ export function teamRatingRaw(
     attackShares += attackShare
     defenceWeighted += defenceShare * playerDefence(player)
     defenceShares += defenceShare
+
+    if (player.position === 'DF') df++
+    else if (player.position === 'MF') mf++
+    else fw++
   }
 
   const attack = attackShares > 0 ? attackWeighted / attackShares : 0
@@ -217,9 +341,12 @@ export function teamRatingRaw(
     defence: defence + defenceShift,
     // Tempo: how open you want the game. The resolver averages both sides and
     // applies it to both scorelines, so a low block smothers the match rather
-    // than only your half of it. Zero at balanced, which is what keeps the M2
-    // calibration intact.
-    tempo: lever,
+    // than only your half of it. Zero at balanced *and* in 4-4-2, which is what
+    // keeps the M2 calibration intact.
+    //
+    // Two contributors, added: the slider, and the shape. See `FORMATION_TEMPO`
+    // for why a formation needs one at all.
+    tempo: lever + (FORMATION_TEMPO_BY_BANKS.get(bankKey(df, mf, fw)) ?? 0),
   }
 }
 
@@ -235,6 +362,35 @@ export function bestXI(squad: readonly Player[], formation: Formation): Lineup {
 /** The inverse — the weakest legal XI. Exists so "a bad lineup costs points" is testable. */
 export function worstXI(squad: readonly Player[], formation: Formation): Lineup {
   return pickXI(squad, formation, (a, b) => overall(a) - overall(b))
+}
+
+/**
+ * True when this squad can fill every bank the shape asks for.
+ *
+ * The question `pickXI` answers by throwing. A screen needs to ask it *before*
+ * offering the button, and the reducer's own bookkeeping needs to ask it before
+ * re-picking an XI for a club whose squad just changed underneath it.
+ */
+export function canField(squad: readonly Player[], formation: Formation): boolean {
+  const shape = FORMATIONS[formation]
+  return POSITIONS.every(
+    (position) => squad.filter((p) => p.position === position).length >= shape[position],
+  )
+}
+
+/**
+ * The preferred shape if the squad can still field it, otherwise the default.
+ *
+ * A fallback rather than a throw, because both callers are AI bookkeeping inside
+ * the reducer rather than a decision anybody made: a club that sold its fourth
+ * striker simply stops playing 4-2-4. `errors.ts` is explicit that a `GameError`
+ * is for a refusal the player is shown, and nobody is being refused here.
+ *
+ * `bestXI` still throws on the result. If 4-4-2 itself cannot be fielded the squad
+ * is broken, and that is worth failing loudly over.
+ */
+export function fieldableFormation(squad: readonly Player[], preferred: Formation): Formation {
+  return canField(squad, preferred) ? preferred : '4-4-2'
 }
 
 function pickXI(

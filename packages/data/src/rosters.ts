@@ -30,14 +30,21 @@ import type { Position, RosterEntry } from '@fm/domain'
  * full-backs are defenders, holding and attacking midfielders are midfielders. Wingers
  * are the interesting case: they are exactly the players who fill either a wide
  * midfield slot or a place in a front three, so they were assigned to whichever bank
- * their squad was short of. No fixed mapping works — 3-5-2 wants five midfielders and
- * 4-3-3 wants three forwards, and in the source data Barcelona has nobody listed as a
- * striker at all while Sevilla and Vigo have only four central midfielders.
+ * their squad was short of. No fixed mapping works — 3-5-2 and 4-5-1 want five
+ * midfielders, 4-3-3 and 3-4-3 want three forwards, 4-2-4 wants four, and in the source
+ * data Barcelona has nobody listed as a striker at all while Sevilla and Vigo have only
+ * four central midfielders.
+ *
+ * **The counts below were solved offline against the formations that existed then, and
+ * they are frozen.** Adding a formation does not rebalance them — it tightens a
+ * constraint the data was already solved for. Sevilla, Getafe and Santander sit at
+ * exactly five midfielders because that was the binding corner, not because there is
+ * headroom there. A new shape wanting six of anything needs the roster re-derived.
  *
  * Squad sizes are the real ones, 19 to 29, rather than the generator's flat 23. They
  * sit inside `MIN_SQUAD` and `MAX_SQUAD`, and every one satisfies the positional
  * minimum of every formation — there is a test for that, because a squad that cannot
- * field 3-5-2 would throw out of `bestXI` rather than fail politely.
+ * field a shape would throw out of `bestXI` rather than fail politely.
  *
  * Clubs outside the league carry no roster: nothing generates squads for them.
  *

@@ -28,9 +28,14 @@
   padding: var(--fm-space-4);
 }
 
+/*
+ * Eight shapes, so a 4x2 block rather than a wrapping row — flex-wrap put three,
+ * three and two across the rail, which reads as a mistake rather than a grid.
+ * `minmax(0, 1fr)` keeps the five-character labels from forcing the columns wide.
+ */
 .lineup-screen__formations {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--fm-space-2);
 }
 
@@ -44,10 +49,23 @@
   padding: 0 var(--fm-space-4) var(--fm-space-4);
 }
 
+/*
+ * Three stats in a 20rem rail, and the third is a word rather than two digits.
+ * `CajaScreen` hit this exact wall going from two figures to three and the rule it
+ * arrived at holds here: **wrap the row, never the value.** A word broken across
+ * two lines reads as a rendering fault; a row that wraps reads as a row.
+ */
 .lineup-screen__ratings {
   display: flex;
-  gap: var(--fm-space-6);
+  flex-wrap: wrap;
+  gap: var(--fm-space-2) var(--fm-space-4);
   padding: var(--fm-space-4);
+}
+
+/* `.stat__value` is sized and tabular for a number. A word needs neither. */
+.lineup-screen__word {
+  font-size: var(--fm-text-md);
+  white-space: nowrap;
 }
 
 /* ── Groups ──────────────────────────────────────────────────────────────── */

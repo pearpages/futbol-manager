@@ -62,8 +62,9 @@ describe('every formation is playable', () => {
   // A squad short at one position throws out of `bestXI` rather than failing
   // politely, so this is a crash guard as much as a content one. It is also the
   // constraint that decided how wingers were assigned: no fixed mapping satisfies
-  // both 3-5-2 (five midfielders) and 4-3-3 (three forwards).
-  it.each(Object.keys(DEFAULT_ROSTERS))('%s can field all four', (club) => {
+  // both 3-5-2 (five midfielders) and 4-3-3 (three forwards). 4-2-4 later added a
+  // fourth forward to that envelope, which is the tightest corner in the set.
+  it.each(Object.keys(DEFAULT_ROSTERS))('%s can field every shape', (club) => {
     const roster = DEFAULT_ROSTERS[club] ?? []
     for (const formation of FORMATION_NAMES) {
       for (const position of ['GK', 'DF', 'MF', 'FW'] as Position[]) {

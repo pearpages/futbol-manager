@@ -1,7 +1,7 @@
 import type { Club } from './entities.ts'
 import { credit, EMPTY_LEDGER, positionsFrom, prizeMoney } from './finance.ts'
 import { generateFixtures } from './fixtures.ts'
-import { bestXI, FORMATIONS, keepsLineup } from './lineup.ts'
+import { bestXI, DEEPEST_BANK, fieldableFormation, keepsLineup } from './lineup.ts'
 import { needFor } from './market.ts'
 import {
   ageOn,
@@ -10,7 +10,6 @@ import {
   overall,
   type Player,
   type Position,
-  POSITIONS,
 } from './player.ts'
 import { generateYouthPlayer } from './squad.ts'
 import type { Rng } from './rng.ts'
@@ -91,26 +90,9 @@ const RETAIN_THRESHOLD = 0.5
  */
 const RELEASE_FLOOR = 21
 
-/**
- * The deepest requirement at each position across every formation — 5 defenders
- * for a 5-3-2, 5 midfielders for a 3-5-2, 3 forwards for a 4-3-3.
- *
- * Releasing down to 4-4-2's shape would leave a squad unable to field the other
- * three formations, which the career harness asserts against directly. Derived
- * rather than written out, so adding a formation cannot silently invalidate it.
- */
-const DEEPEST: Readonly<Record<Position, number>> = Object.freeze(
-  Object.fromEntries(
-    POSITIONS.map((position) => [
-      position,
-      Math.max(...Object.values(FORMATIONS).map((shape) => shape[position])),
-    ]),
-  ) as Record<Position, number>,
-)
-
 /** True when the squad still covers every formation after losing this player. */
 function canRelease(remaining: readonly Player[], position: Position): boolean {
-  return remaining.filter((p) => p.position === position).length >= DEEPEST[position]
+  return remaining.filter((p) => p.position === position).length >= DEEPEST_BANK[position]
 }
 
 export interface RolloverOptions {
@@ -240,7 +222,10 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
       club.id === state.managedClubId && keepsLineup(squad, state.lineups[club.id])
 
     if (squad.length >= 11 && !protectSelection) {
-      lineups[club.id] = bestXI(squad, state.lineups[club.id]?.formation ?? '4-4-2')
+      // Retirements and releases can take a squad below the bank its shape needs,
+      // the same way a sale can in `applyTransfers`. Fall back rather than throw.
+      const formation = fieldableFormation(squad, state.lineups[club.id]?.formation ?? '4-4-2')
+      lineups[club.id] = bestXI(squad, formation)
     }
   }
 

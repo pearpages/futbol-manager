@@ -1,7 +1,15 @@
 import { acceptableYears } from './bids.ts'
 import type { ClubId, Ledger } from './entities.ts'
 import { credit, FINANCE } from './finance.ts'
-import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRatingRaw } from './lineup.ts'
+import {
+  bestXI,
+  DEEPEST_BANK,
+  fieldableFormation,
+  FORMATIONS,
+  keepsLineup,
+  startersOf,
+  teamRatingRaw,
+} from './lineup.ts'
 import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
 import { type Rng, shuffle } from './rng.ts'
 import type { GameState } from './state.ts'
@@ -191,12 +199,22 @@ export function listedForSale(state: GameState): Player[] {
   return surplus(state.squads[state.managedClubId] ?? []).filter((player) => listed.has(player.id))
 }
 
-/** True when removing this player still leaves a legal XI in the reference shape. */
+/**
+ * True when removing this player still leaves a legal XI in every shape.
+ *
+ * Two floors, and the deeper one wins. `4-4-2 + 1` is the "one cover beyond the
+ * XI" intent — a club does not sell down to exactly eleven. `DEEPEST_BANK` is the
+ * deepest any formation asks for, so a club never sells its way out of a shape it
+ * might want to play. This used to be `4-4-2 + 1` alone, on the claim that it
+ * covered every other formation too; 4-2-4 wants a fourth forward and broke it.
+ */
 function canSpare(squad: readonly Player[], player: Player): boolean {
   const remaining = squad.filter((p) => p.id !== player.id)
   const shape = FORMATIONS['4-4-2']
   return POSITIONS.every(
-    (position) => remaining.filter((p) => p.position === position).length >= shape[position] + 1,
+    (position) =>
+      remaining.filter((p) => p.position === position).length >=
+      Math.max(DEEPEST_BANK[position], shape[position] + 1),
   )
 }
 
@@ -447,7 +465,10 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   for (const clubId of touched) {
     const squad = squads[clubId] ?? []
     if (squad.length < 11) continue
-    const formation = state.lineups[clubId]?.formation ?? '4-4-2'
+    // Selling can take a squad below the bank its shape needs — a club on 4-2-4
+    // that sells a fourth forward. `bestXI` throws on that, inside `dispatch`,
+    // with nothing to catch it.
+    const formation = fieldableFormation(squad, state.lineups[clubId]?.formation ?? '4-4-2')
 
     if (clubId === state.managedClubId && keepsLineup(squad, state.lineups[clubId])) continue
     lineups[clubId] = bestXI(squad, formation)

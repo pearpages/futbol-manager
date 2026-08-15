@@ -34,6 +34,29 @@
  * bottom of their panels. What separates them is silhouette, palette and one
  * prop each: the trainer's whistle sits on his chest, and the other three carry
  * something at the right hand, at three different heights and sizes.
+ *
+ * ## Case is the second axis: uppercase means "part of the prop"
+ *
+ * A character still names an ink, and **the case names the part** — `a` is an
+ * accent pixel of the body, `A` the same accent inside the prop. That is what
+ * lets the hub animate a clipboard without dragging a necktie along with it: the
+ * agent and the director both draw a tie in `accent`, so the ink alone cannot
+ * tell the two apart.
+ *
+ * Case rather than a bounding box, because a prop spans several inks — the
+ * clipboard is `light` paper with `ink` rules and an `accent` clip — and a box
+ * around it would have to carve the tie back out again. One character per pixel
+ * also keeps a grid diffable, which a parallel mask would not.
+ *
+ * ## Two expressions, and only one of them showing
+ *
+ * `m` is the mouth at rest and `u` the smile the hub swaps in — see
+ * `PART_BY_CHAR`. They are drawn **side by side rather than on top of each
+ * other**, which is the property that keeps every guard in this file intact: no
+ * pixel is claimed twice, the round trip stays exact, and paint order stays
+ * free. It is also why every smile here has its corners on the mouth's own row
+ * and its curve on the row below — the two shapes have to interlock rather than
+ * overlap.
  */
 
 /**
@@ -59,7 +82,10 @@ export const INK_KEYS = [
 
 export type InkKey = (typeof INK_KEYS)[number]
 
-/** The character each ink is drawn with. Anything else in a grid is empty. */
+/**
+ * The character each ink is drawn with, lowercase. Uppercase draws the same ink
+ * as part of the prop; anything else in a grid is empty.
+ */
 export const INK_BY_CHAR: Readonly<Record<string, InkKey>> = {
   k: 'hair',
   s: 'skin',
@@ -70,6 +96,37 @@ export const INK_BY_CHAR: Readonly<Record<string, InkKey>> = {
   t: 'trouser',
   l: 'light',
   a: 'accent',
+  m: 'ink',
+  u: 'ink',
+}
+
+/**
+ * The addressable pieces of a figure. `body` is the man; `prop` is the thing he
+ * carries; `mouth` and `smile` are the two expressions, of which exactly one is
+ * ever visible.
+ *
+ * Emitted in this order, so the prop paints last — the director's case handle
+ * sits over his hand rather than under it. `mouth` and `smile` overlap nothing,
+ * so their position in the order is free.
+ */
+export const PART_KEYS = ['body', 'mouth', 'smile', 'prop'] as const
+
+export type PartKey = (typeof PART_KEYS)[number]
+
+/**
+ * Characters whose part is not the one their case implies.
+ *
+ * Case gave two parts and there are four, so the expressions carry their own
+ * characters. Both draw in `ink` — which of them is *visible* is the expression,
+ * and that is a CSS state rather than a colour. `u` is its own mnemonic.
+ *
+ * A stray `M` or `U` resolves to `prop` rather than to nothing, which sounds
+ * dangerous and is not: the guard in `sprites.test.ts` puts every prop pixel at
+ * column 18 or beyond, and a face is nowhere near it.
+ */
+export const PART_BY_CHAR: Readonly<Record<string, PartKey>> = {
+  m: 'mouth',
+  u: 'smile',
 }
 
 export type FigureKey = 'assistant' | 'trainer' | 'agent' | 'director'
@@ -86,8 +143,8 @@ const ASSISTANT: readonly string[] = [
   '.........kkssssssk..........',
   '.........ksisssisk..........',
   '.........ksssssssk..........',
-  '..........sssiiss...........',
-  '...........sssss............',
+  '..........ssummus...........',
+  '...........ssuus............',
   '............hhh.............',
   '.........ggglllggg..........',
   '.......gggggglgggggg........',
@@ -99,14 +156,14 @@ const ASSISTANT: readonly string[] = [
   '.......gdgggggggggdg........',
   '.......ssgggggggggss........',
   '.........dddddddddss........',
-  '.........ttttdtttt.aaaaa....',
-  '.........ttttdttttlllllll...',
-  '.........ttttdttttliiiiil...',
-  '.........ttttdttttlllllll...',
-  '.........tttt.ttttliiiiil...',
-  '.........tttt.ttttlllllll...',
-  '.........tttt.ttttliiiiil...',
-  '.........tttt.ttttlllllll...',
+  '.........ttttdtttt.AAAAA....',
+  '.........ttttdttttLLLLLLL...',
+  '.........ttttdttttLIIIIIL...',
+  '.........ttttdttttLLLLLLL...',
+  '.........tttt.ttttLIIIIIL...',
+  '.........tttt.ttttLLLLLLL...',
+  '.........tttt.ttttLIIIIIL...',
+  '.........tttt.ttttLLLLLLL...',
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
   '.........iiii.iiii..........',
@@ -132,8 +189,8 @@ const TRAINER: readonly string[] = [
   '.........ksssssssk..........',
   '.........ksisssisk..........',
   '.........ksssssssk..........',
-  '..........sssiiss...........',
-  '...........sssss............',
+  '..........ssummus...........',
+  '...........ssuus............',
   '............hhh.............',
   '.........ggglllggg..........',
   '.......gggggglgggggg........',
@@ -152,11 +209,11 @@ const TRAINER: readonly string[] = [
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
-  '.........tttt.tttt..aaa.....',
-  '.........tttt.tttt.aaaaa....',
-  '.........tttt.tttt.aaiaa....',
-  '.........iiii.iiii.aaaaa....',
-  '........iiiii.iiiii.aaa.....',
+  '.........tttt.tttt..AAA.....',
+  '.........tttt.tttt.AAAAA....',
+  '.........tttt.tttt.AAIAA....',
+  '.........iiii.iiii.AAAAA....',
+  '........iiiii.iiiii.AAA.....',
 ]
 
 /**
@@ -172,8 +229,8 @@ const AGENT: readonly string[] = [
   '.........ksssssssk..........',
   '.........ksisssisk..........',
   '.........ksssssssk..........',
-  '..........sssiiss...........',
-  '..........sssssss...........',
+  '..........ssummus...........',
+  '..........sssuuss...........',
   '............hhh.............',
   '.........ggglllggg..........',
   '.......gggggglgggggg........',
@@ -185,12 +242,12 @@ const AGENT: readonly string[] = [
   '.......gdgggggggggdg........',
   '.......ssgggggggggss........',
   '.........dddddddddss........',
-  '.........ttttdttttllllll....',
-  '.........ttttdttttliiiil....',
-  '.........ttttdttttllllll....',
-  '.........ttttdttttlaalll....',
-  '.........tttt.ttttllllll....',
-  '.........tttt.ttttllllll....',
+  '.........ttttdttttLLLLLL....',
+  '.........ttttdttttLIIIIL....',
+  '.........ttttdttttLLLLLL....',
+  '.........ttttdttttLAALLL....',
+  '.........tttt.ttttLLLLLL....',
+  '.........tttt.ttttLLLLLL....',
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
@@ -212,8 +269,8 @@ const DIRECTOR: readonly string[] = [
   '.........lsssssssl..........',
   '.........lsisssisl..........',
   '.........ksssssssk..........',
-  '..........ssiiiss...........',
-  '..........sssssss...........',
+  '..........summmus...........',
+  '..........ssuuuss...........',
   '............hhh.............',
   '........gggglllgggg.........',
   '.......gggggglgggggg........',
@@ -226,13 +283,13 @@ const DIRECTOR: readonly string[] = [
   '.......ssgggggggggss........',
   '.........dddddddddss........',
   '.........ttttdtttt.ss.......',
-  '.........ttttdtttt..aa......',
-  '.........ttttdttttaaaaaaa...',
-  '.........ttttdttttaaaaaaa...',
-  '.........tttt.ttttaaaiaaa...',
-  '.........tttt.ttttaaaaaaa...',
-  '.........tttt.ttttaaaaaaa...',
-  '.........tttt.ttttaaaaaaa...',
+  '.........ttttdtttt..AA......',
+  '.........ttttdttttAAAAAAA...',
+  '.........ttttdttttAAAAAAA...',
+  '.........tttt.ttttAAAIAAA...',
+  '.........tttt.ttttAAAAAAA...',
+  '.........tttt.ttttAAAAAAA...',
+  '.........tttt.ttttAAAAAAA...',
   '.........tttt.tttt..........',
   '.........tttt.tttt..........',
   '.........iiii.iiii..........',
@@ -255,11 +312,29 @@ export interface SpriteRun {
   readonly w: number
 }
 
+/** Every run of one ink, within one part. */
+export interface InkRuns {
+  readonly ink: InkKey
+  readonly runs: readonly SpriteRun[]
+}
+
+export interface SpritePart {
+  readonly part: PartKey
+  /** In `INK_KEYS` order, and only the inks this part actually uses. */
+  readonly inks: readonly InkRuns[]
+}
+
 export interface DecodedSprite {
   readonly width: number
   readonly height: number
-  /** In `INK_KEYS` order, and only the inks a figure actually uses. */
-  readonly runs: readonly (readonly [InkKey, readonly SpriteRun[]])[]
+  /**
+   * In `PART_KEYS` order, and only the parts a figure actually uses.
+   *
+   * Nested rather than a flat `(ink, part)` list so the hub can animate **one**
+   * element per part. Several ink groups carrying the same animation would stay
+   * in step in practice, but only by accident of them all starting together.
+   */
+  readonly parts: readonly SpritePart[]
 }
 
 /**
@@ -274,36 +349,44 @@ export interface DecodedSprite {
  * **Unknown characters are skipped rather than thrown on.** A typo in a grid
  * should render a hole a test catches, not white-screen the app on load — the
  * same call `badgeFor` makes when it falls back instead of throwing.
+ *
+ * Runs merge only across *identical* characters, so `a` and `A` never join —
+ * which is exactly what keeps a prop separable from the body beside it.
  */
 export function decodeSprite(rows: readonly string[]): DecodedSprite {
-  const found = new Map<InkKey, SpriteRun[]>()
+  const found = new Map<`${PartKey}/${InkKey}`, SpriteRun[]>()
 
   rows.forEach((row, y) => {
     let x = 0
     while (x < row.length) {
       const char = row[x] as string
-      const ink = INK_BY_CHAR[char]
+      const lower = char.toLowerCase()
+      const ink = INK_BY_CHAR[lower]
       if (ink === undefined) {
         x += 1
         continue
       }
+      const part: PartKey = PART_BY_CHAR[lower] ?? (char === lower ? 'body' : 'prop')
       let w = 1
       while (row[x + w] === char) w += 1
-      const runs = found.get(ink)
-      if (runs === undefined) found.set(ink, [{ x, y, w }])
+      const runs = found.get(`${part}/${ink}`)
+      if (runs === undefined) found.set(`${part}/${ink}`, [{ x, y, w }])
       else runs.push({ x, y, w })
       x += w
     }
   })
 
-  // Iterated in INK_KEYS order rather than insertion order, so the emitted
-  // groups do not depend on which pixel a figure happens to draw first.
-  const runs = INK_KEYS.flatMap((ink) => {
-    const list = found.get(ink)
-    return list === undefined ? [] : [[ink, list] as const]
+  // Iterated in PART_KEYS × INK_KEYS order rather than insertion order, so the
+  // emitted groups do not depend on which pixel a figure happens to draw first.
+  const parts = PART_KEYS.flatMap<SpritePart>((part) => {
+    const inks = INK_KEYS.flatMap<InkRuns>((ink) => {
+      const runs = found.get(`${part}/${ink}`)
+      return runs === undefined ? [] : [{ ink, runs }]
+    })
+    return inks.length === 0 ? [] : [{ part, inks }]
   })
 
-  return { width: rows[0]?.length ?? 0, height: rows.length, runs }
+  return { width: rows[0]?.length ?? 0, height: rows.length, parts }
 }
 
 /**

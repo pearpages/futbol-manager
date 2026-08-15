@@ -1,5 +1,6 @@
 import {
   bestXI,
+  canField,
   FORMATION_NAMES,
   FORMATIONS,
   type Formation,
@@ -96,16 +97,24 @@ export function LineupScreen() {
             <div className="field">
               <span className="field__label">{t('lineup.formation')}</span>
               <div className="lineup-screen__formations">
-                {FORMATION_NAMES.map((formation) => (
-                  <button
-                    key={formation}
-                    type="button"
-                    className={`button${formation === lineup.formation ? ' is-primary' : ''}`}
-                    onClick={() => setFormation(formation)}
-                  >
-                    {formation}
-                  </button>
-                ))}
+                {FORMATION_NAMES.map((formation) => {
+                  // `bestXI` throws on a squad short at any bank, and `setFormation`
+                  // calls it before dispatching — so an enabled button here is an
+                  // uncaught throw in an event handler, with no error boundary.
+                  const playable = canField(squad, formation)
+                  return (
+                    <button
+                      key={formation}
+                      type="button"
+                      className={`button${formation === lineup.formation ? ' is-primary' : ''}`}
+                      disabled={!playable}
+                      {...(playable ? {} : { title: t('lineup.cannotField') })}
+                      onClick={() => setFormation(formation)}
+                    >
+                      {formation}
+                    </button>
+                  )
+                })}
               </div>
               <p className="lineup-screen__hint">{t('lineup.formationHint')}</p>
             </div>
@@ -146,6 +155,12 @@ export function LineupScreen() {
               <span className="stat__label">{t('lineup.defence')}</span>
               <span className="stat__value">{rating.defence}</span>
             </div>
+            <div className="stat">
+              <span className="stat__label">{t('lineup.tempo')}</span>
+              <span className="stat__value lineup-screen__word">
+                {t(describeTempo(rating.tempo))}
+              </span>
+            </div>
           </div>
           <p className="lineup-screen__hint lineup-screen__hint--pad">{t('lineup.ratingHint')}</p>
         </section>
@@ -166,4 +181,25 @@ function describeApproach(attacking: number): string {
   if (attacking > 35) return 'approach.balanced'
   if (attacking > 15) return 'approach.defensive'
   return 'approach.parkTheBus'
+}
+
+/**
+ * How open the game is, as a word — the third number the resolver reads and the
+ * only one with no control of its own.
+ *
+ * `tempo` is set by the slider *and* the formation together, which is exactly why
+ * it needs saying out loud: neither control announces that it is also doing this.
+ *
+ * **The cuts are against the values that actually occur**, not rounded for looks.
+ * The slider contributes −1…+1 and `FORMATION_TEMPO` −0.7…+0.4, so at the default
+ * slider 4-2-4 reads Open, 5-4-1 and 4-5-1 read Tight, and the milder shapes stay
+ * Balanced rather than overclaiming. Retune `FORMATION_TEMPO` and re-check that.
+ *
+ * Three bands where the approach slider has five: openness is a coarser thing than
+ * mentality, and five words would imply a precision the model does not have.
+ */
+function describeTempo(tempo: number): string {
+  if (tempo >= 0.35) return 'tempo.open'
+  if (tempo > -0.35) return 'tempo.balanced'
+  return 'tempo.tight'
 }
