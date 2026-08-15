@@ -30,6 +30,7 @@ import {
   ledgerNet,
   monthlyLines,
   positionsFrom,
+  signingOutlay,
 } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { BALANCED, type Lineup, startersOf, type Tactics, teamRating } from './lineup.ts'
@@ -1004,8 +1005,7 @@ function startExpansion(state: GameState, command: StartExpansion): ReduceResult
  * which is what sizes the overdraft against a season's gate.
  */
 function affordable(state: GameState, club: Club, fee: number): boolean {
-  const outlay = fee + Math.round(fee * FINANCE.SIGNING_BONUS)
-  return canAfford(club, outlay, state.competition.clubIds.length, ROUNDS_PER_HALF)
+  return canAfford(club, signingOutlay(fee), state.competition.clubIds.length, ROUNDS_PER_HALF)
 }
 
 /**

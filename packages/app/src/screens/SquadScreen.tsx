@@ -1,4 +1,12 @@
-import { ageOn, askingPrice, overall, type Player, type Position, surplus } from '@fm/domain'
+import {
+  ageOn,
+  askingPrice,
+  overall,
+  type Player,
+  type Position,
+  surplus,
+  toCivil,
+} from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import './SquadScreen.css'
@@ -52,6 +60,11 @@ export function SquadScreen() {
             <th>{t('squad.column.age')}</th>
             <th>{t('squad.column.overall')}</th>
             <th>{t('squad.column.worth')}</th>
+            {/* What he costs you, and until when. The wage bill is a single figure
+                on the Caja screen and was attributable to nobody; these two columns
+                are where it comes from. */}
+            <th>{t('squad.column.wage')}</th>
+            <th>{t('squad.column.contract')}</th>
             <th className="is-text">{t('squad.column.selected')}</th>
             <th className="is-text">{t('squad.column.sale')}</th>
           </tr>
@@ -80,6 +93,10 @@ export function SquadScreen() {
                   <strong>{overall(player)}</strong>
                 </td>
                 <td>{money(askingPrice(player, date))}</td>
+                <td>{money(player.contract.wage)}</td>
+                {/* Contracts run to 30 June, so the year is the whole of it — a
+                    full date would be four characters of noise on every row. */}
+                <td>{toCivil(player.contract.until).y}</td>
                 <td className="is-text squad-screen__selected">
                   {starting.has(player.id) ? t('squad.starting') : t('squad.notSelected')}
                 </td>

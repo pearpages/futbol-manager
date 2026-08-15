@@ -13,6 +13,7 @@ import {
   POSITION_WEIGHTS,
   positionShare,
   type TeamRating,
+  toCivil,
 } from '@fm/domain'
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
@@ -123,7 +124,7 @@ export function PlayerScreen() {
   const comparedId = useGame((s) => s.comparedPlayerId)
   const inspect = useGame((s) => s.inspect)
   const compare = useGame((s) => s.compare)
-  const { t, percent } = useT()
+  const { t, percent, money } = useT()
 
   const squad = game.squads[game.managedClubId] ?? []
   // The ficha reads anyone in the game, not only your own players — the market
@@ -193,6 +194,16 @@ export function PlayerScreen() {
         <div className="stat">
           <dt className="stat__label">{t('player.defence')}</dt>
           <dd className="stat__value">{Math.round(playerDefence(player))}</dd>
+        </div>
+        {/* The terms. A ficha that says how good he is and not what he costs is
+            half a card — and for a market target it is the half you are buying. */}
+        <div className="stat">
+          <dt className="stat__label">{t('player.wage')}</dt>
+          <dd className="stat__value">{money(player.contract.wage)}</dd>
+        </div>
+        <div className="stat">
+          <dt className="stat__label">{t('player.contract')}</dt>
+          <dd className="stat__value">{toCivil(player.contract.until).y}</dd>
         </div>
       </dl>
 

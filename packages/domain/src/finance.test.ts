@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  canAfford,
   credit,
   debtLimit,
   EMPTY_LEDGER,
@@ -11,6 +12,8 @@ import {
   ledgerNet,
   occupancy,
   prizeMoney,
+  seasonProjection,
+  signingOutlay,
   sponsorMoney,
   tvMoney,
   wageBill,
@@ -20,6 +23,7 @@ import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { reduce } from './reduce.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
+import { computeTable } from './table.ts'
 import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { fromCivil } from './time.ts'
 
@@ -318,3 +322,116 @@ describe('the balance identity', () => {
     )
   })
 })
+
+describe('what a signing really costs', () => {
+  it('adds the bonus to the fee, so a fee-only test of affordability lies', () => {
+    const fee = 1000
+    const limit = debtLimit(BIG, CLUBS, ROUNDS_PER_HALF)
+    // Exactly enough to cover the bare fee by spending to the overdraft floor.
+    const club = { ...BIG, budget: fee - limit }
+
+    expect(signingOutlay(fee) - fee).toBe(Math.round(fee * FINANCE.SIGNING_BONUS))
+    expect(canAfford(club, fee, CLUBS, ROUNDS_PER_HALF)).toBe(true)
+    // The claim that matters: the same deal is refused once the bonus counts.
+    // This is what the market screen has to filter on, or it offers you players
+    // the reducer will then reject.
+    expect(canAfford(club, signingOutlay(fee), CLUBS, ROUNDS_PER_HALF)).toBe(false)
+  })
+})
+
+describe('the season forecast', () => {
+  const fresh = () => newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng: createRng(20260814) })
+
+  const project = (state: ReturnType<typeof fresh>, club = state.clubs[0]) => {
+    /* c8 ignore next */
+    if (club === undefined) throw new Error('no club')
+    return seasonProjection(
+      club,
+      state.squads[club.id] ?? [],
+      state.competition.clubIds,
+      state.season.fixtures,
+    )
+  }
+
+  it('nets the income lines against the wage bill', () => {
+    const forecast = project(fresh())
+    expect(forecast.net).toBe(
+      forecast.gate + forecast.tv + forecast.sponsor + forecast.prize - forecast.wages,
+    )
+  })
+
+  /**
+   * The property that stops this being `annualIncome` with a different name.
+   * That function prices the gate at the league default *on purpose*, because it
+   * sizes the overdraft and a manager must not widen his own borrowing with a
+   * slider. A forecast has the opposite duty.
+   */
+  it("prices the gate at the manager's own ticket, where the overdraft will not", () => {
+    const state = fresh()
+    const club = state.clubs[0]
+    /* c8 ignore next */
+    if (club === undefined) throw new Error('no club')
+    const dearer = { ...club, ticketPrice: club.ticketPrice * FINANCE.MAX_TICKET_FACTOR }
+
+    expect(project(state, dearer).gate).not.toBe(project(state, club).gate)
+    expect(debtLimit(dearer, CLUBS, ROUNDS_PER_HALF)).toBe(debtLimit(club, CLUBS, ROUNDS_PER_HALF))
+  })
+
+  it('assumes a mid-table finish before a ball is kicked', () => {
+    const forecast = project(fresh())
+    expect(forecast.position).toBeNull()
+    expect(forecast.prize).toBe(prizeMoney(Math.ceil(CLUBS / 2), CLUBS))
+    // The flat share, which is what the game actually pays in August.
+    expect(forecast.tv).toBe(tvMoney(null, CLUBS))
+  })
+
+  it('follows the table once there is one', () => {
+    const rng = createRng(20260814)
+    const played = simulateSeason(newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng }), rng)
+    const club = played.clubs[0]
+    /* c8 ignore next */
+    if (club === undefined) throw new Error('no club')
+
+    const standing =
+      computeTable(played.competition.clubIds, played.season.fixtures).findIndex(
+        (row) => row.clubId === club.id,
+      ) + 1
+    const forecast = project(played, club)
+
+    expect(forecast.position).toBe(standing)
+    expect(forecast.prize).toBe(prizeMoney(standing, CLUBS))
+  })
+
+  /**
+   * The reason the panel exists. `wageBill` is what the contracts say; it is not
+   * what a club sitting on money actually pays, and the gap is the brake the
+   * whole economy is bounded by.
+   */
+  it('charges the premium a cash pile adds, which the contracts alone do not show', () => {
+    const state = fresh()
+    const club = state.clubs[0]
+    /* c8 ignore next */
+    if (club === undefined) throw new Error('no club')
+    const squad = state.squads[club.id] ?? []
+
+    const banked = {
+      ...club,
+      budget: annualIncomeYears(club, 10),
+    }
+    expect(project(state, banked).wages).toBeGreaterThan(wageBill(squad))
+    // And a club living hand to mouth is charged exactly the contracts, because
+    // the premium is inert below the healthy reserve.
+    expect(project(state, { ...club, budget: 0 }).wages).toBe(wageBill(squad))
+  })
+})
+
+/** A balance worth this many years of the club's own income. */
+function annualIncomeYears(club: (typeof TEST_CLUBS)[number], years: number): number {
+  return Math.round(
+    (gateReceipts({ ...club, ticketPrice: FINANCE.TICKET }, Math.ceil(CLUBS / 2), CLUBS) *
+      ROUNDS_PER_HALF +
+      tvMoney(null, CLUBS) +
+      sponsorMoney(club)) *
+      years,
+  )
+}

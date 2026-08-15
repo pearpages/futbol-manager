@@ -597,3 +597,26 @@ Watching the tick alone would have announced January every year and never a summ
 556 tests, typecheck / lint / format clean.
 
 **One wart this did not touch:** `TableScreen`'s "Matchday" stat is `ceil(played / 10)` — _rounds completed_ — while the bar shows the round you are _about to play_, so the two still disagree by one for most of a season. Flagged in the 2026-08-14 title-bar entry, still a one-line fix, still not what the session was asked for.
+
+### 2026-08-15 — the economy, made legible
+
+**Prompted by four questions off one screenshot of Caja, and every one turned out to be a presentation gap rather than a model bug.** The numbers on that screen were all arithmetically right. Nothing about the economy changed; `pnpm season` is byte-identical to `f8d7a65`.
+
+- **"How come there are `primas de fichaje` if we didn't allow them?"** They were allowed, at M5a. 10% of the fee, charged to the buyer, and `affordable` in the reducer has always counted it — so the only ways to learn it existed were to be refused a bid, or to read it off the accounts a week later as a line you had not agreed to. **The bid panel now states the bonus and the total before you commit.**
+- **"How come I have `descubierto` −9.7M?"** That was the overdraft **limit**, printed as a negative beside a balance in credit. It is headroom, and it read as debt to the only person it was for. Now `Saldo` · `Disponible` · `Límite de descubierto`, all positive, with a test asserting the panel contains no negative figure while the club is in credit.
+- **"Where can I see the salaries of the players?"** Nowhere — `contract.wage` and `contract.until` were rendered for no owned player on any screen, so a wage bill was attributable to nobody. Both are now columns on Plantilla and fields on the ficha.
+- **"Are we getting any TV, premios?"** Yes; every €0k was a cadence nobody had stated. New **`seasonProjection`** in `finance.ts`, surfaced as a `Previsión` panel.
+
+**`seasonProjection` must not reuse `annualIncome`, and the comment says so.** That function deliberately prices the gate at the league default and assumes a mid-table finish, because it sizes the overdraft and a manager must not widen his own borrowing with the ticket slider. **A forecast has the opposite duty** — his price, his position, or it is not telling him anything. There is a test that moves the slider and asserts the forecast moves while `debtLimit` does not.
+
+**It is a run rate, not "banked plus remaining".** The question is "can I afford this squad", which is a whole year of income against a whole year of wages; mixing actuals in would make the figure lurch every home match and mean something different in May than in August, when the accounts table beside it already states actuals. Every nullable position is handled by the convention that already existed — `occupancy` drops the form term, `tvMoney` pays the flat share — and only prize money needed a fallback, which is the same mid-table assumption `annualIncome` makes.
+
+**`signingOutlay` exists because two places have to agree.** The market's "Within budget" filter compared the bare fee against the bare balance, which was wrong twice: blind to the bonus, so it offered deals `MakeBid` then refused; and blind to the overdraft, so it hid every player the club could legally borrow for. It now asks the reducer's own question. `affordable` in `reduce.ts` was rewritten to call the same function rather than repeat the arithmetic.
+
+**Consequence worth knowing:** at a mid-table club the filter now shows 227 of 228, because with the overdraft it genuinely can reach almost everyone by fee. That is honest rather than useless — the real constraint is wages, and the reducer does not gate on those either (personal terms are a separate negotiation). **Making the screen stricter than the reducer would reintroduce the same mismatch in the other direction.** The market rail now shows `Disponible` beside `Presupuesto`, because the balance alone contradicts the filter next to it.
+
+**Seen in a browser, for the first time in this project.** The extension connected. That is what caught the one real defect: with three stats where there were two, `Saldo 5,7 M€` broke across two lines in an 18rem rail. `.caja-screen__stats` wraps the blocks now and `.caja-screen__figure` is `nowrap` — wrap the block, never the figure. Sarrià's forecast reads gate €6.3M, TV €3.9M, patrocinio €2.4M, premios €1.1M against salarios €8.5M for **€5.2M**, and Plantilla lists a squad from €105k to €777k adding to the €8.5M the panel states.
+
+569 tests, typecheck / lint / format clean. Schema untouched — nothing here is state, so there is no migration.
+
+**A process note worth not repeating: I ran `git stash push` to compare against HEAD and stashed my own work.** It popped back cleanly and nothing was lost, but `git stash` is the wrong tool while another session is committing to the same tree. **Use `git worktree add --detach <dir> HEAD`** — that is how the `pnpm season` byte-identity check was eventually done, and it touches nothing.

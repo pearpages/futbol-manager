@@ -44,7 +44,7 @@ export const ATTRIBUTE_KEYS = [
 export interface Contract {
   /** Expiry. Contracts run to 30 June, as they do in reality. */
   readonly until: DayNumber
-  /** Per season. **Recorded at M4, never spent** — M5 is what pays wages. */
+  /** Per season. Paid monthly since M5a, a twelfth at a time, times the premium. */
   readonly wage: number
 }
 

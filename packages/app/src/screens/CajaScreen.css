@@ -22,9 +22,12 @@
   flex: none;
 }
 
+/* Three stats where there were two, in an 18rem rail. Wrapping the *blocks* is
+   fine; wrapping a figure is not, and `5,7 M€` broke across two lines. */
 .caja-screen__stats {
   display: flex;
-  gap: var(--fm-space-6);
+  flex-wrap: wrap;
+  gap: var(--fm-space-2) var(--fm-space-4);
   padding: var(--fm-space-3) var(--fm-space-4);
 }
 
@@ -32,6 +35,7 @@
    "€24.5M". Same local override the table screen and the hub already carry. */
 .caja-screen__figure {
   font-size: var(--fm-text-md);
+  white-space: nowrap;
 }
 
 /* The result line closes the column, so it is ruled off rather than striped. */
@@ -54,4 +58,14 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   }
+}
+
+/* The forecast is a rail panel, not a main table: no head, tighter rows, and it
+   must not inherit the main table's column sizing. */
+.caja-screen__projection {
+  width: 100%;
+}
+
+.caja-screen__projection td {
+  padding: var(--fm-space-1) var(--fm-space-4);
 }

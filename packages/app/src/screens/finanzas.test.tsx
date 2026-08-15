@@ -1,12 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { expansionCost, FINANCE, ledgerNet, STRIKES_ALLOWED } from '@fm/domain'
+import {
+  debtLimit,
+  expansionCost,
+  FINANCE,
+  ledgerNet,
+  ROUNDS_PER_HALF,
+  seasonProjection,
+  STRIKES_ALLOWED,
+} from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { advanceUntil, back, labelStem, openScreen } from '../testing.ts'
-import { LINES, signed } from './CajaScreen.tsx'
+import { LINES, PROJECTED, signed } from './CajaScreen.tsx'
 import { fillFor } from './EstadioScreen.tsx'
 
 /**
@@ -24,7 +32,7 @@ beforeEach(() => {
   useGame.getState().newGame(MID)
 })
 
-const { t } = translatorFor('en')
+const { t, money } = translatorFor('en')
 const game = () => useGame.getState().game
 const club = () => game().clubs.find((c) => c.id === game().managedClubId)
 
@@ -58,6 +66,84 @@ describe('Caja', () => {
     // checks every tick — the screen states it rather than recomputing it.
     const total = LINES.reduce((sum, line) => sum + signed(before.ledger, line), 0)
     expect(total).toBe(ledgerNet(before.ledger))
+  })
+
+  /**
+   * The overdraft is headroom, and it used to be printed as `-9.7M` beside a
+   * balance that was in credit. Read as debt by the only person it was for.
+   */
+  it('states the overdraft as a ceiling, never as a negative beside the balance', () => {
+    render(<App />)
+    openScreen('nav.caja')
+
+    const current = club()
+    /* c8 ignore next */
+    if (current === undefined) throw new Error('no club')
+    const limit = debtLimit(current, game().competition.clubIds.length, ROUNDS_PER_HALF)
+
+    const panel = document.querySelector('.caja-screen__side .caja-screen__stats')
+    /* c8 ignore next */
+    if (panel === null) throw new Error('no balance panel')
+    const figures = within(panel as HTMLElement)
+
+    expect(figures.getByText(t('caja.overdraftLimit'))).toBeDefined()
+    expect(figures.getByText(money(limit))).toBeDefined()
+    // The number a manager needs before he bids, and the one the reducer tests.
+    expect(figures.getByText(t('caja.available'))).toBeDefined()
+    expect(figures.getByText(money(current.budget + limit))).toBeDefined()
+    // Nothing in this panel is a negative figure while the club is in credit.
+    expect(panel.textContent).not.toMatch(/-/)
+  })
+
+  it('forecasts a whole season, and nets it against the wage bill', () => {
+    render(<App />)
+    openScreen('nav.caja')
+
+    const current = club()
+    /* c8 ignore next */
+    if (current === undefined) throw new Error('no club')
+    const forecast = seasonProjection(
+      current,
+      game().squads[current.id] ?? [],
+      game().competition.clubIds,
+      game().season.fixtures,
+    )
+
+    const panel = document.querySelector('.caja-screen__projection')
+    /* c8 ignore next */
+    if (panel === null) throw new Error('no forecast')
+    const rows = within(panel as HTMLElement)
+
+    for (const line of PROJECTED) {
+      expect(rows.getByText(t(line.label)), line.label).toBeDefined()
+    }
+    // Stated, not recomputed by the screen — the same discipline the accounts
+    // table follows against `ledgerNet`.
+    expect(rows.getByText(money(forecast.net))).toBeDefined()
+  })
+
+  /**
+   * The forecast has to be the manager's own ground, not the league default.
+   * `annualIncome` deliberately ignores the slider because it sizes the
+   * overdraft; a forecast that inherited that would be answering a different
+   * question from the one the panel asks.
+   */
+  it('moves the forecast when the ticket price moves', () => {
+    render(<App />)
+    openScreen('nav.caja')
+    const before = document.querySelector('.caja-screen__projection')?.textContent
+    back()
+
+    // Through the slider a manager actually uses, so this also says the two
+    // Finanzas screens agree about the same ground.
+    openScreen('nav.estadio')
+    fireEvent.change(screen.getByLabelText(labelStem(t('estadio.price', { price: '' }))), {
+      target: { value: String(FINANCE.TICKET * FINANCE.MIN_TICKET_FACTOR) },
+    })
+    back()
+
+    openScreen('nav.caja')
+    expect(document.querySelector('.caja-screen__projection')?.textContent).not.toBe(before)
   })
 
   it('comes back to the hub', () => {

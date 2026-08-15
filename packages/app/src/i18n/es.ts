@@ -92,6 +92,8 @@ export const es: Dictionary = {
   'squad.column.player': 'Jugador',
   'squad.column.age': 'Edad',
   'squad.column.overall': 'Med',
+  'squad.column.wage': 'Sueldo',
+  'squad.column.contract': 'Hasta',
   'squad.column.worth': 'Valor',
   'squad.column.selected': 'Convocado',
   'squad.column.sale': 'Venta',
@@ -134,6 +136,8 @@ export const es: Dictionary = {
   'player.age': 'Edad',
   'player.attack': 'Ataque',
   'player.defence': 'Defensa',
+  'player.wage': 'Sueldo',
+  'player.contract': 'Contrato hasta',
   'player.inXI': 'En el once titular.',
   'player.onBench': 'En el banquillo. Cambia la alineación para hacerlo titular.',
   'attribute.pace': 'Velocidad',
@@ -216,6 +220,8 @@ export const es: Dictionary = {
   'market.feeField': 'Traspaso (miles) · piden {fee}',
   'market.makeBid': 'Hacer oferta',
   'market.bidAgain': 'Volver a ofertar',
+  'market.outlay':
+    'Más una prima de fichaje del {percent} de {bonus} para el jugador — {total} en total.',
   'market.bidHint':
     'Una oferta igual o superior a lo que piden se acepta. Por debajo, pueden poner precio. La respuesta tarda un par de días.',
   'market.wageField': 'Sueldo por temporada (miles) · quiere {wage}',
@@ -261,9 +267,15 @@ export const es: Dictionary = {
   'caja.note':
     'Cada movimiento de tu saldo es una de estas líneas y nada más. Las cuentas de la temporada empiezan de nuevo cada agosto, una vez han llegado los premios.',
   'caja.balance': 'Saldo',
-  'caja.overdraft': 'Descubierto',
+  'caja.available': 'Disponible',
+  'caja.overdraftLimit': 'Límite de descubierto',
   'caja.overdraftNote':
-    'Puedes gastar en números rojos hasta el límite del descubierto, y pagas intereses mientras estés ahí. La directiva no te lo tiene en cuenta.',
+    'Disponible es lo que puedes comprometer: tu saldo más el descubierto. Pagas intereses mientras estés en números rojos, y la directiva no te lo tiene en cuenta.',
+  'caja.projection': 'Previsión',
+  'caja.projectionNote':
+    'Una temporada entera con la plantilla, el precio de la entrada y el {position}º puesto de hoy. No es lo ingresado — eso lo dicen las cuentas. Los traspasos son cosa tuya, así que quedan fuera.',
+  'caja.projectionNoteEarly':
+    'Una temporada entera con la plantilla y el precio de la entrada de hoy, suponiendo un puesto de media tabla mientras no haya clasificación. Los traspasos son cosa tuya, así que quedan fuera.',
   'caja.wages': 'Salarios',
   'caja.annual': 'Anual',
   'caja.squad': 'Plantilla',

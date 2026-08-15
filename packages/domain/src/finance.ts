@@ -321,6 +321,19 @@ export function canAfford(
   return club.budget - amount >= -debtLimit(club, clubCount, homeGames)
 }
 
+/**
+ * What signing a player actually takes out of the bank: the fee, plus the bonus
+ * the player is paid for putting his name to it.
+ *
+ * Stated once because two places have to agree on it. The reducer refuses a bid
+ * it cannot cover, and the market screen filters on affordability — and a screen
+ * filtering on the fee alone offers you players the reducer will then reject,
+ * which is the manager finding out about the bonus by being refused.
+ */
+export function signingOutlay(fee: number): number {
+  return fee + Math.round(fee * FINANCE.SIGNING_BONUS)
+}
+
 // ── The monthly tick ────────────────────────────────────────────────────────
 
 /** Wages, TV, sponsorship and interest all settle on the first of the month. */
@@ -386,4 +399,74 @@ export function positionsFrom(
   if (!fixtures.some((f) => f.result !== null)) return null
   const table = computeTable(clubIds, fixtures)
   return new Map(table.map((row, index) => [row.clubId, index + 1]))
+}
+
+// ── The forecast ────────────────────────────────────────────────────────────
+
+/** A whole season's recurring money, in thousands. Not a measurement. */
+export interface Projection {
+  readonly gate: number
+  readonly tv: number
+  readonly sponsor: number
+  readonly prize: number
+  /** The bill, including whatever premium a cash pile is adding to it. */
+  readonly wages: number
+  /** Income minus wages. */
+  readonly net: number
+  /**
+   * The league position it was computed at, or `null` before a ball is kicked —
+   * so a screen can say the forecast is standing on an assumption.
+   */
+  readonly position: number | null
+}
+
+/**
+ * What a full season looks like at today's squad, ticket price and position.
+ *
+ * **A run rate, deliberately, rather than "banked so far plus what is left".**
+ * The question it answers is "can I afford this squad", and that is a comparison
+ * between a whole year's income and a whole year's wages. Mixing actuals into it
+ * would make the figure lurch every home match and mean something different in
+ * May than in August, when the accounts table beside it already states actuals.
+ *
+ * **It must not reuse `annualIncome`.** That function deliberately prices the
+ * gate at the league default and assumes a mid-table finish, because it sizes the
+ * overdraft and a manager must not widen his own borrowing with the ticket
+ * slider. A forecast has the opposite duty: it is *his* price and *his* position
+ * or it is not telling him anything.
+ *
+ * Every nullable position is handled by the convention that already exists for
+ * it — `occupancy` drops the form term, `tvMoney` pays the flat share. Only prize
+ * money has no such convention, so it falls back to a mid-table finish, which is
+ * the same assumption `annualIncome` makes for the same reason.
+ */
+export function seasonProjection(
+  club: Club,
+  squad: readonly Player[],
+  clubIds: readonly ClubId[],
+  fixtures: readonly Fixture[],
+): Projection {
+  const clubCount = clubIds.length
+  const position = positionsFrom(clubIds, fixtures)?.get(club.id) ?? null
+  // Counted rather than taken from `ROUNDS_PER_HALF`, so a competition with a
+  // different shape needs no second constant kept in step with this one.
+  const homeGames = fixtures.filter((f) => f.homeId === club.id).length
+
+  const gate = gateReceipts(club, position, clubCount) * homeGames
+  const tv = tvMoney(position, clubCount)
+  const sponsor = sponsorMoney(club)
+  const prize = prizeMoney(position ?? Math.ceil(clubCount / 2), clubCount)
+  // The premium is part of the answer, not a detail: the panel exists because the
+  // raw contractual bill is not what a club actually pays.
+  const wages = Math.round(wageBill(squad) * wagePremium(club, clubCount, homeGames))
+
+  return {
+    gate,
+    tv,
+    sponsor,
+    prize,
+    wages,
+    net: gate + tv + sponsor + prize - wages,
+    position,
+  }
 }

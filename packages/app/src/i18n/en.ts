@@ -104,6 +104,8 @@ export const en: Dictionary = {
   'squad.column.age': 'Age',
   'squad.column.overall': 'Ovr',
   'squad.column.worth': 'Worth',
+  'squad.column.wage': 'Wage',
+  'squad.column.contract': 'Until',
   'squad.column.selected': 'Selected',
   'squad.column.sale': 'Sale',
   'squad.starting': 'Starting XI',
@@ -145,6 +147,8 @@ export const en: Dictionary = {
   'player.age': 'Age',
   'player.attack': 'Attack',
   'player.defence': 'Defence',
+  'player.wage': 'Wage',
+  'player.contract': 'Contract to',
   'player.inXI': 'In the starting XI.',
   'player.onBench': 'On the bench. Change the lineup to start them.',
   'attribute.pace': 'Pace',
@@ -230,6 +234,7 @@ export const en: Dictionary = {
   'market.feeField': 'Fee (thousands) · they ask {fee}',
   'market.makeBid': 'Make bid',
   'market.bidAgain': 'Bid again',
+  'market.outlay': 'Plus a {percent} signing bonus of {bonus} to the player — {total} in all.',
   'market.bidHint':
     'A bid at or above the asking price is accepted. Below it they may name their own. An answer takes a couple of days.',
   'market.wageField': 'Wage a season (thousands) · he wants {wage}',
@@ -275,9 +280,15 @@ export const en: Dictionary = {
   'caja.note':
     'Every movement of your balance is one of these lines and nothing else. The season’s books start again each August, once the prize money has landed.',
   'caja.balance': 'Balance',
-  'caja.overdraft': 'Overdraft',
+  'caja.available': 'Available',
+  'caja.overdraftLimit': 'Overdraft limit',
   'caja.overdraftNote':
-    'You may spend into the red as far as your overdraft, and pay interest while you are there. The board does not judge you on it.',
+    'Available is what you can commit — your balance plus the overdraft. You pay interest while you are in the red, and the board does not judge you on it.',
+  'caja.projection': 'Forecast',
+  'caja.projectionNote':
+    'A whole season at today’s squad, ticket price and {position}th place. Not what you have banked — the accounts say that. Transfers are your own doing, so they are left out.',
+  'caja.projectionNoteEarly':
+    'A whole season at today’s squad and ticket price, assuming a mid-table finish until there is a table to read. Transfers are your own doing, so they are left out.',
   'caja.wages': 'Wages',
   'caja.annual': 'Annual',
   'caja.squad': 'Squad',

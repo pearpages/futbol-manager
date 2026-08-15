@@ -3,10 +3,14 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   askingPrice,
   bidIsLive,
+  canAfford,
+  FINANCE,
   fromCivil,
   isTransferWindowOpen,
   MIN_SQUAD,
   needFor,
+  ROUNDS_PER_HALF,
+  signingOutlay,
   suggestedTerms,
   surplus,
 } from '@fm/domain'
@@ -14,6 +18,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { ADVANCE, advance, back, openScreen } from '../testing.ts'
+import { translatorFor } from '../i18n/useT.ts'
 import { listingsFor, marketSeed } from './MarketScreen.tsx'
 
 /**
@@ -575,5 +580,65 @@ describe('the end of a season', () => {
     expect(game().season.startYear).toBe(2027)
     expect(game().season.fixtures.filter((f) => f.result !== null)).toHaveLength(0)
     expect(screen.getByRole('button', { name: ADVANCE() })).toBeDefined()
+  })
+})
+
+/**
+ * The signing bonus, and the filter that used to pretend it did not exist.
+ *
+ * `affordable` in the reducer has always charged `fee + 10%`, so the bonus was
+ * real from M5a onward — it simply had no way of reaching the manager except as
+ * a refusal, or as a line on the accounts a week later that he had not agreed to.
+ */
+describe('what a bid really costs', () => {
+  it('states the bonus and the total before you commit', () => {
+    openMarket()
+    const { target, row } = firstListingRow()
+    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+
+    const { t, money, percent } = translatorFor('en')
+    expect(
+      screen.getByText(
+        t('market.outlay', {
+          bonus: money(signingOutlay(target.fee) - target.fee),
+          total: money(signingOutlay(target.fee)),
+          percent: percent(FINANCE.SIGNING_BONUS),
+        }),
+      ),
+    ).toBeDefined()
+  })
+
+  /**
+   * The filter now asks the reducer's own question. It used to compare the bare
+   * fee against the bare balance, which was wrong twice over: blind to the bonus,
+   * so it offered deals `MakeBid` then refused; and blind to the overdraft, so it
+   * hid every player the club could legally borrow for.
+   */
+  it('only offers deals the reducer would actually accept', () => {
+    // A club with something to worry about — Madrid can afford the whole league.
+    useGame.getState().newGame(DEFAULT_CLUBS[19]?.id ?? '')
+    openMarket()
+    fireEvent.click(screen.getByRole('button', { name: 'Within budget' }))
+
+    const club = game().clubs.find((c) => c.id === game().managedClubId)
+    if (club === undefined) throw new Error('no club')
+    const clubCount = game().competition.clubIds.length
+    const shown = new Set(rowNames())
+
+    const all = listingsFor(game())
+    for (const listing of all) {
+      const reducerWouldTake = canAfford(
+        club,
+        signingOutlay(listing.fee),
+        clubCount,
+        ROUNDS_PER_HALF,
+      )
+      expect(shown.has(listing.player.name), listing.player.name).toBe(reducerWouldTake)
+    }
+
+    // A guard on the guard: a filter that let everything through would satisfy
+    // the loop above without discriminating at all.
+    expect(shown.size).toBeGreaterThan(0)
+    expect(shown.size).toBeLessThan(all.length)
   })
 })

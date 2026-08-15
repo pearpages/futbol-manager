@@ -92,6 +92,8 @@ export const ca: Dictionary = {
   'squad.column.player': 'Jugador',
   'squad.column.age': 'Edat',
   'squad.column.overall': 'Mitj',
+  'squad.column.wage': 'Sou',
+  'squad.column.contract': 'Fins a',
   'squad.column.worth': 'Valor',
   'squad.column.selected': 'Convocat',
   'squad.column.sale': 'Venda',
@@ -134,6 +136,8 @@ export const ca: Dictionary = {
   'player.age': 'Edat',
   'player.attack': 'Atac',
   'player.defence': 'Defensa',
+  'player.wage': 'Sou',
+  'player.contract': 'Contracte fins a',
   'player.inXI': 'A l’onze titular.',
   'player.onBench': 'A la banqueta. Canvia l’alineació per fer-lo titular.',
   'attribute.pace': 'Velocitat',
@@ -216,6 +220,8 @@ export const ca: Dictionary = {
   'market.feeField': 'Traspàs (milers) · en demanen {fee}',
   'market.makeBid': 'Fer oferta',
   'market.bidAgain': 'Tornar a oferir',
+  'market.outlay':
+    'Més una prima de fitxatge del {percent} de {bonus} per al jugador — {total} en total.',
   'market.bidHint':
     'Una oferta igual o superior al que demanen s’accepta. Per sota, poden posar preu. La resposta triga un parell de dies.',
   'market.wageField': 'Sou per temporada (milers) · en vol {wage}',
@@ -261,9 +267,15 @@ export const ca: Dictionary = {
   'caja.note':
     'Cada moviment del teu saldo és una d’aquestes línies i res més. Els comptes de la temporada tornen a començar cada agost, un cop han arribat els premis.',
   'caja.balance': 'Saldo',
-  'caja.overdraft': 'Descobert',
+  'caja.available': 'Disponible',
+  'caja.overdraftLimit': 'Límit de descobert',
   'caja.overdraftNote':
-    'Pots gastar en números vermells fins al límit del descobert, i pagues interessos mentre hi siguis. La junta no t’ho té en compte.',
+    'Disponible és el que pots comprometre: el teu saldo més el descobert. Pagues interessos mentre siguis en números vermells, i la junta no t’ho té en compte.',
+  'caja.projection': 'Previsió',
+  'caja.projectionNote':
+    'Una temporada sencera amb la plantilla, el preu de l’entrada i el {position}è lloc d’avui. No és el que has ingressat — això ho diuen els comptes. Els traspassos són cosa teva, així que queden fora.',
+  'caja.projectionNoteEarly':
+    'Una temporada sencera amb la plantilla i el preu de l’entrada d’avui, suposant un lloc de mitja taula mentre no hi hagi classificació. Els traspassos són cosa teva, així que queden fora.',
   'caja.wages': 'Sous',
   'caja.annual': 'Anual',
   'caja.squad': 'Plantilla',

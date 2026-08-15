@@ -1,4 +1,12 @@
-import { debtLimit, type Ledger, ledgerNet, ROUNDS_PER_HALF, wageBill } from '@fm/domain'
+import {
+  debtLimit,
+  type Ledger,
+  ledgerNet,
+  type Projection,
+  ROUNDS_PER_HALF,
+  seasonProjection,
+  wageBill,
+} from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import './CajaScreen.css'
@@ -43,6 +51,24 @@ export function signed(ledger: Ledger, line: Line): number {
   return line.out ? -ledger[line.key] : ledger[line.key]
 }
 
+/**
+ * The forecast's lines, reusing the accounts' own labels so the two panels name
+ * the same thing the same way.
+ *
+ * Only the recurring five. Transfers, signing bonuses and building work are
+ * decisions rather than income, and a forecast that guessed at them would be
+ * predicting what the manager is about to do.
+ */
+type ProjectedKey = Extract<keyof Projection, 'gate' | 'tv' | 'sponsor' | 'prize' | 'wages'>
+
+export const PROJECTED: readonly { key: ProjectedKey; label: string; out: boolean }[] = [
+  { key: 'gate', label: 'caja.line.gate', out: false },
+  { key: 'tv', label: 'caja.line.tv', out: false },
+  { key: 'sponsor', label: 'caja.line.sponsor', out: false },
+  { key: 'prize', label: 'caja.line.prize', out: false },
+  { key: 'wages', label: 'caja.line.wages', out: true },
+]
+
 export function CajaScreen() {
   const game = useGame((s) => s.game)
   const go = useGame((s) => s.go)
@@ -54,6 +80,7 @@ export function CajaScreen() {
   const squad = game.squads[club.id] ?? []
   const limit = debtLimit(club, game.competition.clubIds.length, ROUNDS_PER_HALF)
   const net = ledgerNet(club.ledger)
+  const forecast = seasonProjection(club, squad, game.competition.clubIds, game.season.fixtures)
 
   return (
     <div className="caja-screen">
@@ -104,12 +131,54 @@ export function CajaScreen() {
                 {money(club.budget)}
               </span>
             </div>
+            {/* What you can actually commit, which is the number a manager wants
+                before he bids — and the one the reducer itself tests against. */}
             <div className="stat">
-              <span className="stat__label">{t('caja.overdraft')}</span>
-              <span className="stat__value caja-screen__figure">{money(-limit)}</span>
+              <span className="stat__label">{t('caja.available')}</span>
+              <span
+                className={`stat__value caja-screen__figure ${amountClass(club.budget + limit)}`}
+              >
+                {money(club.budget + limit)}
+              </span>
+            </div>
+            {/* Stated positive, and labelled as a ceiling. Rendered as `-limit` it
+                read as money owed sitting next to a balance that was in credit —
+                which is the one thing this panel must not be able to say. */}
+            <div className="stat">
+              <span className="stat__label">{t('caja.overdraftLimit')}</span>
+              <span className="stat__value caja-screen__figure">{money(limit)}</span>
             </div>
           </div>
           <p className="screen__note">{t('caja.overdraftNote')}</p>
+        </section>
+
+        <section className="screen caja-screen__panel">
+          <h2 className="screen__heading">{t('caja.projection')}</h2>
+          <table className="data-table caja-screen__projection">
+            <tbody>
+              {PROJECTED.map((line) => (
+                <tr key={line.key} className="data-table__row">
+                  <td className="is-text">{t(line.label)}</td>
+                  <td className={amountClass(line.out ? -forecast[line.key] : forecast[line.key])}>
+                    {money(line.out ? -forecast[line.key] : forecast[line.key])}
+                  </td>
+                </tr>
+              ))}
+              <tr className="data-table__row caja-screen__total">
+                <td className="is-text">
+                  <strong>{t('caja.result')}</strong>
+                </td>
+                <td className={amountClass(forecast.net)}>
+                  <strong>{money(forecast.net)}</strong>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="screen__note">
+            {t(forecast.position === null ? 'caja.projectionNoteEarly' : 'caja.projectionNote', {
+              position: forecast.position ?? 0,
+            })}
+          </p>
         </section>
 
         <section className="screen caja-screen__panel">

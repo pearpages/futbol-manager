@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { surplus } from '@fm/domain'
+import { surplus, toCivil, wageBill } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { back, openScreen } from '../testing.ts'
+import { translatorFor } from '../i18n/useT.ts'
 
 /**
  * The sell side, at the UI level.
@@ -134,5 +135,38 @@ describe('the market screen shows what you have put up', () => {
     expect(within(panel).getByText(player.name)).toBeDefined()
     fireEvent.click(within(panel).getByRole('button', { name: 'Take off' }))
     expect(game().transferList).toEqual([])
+  })
+})
+
+describe('what the squad costs', () => {
+  /**
+   * The wage bill was a single figure on the Caja screen attributable to nobody:
+   * `player.contract.wage` was rendered for no player you own, anywhere. So the
+   * one number the board never judges you on was also the one you could not act
+   * on.
+   */
+  it('shows every wage, and they add up to the bill', () => {
+    openSquad()
+    const { t, money } = translatorFor('en')
+    const squad = game().squads[game().managedClubId] ?? []
+
+    expect(screen.getByRole('columnheader', { name: t('squad.column.wage') })).toBeDefined()
+    expect(screen.getByRole('columnheader', { name: t('squad.column.contract') })).toBeDefined()
+
+    for (const player of squad) {
+      const row = within(rowFor(player.name))
+      expect(row.getAllByText(money(player.contract.wage)).length, player.name).toBeGreaterThan(0)
+    }
+
+    // The claim the column is for: the rows account for the Caja total exactly.
+    const shown = squad.reduce((sum, p) => sum + p.contract.wage, 0)
+    expect(shown).toBe(wageBill(squad))
+  })
+
+  it('dates the contract by its year, since they all run to 30 June', () => {
+    openSquad()
+    const player = aSpare()
+    const row = within(rowFor(player.name))
+    expect(row.getAllByText(String(toCivil(player.contract.until).y)).length).toBeGreaterThan(0)
   })
 })

@@ -3,12 +3,15 @@ import {
   ageOn,
   askingPrice,
   type Bid,
+  canAfford,
   isGameError,
   bidIsLive,
   type ClubId,
   createRng,
   type DayNumber,
+  debtLimit,
   type Event,
+  FINANCE,
   type GameState,
   isTransferWindowOpen,
   listedForSale,
@@ -19,7 +22,9 @@ import {
   type PlayerId,
   type Position,
   POSITIONS,
+  ROUNDS_PER_HALF,
   shuffle,
+  signingOutlay,
   suggestedTerms,
   surplus,
   toCivil,
@@ -193,11 +198,20 @@ export function MarketScreen() {
 
   const managed = game.managedClubId
   const club = game.clubs.find((c) => c.id === managed)
-  const budget = club?.budget ?? 0
   const date = game.season.currentDate
   const open = isTransferWindowOpen(date)
   const names = new Map(game.clubs.map((c) => [c.id, c]))
   const shortlisted = new Set(game.shortlist)
+  const clubCount = game.competition.clubIds.length
+  const spendable =
+    club === undefined ? 0 : club.budget + debtLimit(club, clubCount, ROUNDS_PER_HALF)
+
+  /**
+   * The same question the reducer asks before it accepts a bid — fee plus the
+   * signing bonus, against the balance *and* the overdraft.
+   */
+  const affordable = (fee: number) =>
+    club === undefined || canAfford(club, signingOutlay(fee), clubCount, ROUNDS_PER_HALF)
 
   // One memo is enough now. This used to be split in two because it scored every
   // listing with `needFor` — two `bestXI` passes apiece, a couple of hundred times
@@ -210,8 +224,11 @@ export function MarketScreen() {
   const filtered = all
     .filter((l) => !onlyShortlist || shortlisted.has(l.player.id))
     .filter((l) => !onlyFree || l.from === null)
-    // A free agent costs no fee, so he is always within budget.
-    .filter((l) => !onlyAffordable || l.fee <= budget)
+    // The reducer's own rule, not a fee-against-balance guess. It was both:
+    // blind to the signing bonus, so the filter offered deals `MakeBid` then
+    // refused; and blind to the overdraft, so it hid every player the club could
+    // legally borrow for. A free agent still passes — no fee, so no bonus either.
+    .filter((l) => !onlyAffordable || affordable(l.fee))
     .filter((l) => positions.length === 0 || positions.includes(l.player.position))
 
   const listings = sort === null ? filtered : filtered.sort(comparatorFor(sort, date, locale))
@@ -471,6 +488,13 @@ export function MarketScreen() {
               <span className="stat__label">{t('market.budget')}</span>
               <span className="stat__value">{money(club?.budget ?? 0)}</span>
             </div>
+            {/* The balance alone contradicts the filter beside it, which spends to
+                the overdraft because the reducer does. This is the figure "Within
+                budget" is actually testing against. */}
+            <div className="stat">
+              <span className="stat__label">{t('caja.available')}</span>
+              <span className="stat__value">{money(spendable)}</span>
+            </div>
             <div className="stat">
               <span className="stat__label">{t('market.window')}</span>
               <span className="stat__value market-screen__window">
@@ -672,7 +696,7 @@ interface NegotiationProps {
  */
 function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }: NegotiationProps) {
   const dispatch = useGame((s) => s.dispatch)
-  const { t, money } = useT()
+  const { t, money, percent } = useT()
   const { player } = listing
   const wanted = suggestedTerms(player, date)
 
@@ -716,6 +740,16 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
             >
               {t(bid === undefined ? 'market.makeBid' : 'market.bidAgain')}
             </button>
+            {/* The bonus was charged silently — `affordable` has always counted it,
+                so the only way to find out it existed was to be refused, or to read
+                it off the accounts a week later as a line you did not authorise. */}
+            <p className="screen__note market-screen__hint">
+              {t('market.outlay', {
+                bonus: money(signingOutlay(Number(fee) || 0) - (Number(fee) || 0)),
+                total: money(signingOutlay(Number(fee) || 0)),
+                percent: percent(FINANCE.SIGNING_BONUS),
+              })}
+            </p>
             <p className="screen__note market-screen__hint">{t('market.bidHint')}</p>
           </>
         )}
