@@ -190,12 +190,16 @@ export { askingPrice, expectedWage, formatMoney, valuePlayer } from './valuation
 
 export {
   applyTransfers,
+  COVER_KEEPERS,
   isTransferWindowOpen,
   listedForSale,
   MAX_SQUAD,
   MIN_SQUAD,
   needFor,
   runTransferWindow,
+  type SaleBlock,
+  saleBlock,
+  sellable,
   surplus,
   totalBudget,
   type Transfer,

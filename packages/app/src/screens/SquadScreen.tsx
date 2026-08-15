@@ -5,7 +5,7 @@ import {
   overall,
   type Player,
   type Position,
-  surplus,
+  saleBlock,
   toCivil,
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
@@ -57,16 +57,20 @@ export function SquadScreen() {
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const date = game.season.currentDate
 
-  // Who you are allowed to sell, by the same rule the AI sells by. A player you
-  // cannot spare is not listable, and the button says so rather than throwing when
-  // it is pressed.
+  // Why each player cannot be sold, if he cannot. The button says so rather than
+  // throwing when it is pressed, and it says *which* reason — one string for every
+  // refusal is what made this screen unreadable: a man on the bench was told he was
+  // in the first team, because the rule judged him against a 4-4-2 nobody was
+  // playing.
   //
-  // Asked of the *stored* squad, never the sorted one. `surplus` runs `bestXI`,
-  // which orders on `overall` alone — and `Array.prototype.sort` is stable, so among
-  // players level on overall in a position, whoever comes first in the input takes
-  // the shirt. That was harmless while the input order was fixed; the moment it is a
-  // manager's click, which players are listable would change as he sorts the table.
-  const spare = new Set(surplus(roster).map((player) => player.id))
+  // Asked of the *stored* squad rather than the sorted one, which used to matter a
+  // great deal and now does not. `surplus` ran `bestXI`, ordering on `overall`
+  // alone — and `Array.prototype.sort` is stable, so among players level on overall
+  // whoever came first in the input took the shirt, and sorting this table changed
+  // who you were allowed to sell. `saleBlock` reads the stored lineup and counts
+  // keepers, so the answer no longer depends on row order at all. Kept as it is
+  // because the stored squad is still the honest thing to ask about.
+  const blocks = new Map(roster.map((player) => [player.id, saleBlock(roster, lineup, player)]))
   const listed = new Set(game.transferList)
 
   const ordered = [...roster].sort(
@@ -133,7 +137,8 @@ export function SquadScreen() {
         </thead>
         <tbody>
           {squad.map((player: Player, index: number) => {
-            const canSell = spare.has(player.id)
+            const block = blocks.get(player.id) ?? null
+            const canSell = block === null
             const onSale = listed.has(player.id)
             return (
               <tr key={player.id} className="data-table__row">
@@ -165,7 +170,7 @@ export function SquadScreen() {
                     // otherwise a listed player who wins his place back is stuck on
                     // a list you cannot clear.
                     disabled={!canSell && !onSale}
-                    title={canSell || onSale ? undefined : t('squad.cannotList')}
+                    title={canSell || onSale ? undefined : t(`squad.cannotList.${block}`)}
                     onClick={() =>
                       dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })
                     }

@@ -67,11 +67,32 @@ The market screen carried an "Improves" column until M4c. It made squad-building
 
 ## What a club will sell
 
-`surplus(squad)` — everyone who is not in the best XI **and** can be spared, meaning that removing him still leaves at least one cover at every position. A club at or below `MIN_SQUAD` (18) sells nobody.
+**There are two rules, and which one applies depends on whether a person is watching.**
+
+### An AI club — `surplus(squad)`
+
+Everyone who is not in the best XI **and** can be spared, meaning that removing him still leaves at least one cover at every position. A club at or below `MIN_SQUAD` (18) sells nobody.
 
 The floor is the deeper of two numbers: `shape + 1` in the 4-4-2 reference, which is the "one cover beyond the XI" intent, and `DEEPEST_BANK` from `lineup.ts`, which is the most any formation asks for at that position. Until the second batch of formations arrived the first alone happened to satisfy every shape, and this file said so; 4-2-4 wants a fourth forward, which made that quietly false and put 19 of 200 squad-seasons out of reach of a formation the screen was offering. **`DEEPEST_BANK` is derived from `FORMATIONS`, so adding a shape cannot break this again.**
 
-Starters are never for sale, at any price. That is the whole rule; there is no separate "not for sale" flag.
+The reference shape is 4-4-2 whatever the club plays — the same fixed-shape approximation `needFor` makes, and harmless for a club nobody watches, since every AI club is on 4-4-2 anyway.
+
+### The manager — `saleBlock(squad, lineup, player)`
+
+Two clauses and no others:
+
+- **He is in the XI you picked.** Not the best XI, not a 4-4-2 XI — the team sheet as it stands.
+- **He is a goalkeeper and you would be left with one.** `COVER_KEEPERS` is 2. The keeper carries 35% of the defensive rating alone, and from M6 an injury to a lone keeper leaves a squad unable to field a legal XI at all.
+
+**There is no squad-size floor and no outfield depth floor for the manager**, and neither is needed for safety: refusing to sell a starter means eleven legal players with exactly one keeper always survive, whatever else goes. He may sell below 18 if he wants to; that is his business, and `LineupScreen` simply stops offering a shape his squad can no longer fill.
+
+**This used to be `surplus` for both, on the argument that one rule beats two.** It was wrong for a person, and visibly so. Judged against 4-4-2, a bench player in the manager's own 4-2-4 was refused as "in your first team" while the row beside the button read "not selected" — a contradiction on one line, with no way to act on either half. Measured before the change: one such row per club on most shapes, two per club on 4-2-4, plus 14 reserve goalkeepers and 3 midfielders across the league blocked by the depth floor and given the same wrong sentence.
+
+`sellable` derives from `saleBlock` rather than restating it, so the sentence the Plantilla screen shows and the code the reducer throws cannot drift from what is enforced.
+
+**Five places ask the manager's rule and must stay in step:** `SquadScreen`, `ListPlayer`, `RespondToOffer`, `bestOfferFor` and — the one that is easy to miss — the **seller-side re-check inside `runTransferWindow`'s buy loop**. That gate applies to the human for anything he listed; left on `canSpare`/`MIN_SQUAD` it silently vetoes deals the screen and the reducer have both already allowed, with no refusal and no event. The player simply never moves.
+
+Starters are never for sale, at any price, under either rule. That is the whole of it; there is no separate "not for sale" flag.
 
 **Your own club is invisible to the AI market**, in both directions, so nothing you own is ever in front of a buyer. `transferList` is how you opt one player back in — see below.
 
@@ -148,6 +169,6 @@ Never loosened without a very good reason, and each has a test:
 - **Money is accounted for.** Every movement writes a ledger line, and a club's balance changes by exactly what its ledger says — checked per club, on every tick. This **replaced "money is conserved"** at M5a, when revenue started creating money and wages started destroying it; it is the stricter of the two, because the old one could only say the league had inflated while this one says which club and on which line. See [ADR 0009](./adr/0009-the-ledger-identity.md).
 - **A club may go into debt, but not past its limit**, which is a fraction of its own annual income rather than a flat figure. The AI never borrows to buy, so debt is always something a club drifted into rather than chose.
 - **Nothing on the money path draws randomness.** Finance runs inside `AdvanceDay`, the path every calibrated band is measured through. `pnpm season` staying byte-identical is the check.
-- **Squads stay between 18 and 30**, as a consequence of needs decaying rather than a cap. Releases stop at `RELEASE_FLOOR` (21) rather than `MIN_SQUAD` — draining to the legal minimum froze the market, because `surplus` returns nothing at 18.
-- **Every squad can field a legal XI in every formation**, which is why sales are re-checked against the squad as it stands rather than as it stood when the window opened.
+- **Every AI squad stays between 18 and 30**, as a consequence of needs decaying rather than a cap. Releases stop at `RELEASE_FLOOR` (21) rather than `MIN_SQUAD` — draining to the legal minimum froze the market, because `surplus` returns nothing at 18. **The manager is not held to this** and may sell below 18; what holds for him is that he always keeps a fieldable XI and a cover keeper.
+- **Every AI squad can field a legal XI in every formation**, which is why sales are re-checked against the squad as it stands rather than as it stood when the window opened. The manager keeps a legal XI by construction — a starter cannot be sold — but may sell his way out of a _shape_, which the lineup screen then stops offering.
 - **A budget buys roughly two players of the club's own first-team standard.** Below that the market is decorative: at the old seeding, 48 of 228 listings were affordable to a mid-table club and every one scored zero on need.

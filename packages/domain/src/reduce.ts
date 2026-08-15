@@ -40,6 +40,8 @@ import {
   MAX_SQUAD,
   needFor,
   runTransferWindow,
+  saleBlock,
+  sellable,
   surplus,
   transferWindowChange,
   transferWindowDaysLeft,
@@ -692,11 +694,15 @@ function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult
     }
   }
 
-  // Re-checked at acceptance rather than trusted from when the offer was made:
-  // the squad may have shrunk in between, and selling below the floor would leave
-  // a team unable to field an XI.
+  // Re-checked at acceptance rather than trusted from when the offer was made: he
+  // may have been picked since, and accepting would then sell a man out of the XI
+  // on the team sheet.
   const squad = state.squads[state.managedClubId] ?? []
-  if (!surplus(squad).some((p) => p.id === bid.playerId)) {
+  const wanted = squad.find((p) => p.id === bid.playerId)
+  if (
+    wanted === undefined ||
+    saleBlock(squad, state.lineups[state.managedClubId], wanted) !== null
+  ) {
     throw new GameError('error.offer.cannotSpare', 'You can no longer spare him')
   }
 
@@ -721,10 +727,16 @@ function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult
 /**
  * List or unlist one of your own players.
  *
- * Only a spare player can be listed, using the same `surplus` rule that decides
- * what an AI club will part with — there is deliberately not a second notion of
- * "spare" for the human. Selling stays squad management: you cannot strip out the
- * XI you just picked.
+ * **There is a second notion of "spare" for the human, and this is where it is
+ * enforced.** This used to run the AI's `surplus` on the argument that one rule was
+ * better than two — but `surplus` judges against a fixed 4-4-2, so a manager
+ * playing any other shape was told a man on his own bench was "in your first team"
+ * while the row beside the button read "not selected". `saleBlock` asks the two
+ * questions that are actually true of him: is he in the XI you picked, and would
+ * selling him leave you one goalkeeper.
+ *
+ * Selling is still squad management rather than asset-stripping — you cannot strip
+ * out the team sheet you just wrote. That part never changed.
  *
  * Unlisting is always allowed. A player who has become a starter since he was
  * listed must still be removable, and refusing that would strand him on the list
@@ -745,10 +757,19 @@ function listPlayer(state: GameState, command: ListPlayer): ReduceResult {
   const player = squad.find((p) => p.id === command.playerId)
   if (player === undefined)
     throw new GameError('error.list.notYours', 'You can only list your own players')
-  if (!surplus(squad).some((p) => p.id === command.playerId)) {
+
+  const block = saleBlock(squad, state.lineups[state.managedClubId], player)
+  if (block === 'lineup') {
     throw new GameError(
       'error.list.firstTeam',
       `${player.name} is in your first team — you cannot list him`,
+      { player: player.name },
+    )
+  }
+  if (block === 'coverKeeper') {
+    throw new GameError(
+      'error.list.coverKeeper',
+      `Selling ${player.name} would leave you with one goalkeeper`,
       { player: player.name },
     )
   }
@@ -877,13 +898,18 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
  * The deals that actually exist are the cheap ones at the bottom of the squad.
  */
 function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee: number } | null {
-  const spare = surplus(state.squads[state.managedClubId] ?? [])
+  // The manager's own rule, so a club cannot offer for a man he is not allowed to
+  // sell — an offer he could only ever refuse is noise in an inbox that exists to
+  // carry decisions.
+  const spare = sellable(
+    state.squads[state.managedClubId] ?? [],
+    state.lineups[state.managedClubId],
+  )
   if (spare.length === 0) return null
 
   const date = state.season.currentDate
   // Derived from the `spare` list already computed rather than via `listedForSale`,
-  // which would run `surplus` — a `bestXI` pass plus a check per player — a second
-  // time on every generation day.
+  // which would run the whole sale rule a second time on every generation day.
   const listed = new Set<PlayerId>(state.transferList)
   const onTheMarket = new Set<PlayerId>(
     spare.filter((player) => listed.has(player.id)).map((player) => player.id),

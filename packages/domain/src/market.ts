@@ -7,6 +7,7 @@ import {
   fieldableFormation,
   FORMATIONS,
   keepsLineup,
+  type Lineup,
   startersOf,
   teamRatingRaw,
 } from './lineup.ts'
@@ -173,7 +174,18 @@ function ratingOf(squad: readonly Player[]): number {
   return rating.attack + rating.defence
 }
 
-/** Players a club would let go: those whose absence costs the XI nothing. */
+/**
+ * Players an **AI club** would let go: those whose absence costs the XI nothing.
+ *
+ * The reference shape is 4-4-2 regardless of what the club plays, which is the
+ * same fixed-shape approximation `needFor` makes and is fine for a club nobody
+ * watches — every AI club is on 4-4-2 anyway, and this is the path every
+ * calibrated band in the project is measured through.
+ *
+ * **It is no longer the manager's rule.** Judging a person by a shape he does not
+ * play told him a bench player in his own 4-2-4 was "in your first team", which is
+ * simply false — see `saleBlock`.
+ */
 export function surplus(squad: readonly Player[]): Player[] {
   if (squad.length <= MIN_SQUAD) return []
   const starting = new Set<PlayerId>(bestXI(squad, '4-4-2').starters)
@@ -185,18 +197,97 @@ export function surplus(squad: readonly Player[]): Player[] {
 }
 
 /**
+ * How many goalkeepers a manager must be left holding after a sale.
+ *
+ * The one floor that survived when selling stopped being judged by `surplus`. A
+ * keeper carries `KEEPER_WEIGHT` — 35% — of the defensive rating on his own, more
+ * than any other single player, and M6's injuries would leave a one-keeper squad
+ * unable to field a legal XI at all. Everything else a squad might run short of
+ * degrades gracefully: the lineup screen simply stops offering a shape it cannot
+ * fill.
+ *
+ * Deliberately not `DEEPEST_BANK.GK`, which is 1 and answers a different question
+ * — what a formation asks for on the day, not what a season needs in reserve.
+ */
+export const COVER_KEEPERS = 2
+
+/** Why the manager cannot sell this player. */
+export type SaleBlock = 'lineup' | 'coverKeeper'
+
+/**
+ * Why this player cannot be sold, or `null` when he can be.
+ *
+ * **The manager's rule, and it is deliberately not `surplus`.** Two clauses, and
+ * that is the whole of it:
+ *
+ * - He is in the XI you picked. Selling is squad management rather than
+ *   asset-stripping — you cannot sell a man out of your own team sheet. Read off
+ *   the *stored* lineup, which is also what makes the answer independent of the
+ *   order a screen happens to hold the squad in; `surplus` ran `bestXI`, whose
+ *   stable sort meant sorting the Plantilla table could change who was sellable.
+ * - He is a goalkeeper and you would be left with one. See `COVER_KEEPERS`.
+ *
+ * There is no squad-size floor and no outfield depth floor, and neither is needed
+ * for safety: refusing to sell a starter means eleven legal players with exactly
+ * one keeper always remain, whatever else goes.
+ *
+ * **This is the second notion of "spare", and it exists because the first was
+ * wrong for a person.** `surplus` judges against 4-4-2 — so a bench player in a
+ * manager's own 4-2-4 was refused as "in your first team" while his row read "not
+ * selected", a contradiction on one line. Measured before the change: 20 such rows
+ * across the league on most shapes, 40 on 4-2-4, plus 14 reserve goalkeepers and 3
+ * midfielders blocked by a depth floor and given the same wrong sentence.
+ *
+ * A missing lineup falls back to the old reference rather than freeing everybody:
+ * the safe answer to "I do not know who is picked" is the one that changes least.
+ */
+export function saleBlock(
+  squad: readonly Player[],
+  lineup: Lineup | undefined,
+  player: Player,
+): SaleBlock | null {
+  const starting =
+    lineup === undefined ? new Set(bestXI(squad, '4-4-2').starters) : new Set(lineup.starters)
+  if (starting.has(player.id)) return 'lineup'
+
+  if (player.position === 'GK') {
+    const remaining = squad.filter((p) => p.position === 'GK' && p.id !== player.id).length
+    if (remaining < COVER_KEEPERS) return 'coverKeeper'
+  }
+
+  return null
+}
+
+/**
+ * Everyone the manager may put up for sale.
+ *
+ * Derived from `saleBlock` rather than restating it, so the sentence the Plantilla
+ * screen shows and the code the reducer throws cannot drift apart from what is
+ * actually enforced. Same reason the ficha imports the resolver's weights instead
+ * of writing the percentages out as prose.
+ */
+export function sellable(squad: readonly Player[], lineup: Lineup | undefined): Player[] {
+  return squad
+    .filter((player) => saleBlock(squad, lineup, player) === null)
+    .sort((a, b) => overall(a) - overall(b))
+}
+
+/**
  * The manager's listed players who are *currently* sellable.
  *
- * `surplus` is applied again here rather than trusted from when the button was
- * pressed. A player listed in August may be a starter by January — an injury to
- * the man ahead of him, a sale elsewhere — and selling him then would break up an
- * XI the manager chose on purpose. Listing says "I would let him go", not "sell
- * him whatever happens".
+ * The rule is applied again here rather than trusted from when the button was
+ * pressed. A player listed in August may be in the XI by January — an injury to
+ * the man ahead of him, a sale elsewhere, or simply a change of mind — and selling
+ * him then would break up a team sheet the manager chose on purpose. Listing says
+ * "I would let him go", not "sell him whatever happens".
  */
 export function listedForSale(state: GameState): Player[] {
   if (state.transferList.length === 0) return []
   const listed = new Set<PlayerId>(state.transferList)
-  return surplus(state.squads[state.managedClubId] ?? []).filter((player) => listed.has(player.id))
+  return sellable(
+    state.squads[state.managedClubId] ?? [],
+    state.lineups[state.managedClubId],
+  ).filter((player) => listed.has(player.id))
 }
 
 /**
@@ -341,13 +432,25 @@ export function runTransferWindow(
         const sellerSquad = squads.get(candidate.from)
         /* c8 ignore next */
         if (sellerSquad === undefined) continue
-        if (sellerSquad.length <= MIN_SQUAD) continue
         if (!sellerSquad.some((p) => p.id === candidate.player.id)) continue // already sold
         // Re-checked against the squad *as it stands now*, not as it stood when
         // `listed` was built. Two of a club's forwards can each be spareable on
         // their own and leave it with two between them — which is a squad that
         // cannot field a 4-3-3, and the career harness says that must never happen.
-        if (!canSpare(sellerSquad, candidate.player)) continue
+        //
+        // **The manager is judged by his own rule here, and he has to be.** This is
+        // the last gate a sale passes through, so leaving him on `canSpare` would
+        // have silently vetoed deals the Plantilla screen and the reducer had both
+        // already allowed — a listed bench forward at a four-forward club would
+        // simply never move, with nothing said anywhere.
+        if (candidate.from === options.exclude) {
+          if (saleBlock(sellerSquad, state.lineups[candidate.from], candidate.player) !== null) {
+            continue
+          }
+        } else {
+          if (sellerSquad.length <= MIN_SQUAD) continue
+          if (!canSpare(sellerSquad, candidate.player)) continue
+        }
 
         squads.set(
           candidate.from,

@@ -3,16 +3,21 @@ import { suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
 import { bidIsLive } from './bids.ts'
 import { FINANCE } from './finance.ts'
+import { bestXI, type Formation, startersOf } from './lineup.ts'
 import {
+  COVER_KEEPERS,
+  listedForSale,
   MAX_SQUAD,
   MIN_SQUAD,
+  runTransferWindow,
+  saleBlock,
   surplus,
   totalBudget,
   transferWindowChange,
   transferWindowDaysLeft,
   WINDOW_WARNING_DAYS,
 } from './market.ts'
-import { contractMonthsLeft, type Player, type PlayerId } from './player.ts'
+import { contractMonthsLeft, overall, type Player, type PlayerId, type Position } from './player.ts'
 import { addDays, fromCivil, toCivil } from './time.ts'
 import { type Command, type Event, reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
@@ -560,15 +565,192 @@ describe('the transfer list — putting your own players up for sale', () => {
     expect(bought).toHaveLength(0)
   })
 
-  it('never sells you below the squad floor', () => {
+  it('never sells you down to a team you cannot field', () => {
+    // **`MIN_SQUAD` is deliberately not what is asserted here.** It is the AI's
+    // floor, and the manager is no longer held to it — he may sell his way below
+    // 18 if he wants to, which is his business. What the rule does still guarantee
+    // is the part that matters: a starter is never sold, so a legal XI with exactly
+    // one goalkeeper always survives, and a cover keeper with it.
     for (const player of surplus(state.squads[MID] ?? [])) {
       dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
     }
     for (let season = 0; season < 3; season++) {
       state = simulateSeason(state, rng)
       dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
-      expect((state.squads[MID] ?? []).length).toBeGreaterThanOrEqual(MIN_SQUAD)
+
+      const squad = state.squads[MID] ?? []
+      expect(() => startersOf(squad, bestXI(squad, '4-4-2'))).not.toThrow()
+      expect(squad.filter((p) => p.position === 'GK').length).toBeGreaterThanOrEqual(COVER_KEEPERS)
     }
+  })
+})
+
+/**
+ * What the manager may sell, which stopped being what an AI club may sell.
+ *
+ * `surplus` judges against a fixed 4-4-2 — fine for a club nobody watches, and
+ * wrong for a person, because it told him a man on his own bench was "in your
+ * first team". Measured before the change: on any shape but 4-4-2, one row per
+ * club read "not selected" *and* refused him as first-team, two rows per club on
+ * 4-2-4, plus 14 reserve goalkeepers and 3 midfielders across the league blocked
+ * by a depth floor and given the same wrong sentence.
+ */
+describe('selling is judged by the XI you picked', () => {
+  const MID = TEST_CLUBS[13]?.id ?? SELLER
+
+  beforeEach(() => {
+    rng = createRng(4242)
+    state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng, managedClubId: MID })
+  })
+
+  /** Puts the manager on a shape whose XI genuinely differs from the 4-4-2 one. */
+  function play(formation: Formation): { starting: Set<PlayerId>; squad: readonly Player[] } {
+    const squad = state.squads[MID] ?? []
+    const lineup = bestXI(squad, formation)
+    state = { ...state, lineups: { ...state.lineups, [MID]: lineup } }
+    return { starting: new Set(lineup.starters), squad }
+  }
+
+  it('lets you sell a man on your own bench, whatever 4-4-2 would say', () => {
+    // The reported bug. On 4-2-4 two midfielders drop out of the XI, and both were
+    // refused as first-team while their row read "not selected" — a contradiction
+    // on one line, and the whole reason the rule changed.
+    const { starting, squad } = play('4-2-4')
+    const reference = new Set(bestXI(squad, '4-4-2').starters)
+    const benched = squad.filter((p) => !starting.has(p.id) && reference.has(p.id))
+    expect(benched.length).toBeGreaterThan(0)
+
+    for (const player of benched) {
+      expect(saleBlock(squad, state.lineups[MID], player)).toBeNull()
+      dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
+    }
+    expect(state.transferList).toEqual(benched.map((p) => p.id))
+  })
+
+  it('and still refuses a man in your XI, where 4-4-2 would have let him go', () => {
+    // The mirror, and the test that bites if the rule is merely deleted rather than
+    // replaced: on 4-2-4 two forwards come *into* the team who are not in the 4-4-2
+    // eleven, and they are exactly the players the old rule would have sold.
+    const { starting, squad } = play('4-2-4')
+    const reference = new Set(bestXI(squad, '4-4-2').starters)
+    const promoted = squad.filter((p) => starting.has(p.id) && !reference.has(p.id))
+    expect(promoted.length).toBeGreaterThan(0)
+
+    for (const player of promoted) {
+      expect(saleBlock(squad, state.lineups[MID], player)).toBe('lineup')
+      expect(() => dispatch({ type: 'ListPlayer', playerId: player.id, on: true })).toThrow(
+        /first team/,
+      )
+    }
+    expect(state.transferList).toEqual([])
+  })
+
+  it('will not leave you with one goalkeeper, and says so in its own words', () => {
+    // The one floor that survived. A keeper carries 35% of the defensive rating
+    // alone, so a squad down to one is a squad an injury ends.
+    const squad = state.squads[MID] ?? []
+    const keepers = squad.filter((p) => p.position === 'GK')
+    expect(keepers.length).toBeGreaterThanOrEqual(COVER_KEEPERS + 1)
+
+    // With three, the reserves are sellable.
+    const starting = new Set(state.lineups[MID]?.starters ?? [])
+    const reserves = keepers.filter((p) => !starting.has(p.id))
+    for (const keeper of reserves) expect(saleBlock(squad, state.lineups[MID], keeper)).toBeNull()
+
+    // Cut to two, and the reserve is not — with the keeper sentence, not the
+    // first-team one, which is the half of this the screen was getting wrong.
+    const twoKeepers = squad.filter((p) => p.position !== 'GK' || p.id !== reserves[0]?.id)
+    state = { ...state, squads: { ...state.squads, [MID]: twoKeepers } }
+    const survivor = reserves[1]
+    /* c8 ignore next */
+    if (survivor === undefined) throw new Error('expected a second reserve keeper')
+
+    expect(saleBlock(twoKeepers, state.lineups[MID], survivor)).toBe('coverKeeper')
+    expect(() => dispatch({ type: 'ListPlayer', playerId: survivor.id, on: true })).toThrow(
+      /goalkeeper/,
+    )
+  })
+
+  it('drops a listed player from the market once you pick him', () => {
+    // Listing says "I would let him go", not "sell him whatever happens". The rule
+    // is applied again at the window rather than trusted from when the button was
+    // pressed.
+    const squad = state.squads[MID] ?? []
+    const starting = new Set(state.lineups[MID]?.starters ?? [])
+    const spare = squad.find((p) => !starting.has(p.id) && p.position !== 'GK')
+    /* c8 ignore next */
+    if (spare === undefined) throw new Error('nothing spare')
+
+    dispatch({ type: 'ListPlayer', playerId: spare.id, on: true })
+    expect(listedForSale(state).map((p) => p.id)).toEqual([spare.id])
+
+    // Pick him, without unlisting him.
+    const lineup = state.lineups[MID]
+    /* c8 ignore next */
+    if (lineup === undefined) throw new Error('no lineup')
+    const starters = [...lineup.starters]
+    const dropped = starters.findIndex((id) =>
+      squad.some((p) => p.id === id && p.position === spare.position),
+    )
+    starters[dropped] = spare.id
+    state = { ...state, lineups: { ...state.lineups, [MID]: { ...lineup, starters } } }
+
+    expect(listedForSale(state)).toEqual([])
+  })
+
+  it('completes a sale the squad-size floor would have vetoed at the window', () => {
+    // **The half of this change that is invisible until a whole window runs.**
+    // `runTransferWindow` re-checks the seller in its buy loop, and that gate applies
+    // to the manager for anything he listed. Left on `canSpare`/`MIN_SQUAD` it would
+    // have silently killed deals the screen and the reducer had both already allowed
+    // — no refusal, no event, the player simply never moves.
+    //
+    // Set up so the old gate is unambiguously the only thing that could refuse:
+    // exactly `MIN_SQUAD` players, where `surplus` returns nothing at all.
+    const squad = state.squads[MID] ?? []
+    const target = squad.find(
+      (p) => p.position === 'GK' && !new Set(state.lineups[MID]?.starters ?? []).has(p.id),
+    )
+    /* c8 ignore next */
+    if (target === undefined) throw new Error('no reserve keeper')
+
+    const cap: Record<Position, number> = { GK: 3, DF: 6, MF: 5, FW: 4 }
+    const kept: Player[] = [target]
+    const taken: Record<Position, number> = { GK: 1, DF: 0, MF: 0, FW: 0 }
+    for (const player of squad) {
+      if (player.id === target.id) continue
+      if (taken[player.position] < cap[player.position]) {
+        kept.push(player)
+        taken[player.position]++
+      }
+    }
+    expect(kept).toHaveLength(MIN_SQUAD)
+    expect(surplus(kept)).toEqual([]) // the old rule sold nobody from a squad this size
+
+    // A buyer who unambiguously wants him: the richest club, left with only its
+    // worst goalkeeper.
+    const buyerSquad = state.squads[RICH] ?? []
+    const buyerKeepers = [...buyerSquad.filter((p) => p.position === 'GK')].sort(
+      (a, b) => overall(a) - overall(b),
+    )
+    const holed = buyerSquad.filter((p) => p.position !== 'GK' || p.id === buyerKeepers[0]?.id)
+
+    state = {
+      ...state,
+      squads: { ...state.squads, [MID]: kept, [RICH]: holed },
+      lineups: {
+        ...state.lineups,
+        [MID]: bestXI(kept, '4-4-2'),
+        [RICH]: bestXI(holed, '4-4-2'),
+      },
+      transferList: [target.id],
+    }
+    expect(saleBlock(kept, state.lineups[MID], target)).toBeNull()
+
+    const sold = runTransferWindow(state, createRng(1), { exclude: MID }).filter(
+      (t) => t.from === MID,
+    )
+    expect(sold.map((t) => t.playerId)).toEqual([target.id])
   })
 })
 

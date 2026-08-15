@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { surplus, toCivil, wageBill } from '@fm/domain'
+import { bestXI, surplus, toCivil, wageBill } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
@@ -98,7 +98,64 @@ describe('the squad screen', () => {
     const button = within(rowFor(aStarter().name)).getByRole('button', { name: 'List' })
 
     expect(button.hasAttribute('disabled')).toBe(true)
-    expect(button.getAttribute('title')).toMatch(/first team/)
+    expect(button.getAttribute('title')).toMatch(/starting eleven/)
+  })
+
+  it('lets you sell a man your own formation benches', () => {
+    // The reported bug, and the one a person actually hits. Sellability used to be
+    // judged against a fixed 4-4-2, so switching shape left rows reading "—" in the
+    // Convocado column while their button refused them as first-team — a
+    // contradiction on a single line, and no way to act on either half of it.
+    const squad = game().squads[game().managedClubId] ?? []
+    const reference = new Set(bestXI(squad, '4-4-2').starters)
+    useGame.getState().dispatch({
+      type: 'SetLineup',
+      clubId: game().managedClubId,
+      lineup: bestXI(squad, '4-2-4'),
+    })
+
+    const starting = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+    const benched = squad.filter((p) => !starting.has(p.id) && reference.has(p.id))
+    expect(benched.length).toBeGreaterThan(0)
+
+    openSquad()
+    for (const player of benched) {
+      const row = rowFor(player.name)
+      // The two halves of the row that used to disagree.
+      expect(within(row).getByText('—')).toBeDefined()
+      const button = within(row).getByRole('button', { name: 'List' })
+      expect(button.hasAttribute('disabled')).toBe(false)
+    }
+  })
+
+  it('says it is the goalkeeper, not the first team, when that is the reason', () => {
+    // The other half of the same complaint: 14 of 20 clubs open a career with a
+    // reserve keeper who cannot be sold, and every one of them used to be told he
+    // was in the first team.
+    const squad = game().squads[game().managedClubId] ?? []
+    const starting = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+    const keepers = squad.filter((p) => p.position === 'GK')
+    const reserve = keepers.find((p) => !starting.has(p.id))
+    if (reserve === undefined) throw new Error('no reserve keeper')
+
+    // Cut to two, so selling him would leave one.
+    useGame.setState({
+      game: {
+        ...game(),
+        squads: {
+          ...game().squads,
+          [game().managedClubId]: squad.filter(
+            (p) => p.position !== 'GK' || p.id === reserve.id || starting.has(p.id),
+          ),
+        },
+      },
+    })
+
+    openSquad()
+    const button = within(rowFor(reserve.name)).getByRole('button', { name: 'List' })
+    expect(button.hasAttribute('disabled')).toBe(true)
+    expect(button.getAttribute('title')).toMatch(/goalkeeper/)
+    expect(button.getAttribute('title')).not.toMatch(/eleven/)
   })
 
   it('survives navigating away and back', () => {
