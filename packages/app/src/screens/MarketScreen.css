@@ -50,23 +50,6 @@
   text-transform: uppercase;
 }
 
-/* A player's name opens his ficha, so it is a control, not a label. */
-.market-screen__name {
-  padding: 0;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  text-decoration: underline dotted;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.market-screen__name:hover {
-  color: var(--fm-champion);
-}
-
 .market-screen__free {
   color: var(--fm-uecl);
   font-family: var(--fm-font-condensed);

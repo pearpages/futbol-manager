@@ -448,6 +448,46 @@
   background: #f2c157;
 }
 
+/*
+ * A player's name, as a way into his ficha.
+ *
+ * Inherits everything about its type so it reads as the name it is standing in
+ * for — a table cell, a bold list row, a panel heading — and announces itself
+ * with a dotted underline rather than with a colour or a border. That is why it
+ * declares no size, weight or family of its own and must keep `font: inherit`.
+ *
+ * `letter-spacing` and `text-transform` are named separately because **`font` is
+ * a shorthand that covers neither**. Both screen-only copies this graduated from
+ * lived in a table cell, which sets neither, so both got away without them — and
+ * the negotiation panel's heading, the first place this landed inside
+ * `text-transform: uppercase`, rendered the name in mixed case beside headings
+ * that were all uppercase. jsdom performs no layout and the app project runs
+ * `css: false`, so only opening the app could see it. `.data-table__sort` carries
+ * the same two lines for the same reason.
+ *
+ * Graduated from the two identical copies `.squad-screen__name` and
+ * `.market-screen__name` had become, the same move `.data-table__sort` made from
+ * `.market-screen__sort`. Every place a player's name stands on its own now uses
+ * it, which is eight call sites rather than the two the house rule waits for.
+ */
+.player-link {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.player-link:hover {
+  color: var(--fm-champion);
+}
+
 .field {
   display: flex;
   flex-direction: column;

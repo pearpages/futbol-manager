@@ -18,6 +18,17 @@
   gap: var(--fm-space-3);
 }
 
+/* A player nobody owns. Sits where the crest sits, in the same small type as the
+   position chip beside it, so the row reads the same length either way. */
+.ficha__free {
+  color: var(--fm-uecl);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
 .ficha__name {
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xl);
@@ -41,9 +52,13 @@
   margin: 0;
 }
 
+/* Half each. The chart used to be pinned at 20rem and the attribute list took
+   every remaining pixel, which on a wide stage is well over half for eight bars.
+   `.attr` has a hard floor of ~13rem (5.5rem label + 2ch/2ch/3.5ch while
+   comparing), so half is never the binding constraint. */
 .ficha__body {
   display: grid;
-  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--fm-space-6);
   padding: var(--fm-space-4);
 }

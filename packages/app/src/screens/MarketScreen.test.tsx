@@ -48,8 +48,7 @@ function openMarket() {
 const bodyRows = () => [...document.querySelectorAll('.market-screen__main tbody tr')]
 
 /** Names in the order the table shows them. */
-const rowNames = () =>
-  bodyRows().map((r) => r.querySelector('.market-screen__name')?.textContent ?? '')
+const rowNames = () => bodyRows().map((r) => r.querySelector('.player-link')?.textContent ?? '')
 
 /** Asking prices as numbers, for order assertions. `Free` sorts as zero. */
 const rowFees = () =>
@@ -188,6 +187,30 @@ describe('the market screen', () => {
     expect(screen.getByRole('heading', { name: target.player.name })).toBeDefined()
 
     // Closing used to always return to the squad, which loses your place here.
+    back()
+    expect(screen.getByRole('heading', { name: 'Transfer market' })).toBeDefined()
+  })
+
+  it('opens the ficha for a man you have put up for sale', () => {
+    // The rail names players in three panels and the table names them once. Only
+    // the table used to be a way in, so you could be shown a man's asking price
+    // with no route to what you were selling.
+    const spare = surplus(game().squads[game().managedClubId] ?? [])[0]
+    if (spare === undefined) throw new Error('nobody spare')
+
+    render(<App />)
+    openScreen('nav.squad')
+    const row = screen.getByText(spare.name).closest('tr')
+    if (row === null) throw new Error('no squad row')
+    fireEvent.click(within(row).getByRole('button', { name: 'List' }))
+    back()
+    openScreen('nav.market')
+
+    const panel = screen.getByRole('heading', { name: 'Up for sale' }).closest('section')
+    if (panel === null) throw new Error('no panel')
+    fireEvent.click(within(panel).getByRole('button', { name: spare.name }))
+
+    expect(screen.getByRole('heading', { name: spare.name })).toBeDefined()
     back()
     expect(screen.getByRole('heading', { name: 'Transfer market' })).toBeDefined()
   })
@@ -540,6 +563,33 @@ describe('reopening a deal', () => {
 
     openBid(first.player.name)
     expect(screen.getByRole('heading', { name: first.player.name })).toBeDefined()
+  })
+
+  it('opens the ficha from a bid of your own', () => {
+    const { first } = twoAgreedBids()
+
+    // Scoped for the same reason `openBid` is: the man is a link in the table
+    // above as well, and this panel is the *second* way to reach him.
+    const outbox = document.querySelector('.market-screen__outbox')
+    if (outbox === null) throw new Error('no outbox')
+    fireEvent.click(within(outbox as HTMLElement).getByRole('button', { name: first.player.name }))
+
+    expect(screen.getByRole('heading', { name: first.player.name })).toBeDefined()
+    back()
+    expect(screen.getByRole('heading', { name: 'Transfer market' })).toBeDefined()
+  })
+
+  it('opens the ficha from the deal you are negotiating', () => {
+    // The panel asks you to commit money to a man whose card was two screens
+    // away. Its heading is the name, so the name is the way in.
+    const { first } = twoAgreedBids()
+    openBid(first.player.name)
+
+    const heading = screen.getByRole('heading', { name: first.player.name })
+    fireEvent.click(within(heading).getByRole('button', { name: first.player.name }))
+
+    expect(screen.getByRole('heading', { name: first.player.name })).toBeDefined()
+    expect(useGame.getState().inspectedPlayerId).toBe(first.player.id)
   })
 })
 

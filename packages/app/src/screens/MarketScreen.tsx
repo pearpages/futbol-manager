@@ -31,6 +31,7 @@ import {
 } from '@fm/domain'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { PlayerLink } from './PlayerLink.tsx'
 import { describe as describeEvent, lookupFor } from '../notifications.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
@@ -169,7 +170,6 @@ export function listingValue(
 export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const inspect = useGame((s) => s.inspect)
   const go = useGame((s) => s.go)
   const translator = useT()
   const { t, money, locale } = translator
@@ -413,13 +413,7 @@ export function MarketScreen() {
                       {positionChip(player.position, t(`position.${player.position}`))}
                     </td>
                     <td className="is-text">
-                      <button
-                        type="button"
-                        className="market-screen__name"
-                        onClick={() => inspect(player.id)}
-                      >
-                        {player.name}
-                      </button>
+                      <PlayerLink player={player} />
                     </td>
                     <td className="is-text">
                       {listing.from === null ? (
@@ -530,7 +524,9 @@ export function MarketScreen() {
             <ul className="offer-list">
               {onSale.map((player) => (
                 <li key={player.id} className="offer-list__item">
-                  <span className="offer-list__name">{player.name}</span>
+                  <span className="offer-list__name">
+                    <PlayerLink player={player} />
+                  </span>
                   <span className="offer-list__detail">
                     {t('market.askingLine', {
                       position: t(`position.${player.position}`),
@@ -564,9 +560,7 @@ export function MarketScreen() {
             <ul className="offer-list">
               {incoming.map((bid) => (
                 <li key={bid.id} className="offer-list__item">
-                  <span className="offer-list__name">
-                    {byId.get(bid.playerId)?.name ?? t('market.unknownPlayer')}
-                  </span>
+                  <BidName player={byId.get(bid.playerId)} t={t} />
                   <span className="offer-list__detail club-cell">
                     {(() => {
                       const bidder = names.get(bid.from)
@@ -618,9 +612,7 @@ export function MarketScreen() {
                   // the press needs an answer here as well as up there.
                   className={`offer-list__item${bid.playerId === target ? ' is-active' : ''}`}
                 >
-                  <span className="offer-list__name">
-                    {byId.get(bid.playerId)?.name ?? t('market.unknownPlayer')}
-                  </span>
+                  <BidName player={byId.get(bid.playerId)} t={t} />
                   <span className="offer-list__detail">
                     {money(bid.fee)} · {describeBid(bid, translator)}
                   </span>
@@ -657,6 +649,26 @@ export function MarketScreen() {
         </div>
       </aside>
     </div>
+  )
+}
+
+/**
+ * The name at the head of a bid row, on either side of the deal.
+ *
+ * The lookup can miss: a bid outlives the squad it was made against, so the man
+ * may have retired or moved on since. The fallback stays plain text because
+ * there is no card behind it — a link that opens the empty ficha would be worse
+ * than no link at all.
+ */
+function BidName({ player, t }: { player: Player | undefined; t: Translator['t'] }) {
+  return (
+    <span className="offer-list__name">
+      {/* Nested rather than given the class, because `.offer-list__name` sets
+          type. `.player-link` carries `font: inherit`, so the two would be a
+          same-specificity fight settled by import order — inheriting the bold
+          from a wrapper is the same split `.lineup-row__select` makes. */}
+      {player === undefined ? t('market.unknownPlayer') : <PlayerLink player={player} />}
+    </span>
   )
 }
 
@@ -700,7 +712,13 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
 
   return (
     <section className="screen market-screen__panel" ref={ref}>
-      <h2 className="screen__heading">{player.name}</h2>
+      {/* The name is the heading *and* a way into his ficha — this panel asks
+          you to commit money to a man whose card was two screens away. A button
+          inside a heading still computes into the heading's accessible name, so
+          `getByRole('heading', { name })` is unaffected. */}
+      <h2 className="screen__heading">
+        <PlayerLink player={player} />
+      </h2>
 
       <div className="market-screen__deal">
         {!feeAgreed && (

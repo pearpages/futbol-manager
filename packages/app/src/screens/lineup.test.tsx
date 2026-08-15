@@ -91,6 +91,27 @@ describe('formation buttons', () => {
   })
 })
 
+describe('the team sheet', () => {
+  it('opens a starter’s card, and comes back to the lineup', () => {
+    render(<App />)
+    openScreen('nav.lineup')
+
+    const starters = game().lineups[game().managedClubId]?.starters ?? []
+    const first = squadOf().find((p) => starters.includes(p.id))
+    if (first === undefined) throw new Error('nobody in the XI')
+
+    // A bench man is `<option>` text of the form `Name (83)`, which no button
+    // query can reach — so this resolves the starter row and nothing else.
+    fireEvent.click(screen.getByRole('button', { name: first.name }))
+    expect(screen.getByRole('heading', { name: first.name })).toBeDefined()
+
+    // The other half of the claim: closing returns you to the screen you pressed
+    // on. An `inspectedFrom` fixed at 'squad' lands you somewhere else entirely.
+    back()
+    expect(screen.getByRole('heading', { name: t('lineup.startingXI') })).toBeDefined()
+  })
+})
+
 describe('the tempo readout', () => {
   /**
    * Scoped to the ratings panel on purpose. `approach.balanced` renders the word

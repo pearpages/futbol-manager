@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { ATTRIBUTE_KEYS, type Player } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { back, openScreen } from '../testing.ts'
+import { listingsFor } from './MarketScreen.tsx'
 
 /**
  * The ficha — the radar, the comparison, and the block that says what any of the
@@ -44,6 +45,31 @@ function openFicha(player: Player) {
 function openAnother(player: Player) {
   back()
   fireEvent.click(screen.getByText(player.name))
+}
+
+/**
+ * Somebody else's player, reached the way a manager reaches one — through the
+ * market table. The card is the same card; what differs is what it may claim.
+ */
+function openListedFicha() {
+  render(<App />)
+  const listing = listingsFor(useGame.getState().game).find((l) => l.from !== null)
+  if (listing === undefined) throw new Error('nothing listed by another club')
+  openScreen('nav.market')
+  fireEvent.click(screen.getByRole('button', { name: listing.player.name }))
+  return listing
+}
+
+const identity = () => {
+  const el = document.querySelector('.ficha__identity')
+  if (el === null) throw new Error('no identity block')
+  return el as HTMLElement
+}
+
+const radarKey = () => {
+  const el = document.querySelector('.radar-key')
+  if (el === null) throw new Error('no radar key')
+  return el as HTMLElement
 }
 
 const polygons = () => document.querySelectorAll('.radar__area')
@@ -143,15 +169,115 @@ describe('comparing two players', () => {
   })
 
   it('is dropped by opening a card directly, not only by closing one', () => {
-    // The UI has no ficha-to-ficha link yet, so the route above goes out through
-    // `inspect(null)` and would pass even if opening a card kept the comparison.
-    // This drives the door the first such link will use.
+    // The route above goes out through `inspect(null)` and would pass even if
+    // opening a card kept the comparison. The key's link is now a UI route that
+    // does not — see 'one card to the next' below — but this holds the store to
+    // the contract independently of any screen.
     const store = useGame.getState()
     store.inspect(at('MF').id)
     store.compare(at('MF', 1).id)
     store.inspect(at('DF').id)
 
     expect(useGame.getState().comparedPlayerId).toBeNull()
+  })
+})
+
+describe('one card to the next', () => {
+  /** Subject, compared man, and the key showing both. */
+  function comparing() {
+    const subject = at('MF')
+    const other = at('MF', 1)
+    openFicha(subject)
+    fireEvent.change(compareSelect(), { target: { value: other.id } })
+    return { subject, other }
+  }
+
+  it('opens the compared man from the key', () => {
+    const { other } = comparing()
+
+    fireEvent.click(within(radarKey()).getByRole('button', { name: other.name }))
+
+    expect(screen.getByRole('heading', { name: other.name })).toBeDefined()
+    expect(useGame.getState().inspectedPlayerId).toBe(other.id)
+  })
+
+  it('offers no route back to the card you are already on', () => {
+    const { subject } = comparing()
+
+    // Linking both names is the symmetric-looking mistake: `inspect` clears the
+    // comparison on every open, so the subject's own name would silently destroy
+    // the very thing the key is explaining.
+    expect(within(radarKey()).getAllByRole('button')).toHaveLength(1)
+    expect(within(radarKey()).queryByRole('button', { name: subject.name })).toBeNull()
+  })
+
+  it('comes back to the list you started from, not the card you came through', () => {
+    // The first exercise of the `inspectedFrom` guard in the store, which has
+    // been written and unreachable since M4b. Without it, back lands on a card
+    // with no player and the ficha renders its empty state.
+    const { other } = comparing()
+    fireEvent.click(within(radarKey()).getByRole('button', { name: other.name }))
+
+    back()
+
+    expect(useGame.getState().screen).toBe('squad')
+    expect(screen.getByRole('heading', { name: 'Squad' })).toBeDefined()
+  })
+
+  it('drops the comparison on the way', () => {
+    const { other } = comparing()
+    fireEvent.click(within(radarKey()).getByRole('button', { name: other.name }))
+
+    // The assertion has to be on the store. The rendered consequence is invisible
+    // for this particular link — the target *is* the compared man, and the screen
+    // already refuses to compare anyone against himself.
+    expect(useGame.getState().comparedPlayerId).toBeNull()
+  })
+})
+
+describe('whose player this is', () => {
+  it('says which club he plays for', () => {
+    const listing = openListedFicha()
+    const club = useGame.getState().game.clubs.find((c) => c.id === listing.from)
+    if (club === undefined) throw new Error('no seller')
+
+    expect(within(identity()).getByRole('img', { name: club.name })).toBeDefined()
+  })
+
+  it('says so when nobody owns him', () => {
+    // Season one has no pool — free agents accumulate at each rollover — so one
+    // is planted rather than playing a year to reach the branch.
+    const state = useGame.getState().game
+    const rival = state.clubs.find((c) => c.id !== state.managedClubId)
+    if (rival === undefined) throw new Error('no rival')
+    const [released, ...rest] = state.squads[rival.id] ?? []
+    if (released === undefined) throw new Error('empty squad')
+    useGame.setState({
+      game: { ...state, squads: { ...state.squads, [rival.id]: rest }, freeAgents: [released] },
+    })
+
+    render(<App />)
+    openScreen('nav.market')
+    fireEvent.click(screen.getByRole('button', { name: released.name }))
+
+    expect(within(identity()).getByText('Free agent')).toBeDefined()
+  })
+
+  it('does not tell you to pick a rival for your own XI', () => {
+    // It used to: the line reads off *your* team sheet whoever the card is for,
+    // so a man at another club was told "On the bench. Change the lineup to start
+    // them" — false, and an instruction you cannot follow.
+    openListedFicha()
+
+    expect(document.querySelector('.ficha__status')).toBeNull()
+  })
+
+  it('still says where one of your own stands', () => {
+    // The pair is the constraint. Hiding the line for everybody would satisfy the
+    // test above on its own.
+    openFicha(at('MF'))
+
+    expect(document.querySelector('.ficha__status')?.textContent).toMatch(/starting XI|bench/)
   })
 })
 

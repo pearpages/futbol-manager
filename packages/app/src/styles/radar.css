@@ -11,10 +11,13 @@
  * marks a Champions League place.
  */
 
+/* The cap tracks the viewBox: 17rem × 152/120. It was 17rem while the box was
+   square, and widening the box for the side labels would otherwise have shrunk
+   the rings and the 7px labels by the same 27%. The extra width is gutter. */
 .radar {
   display: block;
   width: 100%;
-  max-width: 17rem;
+  max-width: 22rem;
   margin-inline: auto;
 }
 

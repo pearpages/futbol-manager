@@ -18,6 +18,8 @@ import {
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
 import { AttributeRadar } from './AttributeRadar.tsx'
+import { ClubBadge } from './ClubBadge.tsx'
+import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import './PlayerScreen.css'
 
@@ -157,9 +159,15 @@ export function PlayerScreen() {
   // The ficha reads anyone in the game, not only your own players — the market
   // screen opens it for a target you are thinking about bidding for, and a card
   // that only worked for players you already own would be useless there.
+  //
+  // The owning club comes back with him. Every name in the app is now a way onto
+  // this card, so it is reached far more often for somebody else's player than it
+  // used to be, and a card that will not say who he plays for is a card you have
+  // to leave to find out.
+  const owner = game.clubs.find((c) => (game.squads[c.id] ?? []).some((p) => p.id === playerId))
   const player =
     squad.find((p) => p.id === playerId) ??
-    game.clubs.flatMap((c) => game.squads[c.id] ?? []).find((p) => p.id === playerId) ??
+    (owner === undefined ? undefined : game.squads[owner.id]?.find((p) => p.id === playerId)) ??
     game.freeAgents.find((p) => p.id === playerId)
 
   if (player === undefined) {
@@ -172,6 +180,11 @@ export function PlayerScreen() {
   }
 
   const lineup = game.lineups[game.managedClubId]
+  // Whether he is in the XI is a question about *your* team sheet, so it is only
+  // a question at all for one of yours. It used to be answered for everybody:
+  // a rival you were scouting was told "On the bench. Change the lineup to start
+  // them", which is both false and an instruction you cannot follow.
+  const isYours = squad.some((p) => p.id === player.id)
   const isStarting = lineup?.starters.includes(player.id) ?? false
   const formation: Formation = lineup?.formation ?? '4-4-2'
 
@@ -197,6 +210,14 @@ export function PlayerScreen() {
         <div className="ficha__identity">
           {positionChip(player.position, positionName)}
           <h2 className="ficha__name">{player.name}</h2>
+          {/* Who he plays for. Reuses `market.freeAgent` rather than adding a
+              fourth entry to three dictionaries for a fact already worded once
+              — the same call the form strip made with `news.won`. */}
+          {owner === undefined ? (
+            <span className="ficha__free">{t('market.freeAgent')}</span>
+          ) : (
+            <ClubBadge club={owner} labelled />
+          )}
         </div>
         {/* Contextual, not a route home: a ficha opened from a two-hundred-row
             market list returns to that list, never to the hub. */}
@@ -245,13 +266,17 @@ export function PlayerScreen() {
 
           {compared !== undefined && (
             <ul className="radar-key">
+              {/* Only the other man is a route out. `inspect` clears the
+                  comparison on every open, so a link on the subject's own name
+                  would destroy the comparison this key exists to explain — and
+                  navigate nowhere doing it. */}
               <li className="radar-key__item">
                 <span className="radar-key__swatch is-a" />
                 {player.name}
               </li>
               <li className="radar-key__item">
                 <span className="radar-key__swatch is-b" />
-                {compared.name}
+                <PlayerLink player={compared} />
               </li>
             </ul>
           )}
@@ -347,7 +372,9 @@ export function PlayerScreen() {
         </p>
       </section>
 
-      <p className="ficha__status">{t(isStarting ? 'player.inXI' : 'player.onBench')}</p>
+      {isYours && (
+        <p className="ficha__status">{t(isStarting ? 'player.inXI' : 'player.onBench')}</p>
+      )}
     </section>
   )
 }

@@ -13,6 +13,7 @@ import {
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import './LineupScreen.css'
 
@@ -63,7 +64,7 @@ export function LineupScreen() {
               </h3>
               {inXI.map((player: Player) => (
                 <div key={player.id} className="lineup-row">
-                  <span className="lineup-row__name">{player.name}</span>
+                  <PlayerLink player={player} className="lineup-row__name" />
                   <span className="lineup-row__ovr">{overall(player)}</span>
                   <label className="lineup-row__swap">
                     <span className="lineup-row__swap-label">{t('lineup.replaceWith')}</span>
@@ -76,6 +77,10 @@ export function LineupScreen() {
                       }}
                     >
                       <option value="">{t('lineup.keep')}</option>
+                      {/* The one place a player's name is not a way into his
+                          ficha: an `<option>` cannot hold a button. Everyone on
+                          this list is a row on Plantilla, so the gap costs a
+                          detour rather than a dead end. */}
                       {bench.map((sub) => (
                         <option key={sub.id} value={sub.id}>
                           {sub.name} ({overall(sub)})

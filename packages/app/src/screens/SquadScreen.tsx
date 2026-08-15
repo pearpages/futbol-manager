@@ -11,6 +11,7 @@ import {
 import { useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
 import { useGame } from '../store.ts'
+import { PlayerLink } from './PlayerLink.tsx'
 import { SortHeader } from './SortHeader.tsx'
 import './SquadScreen.css'
 
@@ -43,7 +44,6 @@ export function positionChip(position: Position, label: string) {
 
 export function SquadScreen() {
   const game = useGame((s) => s.game)
-  const inspect = useGame((s) => s.inspect)
   const dispatch = useGame((s) => s.dispatch)
   const go = useGame((s) => s.go)
   const { t, money, locale } = useT()
@@ -142,13 +142,7 @@ export function SquadScreen() {
                   {positionChip(player.position, t(`position.${player.position}`))}
                 </td>
                 <td className="is-text">
-                  <button
-                    type="button"
-                    className="squad-screen__name"
-                    onClick={() => inspect(player.id)}
-                  >
-                    {player.name}
-                  </button>
+                  <PlayerLink player={player} />
                 </td>
                 <td>{ageOn(player, date)}</td>
                 <td>

@@ -12,12 +12,23 @@
  * and a centre-half lean visibly opposite ways.
  */
 
-/** Drawn in a square box with room outside the rings for the eight labels. */
-export const RADAR_VIEWBOX = '0 0 120 120'
-
 const CENTRE = 60
 const RADIUS = 40
 const LABEL_RADIUS = 52
+
+/**
+ * Horizontal gutters for the two side labels — the box is deliberately not square.
+ *
+ * The labels on the left and right axes anchor `end` and `start` at x = 8 and
+ * x = 112 and grow *outward* from there (see `labelAt`), so three characters run
+ * past a 0–120 box and an `<svg>` clips to its viewport. The gutters are where
+ * those two labels are drawn; the rings still occupy a square 120 in the middle.
+ *
+ * Vertically there is nothing to add: the top and bottom labels are centred on
+ * their anchor, so they sit well inside 0–120.
+ */
+const LABEL_ROOM = 16
+export const RADAR_VIEWBOX = `${-LABEL_ROOM} 0 ${2 * CENTRE + 2 * LABEL_ROOM} ${2 * CENTRE}`
 
 /** The grid octagons, as fractions of the full radius. */
 export const RADAR_RINGS = [0.25, 0.5, 0.75, 1] as const
