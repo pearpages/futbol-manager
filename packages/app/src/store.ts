@@ -11,7 +11,7 @@ import {
   type Rng,
   type RngState,
 } from '@fm/domain'
-import { DEFAULT_CLUBS, PLAYER_NAMES } from '@fm/data'
+import { DEFAULT_CLUBS, DEFAULT_ROSTERS, PLAYER_NAMES } from '@fm/data'
 import { loadGame, saveGame } from '@fm/persistence'
 import { DEFAULT_LANGUAGE, isLanguage, type Language } from './i18n/index.ts'
 
@@ -131,6 +131,9 @@ function freshGame(managedClubId?: string): GameState {
   return newSeason(DEFAULT_CLUBS, 2026, {
     names: PLAYER_NAMES,
     rng,
+    // Real squad shapes for the opening league. `PLAYER_NAMES` stays: it still
+    // names youth intake and free agents at every rollover.
+    rosters: DEFAULT_ROSTERS,
     ...(managedClubId === undefined
       ? {}
       : { managedClubId: managedClubId as GameState['managedClubId'] }),

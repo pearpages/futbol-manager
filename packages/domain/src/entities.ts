@@ -16,9 +16,9 @@ export type FixtureId = string & { readonly __fixtureId: unique symbol }
  * learns the difference — M3 replaced the supplier, not the signature.
  */
 export interface TeamRating {
-  /** 1–99. */
+  /** 60–94 in the shipped league; clamped to 1–99. */
   readonly attack: number
-  /** 1–99. */
+  /** 60–94 in the shipped league; clamped to 1–99. */
   readonly defence: number
   /**
    * How open this side wants the game, −1 (low block) to +1 (all-out attack).

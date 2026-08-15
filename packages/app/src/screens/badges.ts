@@ -54,31 +54,41 @@ export interface Badge {
 }
 
 /**
- * Keyed by club id. The five clubs on red-and-white stripes are deliberately
- * given five different shapes; likewise the two on blue-and-white and the two on
- * yellow.
+ * Keyed by club id, and covering every club in `@fm/data` — including the five in
+ * the second tier, which have no fixtures but do have a crest wherever they are
+ * listed.
+ *
+ * The five clubs on red-and-white stripes are deliberately given five different
+ * shapes. **Blue-and-white is now the crowded one at four** — San Sebastián, Sarrià,
+ * A Coruña and Málaga — which is what real kits do, and the shapes carry the whole
+ * burden of telling them apart in a twenty-row table.
  */
 export const BADGES: Readonly<Record<string, Badge>> = {
   madrid: { colours: 'white', pattern: 'solid', shape: 'circle' },
   barcelona: { colours: 'garnet-blue', pattern: 'stripes', shape: 'shield' },
   manzanares: { colours: 'red-white', pattern: 'stripes', shape: 'shield' },
-  sevilla: { colours: 'white-red', pattern: 'solid', shape: 'square' },
-  bilbao: { colours: 'red-white', pattern: 'stripes', shape: 'circle' },
-  'san-sebastian': { colours: 'blue-white', pattern: 'stripes', shape: 'shield' },
-  valencia: { colours: 'orange-black', pattern: 'sash', shape: 'lozenge' },
   villarreal: { colours: 'yellow', pattern: 'solid', shape: 'shield' },
+  'san-sebastian': { colours: 'blue-white', pattern: 'stripes', shape: 'shield' },
+  bilbao: { colours: 'red-white', pattern: 'stripes', shape: 'circle' },
   heliopolis: { colours: 'green-white', pattern: 'stripes', shape: 'shield' },
   vigo: { colours: 'sky', pattern: 'solid', shape: 'lozenge' },
-  girona: { colours: 'red-white', pattern: 'stripes', shape: 'square' },
-  pamplona: { colours: 'red', pattern: 'solid', shape: 'pennant' },
-  palma: { colours: 'red-black', pattern: 'halves', shape: 'shield' },
+  sevilla: { colours: 'white-red', pattern: 'solid', shape: 'square' },
+  valencia: { colours: 'orange-black', pattern: 'sash', shape: 'lozenge' },
   sarria: { colours: 'blue-white', pattern: 'hoops', shape: 'circle' },
+  girona: { colours: 'red-white', pattern: 'stripes', shape: 'square' },
   getafe: { colours: 'blue', pattern: 'solid', shape: 'square' },
-  vitoria: { colours: 'white-blue', pattern: 'halves', shape: 'circle' },
+  benicalap: { colours: 'garnet-blue', pattern: 'stripes', shape: 'pennant' },
+  'a-coruna': { colours: 'blue-white', pattern: 'stripes', shape: 'lozenge' },
+  santander: { colours: 'green-white', pattern: 'stripes', shape: 'circle' },
+  elche: { colours: 'white', pattern: 'solid', shape: 'lozenge' },
   vallecas: { colours: 'white-red', pattern: 'sash', shape: 'shield' },
+  pamplona: { colours: 'red', pattern: 'solid', shape: 'pennant' },
+  vitoria: { colours: 'white-blue', pattern: 'halves', shape: 'circle' },
+  almeria: { colours: 'red-white', pattern: 'stripes', shape: 'lozenge' },
+  palma: { colours: 'red-black', pattern: 'halves', shape: 'shield' },
+  malaga: { colours: 'blue-white', pattern: 'stripes', shape: 'square' },
   cadiz: { colours: 'yellow', pattern: 'solid', shape: 'pennant' },
   granada: { colours: 'red-white', pattern: 'hoops', shape: 'shield' },
-  almeria: { colours: 'red-white', pattern: 'stripes', shape: 'lozenge' },
 }
 
 /** Falls back rather than throwing: a missing badge should not blank a screen. */

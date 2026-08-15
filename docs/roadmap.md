@@ -169,7 +169,7 @@ Two open questions closed. Two others recorded rather than solved, because they 
 
 **Still open, and not code:**
 
-- **Nothing has been looked at in a browser.** The Chrome extension has refused to connect across three attempts, so the UI is verified by build, tests and rendered-DOM dumps only.
+- **Nothing has been looked at in a browser.** The Chrome extension has refused to connect across three attempts, so the UI is verified by build, tests and rendered-DOM dumps only. _(Resolved in part on 2026-08-15, after thirteen consecutive failures: the extension connected twice, and both sittings immediately found defects reasoning had not — a three-stat rail wrapping `Saldo 5,7 M€` onto two lines, and the transfer-window badge verified across a full career including the summer opening the day clock cannot reach. Connection remains unreliable and most screens are still verified by DOM dump, so "the appearance is unverified" stays the honest default.)_
 - **The manager still has little to manage, and that is expected.** Tactics are worth ~3 points; a single goalkeeper is worth +10.5. The squad is the real lever and M4 is what changes it.
 
 ---
@@ -187,6 +187,8 @@ Two open questions closed. Two others recorded rather than solved, because they 
 **Exit — met.** Ten continuous seasons: champions rotated across four clubs (Barcelona ×4, Madrid ×3, Manzanares ×2, Sevilla), champion points 79–96, squads 18–25, mean age steady at 27, and the pecking order held without inverting or running away.
 
 **Money is conserved exactly** — 27,854k in the league every season for ten seasons. That is the structural invariant most likely to catch a real bug, and it is never to be loosened.
+
+**Superseded at M5a, and by something stricter rather than looser.** Once revenue started creating money and wages started destroying it, conservation could no longer hold — so it was replaced by the per-club **ledger identity** of [ADR 0009](./adr/0009-the-ledger-identity.md): every movement writes a line, and a balance changes by exactly what its ledger says, checked per club on every tick. The old invariant could only say the league had inflated; this one says which club and on which line. The measurement above stands as M4a-era history.
 
 **The harness caught a real one.** With squads carrying forward and nobody retiring, the league aged into a retirement home — mean squad age 33.75 after ten seasons. Fixed with retirement from 33 (certain by 39) and a youth replacement at the same position. That is _not_ the youth academy, which is M7's scouting and development; it is the minimum inflow a career needs to survive.
 
@@ -274,6 +276,28 @@ Ticket pricing, stadium expansion, board objectives and the sack. The three `Fin
 
 ---
 
+## Between M5 and M6 — the polish phase
+
+**Not a milestone. Recorded because it happened and this file did not say so.**
+
+Two days and nine commits sat between M5b and the start of M6, and no milestone moved. That stretch is now visible in the numbers: **+6,746 / −936 lines across 74 files** — roughly 30% of the codebase — with **81% of the insertions in `packages/app`**. The whole of it went into presentation, and none of it into M6 or M7.
+
+**What shipped:** club badges (kit colours, shirt patterns and shapes, no crests — see [ADR 0007](./adr/0007-intellectual-property.md)); the hub rebuilt as four coloured quadrants with twelve icons and four pixel-art figures, replacing the nav rail entirely; a news feed, and then its removal from the shell once the hub became the only place the day advances; the ficha grown an attribute radar, a squad-mate comparison and a block explaining which attributes actually count for what; real stadium capacities in place of a curve on rating; squad numbers, wages and contracts on Plantilla; the transfer window given a badge and then a countdown; a form strip and the league position moved onto the hub; and **three languages**.
+
+**Why it was not waste, and this is the transferable part.** The suite was green throughout, and this phase still turned up defects that only surface when somebody plays:
+
+- **A transfer you could not close.** `NegotiationPanel` had no `key`, so switching between two live bids reused the component instance and left the previous player's wage in the field — an offer below what the man wanted, silently refused, with the panel itself mounted above the scroll viewport where the button appeared dead.
+- **The market's 60-row cap was hiding exactly the wrong players.** A bare `.slice(0, 60)` on a list sorted by improvement showed a weak club sixty players it could not afford while ~90 useful, affordable signings sat below the cut — the precise opposite of what M4b's exit criterion needs.
+- **A ticket rendered as "€0k"**, and **the overdraft _limit_ was printed as a negative figure** beside a balance in credit, so headroom read as debt to the only person it was for.
+
+Each was found by looking, not by testing. The lesson the milestones keep re-learning is that a feature with green tests is not a feature somebody can use.
+
+**What it cost, honestly:** the ~40-screen UI estimate in the cross-cutting tracks below is the line item this phase drew down, and it added a permanent per-screen tax in the form of three dictionaries. Both are recorded there rather than here.
+
+The blow-by-blow lives in `CLAUDE.md`'s session log; this section exists so the roadmap is not silent about two days of work.
+
+---
+
 ## M6 — Living squad
 
 **~3 weeks**
@@ -306,10 +330,14 @@ Fog-of-war is worth doing properly: store true attributes, expose an estimate wh
 
 Run these alongside, not as separate phases.
 
-**Data pipeline** _(starts at M3, ~2 weeks total)_
+**Data pipeline** _(**unstarted — deferred to M7, unscheduled.** Originally "starts at M3, ~2 weeks total")_
 Derivation layer mapping FBref/StatsBomb per-90 stats onto the eight attributes — skeleton mapping table already in [attribute-model.md](./attribute-model.md#bridge-to-the-data-pipeline). Pure functions, unit-tested. openfootball for club and league structure.
 
-**Ships with unlicensed city names by default** — a club is its city (Madrid, Barcelona, Sevilla), and a city's second club takes the district or ground it is identified with (Manzanares, Heliópolis, Sarrià, Vallecas). A city name is not a club trademark. Real club and player names stay a user-supplied import. Player names are generated from Spanish name pools, never lifted from real squads — there is no city-name equivalent for people. Reasoning in [ADR 0007](./adr/0007-intellectual-property.md), which also leaves deliberately open what this layer may _ship_ as opposed to _read_.
+**None of this was built.** M3 came and went and `packages/data/` is three files — `clubs.ts` (twenty hardcoded clubs with ratings and real capacities), `names.ts` (the Spanish name pools) and a barrel. The 5.0-shaped game reached M5 without a byte of external data, because generated squads round-trip club strength and city-named clubs need no licence; the track was scheduled against M3 for no stronger reason than that M3 was where players arrived.
+
+**It is re-pointed at M7**, which is the first milestone with an actual consumer: scouting and fog-of-war want a real attribute distribution to be uncertain _about_, and a second division wants a league structure to import. Dataset import stays the opt-in layer [ADR 0007](./adr/0007-intellectual-property.md) describes — what the layer may _ship_ as opposed to _read_ is still deliberately open there. The `pace` mapping risk travels with it; see Risks.
+
+**Ships with unlicensed city names by default** — a club is its city (Madrid, Barcelona, Sevilla), and a city's second club takes the district or ground it is identified with (Manzanares, Heliópolis, Sarrià, Vallecas). A city name is not a club trademark. Real club names stay a user-supplied import. **Player names no longer are**: as of 2026-08-15 the opening squads are shaped on real rosters with every surname altered, which answers the question ADR 0007 left open — the data layer ships data, not only a format. Reasoning and the accepted risk in [ADR 0010](./adr/0010-real-squad-shapes.md); the club-naming half of [ADR 0007](./adr/0007-intellectual-property.md) is unchanged. Youth intake and free agents still come from the Spanish name pools.
 
 **Save migrations** _(continuous)_
 Every schema change gets a migration and a round-trip test against a stored fixture save from the previous version. Keep one fixture save per shipped version in the repo. See [ADR 0005](./adr/0005-persistence.md).
@@ -318,6 +346,15 @@ Every schema change gets a migration and a round-trip test against a stored fixt
 Table-heavy screens reading from a store. Expect ~40 distinct views by M7. The retro chrome is fun to build, but each screen still needs wiring — budget for it.
 
 The mitigation for the screen-count risk is a shared chrome layer (`packages/app/src/styles/chrome.css`) good enough that a new screen is markup and data wiring with no new CSS. That is why styling is plain global CSS with block-element names rather than per-component modules — see [stack.md](./stack.md#styling--plain-css-global-block-element-class-names).
+
+**Measured at ten screens, that mitigation is partly holding.** `chrome.css` carries 569 shared lines against ~1,000 lines of per-screen CSS — so "no new CSS" is not true, but the trend is right and the split is the one you would want: routine table screens are nearly free (Squad 40 lines, Setup 40, Estadio 67, Caja 71) while the signature screens are not (Hub 383, Market 193, Player 146). Keep graduating a primitive to `chrome.css` on its _second_ use and the routine screens stay cheap; the expensive ones are expensive because they are bespoke, which is the correct reason.
+
+**i18n** _(shipped, off-roadmap, continuous from here)_
+Three languages — **Catalan (default), Spanish, English** — hand-rolled with no dependency, per [stack.md](./stack.md). ~334 keys × 3 dictionaries, plus `format.ts` for money, percentages, counts and dates, because `€12.4M` is `12,4 M€` in ca/es and the separator is not a suffix you can bolt on.
+
+This was never on the roadmap and it is a **standing tax on everything after it**: a new screen now costs its markup, its data wiring, _and_ three dictionary entries per string. Budget it alongside the ~40-view estimate above rather than as a one-off.
+
+The known gap: `dictionaries.test.ts` enforces key parity in both directions and identical `{parameters}` across languages, but it **cannot see a key nobody uses** — parity is not coverage. Two orphans have already been found by hand (`market.openNegotiation`, unused from the i18n pass until the negotiation bug; `shell.next`/`shell.today`/`shell.inDays`, orphaned when the bar stopped telling the time). A periodic grep for unreferenced keys is the only guard there is.
 
 ---
 
@@ -347,9 +384,22 @@ Listed so they stay decided rather than getting relitigated at 1am:
 
 **Balance tuning is underestimated, always.** M2, M4 and M5 each carry a tail of tuning work that doesn't look like progress. The N-season headless harness is the mitigation — it is now an **M1** deliverable rather than an M2 one, so that by the time there is something to calibrate the tool already exists and is trusted.
 
-**The attribute model is load-bearing.** Getting it wrong surfaces as vague "the game feels arbitrary" complaints in M4, three months after the mistake. _Now specified_ in [attribute-model.md](./attribute-model.md), including the M3→M2 contract. The residual risk has moved: it is no longer "we haven't decided", it is "the `pace` derivation from FBref has no direct source stat" — flagged in that document, to be resolved during M3's data work.
+**The attribute model is load-bearing.** Getting it wrong surfaces as vague "the game feels arbitrary" complaints in M4, three months after the mistake. _Now specified_ in [attribute-model.md](./attribute-model.md), including the M3→M2 contract. The residual risk has moved: it is no longer "we haven't decided", it is "the `pace` derivation from FBref has no direct source stat" — flagged in that document. **It was to be resolved during M3's data work; that work did not happen and M3 is closed**, so the risk now travels with the deferred data-pipeline track above rather than expiring silently with the milestone it was pinned to.
 
-**Screen count is the silent cost.** The domain work is genuinely tractable; forty table screens is what actually eats the calendar.
+**Screen count is the silent cost.** The domain work is genuinely tractable; forty table screens is what actually eats the calendar. **Ten screens in, and the polish phase above is what this risk looks like when it arrives** — it does not present as "too many screens", it presents as two days of work on the ten that exist.
+
+---
+
+## Known open items
+
+Small, real, and deferred more than once. They live here rather than only in `CLAUDE.md`'s session log, because an append-only log is where a one-line fix goes to be deferred a third time.
+
+| Item                                         | Where                                                                                                                                      | Note                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Matchday number disagrees by one**         | `TableScreen.tsx` computes `Math.ceil(played / 10)` — _rounds completed_ — while the hub and title bar show the round _about to be played_ | A one-line fix. Deferred twice, both times as "a screen this change was not asked to touch". Decide which of the two numbers is the right one and make both sites say it.                                                                                                                                  |
+| **Disabled-tile accessible name**            | `HubScreen.tsx` — the label and milestone spans are adjacent with no separator, so a screen reader says `"CanteraM7"`                      | One attribute (`aria-hidden` on the badge; its `title` already carries the information). **Pinned by a test** that builds the expected name as `` `${label}${tile.milestone}` `` — the test changes with the fix. The identical defect in the hub's position band was already fixed, with a leading space. |
+| **The overdraft has no teeth**               | `board.ts` judges league position and nothing else                                                                                         | Recorded at M5b as a deliberate cost, not an oversight. A club may run to its limit and nobody mentions it. Debt becomes a consequence when there is something to attach it to.                                                                                                                            |
+| **The harness cannot see tactical exploits** | Every club runs balanced tactics in `simulate.harness.test.ts`                                                                             | So the net that guards every calibrated band is blind to the one class of bug M3a and M5b both shipped — a lever whose right answer is an end stop. M3c's test covers this by driving tactics explicitly; a broader sweep is the real fix if the model grows more levers.                                  |
 
 ---
 
@@ -359,7 +409,7 @@ Locked decisions live in [`docs/adr/`](./adr/). Read them before reopening a set
 
 | ADR                                         | Decision                                                      |
 | ------------------------------------------- | ------------------------------------------------------------- |
-| [0001](./adr/0001-workspace-tooling.md)     | npm workspaces, no Turborepo                                  |
+| [0001](./adr/0001-workspace-tooling.md)     | pnpm workspaces, no Turborepo                                 |
 | [0002](./adr/0002-prng.md)                  | `sfc32` seeded PRNG                                           |
 | [0003](./adr/0003-league-format.md)         | 20 clubs, 38 rounds, Spanish tiebreakers                      |
 | [0004](./adr/0004-attribute-model.md)       | Eight attributes, not thirty                                  |
@@ -367,3 +417,5 @@ Locked decisions live in [`docs/adr/`](./adr/). Read them before reopening a set
 | [0006](./adr/0006-typescript-6-not-7.md)    | TypeScript pinned to 6.x — typescript-eslint caps at `<6.1.0` |
 | [0007](./adr/0007-intellectual-property.md) | Copy the design, not the expression or the name               |
 | [0008](./adr/0008-target-pc-futbol-5.md)    | PC Fútbol 5.0 is the v1 target; 2001 is the direction         |
+| [0009](./adr/0009-the-ledger-identity.md)   | Money is accounted for, not conserved                         |
+| [0010](./adr/0010-real-squad-shapes.md)     | Real squad shapes, and altered surnames                       |

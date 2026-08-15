@@ -52,7 +52,7 @@ export interface Tactics {
 export const BALANCED: Tactics = { attacking: 50 }
 
 /** How far the slider can shift the split, in rating points, at either extreme. */
-const SLIDER_SWING = 8
+const SLIDER_SWING = 3.99
 
 /**
  * Extremes cost more than they give. Without this the slider is not a decision:
@@ -153,7 +153,23 @@ export function positionShare(
   }
 }
 
-export function teamRating(starters: readonly Player[], tactics: Tactics = BALANCED): TeamRating {
+/**
+ * The same collapse, **unrounded**.
+ *
+ * `needFor` scores marginal signings by subtracting two team ratings, and rounding
+ * each before subtracting quantises the answer to whole points — which is what once
+ * made four separately-written market thresholds all mean "at least one". It matters
+ * more since the rating scale compressed, because every marginal gain shrank with it.
+ *
+ * Kept as a separate entry point rather than an extra field on `TeamRating`:
+ * `teamRating` is one of the hottest functions here — `bestXI`, `needFor` and every
+ * resolved fixture go through it — and returning a nested object on every call cost
+ * enough allocation to push the tactics harness past its timeout.
+ */
+export function teamRatingRaw(
+  starters: readonly Player[],
+  tactics: Tactics = BALANCED,
+): TeamRating {
   const keeper = starters.find((p) => p.position === 'GK')
   const outfield = starters.filter((p) => p.position !== 'GK')
 
@@ -193,9 +209,12 @@ export function teamRating(starters: readonly Player[], tactics: Tactics = BALAN
   const [attackShift, defenceShift] =
     lever >= 0 ? [magnitude, -surrendered] : [-surrendered, magnitude]
 
+  // `raw` keeps the unrounded pair. `needFor` scores marginal signings off it,
+  // because rounding a *difference* of two rounded numbers is what made four
+  // separately-written market thresholds all collapse to "at least one point".
   return {
-    attack: clampRating(attack + attackShift),
-    defence: clampRating(defence + defenceShift),
+    attack: attack + attackShift,
+    defence: defence + defenceShift,
     // Tempo: how open you want the game. The resolver averages both sides and
     // applies it to both scorelines, so a low block smothers the match rather
     // than only your half of it. Zero at balanced, which is what keeps the M2
@@ -273,4 +292,10 @@ export function startersOf(squad: readonly Player[], lineup: Lineup): Player[] {
   if (new Set(lineup.starters).size !== 11) throw new Error('A lineup cannot name a player twice')
 
   return starters
+}
+
+/** The collapse the resolver consumes: whole numbers, clamped to 1–99. */
+export function teamRating(starters: readonly Player[], tactics: Tactics = BALANCED): TeamRating {
+  const raw = teamRatingRaw(starters, tactics)
+  return { attack: clampRating(raw.attack), defence: clampRating(raw.defence), tempo: raw.tempo }
 }

@@ -55,19 +55,25 @@ describe('generateSquad', () => {
   it('gives outfield players no goalkeeping ability, and keepers plenty', () => {
     const squad = squadFor(strongest)
     for (const player of squad) {
-      if (player.position === 'GK') expect(player.attributes.keeping).toBeGreaterThan(50)
-      else expect(player.attributes.keeping).toBeLessThan(20)
+      // On the 60–94 scale an outfielder's dead `keeping` sits just above 40 —
+      // below every real rating, which is the point, but no longer near 1.
+      if (player.position === 'GK') expect(player.attributes.keeping).toBeGreaterThan(58)
+      else expect(player.attributes.keeping).toBeLessThan(52)
     }
   })
 
   it('specialises by position rather than producing generalists', () => {
+    // Asserted over the whole position group, not one player. The separation between
+    // a key attribute and the rest is about five points on this scale while `NOISE` is
+    // ±3, so any single defender can come out even — picking `find`'s first match made
+    // this a coin toss rather than a claim about generation.
     const squad = squadFor(strongest)
-    const defender = squad.find((p) => p.position === 'DF')
-    const striker = squad.find((p) => p.position === 'FW')
-    if (defender === undefined || striker === undefined) throw new Error('missing players')
+    const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length
+    const of = (position: string, key: 'tackling' | 'finishing') =>
+      mean(squad.filter((p) => p.position === position).map((p) => p.attributes[key]))
 
-    expect(defender.attributes.tackling).toBeGreaterThan(defender.attributes.finishing)
-    expect(striker.attributes.finishing).toBeGreaterThan(striker.attributes.tackling)
+    expect(of('DF', 'tackling')).toBeGreaterThan(of('DF', 'finishing'))
+    expect(of('FW', 'finishing')).toBeGreaterThan(of('FW', 'tackling'))
   })
 
   it('makes the first-choice player better than the last of their position', () => {
@@ -103,8 +109,8 @@ describe('round trip back to club strength', () => {
     const strongRating = teamRating(startersOf(strong, bestXI(strong, '4-4-2')))
     const weakRating = teamRating(startersOf(weak, bestXI(weak, '4-4-2')))
 
-    expect(strongRating.attack - weakRating.attack).toBeGreaterThan(30)
-    expect(strongRating.defence - weakRating.defence).toBeGreaterThan(30)
+    expect(strongRating.attack - weakRating.attack).toBeGreaterThan(14)
+    expect(strongRating.defence - weakRating.defence).toBeGreaterThan(14)
   })
 
   it('holds across seeds', () => {
@@ -121,7 +127,7 @@ describe('round trip back to club strength', () => {
     const best = teamRating(startersOf(squad, bestXI(squad, '4-4-2')))
     const worst = teamRating(startersOf(squad, worstXI(squad, '4-4-2')))
 
-    expect(best.attack).toBeGreaterThan(worst.attack + 5)
-    expect(best.defence).toBeGreaterThan(worst.defence + 5)
+    expect(best.attack).toBeGreaterThan(worst.attack + 3)
+    expect(best.defence).toBeGreaterThan(worst.defence + 3)
   })
 })

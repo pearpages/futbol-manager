@@ -111,7 +111,7 @@ export const MAX_CONTRACT_YEARS = 5
  * the best players the cheapest relative to their worth.
  */
 function wageDemand(player: Player): number {
-  return 1 + Math.max(0, overall(player) - 60) / 100
+  return 1 + Math.max(0, overall(player) - 75.03) / 49.93
 }
 
 /**

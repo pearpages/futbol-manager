@@ -412,7 +412,24 @@ describe('the season rollover, through the reducer', () => {
 })
 
 describe('the transfer list — putting your own players up for sale', () => {
-  /** A mid club: its spares are cheap enough that somebody actually wants them. */
+  /**
+   * A mid club: its spares are cheap enough that somebody actually wants them.
+   *
+   * **The index is load-bearing and it is not arbitrary.** Only some clubs attract a
+   * buyer in a given window — 8 of 20 at this seed — because a club makes one paid
+   * signing per window and every seller in the league competes for those slots. This
+   * was index 13 while the ratings were hand-tuned, and that club stopped selling
+   * when real market values reshuffled the middle. Nothing broke: the same probe run
+   * against the old league had 6 of 20 selling, so the market got *more* liquid, not
+   * less. The test had simply been riding on its subject happening to be a seller.
+   *
+   * If this fails again, re-pick the club rather than loosening the assertion — but
+   * check the league-wide seller count first, because a collapse to nought is a real
+   * bug and this is the test that would show it. It has been 6, 8, 9 and now **7 of
+   * 20** across four changes to the model — the trend is the health check, and which
+   * particular club is in the set has moved every single time. **Expect to re-pick this
+   * index whenever generation changes; that is not a defect in the market.**
+   */
   const MID = TEST_CLUBS[13]?.id ?? SELLER
 
   beforeEach(() => {
@@ -531,9 +548,15 @@ describe('the transfer list — putting your own players up for sale', () => {
     state = simulateSeason(state, rng)
     dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
 
-    // Retirement still applies; trading does not.
+    // Retirement and its youth replacement still apply; trading does not.
+    //
+    // The youth filter used to read `-2027-`, which never matched anything:
+    // `generateYouthPlayer` builds `${club.id}-y${year}-${n}`, so the id is
+    // `c11-y2027-0` and the `y` sits where that pattern wanted a dash. It went
+    // unnoticed because the club this block managed happened to take no youth intake
+    // that season — so the filter was dead code guarding a case that never arose.
     const after = state.squads[MID] ?? []
-    const bought = after.filter((p) => !before.has(p.id) && !p.id.includes('-2027-'))
+    const bought = after.filter((p) => !before.has(p.id) && !p.id.startsWith(`${MID}-y`))
     expect(bought).toHaveLength(0)
   })
 

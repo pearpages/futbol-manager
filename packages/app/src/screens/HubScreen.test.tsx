@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { computeTable, nextFixtureFor, recentResultsFor } from '@fm/domain'
+import { computeTable, nextFixtureFor, overall, recentResultsFor, type Player } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
@@ -164,11 +164,20 @@ describe('the weak-XI warning', () => {
     const lineup = state.lineups[MID]
     if (lineup === undefined) throw new Error('no lineup')
 
-    // Swap a starter for a reserve of the same position.
+    // Swap the best defender out for the worst reserve defender. Deliberately the
+    // widest legal swap rather than the first pair found: `teamRating` clamps to a
+    // whole number, so a swap between two adjacent squad members can round away to
+    // no change at all and leave this asserting nothing. That is squad-dependent,
+    // which means it passes or fails on which league happens to be loaded.
     const starters = new Set(lineup.starters)
-    const out = squad.find((p) => starters.has(p.id) && p.position === 'DF')
-    const bench = squad.find((p) => !starters.has(p.id) && p.position === 'DF')
+    const byQuality = (a: Player, b: Player) => overall(b) - overall(a)
+    const out = squad.filter((p) => starters.has(p.id) && p.position === 'DF').sort(byQuality)[0]
+    const bench = squad
+      .filter((p) => !starters.has(p.id) && p.position === 'DF')
+      .sort(byQuality)
+      .at(-1)
     if (out === undefined || bench === undefined) throw new Error('no swap available')
+    expect(overall(out), 'the swap must actually weaken the XI').toBeGreaterThan(overall(bench))
 
     useGame.getState().dispatch({
       type: 'SetLineup',

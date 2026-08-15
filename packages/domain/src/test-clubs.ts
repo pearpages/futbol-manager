@@ -6,15 +6,19 @@ import { EMPTY_LEDGER, FINANCE } from './finance.ts'
  * not ship content, and it cannot import `@fm/data` (that would reverse the
  * dependency direction), so the fixture lives here.
  *
- * The spread deliberately mirrors the shape of a real top division rather than a
- * uniform ramp: a few contenders, a broad middle where finishing order is mostly
- * variance, and a weak tail. The harness asserts that strong clubs finish high on
- * average, which only means something against a spread like this.
+ * The spread is not a designed shape any more: **both rating columns are derived
+ * from real squad market values**, so the league is top-heavy because real leagues
+ * are, rather than because someone laid out a curve they thought looked right. The
+ * harness asserts that strong clubs finish high on average, which only means
+ * something against a spread with real structure in it.
  *
  * Index 0 is the strongest and index 19 the weakest — several tests rely on that
  * ordering to check rating against finishing position.
  *
- * `[attack, defence, capacity]`, mirroring `CLUBS` in `@fm/data` row for row.
+ * `[attack, defence, capacity]`, mirroring the **in-league rows** of `CLUBS` in
+ * `@fm/data` row for row. That list holds twenty-five clubs and marks twenty of them
+ * `inLeague`; the five it leaves out are second-tier and are not represented here,
+ * because nothing generates a season from them.
  *
  * **The seat counts are the real grounds, copied verbatim, and they must stay in
  * step with the ones in `@fm/data` — change one list and change the other.** Every
@@ -24,31 +28,31 @@ import { EMPTY_LEDGER, FINANCE } from './finance.ts'
  * league the harness cannot speak for.
  *
  * **Capacity deliberately does not track rating**, for the reasons set out in
- * `@fm/data`: index 9 has 70% more seats than index 10 despite being two rating
- * points apart, and index 8 outsizes index 3 outright. Those inversions are copied
- * on purpose.
+ * `@fm/data`: index 19 is the weakest club in the division and has the sixth-largest
+ * ground, and index 16 outsizes index 8 outright. Those inversions are copied on
+ * purpose.
  */
 const CLUBS: readonly (readonly [number, number, number])[] = [
-  [88, 85, 83_186],
-  [86, 82, 105_000],
-  [80, 86, 70_692],
-  [76, 74, 43_864],
-  [73, 72, 53_331],
-  [70, 74, 40_000],
-  [68, 66, 49_430],
-  [67, 64, 23_500],
-  [66, 67, 60_270],
-  [65, 65, 24_870],
-  [65, 61, 14_624],
-  [64, 66, 23_576],
-  [63, 64, 25_736],
-  [61, 63, 38_529],
-  [59, 60, 17_393],
-  [58, 58, 19_840],
-  [57, 56, 14_708],
-  [54, 53, 25_033],
-  [52, 51, 21_600],
-  [49, 50, 21_350],
+  [89, 87, 83_186],
+  [87, 88, 105_000],
+  [85, 84, 70_692],
+  [80, 81, 23_500],
+  [80, 79, 40_000],
+  [79, 80, 53_331],
+  [79, 79, 60_270],
+  [76, 78, 24_870],
+  [75, 77, 43_864],
+  [76, 75, 49_430],
+  [75, 76, 38_529],
+  [75, 73, 17_393],
+  [75, 73, 26_354],
+  [74, 74, 32_490],
+  [74, 74, 22_514],
+  [73, 74, 33_732],
+  [73, 74, 14_708],
+  [72, 74, 23_576],
+  [73, 73, 19_840],
+  [71, 69, 30_778],
 ]
 
 export const TEST_CLUBS: readonly Club[] = CLUBS.map(([attack, defence, capacity], i) => ({
@@ -61,7 +65,7 @@ export const TEST_CLUBS: readonly Club[] = CLUBS.map(([attack, defence, capacity
   // in @fm/data. Budgets must reflect the pecking order or a decade of transfers
   // inverts the table, and they must be large enough relative to `askingPrice`
   // that a signing which improves the XI is reachable at all.
-  budget: Math.round(2400 * Math.pow((attack + defence) / 100, 4)),
+  budget: Math.round(2400 * Math.pow(((attack + defence) / 2 - 45.08) / 24.96, 4)),
   capacity,
   ticketPrice: FINANCE.TICKET,
   expansion: null,
@@ -72,8 +76,8 @@ export const TEST_CLUBS: readonly Club[] = CLUBS.map(([attack, defence, capacity
 /** All clubs identical — isolates variance from rating effects. */
 export const EVEN_CLUBS: readonly Club[] = TEST_CLUBS.map((club) => ({
   ...club,
-  attack: 65,
-  defence: 65,
+  attack: 77,
+  defence: 77,
 }))
 
 /**

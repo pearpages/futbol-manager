@@ -63,9 +63,33 @@ function contractFactor(monthsLeft: number): number {
   return 1
 }
 
+/**
+ * Where the price curve is anchored, in rating points.
+ *
+ * A player on `RATING_FLOOR + RATING_UNIT` — that is, **69.54** — prices at exactly
+ * `BASE_VALUE`. Everything above costs disproportionately more and everything below
+ * disproportionately less, which is the convexity that keeps a superstar out of a
+ * small club's reach.
+ *
+ * **These two numbers exist because the rating scale was renumbered, and they are how
+ * the renumbering was made free.** This used to read `Math.pow(rating / 50, 3.2)` —
+ * fifty being "average" on a 1–99 scale where the typical Primera player came out at
+ * 59 and half the league was under 60. The scale now runs 60–94, so a bare `/50` would
+ * have multiplied every squad player's fee and wage by more than three, silently:
+ * nothing in the suite asserts an absolute price.
+ *
+ * So the curve is expressed against the *same point in the distribution* it always
+ * was. `RATING_FLOOR` is where the old scale's zero landed and `RATING_UNIT` is what
+ * fifty of its points are worth now. **Read as: the arithmetic is unchanged, only its
+ * units are.** The same pair appears in `seedBudget` and `sponsorMoney`, and a
+ * different pivot on the same footing in `wageDemand` — change one, change all four.
+ */
+const RATING_FLOOR = 45.08
+const RATING_UNIT = 24.96
+
 /** Quality multiplier. Convex, so the top of the market costs disproportionately. */
 function qualityFactor(rating: number): number {
-  return Math.pow(rating / 50, 3.2)
+  return Math.pow((rating - RATING_FLOOR) / RATING_UNIT, 3.2)
 }
 
 /**

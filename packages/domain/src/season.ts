@@ -76,7 +76,7 @@ function retirementChance(age: number): number {
  * a threshold of exactly zero would retain every bench player forever and leave
  * the free-agent pool permanently empty.
  */
-const RETAIN_THRESHOLD = 0.25
+const RETAIN_THRESHOLD = 0.5
 
 /**
  * The squad size a club releases *down to* — deliberately above `MIN_SQUAD`.

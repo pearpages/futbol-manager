@@ -1,7 +1,7 @@
 import { acceptableYears } from './bids.ts'
 import type { ClubId, Ledger } from './entities.ts'
 import { credit, FINANCE } from './finance.ts'
-import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRating } from './lineup.ts'
+import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRatingRaw } from './lineup.ts'
 import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
 import { type Rng, shuffle } from './rng.ts'
 import type { GameState } from './state.ts'
@@ -81,13 +81,14 @@ export const MAX_SQUAD = 30
 /**
  * A need below this is noise; acting on it produces churn for its own sake.
  *
- * `needFor` returns whole numbers, so this reads as **"at least 1"** — the
- * fraction buys nothing. Moving it to 0.3 or 0.6 changes no decision in the game.
+ * This used to be a fiction: `needFor` returned whole numbers, so any value in
+ * (0, 1] meant the same thing. It scores unrounded now, so the figure is real and
+ * moving it by a tenth moves decisions.
  */
-const NEED_THRESHOLD = 0.4
+const NEED_THRESHOLD = 0.5
 
 /** How much rating gain a club demands per unit of value spent. */
-const VALUE_FOR_MONEY = 0.0016
+const VALUE_FOR_MONEY = 0.0003
 
 export interface Transfer {
   readonly playerId: PlayerId
@@ -132,11 +133,18 @@ function freeAgentContract(player: Player, startYear: number, date: DayNumber) {
  * formation change — but it makes the number an approximation under 4-3-3 or
  * 3-5-2.
  *
- * **The result is always a whole number.** `teamRating` runs `clampRating`, which
- * rounds, so both sides of the subtraction are integers. Every threshold compared
- * against this therefore collapses to an integer cutoff — see the constants in
- * this file and in `season.ts`, which are written as fractions and are not as
- * finely tuned as they look.
+ * **The result is a fraction, and it did not used to be.** This scored off
+ * `teamRating`, which rounds — so both sides of the subtraction were integers and
+ * every threshold compared against it collapsed onto an integer cutoff. Four
+ * constants written as 0.25, 0.4, 0.4 and 1.5 meant only "≥ 1" or "≥ 2", and looked
+ * far more tuned than they were.
+ *
+ * It scores off `teamRatingRaw` now. That was forced by the rescale: compressing the
+ * rating scale shrank every marginal gain, so under rounding far more candidates
+ * would have scored zero and the AI would have stopped trading — with **no harness
+ * band to catch it**, because none asserts deal volume. The health check is the
+ * number of clubs that sell in a window, which is 9 of 20 and has been measured by
+ * hand at each change.
  */
 export function needFor(squad: readonly Player[], candidate: Player): number {
   const before = ratingOf(squad)
@@ -151,7 +159,9 @@ function ratingOf(squad: readonly Player[]): number {
   for (const position of POSITIONS) {
     if (squad.filter((p) => p.position === position).length < shape[position]) return 0
   }
-  const rating = teamRating(startersOf(squad, bestXI(squad, '4-4-2')))
+  // Unrounded on purpose — see `teamRatingRaw`. A marginal signing is often worth
+  // a fraction of a point, and rounding before subtracting throws that away.
+  const rating = teamRatingRaw(startersOf(squad, bestXI(squad, '4-4-2')))
   return rating.attack + rating.defence
 }
 

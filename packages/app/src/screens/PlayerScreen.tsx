@@ -44,18 +44,45 @@ import './PlayerScreen.css'
  * position, and leaves the judgement where it belongs.
  */
 
-/** Colour marks only the extremes: a bar is neutral unless it is worth noticing. */
+/**
+ * Where an attribute bar starts, and how much of one bucket a point is worth.
+ *
+ * **Bars are plotted from 40, not from zero.** Ratings live in 60–94 and attributes
+ * in roughly 45–99, so measuring from zero spends more than half of every bar on
+ * range nothing occupies — twenty players would draw twenty near-identical bars, and
+ * a bar that cannot separate anything is decoration. Forty is under the lowest real
+ * attribute with room to spare, so nothing clips and the visible half is the half
+ * that varies.
+ *
+ * The bucket count is still the twenty-one `chrome.css` declares. `EstadioScreen`
+ * fills the same primitive from an occupancy *fraction*, so the rebasing lives here
+ * rather than in the shared helper.
+ */
+const BAR_FLOOR = 45
+const BAR_STEP = 2.7
+
+function fillFor(value: number): number {
+  return Math.max(0, Math.min(20, Math.round((value - BAR_FLOOR) / BAR_STEP)))
+}
+
+/**
+ * Colour marks only the extremes: a bar is neutral unless it is worth noticing.
+ *
+ * Re-cut for the 60–94 scale. At the old 80 / 40 an ordinary Primera player would
+ * light up as strong and `is-weak` would never fire at all, since nothing is below
+ * 60 any more.
+ */
 function band(value: number): string {
-  if (value >= 80) return ' is-strong'
-  if (value <= 40) return ' is-weak'
+  if (value >= 85) return ' is-strong'
+  if (value <= 64) return ' is-weak'
   return ''
 }
 
 /** The illustration point for what a rating edge is worth. Nothing depends on it. */
-const SAMPLE_EDGE = 10
+const SAMPLE_EDGE = 5
 
 /** An even matchup, used only to measure the model against itself. */
-const EVEN: TeamRating = { attack: 50, defence: 50, tempo: 0 }
+const EVEN: TeamRating = { attack: 75, defence: 75, tempo: 0 }
 
 interface Weighting {
   readonly key: keyof Attributes
@@ -264,7 +291,7 @@ export function PlayerScreen() {
                   {/* Width comes from a bucketed data attribute rather than an
                       inline style: the convention keeps every styling decision in
                       CSS, and 5% steps are visually indistinguishable from exact. */}
-                  <span className={`attr__fill${band(value)}`} data-fill={Math.round(value / 5)} />
+                  <span className={`attr__fill${band(value)}`} data-fill={fillFor(value)} />
                 </span>
                 <span className={`attr__value${other === undefined ? '' : ' is-a'}`}>{value}</span>
                 {other !== undefined && <span className="attr__value is-b">{other}</span>}

@@ -169,6 +169,7 @@ export {
   startersOf,
   type Tactics,
   teamRating,
+  teamRatingRaw,
   worstXI,
 } from './lineup.ts'
 
@@ -176,6 +177,8 @@ export {
   generateLeagueSquads,
   generateSquad,
   generateYouthPlayer,
+  type LeagueOptions,
+  type RosterEntry,
   SQUAD_SIZE,
   type SquadOptions,
 } from './squad.ts'

@@ -5,7 +5,7 @@ import { BALANCED, bestXI, type Formation, type Lineup, type Tactics } from './l
 import type { Player } from './player.ts'
 import { reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
-import { generateLeagueSquads } from './squad.ts'
+import { generateLeagueSquads, type RosterEntry } from './squad.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
 import { defaultSeasonStart, rolloverSeason } from './season.ts'
 import { applyTransfers, runTransferWindow } from './market.ts'
@@ -30,6 +30,11 @@ export interface NewSeasonOptions {
   readonly rng: Rng
   /** Which club the human takes. Defaults to the last-rated, which is the hard game. */
   readonly managedClubId?: ClubId
+  /**
+   * Real squad shapes, keyed by club id. `@fm/data` supplies `DEFAULT_ROSTERS`;
+   * anything without an entry falls back to a generated squad.
+   */
+  readonly rosters?: Readonly<Record<string, readonly RosterEntry[]>>
 }
 
 export function newSeason(
@@ -48,6 +53,7 @@ export function newSeason(
   const squadsByClub = generateLeagueSquads(clubs, options.rng, {
     names: options.names,
     seasonStart: start,
+    ...(options.rosters === undefined ? {} : { rosters: options.rosters }),
   })
 
   const squads: Record<string, readonly Player[]> = {}

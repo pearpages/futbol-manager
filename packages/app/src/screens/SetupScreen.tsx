@@ -20,14 +20,27 @@ interface Tier {
   readonly min: number
 }
 
-/** Keyed off the club's own rating, so it stays honest if the ratings change. */
+/**
+ * Keyed off the club's own rating — but the **thresholds** are a second, independent
+ * reading of the spread and do not follow it automatically. When ratings became real
+ * market values the old cuts (80/70/62/55) bucketed the division 2/2/4/11/1, putting
+ * eleven clubs in one band and making the label useless exactly where a player most
+ * needs it.
+ *
+ * These sit on the natural breaks in the real spread: three clubs clear at the top,
+ * a European group, a short mid-table, then a long flat tail where seven clubs sit
+ * inside two rating points — which is honest, because that is what the division is.
+ *
+ * **Re-check these whenever the rating mapping moves.** They are the one place a
+ * compressed spread degrades silently rather than failing a test.
+ */
 // Dictionary keys. `TIERS` is module-level, so it cannot reach a hook — which is
 // exactly why it holds keys and the component does the translating.
 const TIERS: readonly Tier[] = [
-  { label: 'tier.contender', note: 'tier.contender.note', min: 80 },
-  { label: 'tier.european', note: 'tier.european.note', min: 70 },
-  { label: 'tier.midTable', note: 'tier.midTable.note', min: 62 },
-  { label: 'tier.struggler', note: 'tier.struggler.note', min: 55 },
+  { label: 'tier.contender', note: 'tier.contender.note', min: 83 },
+  { label: 'tier.european', note: 'tier.european.note', min: 77 },
+  { label: 'tier.midTable', note: 'tier.midTable.note', min: 74 },
+  { label: 'tier.struggler', note: 'tier.struggler.note', min: 71.5 },
   { label: 'tier.relegation', note: 'tier.relegation.note', min: 0 },
 ]
 

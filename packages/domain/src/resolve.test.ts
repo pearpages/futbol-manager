@@ -15,9 +15,9 @@ const rating = (attack: number, defence: number, tempo = 0): TeamRating => ({
   defence,
   tempo,
 })
-const EVEN = rating(65, 65)
-const STRONG = rating(88, 85)
-const WEAK = rating(49, 50)
+const EVEN = rating(77, 77)
+const STRONG = rating(89, 87)
+const WEAK = rating(70, 70)
 
 describe('expectedGoals', () => {
   it('gives the home side a higher expectation than the away side, all else equal', () => {
@@ -26,8 +26,8 @@ describe('expectedGoals', () => {
 
   it('rises monotonically with attack', () => {
     let previous = 0
-    for (let attack = 20; attack <= 95; attack += 5) {
-      const current = expectedGoals(rating(attack, 65), EVEN, false)
+    for (let attack = 63; attack <= 90; attack += 3) {
+      const current = expectedGoals(rating(attack, 77), EVEN, false)
       expect(current).toBeGreaterThan(previous)
       previous = current
     }
@@ -35,8 +35,8 @@ describe('expectedGoals', () => {
 
   it('falls monotonically as the opposing defence improves', () => {
     let previous = Infinity
-    for (let defence = 20; defence <= 95; defence += 5) {
-      const current = expectedGoals(EVEN, rating(65, defence), false)
+    for (let defence = 63; defence <= 90; defence += 3) {
+      const current = expectedGoals(EVEN, rating(77, defence), false)
       expect(current).toBeLessThan(previous)
       previous = current
     }

@@ -924,10 +924,10 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
  * interruption, and one that arrives for a player nobody really wants trains you
  * to ignore the inbox.
  */
-const OFFER_NEED_THRESHOLD = 1.5
+const OFFER_NEED_THRESHOLD = 1.0
 
 /** For a player you have listed. You asked for interest, so less of it is needed. */
-const LISTED_NEED_THRESHOLD = 0.4
+const LISTED_NEED_THRESHOLD = 0.5
 
 /**
  * What you charge at the gate.

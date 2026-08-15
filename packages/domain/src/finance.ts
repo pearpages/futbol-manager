@@ -205,7 +205,7 @@ export const FINANCE = {
 export function occupancy(club: Club, position: number | null, clubCount: number): number {
   const rating = (club.attack + club.defence) / 2
   // A rating of 50 sits mid-scale; the good clubs fill up, the poor ones do not.
-  const fromQuality = 0.5 + (rating - 50) / 100
+  const fromQuality = 0.5 + (rating - 70.03) / 49.93
   // Top of the table adds, bottom subtracts, and it is worth less than quality —
   // a big club with a bad season still draws a bigger crowd than a small one.
   const fromForm =
@@ -260,7 +260,9 @@ export function tvMoney(position: number | null, clubCount: number): number {
 /** A season's sponsorship, on the club's standing rather than its results. */
 export function sponsorMoney(club: Club): number {
   const rating = (club.attack + club.defence) / 2
-  return Math.round(FINANCE.BASE_SPONSOR * Math.pow(rating / 50, FINANCE.SPONSOR_EXPONENT))
+  return Math.round(
+    FINANCE.BASE_SPONSOR * Math.pow((rating - 45.08) / 24.96, FINANCE.SPONSOR_EXPONENT),
+  )
 }
 
 /**

@@ -34,7 +34,7 @@ export const MODEL = {
    */
   SLOPE: 1.0,
   /** Rating points per unit of SLOPE. Larger = ratings matter less. */
-  SCALE: 42,
+  SCALE: 20.96,
   /** Log-scale home bonus. exp(0.26) ≈ 1.30, i.e. ~30% more goals at home. */
   HOME_EDGE: 0.26,
   /**

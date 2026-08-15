@@ -1,13 +1,17 @@
 /**
  * Name pools for generated players.
  *
- * Players have no city-name equivalent — a person's name cannot be swapped for a
- * place — so these are **generated, never lifted from a real squad**. Common
- * Spanish given names and surnames combine into plausible names that belong to
- * nobody in particular.
+ * Common Spanish given names and surnames combine into plausible names that belong
+ * to nobody in particular.
  *
- * Word lists live in `data`; the generation logic lives in `domain`. Real player
- * names stay a user-supplied import.
+ * **These no longer name the opening squads.** As of 2026-08-15 those are shaped on
+ * real rosters in `rosters.ts`, with every surname altered — see
+ * [ADR 0010](../../../docs/adr/0010-real-squad-shapes.md). This pool still names
+ * **everyone who arrives afterwards**: youth intake at each rollover and the free
+ * agents the market creates. A long career therefore drifts off the real rosters on
+ * its own, which is the intended shape rather than an accident.
+ *
+ * Word lists live in `data`; the generation logic lives in `domain`.
  */
 
 const GIVEN_NAMES: readonly string[] = [

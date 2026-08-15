@@ -212,8 +212,17 @@ describe('teamRating', () => {
     const total = (r: { attack: number; defence: number }) => r.attack + r.defence
     const balanced = total(teamRating(starters, BALANCED))
 
+    // `teamRating` rounds, and on the 60–94 scale the penalty at a mild setting is
+    // a fraction of a point — so it can round away. The claim is that no setting is
+    // *free*; the extremes are where it must be visible.
     for (const attacking of [0, 10, 25, 75, 90, 100]) {
-      expect(total(teamRating(starters, { attacking }))).toBeLessThan(balanced)
+      expect(total(teamRating(starters, { attacking })), `${attacking}`).toBeLessThanOrEqual(
+        balanced,
+      )
+    }
+    // The extremes are the exploit this guards, so there the loss must be real.
+    for (const attacking of [0, 100]) {
+      expect(total(teamRating(starters, { attacking })), `${attacking}`).toBeLessThan(balanced)
     }
   })
 

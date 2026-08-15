@@ -22,8 +22,16 @@ const LABEL_RADIUS = 52
 /** The grid octagons, as fractions of the full radius. */
 export const RADAR_RINGS = [0.25, 0.5, 0.75, 1] as const
 
-/** Values are 1–99, plotted against a round 100 so a 99 stops just short of the rim. */
-const FULL_SCALE = 100
+/**
+ * The plotted window, not the rating range.
+ *
+ * Attributes occupy roughly 45–99, so plotting from zero would push every polygon
+ * outside the second ring and make two players' silhouettes near-identical — which
+ * defeats the only thing a radar is for. Forty is below the lowest real attribute,
+ * and a 99 still stops just short of the rim.
+ */
+const FLOOR = 45
+const FULL_SCALE = 100 - FLOOR
 
 export interface Point {
   readonly x: number
@@ -51,7 +59,11 @@ function round(value: number): number {
 
 /** One player's shape. Values are read in the order the axes are drawn. */
 export function polygonPoints(values: readonly number[]): string {
-  return join(values.map((value, i) => at((RADIUS * value) / FULL_SCALE, i, values.length)))
+  return join(
+    values.map((value, i) =>
+      at((RADIUS * Math.max(0, value - FLOOR)) / FULL_SCALE, i, values.length),
+    ),
+  )
 }
 
 /** One grid octagon at a fraction of the full radius. */
@@ -88,6 +100,6 @@ export function labelAt(index: number, count = 8): Label {
 
 /** Where a vertex sits, for the dots on the subject's own polygon. */
 export function nodeAt(value: number, index: number, count = 8): Point {
-  const point = at((RADIUS * value) / FULL_SCALE, index, count)
+  const point = at((RADIUS * Math.max(0, value - FLOOR)) / FULL_SCALE, index, count)
   return { x: round(point.x), y: round(point.y) }
 }

@@ -8,7 +8,9 @@ This document is the contract between M3 (players), M2 (result resolver), M6 (tr
 
 ## The eight attributes
 
-All are integers in **1–99**. Eight, not thirty — see ADR 0004 for why.
+All are integers, clamped to **1–99**, and in the shipped league they occupy roughly **45–99**. Eight, not thirty — see ADR 0004 for why.
+
+**On the scale.** A player's `overall` runs **62–93**: the typical Primera player is 73, a good one 83, a star 90+, and nothing in a first-division squad is below 60. Six players in the league reach 90. That is deliberate and it is the PC Fútbol reading of a rating. It was not always so — the scale used to put the median at 59 with half the league under 60 — and the renumbering was free because `expectedGoals` reads ratings _only_ as `attack − defence`, so scaling `MODEL.SCALE` by the same factor leaves every result identical. See the 2026-08-15 session entry in `CLAUDE.md`.
 
 | Attribute   | Means, mechanically                                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -46,7 +48,7 @@ A keeper's `finishing` is worth nothing; their `keeping` dominates. A striker's 
 
 ## Bridge to M2 — the resolver contract
 
-M2's Poisson model takes **three** numbers per side: `attack` and `defence` on a 1–99 scale, plus `tempo` on −1…+1. Everything above collapses into those. Getting this written down is what lets M3 slot into M2 rather than rewrite it.
+M2's Poisson model takes **three** numbers per side: `attack` and `defence` on the rating scale (60–94 in practice), plus `tempo` on −1…+1. Everything above collapses into those. Getting this written down is what lets M3 slot into M2 rather than rewrite it.
 
 > **Changed at M3c.** This was two numbers until the tactical slider was measured and found to be a trap — upside 0–3 points, downside −4 to −9, with balanced optimal at every club. `attack` and `defence` only describe how strength is _split_; nothing described how _open_ a game is, so a low block could not do the one thing a low block is for. `tempo` is that third dimension. See [Step 4](#step-4--modifiers).
 
@@ -105,9 +107,9 @@ Lower tempo means fewer goals for everybody, which means more draws — and a dr
 
 **At balanced tactics `combined` is 0 and the term vanishes**, so the M2 calibration is untouched by construction. Only deviation from balanced changes anything.
 
-Result: two integers in 1–99 plus a tempo in −1…+1, which is all M2 needs to know about players.
+Result: two integers plus a tempo in −1…+1, which is all M2 needs to know about players. `teamRatingRaw` returns them **unrounded**, which is what `needFor` scores against — rounding a difference of two rounded numbers is what once made four separately-written market thresholds all mean the same thing.
 
-**M2 already consumes this shape.** `resolveFixture(home: TeamRating, away: TeamRating, rng)` is live, fed at M2 from provisional `Club.attack` / `Club.defence`. M3's job is to replace the _supplier_ with the collapse above — the resolver signature does not change. For scale: the calibrated model uses `SCALE = 42`, so roughly 42 rating points is one unit on the log-goals scale. A side rated ~20 points above its opponent scores about 1.6× as often.
+**M2 already consumes this shape.** `resolveFixture(home: TeamRating, away: TeamRating, rng)` is live, fed at M2 from provisional `Club.attack` / `Club.defence`. M3's job is to replace the _supplier_ with the collapse above — the resolver signature does not change. For scale: the calibrated model uses `SCALE = 20.96`, so roughly 21 rating points is one unit on the log-goals scale. A side rated ~10 points above its opponent scores about 1.6× as often. **`SCALE` is the only rating-dimensioned constant in the resolver**, which is why a rescale costs one number here.
 
 ---
 
@@ -182,7 +184,7 @@ M6's exit criterion — "a 34-year-old declines, a 19-year-old improves" — is 
 
 ## Bridge to the data pipeline
 
-Skeleton only. Filled in at M3 when the derivation layer is built — it exists now so that work is a lookup rather than a redesign. Ships fictional by default; real-name import stays a user-supplied file.
+Skeleton only. Filled in at M3 when the derivation layer is built — it exists now so that work is a lookup rather than a redesign. **Note the shipped data moved ahead of this table**: `packages/data/src/rosters.ts` now carries real squad _shapes_ — positions, ages, and the value order inside a position group — while attributes are still generated and calibrated onto the club rating. Mapping per-90 stats onto the eight attributes is still the unbuilt part. See [ADR 0010](./adr/0010-real-squad-shapes.md).
 
 | Attribute   | Candidate FBref / StatsBomb per-90 inputs                                                                                          |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |

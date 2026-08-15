@@ -197,7 +197,8 @@ describe('what the numbers do', () => {
 
   it('says what a rating edge is worth in goals', () => {
     openFicha(at('MF'))
-    // exp(SLOPE × 10 / SCALE) − 1 ≈ 27%, asked of the resolver rather than quoted.
-    expect(model()).toMatch(/10 rating points of advantage is worth about 27% more of them/)
+    // exp(SLOPE × 5 / SCALE) − 1 ≈ 27%, asked of the resolver rather than quoted.
+    // Six points on the 60–94 scale is what ten was on the old 1–99 one.
+    expect(model()).toMatch(/5 rating points of advantage is worth about 27% more of them/)
   })
 })

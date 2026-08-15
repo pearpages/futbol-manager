@@ -32,20 +32,24 @@ It is also why the market needs no rule against stockpiling goalkeepers. A secon
 
 Whatever formation you actually play. This is deliberate: comparing every candidate under one fixed shape keeps the score about the player rather than about a formation change. The cost is that the number is an approximation if you play 4-3-3 or 3-5-2 — a winger who would start in your 4-3-3 may score zero against a 4-4-2 reference.
 
-### The result is always a whole number
+### It used to be a whole number, and that was a trap
 
-`teamRating` runs `clampRating`, which rounds, so `attack` and `defence` are integers and so is the difference. It never returns 3.4.
+`teamRating` runs `clampRating`, which rounds — so for a long time `needFor` subtracted two rounded integers and could never return 3.4. Four thresholds written as distinct fractions therefore collapsed onto two integer cutoffs, and looked far more tuned than they were.
+
+**`teamRatingRaw` returns the pair unrounded and `needFor` scores against that.** It is a separate entry point rather than an extra field, because `teamRating` is hot enough that returning a nested object on every call pushed the tactics harness past its timeout. The thresholds below mean what they say. This was forced by the rescale: compressing the scale shrank every marginal gain, so under rounding far more candidates would have scored zero and the AI would have quietly stopped trading — with no harness band to catch it, because none asserts deal volume.
 
 **This matters for tuning.** Four thresholds are written as fractions and collapse to two cutoffs:
 
 | Constant                | Where       | Written | Actually means |
 | ----------------------- | ----------- | ------- | -------------- |
-| `RETAIN_THRESHOLD`      | `season.ts` | 0.25    | ≥ 1            |
-| `NEED_THRESHOLD`        | `market.ts` | 0.4     | ≥ 1            |
-| `LISTED_NEED_THRESHOLD` | `reduce.ts` | 0.4     | ≥ 1            |
-| `OFFER_NEED_THRESHOLD`  | `reduce.ts` | 1.5     | ≥ 2            |
+| `RETAIN_THRESHOLD`      | `season.ts` | 0.5     | 0.5            |
+| `NEED_THRESHOLD`        | `market.ts` | 0.5     | 0.5            |
+| `LISTED_NEED_THRESHOLD` | `reduce.ts` | 0.5     | 0.5            |
+| `OFFER_NEED_THRESHOLD`  | `reduce.ts` | 1.0     | 1.0            |
 
-Nudging any of them by a tenth changes nothing at all. If you want a different behaviour, move it across a whole number.
+Nudging one by a tenth is now a real change, which it was not before.
+
+**`VALUE_FOR_MONEY` moved by more than the rescale factor** — 0.0016 to 0.0003 — and the reason is worth knowing. It caps what the AI pays per point of improvement, and it only ever bought at the cheap end. Raising the rating floor from 27 to 60 removed the cheap end: there are no bad players any more, so there are no bargains, and the bottom of the market roughly doubled in price. Measured after the rescale, only 2 of 158 positive-need candidates still cleared the old figure.
 
 ### Three call sites, asked in both directions
 

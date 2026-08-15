@@ -119,7 +119,15 @@ describe('Caja', () => {
     }
     // Stated, not recomputed by the screen — the same discipline the accounts
     // table follows against `ledgerNet`.
-    expect(rows.getByText(money(forecast.net))).toBeDefined()
+    //
+    // Scoped to the total row rather than the whole panel: the net is one of six
+    // figures formatted the same way, and it only takes two of them rounding to the
+    // same €0.1M for a panel-wide `getByText` to fail on "found multiple" — which is
+    // a collision, not a wrong number.
+    const total = panel.querySelector('.caja-screen__total')
+    /* c8 ignore next */
+    if (total === null) throw new Error('no total row')
+    expect(within(total as HTMLElement).getByText(money(forecast.net))).toBeDefined()
   })
 
   /**

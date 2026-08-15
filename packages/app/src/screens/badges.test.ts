@@ -1,28 +1,33 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CLUBS } from '@fm/data'
+import { ALL_CLUBS } from '@fm/data'
 import { BADGES, badgeFor, COLOUR_KEYS, needsNameplate } from './badges.ts'
 
 /**
  * The badge table, checked without rendering.
  *
- * The point of the file under test is that twenty clubs must be tellable apart
- * at a glance, so that is what these assert.
+ * The point of the file under test is that clubs must be tellable apart at a
+ * glance, so that is what these assert.
+ *
+ * **Everything here runs over `ALL_CLUBS`, not `DEFAULT_CLUBS`.** Twenty of the
+ * twenty-five play; the other five are second-tier and still get rendered wherever
+ * they are listed, so they need a badge and they need a distinguishable one. Using
+ * the league would leave five clubs unchecked and let a duplicate through.
  */
 
 describe('every club has a badge', () => {
-  it('covers the whole league', () => {
-    // Adding a twenty-first club should fail here rather than render blank.
-    for (const club of DEFAULT_CLUBS) {
+  it('covers every club, not only the league', () => {
+    // Adding a twenty-sixth club should fail here rather than render blank.
+    for (const club of ALL_CLUBS) {
       expect(BADGES[club.id], club.id).toBeDefined()
     }
   })
 
   it('has no entries for clubs that do not exist', () => {
-    const ids = new Set(DEFAULT_CLUBS.map((c) => c.id))
+    const ids = new Set(ALL_CLUBS.map((c) => c.id))
     for (const id of Object.keys(BADGES)) {
-      expect(ids.has(id as (typeof DEFAULT_CLUBS)[number]['id']), id).toBe(true)
+      expect(ids.has(id as (typeof ALL_CLUBS)[number]['id']), id).toBe(true)
     }
   })
 
@@ -38,7 +43,7 @@ describe('no two clubs look the same', () => {
     // table has five identical marks in it.
     const seen = new Map<string, string>()
 
-    for (const club of DEFAULT_CLUBS) {
+    for (const club of ALL_CLUBS) {
       const badge = badgeFor(club.id)
       const key = `${badge.colours}/${badge.pattern}/${badge.shape}`
       const clash = seen.get(key)
@@ -50,13 +55,13 @@ describe('no two clubs look the same', () => {
   it('really does share colours — otherwise shapes are doing nothing', () => {
     // A guard on the guard: if every club had its own palette the uniqueness
     // test above would pass trivially and prove nothing.
-    const palettes = DEFAULT_CLUBS.map((c) => badgeFor(c.id).colours)
-    expect(new Set(palettes).size).toBeLessThan(DEFAULT_CLUBS.length)
+    const palettes = ALL_CLUBS.map((c) => badgeFor(c.id).colours)
+    expect(new Set(palettes).size).toBeLessThan(ALL_CLUBS.length)
   })
 
   it('gives the clubs sharing a palette different shapes', () => {
     const byPalette = new Map<string, string[]>()
-    for (const club of DEFAULT_CLUBS) {
+    for (const club of ALL_CLUBS) {
       const badge = badgeFor(club.id)
       const shapes = byPalette.get(badge.colours) ?? []
       shapes.push(`${badge.pattern}/${badge.shape}`)
@@ -74,13 +79,13 @@ describe('the palettes are declared', () => {
     // A typo'd key renders an unstyled badge — ugly rather than obviously broken,
     // which is exactly the kind of thing that ships.
     const declared = new Set<string>(COLOUR_KEYS)
-    for (const club of DEFAULT_CLUBS) {
+    for (const club of ALL_CLUBS) {
       expect(declared.has(badgeFor(club.id).colours), club.id).toBe(true)
     }
   })
 
   it('declares none it does not use', () => {
-    const used = new Set(DEFAULT_CLUBS.map((c) => badgeFor(c.id).colours))
+    const used = new Set(ALL_CLUBS.map((c) => badgeFor(c.id).colours))
     for (const key of COLOUR_KEYS) {
       expect(used.has(key), `${key} is declared but unused`).toBe(true)
     }
