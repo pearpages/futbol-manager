@@ -220,6 +220,19 @@ describe('the transfer window', () => {
     )
   })
 
+  it('warns with the count, so the threshold can move without the wording lying', () => {
+    const closing = (daysLeft: number): Event =>
+      ({ type: 'TransferWindowClosing', daysLeft, date: game.season.currentDate }) as Event
+
+    expect(describeEvent(closing(7), game, names, t)?.text).toBe(
+      '7 days of the transfer window left.',
+    )
+    // Singular, not "1 days" — the reason this is a plural key and not a parameter.
+    expect(describeEvent(closing(1), game, names, t)?.text).toBe(
+      '1 day of the transfer window left.',
+    )
+  })
+
   it('keys the two apart, so a rollover cannot swallow one', () => {
     // The rollover can emit an opening on the same date a season's last tick
     // reports a closing, and the feed keys on the pair.

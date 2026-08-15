@@ -3,7 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   bestXI,
   computeTable,
-  isTransferWindowOpen,
+  transferWindowDaysLeft,
   overall,
   startersOf,
   teamRating,
@@ -36,7 +36,7 @@ const openTable = () => {
   openScreen('nav.table')
 }
 
-const { t } = translatorFor('en')
+const { t, plural } = translatorFor('en')
 
 const managed = () => {
   const { game } = useGame.getState()
@@ -150,11 +150,30 @@ describe('the title bar says where you stand', () => {
     render(<App />)
 
     // A career opens on 15 August, inside the summer window.
-    expect(within(bar()).getByText(t('shell.windowOpen'))).toBeDefined()
+    const badge = () => bar().querySelector('.shell__window')
+    expect(badge()?.textContent).toBe(plural('shell.windowOpen', 17))
 
     // Out the far side of it: a badge that is always there is furniture.
-    advanceUntil(() => !isTransferWindowOpen(managed().game.season.currentDate))
-    expect(within(bar()).queryByText(t('shell.windowOpen'))).toBeNull()
+    advanceUntil(() => transferWindowDaysLeft(managed().game.season.currentDate) === null)
+    expect(badge()).toBeNull()
+  })
+
+  // The number falling is the actual claim. Asserting one static figure would pass
+  // against a badge that had the day count typed into it and never moved.
+  it('counts the days left down as the clock runs', () => {
+    render(<App />)
+    const seen: string[] = []
+
+    for (let i = 0; i < 4; i++) {
+      seen.push(bar().querySelector('.shell__window')?.textContent ?? '')
+      advance()
+    }
+
+    expect(seen).toEqual([17, 16, 15, 14].map((d) => plural('shell.windowOpen', d)))
+
+    // On the last day it must read singular, not "1 days".
+    advanceUntil(() => transferWindowDaysLeft(managed().game.season.currentDate) === 1)
+    expect(bar().querySelector('.shell__window')?.textContent).toBe(plural('shell.windowOpen', 1))
   })
 })
 

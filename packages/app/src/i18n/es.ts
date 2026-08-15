@@ -35,7 +35,8 @@ export const es: Dictionary = {
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Jornada {round}',
   'shell.position': '{position}º',
-  'shell.windowOpen': 'Mercado abierto',
+  'shell.windowOpen.one': 'Mercado abierto · {count} día',
+  'shell.windowOpen.other': 'Mercado abierto · {count} días',
 
   // ── Partidos ─────────────────────────────────────────────────────────────
   'fixture.home': 'contra {club} (C)',
@@ -352,6 +353,8 @@ export const es: Dictionary = {
   'news.expansionOpened': 'La nueva grada ya está abierta — {capacity} asientos',
   'news.windowOpened': 'El mercado de fichajes está abierto.',
   'news.windowClosed': 'El mercado de fichajes se ha cerrado.',
+  'news.windowClosing.one': 'Queda {count} día de mercado.',
+  'news.windowClosing.other': 'Quedan {count} días de mercado.',
   'news.unknownPlayer': 'un jugador',
   'news.freeAgents': 'los agentes libres',
   'news.unknownClub': 'otro club',

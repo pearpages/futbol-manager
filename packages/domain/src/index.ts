@@ -191,7 +191,9 @@ export {
   totalBudget,
   type Transfer,
   transferWindowChange,
+  transferWindowDaysLeft,
   type TransferWindowOptions,
+  WINDOW_WARNING_DAYS,
 } from './market.ts'
 
 // `contractExpiry` moved to `player.ts` at M4b — it describes a contract, and

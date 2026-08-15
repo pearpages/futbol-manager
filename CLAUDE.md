@@ -641,3 +641,25 @@ Watching the tick alone would have announced January every year and never a summ
 **Every new test was checked against the unbuilt code, and one earned its keep immediately.** Breaking the run-merge left the round-trip test _green_ — one rect per pixel round-trips perfectly — and only the guard-on-the-guard (`rects < pixels / 3`) fired. A round-trip test alone would have proved nothing about the merge it exists to protect.
 
 **`aria-hidden` on every figure is load-bearing, same as the tile icons.** Two dozen assertions across five files resolve a tile by its exact accessible name. The figure sits outside the `<button>` so it could not rename one — the test is there to prove it did not. And because these are decoration, **the whole change needed no dictionary entry in any of the three languages**, which is the unusual case worth noting.
+
+### 2026-08-15 — the corner counts down
+
+**Prompted by a question, not a plan: "is it possible to know how many days left of transfer are there?"** The badge said the window was open and not for how long, which is half a deadline — you can see that you may buy, but not that you have three days to do it. 615 tests, `pnpm season` byte-identical, no domain behaviour change beyond one new event.
+
+**`transferWindowDaysLeft(date)` is derived, because the window has no stored end.** It is a predicate over the month, so the deadline is the first day of the month _after the window's last month_ — 1 September for the summer window, 1 February for the winter one. Null is the shut state, which means the app asks one question where it used to ask two: `daysLeft !== null` **is** the open test, and `App.tsx` no longer imports `isTransferWindowOpen` at all.
+
+**The trap, and it is a genuinely nasty one: July and August are one window.** A July date must count to 1 September — **1 July is 62 days out, not 31**. "The month after this month" is the obvious rule, it is wrong, and it is right in every other case, because _the day clock never enters July_ (the rollover jumps it). So nothing in a normal career would ever have exposed it. It has its own test, and that test is the only one that fails when the naive rule is substituted.
+
+**This is the third time this project has been bitten by the same fact.** M4c's `toCivil(today).d === 1` never fired for 1 July or 1 August; yesterday's `TransferWindowChanged` needed a second emission site in `startNewSeason` for the same reason; and now the countdown. **The clock enters every season on 15 August and `StartNewSeason` jumps to the next 15 August — write anything keyed on July and check it by hand, because no career will check it for you.**
+
+**`daysBetween` finally has a production call site.** It has existed in `time.ts` since M1 with nothing but tests calling it. Used here rather than the raw subtraction `matchday.ts:41` does.
+
+**The warning fires on exact equality, and that is the mechanism, not a detail.** `left === WINDOW_WARNING_DAYS` in `advanceDay`: the tick moves one day, so the count passes through 7 exactly once per window. **`<=` would report the deadline every day for a week**, which is precisely the shape of feed the notification layer exists to prevent — and the once-per-window test is the one that fails when you write it that way. It is also correctly silent at the rollover, which lands on 15 August with the whole window ahead of it.
+
+**`shell.windowOpen` stopped being a flat key and became a `.one`/`.other` pair.** Not decoration: on 31 August the badge reads **`Mercat obert · 1 dia`**, and a `{days}` parameter would have printed "1 dies" in the one place a player is most likely to be looking. Same for the warning — **`news.windowClosing` takes `{count}` rather than saying "a week"**, so `WINDOW_WARNING_DAYS` can move without leaving three dictionaries lying about it. Prose that names a number a constant also names is drift waiting to happen.
+
+**Measured, all three languages** (`scripts` throwaway, not kept): 15/08 `Mercat obert · 17 dies` → 25/08 `· 7 dies` with the single warning _"Queden 7 dies de mercat."_ → 31/08 `· 1 dia` → 01/09 gone. Boundaries: 01 Jul **62**, 31 Jul 32, 15 Aug 17, 31 Aug 1, 01 Sep `null`, 01 Jan 31, 31 Jan 1.
+
+**Both emission rules were checked by breaking them independently** — the naive month rule fails only the July test, the `<=` variant fails only the once-per-window test. The App test asserts the number **falling** (17 → 16 → 15 → 14) rather than one static figure, because a hardcoded string would satisfy a single assertion perfectly.
+
+**Not seen in a browser this time** — the extension connected for yesterday's entry and was gone again by this one (`list_connected_browsers` → `[]`), so the figures above are a headless dump. **The appearance is unverified:** nothing here proves `Transfer window open · 17 days` fits the corner beside the cog at the narrow breakpoint, and English is the longest of the three.

@@ -3,7 +3,15 @@ import { suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
 import { bidIsLive } from './bids.ts'
 import { FINANCE } from './finance.ts'
-import { MAX_SQUAD, MIN_SQUAD, surplus, totalBudget, transferWindowChange } from './market.ts'
+import {
+  MAX_SQUAD,
+  MIN_SQUAD,
+  surplus,
+  totalBudget,
+  transferWindowChange,
+  transferWindowDaysLeft,
+  WINDOW_WARNING_DAYS,
+} from './market.ts'
 import { contractMonthsLeft, type Player, type PlayerId } from './player.ts'
 import { addDays, fromCivil, toCivil } from './time.ts'
 import { type Command, type Event, reduce } from './reduce.ts'
@@ -652,5 +660,48 @@ describe('the window announces itself', () => {
     expect(changes).toHaveLength(1)
     expect(changes[0]?.open).toBe(true)
     expect(toCivil(state.season.currentDate).m).toBe(8)
+  })
+})
+
+describe('how long is left of the market', () => {
+  it('counts to the end of the window, not to the end of the month', () => {
+    // A season opens here, so this is the figure the bar shows on day one.
+    expect(transferWindowDaysLeft(fromCivil(2026, 8, 15))).toBe(17)
+    expect(transferWindowDaysLeft(fromCivil(2026, 8, 31))).toBe(1)
+    expect(transferWindowDaysLeft(fromCivil(2027, 1, 1))).toBe(31)
+    expect(transferWindowDaysLeft(fromCivil(2027, 1, 31))).toBe(1)
+    expect(transferWindowDaysLeft(fromCivil(2027, 3, 5))).toBe(null)
+  })
+
+  /**
+   * July and August are **one** window. Counting to the first of next month gives 31
+   * here and is wrong by a whole month — and it is right in every other case above,
+   * because the day clock never enters July. The rollover jumps it.
+   */
+  it('treats July and August as one window', () => {
+    expect(transferWindowDaysLeft(fromCivil(2026, 7, 1))).toBe(62)
+    expect(transferWindowDaysLeft(fromCivil(2026, 7, 31))).toBe(32)
+  })
+
+  it('warns once, on the day the threshold is reached, and never again', () => {
+    const warnings: number[] = []
+
+    // Through the summer deadline and the whole of the winter window, so a warning
+    // repeated daily — or emitted twice a window — shows up as a longer list.
+    while (toCivil(state.season.currentDate).m !== 2) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'TransferWindowClosing') warnings.push(event.daysLeft)
+      }
+    }
+
+    expect(warnings).toEqual([WINDOW_WARNING_DAYS, WINDOW_WARNING_DAYS])
+  })
+
+  it('says nothing at the rollover, which lands with the window wide open', () => {
+    state = simulateSeason(state, rng)
+    const events = dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
+
+    expect(events.some((e) => e.type === 'TransferWindowClosing')).toBe(false)
+    expect(transferWindowDaysLeft(state.season.currentDate)).toBe(17)
   })
 })

@@ -216,6 +216,13 @@ export function describe(
         text: t(event.open ? 'news.windowOpened' : 'news.windowClosed'),
         tone: 'plain',
       }
+
+    case 'TransferWindowClosing':
+      return {
+        key: `window-closing-${String(event.date)}`,
+        text: plural('news.windowClosing', event.daysLeft),
+        tone: 'plain',
+      }
   }
 }
 

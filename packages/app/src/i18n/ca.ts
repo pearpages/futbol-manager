@@ -35,7 +35,8 @@ export const ca: Dictionary = {
   'shell.wordmark': 'Fútbol Manager',
   'shell.matchday': 'Jornada {round}',
   'shell.position': '{position}è',
-  'shell.windowOpen': 'Mercat obert',
+  'shell.windowOpen.one': 'Mercat obert · {count} dia',
+  'shell.windowOpen.other': 'Mercat obert · {count} dies',
 
   // ── Partits ──────────────────────────────────────────────────────────────
   'fixture.home': 'contra {club} (L)',
@@ -353,6 +354,8 @@ export const ca: Dictionary = {
   'news.expansionOpened': 'La graderia nova ja és oberta — {capacity} seients',
   'news.windowOpened': 'El mercat de fitxatges és obert.',
   'news.windowClosed': 'El mercat de fitxatges s’ha tancat.',
+  'news.windowClosing.one': 'Queda {count} dia de mercat.',
+  'news.windowClosing.other': 'Queden {count} dies de mercat.',
   'news.unknownPlayer': 'un jugador',
   'news.freeAgents': 'els agents lliures',
   'news.unknownClub': 'un altre club',

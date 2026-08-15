@@ -42,6 +42,8 @@ import {
   runTransferWindow,
   surplus,
   transferWindowChange,
+  transferWindowDaysLeft,
+  WINDOW_WARNING_DAYS,
 } from './market.ts'
 import { contractExpiry, type Player, type PlayerId } from './player.ts'
 import { resolveFixture } from './resolve.ts'
@@ -301,6 +303,18 @@ export interface TransferWindowChanged {
   readonly date: DayNumber
 }
 
+/**
+ * The deadline is close. Emitted once per window, not once a day.
+ *
+ * Only the day tick emits this. The rollover lands on 15 August with the whole
+ * window ahead of it, so there is nothing to warn about there.
+ */
+export interface TransferWindowClosing {
+  readonly type: 'TransferWindowClosing'
+  readonly daysLeft: number
+  readonly date: DayNumber
+}
+
 export type Event =
   | MatchPlayed
   | DayAdvanced
@@ -319,6 +333,7 @@ export type Event =
   | ExpansionStarted
   | ExpansionOpened
   | TransferWindowChanged
+  | TransferWindowClosing
 
 export interface ReduceResult {
   readonly state: GameState
@@ -1146,6 +1161,14 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const window = transferWindowChange(today, next.season.currentDate)
   if (window !== null) {
     events.push({ type: 'TransferWindowChanged', open: window, date: next.season.currentDate })
+  }
+
+  // Exact equality is what makes this fire once. The tick moves a single day, so the
+  // count passes through the threshold exactly once per window — a `<=` would report
+  // the deadline every day for a week, which is the shape of feed nobody reads.
+  const left = transferWindowDaysLeft(next.season.currentDate)
+  if (left === WINDOW_WARNING_DAYS) {
+    events.push({ type: 'TransferWindowClosing', daysLeft: left, date: next.season.currentDate })
   }
 
   // Emitted once, on the transition — not on every subsequent day.

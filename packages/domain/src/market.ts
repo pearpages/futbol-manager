@@ -5,7 +5,7 @@ import { bestXI, FORMATIONS, keepsLineup, startersOf, teamRating } from './lineu
 import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
 import { type Rng, shuffle } from './rng.ts'
 import type { GameState } from './state.ts'
-import { type DayNumber, toCivil } from './time.ts'
+import { type DayNumber, daysBetween, fromCivil, toCivil } from './time.ts'
 import { askingPrice, expectedWage } from './valuation.ts'
 
 /**
@@ -45,6 +45,33 @@ export function transferWindowChange(from: DayNumber, to: DayNumber): boolean | 
   const open = isTransferWindowOpen(to)
   return open === isTransferWindowOpen(from) ? null : open
 }
+
+/**
+ * Days of market left, counting today, or null when the window is shut.
+ *
+ * The window has no stored end — it is a predicate over the month — so the deadline
+ * is derived: the first day of the month *after the window's last month*.
+ *
+ * **July and August are one window**, so a July date counts to 1 September, not to
+ * 1 August. Taking "the month after this month" is the obvious rule and the wrong
+ * one, and it looks right in every test that starts in August — which is all of them,
+ * because the day clock never enters July. That is exactly what makes it cheap to
+ * leave broken, so it has its own test.
+ */
+export function transferWindowDaysLeft(date: DayNumber): number | null {
+  const { y, m } = toCivil(date)
+  if (m === 7 || m === 8) return daysBetween(date, fromCivil(y, 9, 1))
+  if (m === 1) return daysBetween(date, fromCivil(y, 2, 1))
+  return null
+}
+
+/**
+ * One warning, this many days before the deadline.
+ *
+ * The sentence that reports it takes `{count}` rather than saying "a week", so this
+ * can move without leaving three dictionaries lying about it.
+ */
+export const WINDOW_WARNING_DAYS = 7
 
 /** Squad floor. A club will not sell below this. */
 export const MIN_SQUAD = 18

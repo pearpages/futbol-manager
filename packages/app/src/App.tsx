@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { computeTable, isTransferWindowOpen } from '@fm/domain'
+import { computeTable, transferWindowDaysLeft } from '@fm/domain'
 import { LOCALE_TAGS } from './i18n/format.ts'
 import { useT } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
@@ -64,7 +64,7 @@ export function App() {
   const restore = useGame((s) => s.restore)
   const needsSetup = useGame((s) => s.needsSetup)
   const translator = useT()
-  const { t, season, language } = translator
+  const { t, plural, season, language } = translator
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
@@ -80,6 +80,10 @@ export function App() {
 
   const Current = SCREENS[screen]
   const matchday = matchdayFor(game)
+
+  // Null *is* the closed state, so this answers "is it open" and "for how long" in
+  // one call rather than asking the predicate and then the count.
+  const windowDaysLeft = transferWindowDaysLeft(game.season.currentDate)
 
   // Where you stand, for the bar. Memoised because the bar re-renders on every
   // tick of the clock and this walks all 380 fixtures; `game` is replaced
@@ -140,10 +144,11 @@ export function App() {
               can be advanced, so you pass the real ones every tick.
 
               What the game never announced is the one deadline it enforces. Shown
-              only while the window is open: a badge that is always there is
-              furniture, and this one is meant to be read. */}
-          {isTransferWindowOpen(game.season.currentDate) && (
-            <span className="shell__window">{t('shell.windowOpen')}</span>
+              only while the window is open — a badge that is always there is
+              furniture — and carrying the days left, because "you may buy" without
+              "until when" is half a deadline. */}
+          {windowDaysLeft !== null && (
+            <span className="shell__window">{plural('shell.windowOpen', windowDaysLeft)}</span>
           )}
           <SettingsMenu />
         </p>
