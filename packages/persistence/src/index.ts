@@ -9,7 +9,21 @@ export {
   SCHEMA_VERSION,
 } from './migrations.ts'
 
-export { AUTOSAVE_SLOT, deleteGame, exportSave, importSave, loadGame, saveGame } from './store.ts'
+export {
+  AUTOSAVE_SLOT,
+  closeDb,
+  deleteGame,
+  exportSave,
+  importSave,
+  listSaves,
+  loadGame,
+  nameFor,
+  type SaveDetails,
+  type SaveSummary,
+  saveGame,
+  slotFor,
+  StorageBlockedError,
+} from './store.ts'
 
 /**
  * The envelope every save is wrapped in. Ground rule 3 — `schemaVersion` is present

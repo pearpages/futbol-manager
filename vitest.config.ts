@@ -40,6 +40,8 @@ export default defineConfig({
           name: 'persistence',
           root: 'packages/persistence',
           environment: 'node',
+          // Node has no IndexedDB either, and `store.ts` is most of this package.
+          setupFiles: ['./src/test-setup.ts'],
         },
       },
       {

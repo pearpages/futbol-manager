@@ -1,0 +1,58 @@
+/*
+ * The dialog primitive. Geometry and material here, content in the screen that
+ * opens one — same split every other component in this codebase uses.
+ *
+ * The box is `.panel`: raised hardware, because a dialog holds controls. It sits
+ * over the `.screen` material, which is near-black, so the backdrop is `--fm-void`
+ * rather than a neutral grey — the frame darkens and the panel reads as lifted off
+ * it rather than as another inset display.
+ */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20; /* above `.settings__menu`, the only other floating thing at 10 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--fm-space-4);
+  background: rgb(10 18 12 / 72%);
+}
+
+.modal__box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  width: min(34rem, 100%);
+  max-height: 100%;
+  padding: var(--fm-space-4);
+}
+
+/* A table needs room the default box does not have. At 34rem the save picker put
+   a name, a date-club-jornada line and two buttons in one row, and the buttons
+   went off the right edge — a defect nothing measured caught, because the list
+   scrolls and so `scrollWidth > clientWidth` was false on every *cell*. */
+.modal__box.is-wide {
+  width: min(46rem, 100%);
+}
+
+/* Deliberately not `.panel__title`, which is a quiet caption at --fm-text-xs. A
+   dialog's title is the only thing naming what you are about to do. */
+.modal__heading {
+  padding-bottom: var(--fm-space-2);
+  border-bottom: 1px solid var(--fm-bevel-dark);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+/* The box is capped at the viewport, so the body is what scrolls when a save list
+   grows. `min-height: 0` is what lets a flex child shrink below its content. */
+.modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  min-height: 0;
+  overflow: auto;
+}

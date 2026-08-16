@@ -65,6 +65,7 @@ const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
 
 export function SetupScreen() {
   const newGame = useGame((s) => s.newGame)
+  const storageBlocked = useGame((s) => s.storageBlocked)
   const { t, locale } = useT()
 
   /** `null` is the order `DEFAULT_CLUBS` is authored in — strongest first. */
@@ -104,7 +105,16 @@ export function SetupScreen() {
     <div className="setup">
       <section className="screen setup__panel">
         <h2 className="screen__heading">{t('setup.heading')}</h2>
-        <p className="screen__note">{t('setup.note')}</p>
+        {/* Landing here with a career already saved means storage could not be
+            read, not that there is nothing to read. Without saying so, the club
+            picker reads as "your career is gone". */}
+        {storageBlocked ? (
+          <p className="screen__note is-out" role="alert">
+            {t('setup.storageBlocked')}
+          </p>
+        ) : (
+          <p className="screen__note">{t('setup.note')}</p>
+        )}
 
         <table className="data-table">
           <thead className="data-table__head">

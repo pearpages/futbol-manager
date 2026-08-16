@@ -27,6 +27,7 @@ export const es: Dictionary = {
   'action.save': 'Grabar',
   'action.saving': 'Grabando…',
   'action.newCareer': 'Nueva carrera',
+  'action.cancel': 'Cancelar',
   'action.close': 'Cerrar',
   'action.settings': 'Configuración',
   'action.language': 'Idioma',
@@ -63,6 +64,26 @@ export const es: Dictionary = {
   'hub.advanceDay': 'Avanzar un día',
   'hub.news': 'Noticias',
   'hub.noNews': 'Todavía no ha pasado nada.',
+  'hub.confirmNewCareer':
+    '¿Volver a la elección de club? Todo lo que no hayas grabado de esta carrera se perderá.',
+
+  // ── Partidas grabadas ────────────────────────────────────────────────────
+  'saves.title': 'Partidas grabadas',
+  // El nombre que recibe una carrera que ya existía antes de los guardados con nombre.
+  'saves.adoptedName': 'Mi carrera',
+  'saves.nameLabel': 'Ponle nombre a la partida',
+  'saves.empty': 'Todavía no has grabado nada.',
+  'saves.column.name': 'Partida',
+  'saves.column.career': 'Carrera',
+  'saves.column.action': 'Acción',
+  'saves.summary': '{date} · {club} · jornada {round}',
+  'saves.summaryOver': '{date} · {club} · temporada terminada',
+  'saves.current': 'En juego',
+  'saves.load': 'Cargar',
+  'saves.delete': 'Borrar',
+  'saves.confirmOverwrite': '¿Escribir encima de «{name}»? Lo que hay ahora se perderá.',
+  'saves.confirmLoad': '¿Cargar «{name}»? Todo lo que no hayas grabado de esta carrera se perderá.',
+  'saves.confirmDelete': '¿Borrar «{name}»? No hay vuelta atrás.',
 
   // ── Clasificación ────────────────────────────────────────────────────────
   'table.band.champion': 'Campeón',
@@ -240,6 +261,9 @@ export const es: Dictionary = {
 
   // ── Elección de club ─────────────────────────────────────────────────────
   'setup.heading': 'Elige un club',
+  // Otra pestaña tiene la base de datos abierta con una versión anterior.
+  'setup.storageBlocked':
+    'No se ha podido leer tu carrera: el juego está abierto en otra pestaña. Ciérrala y recarga esta página.',
   'setup.note': 'Diriges un club durante la temporada. El resto los lleva el juego.',
   'setup.column.club': 'Club',
   'setup.column.attack': 'Ata',

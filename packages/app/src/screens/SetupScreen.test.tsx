@@ -86,13 +86,40 @@ describe('choosing a club', () => {
 })
 
 describe('New career', () => {
+  /** The confirm the press now goes through. Two buttons share the label. */
+  const confirm = () =>
+    within(screen.getByRole('dialog')).getByRole('button', { name: t('action.newCareer') })
+
   it('returns to the picker from an in-progress season', () => {
     useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
     render(<App />)
     expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    fireEvent.click(confirm())
     expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
+  })
+
+  it('asks first, because there is no undo behind it', () => {
+    useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    expect(screen.getByText(t('hub.confirmNewCareer'))).toBeDefined()
+    // Still in the career at this point — the question has been asked, not answered.
+    expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
+  })
+
+  it('leaves the career alone when the question is declined', () => {
+    useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    fireEvent.click(screen.getByRole('button', { name: t('action.cancel') }))
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
+    expect(useGame.getState().needsSetup).toBe(false)
   })
 })
 
@@ -139,5 +166,28 @@ describe('sorting the club picker', () => {
 
     const chosen = DEFAULT_CLUBS.find((c) => c.name === first)
     expect(useGame.getState().game.managedClubId).toBe(chosen?.id)
+  })
+})
+
+describe('when storage could not be read', () => {
+  it('says why, rather than looking like the career is gone', () => {
+    // Another tab holding the database at an older version is the one failure
+    // that lands a player with a saved career on the club picker. Silence there
+    // reads as "your career has been lost", which is both alarming and false.
+    useGame.setState({ needsSetup: true, storageBlocked: true })
+    render(<App />)
+
+    expect(screen.getByRole('alert').textContent).toBe(t('setup.storageBlocked'))
+    expect(screen.queryByText(t('setup.note'))).toBeNull()
+  })
+
+  it('says nothing of the sort on an ordinary first visit', () => {
+    // The guard on the guard: a notice that always showed would satisfy the test
+    // above while telling every new player their career had failed to load.
+    useGame.setState({ needsSetup: true, storageBlocked: false })
+    render(<App />)
+
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.getByText(t('setup.note'))).toBeDefined()
   })
 })

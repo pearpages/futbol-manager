@@ -12,8 +12,19 @@ import {
   type RngState,
 } from '@fm/domain'
 import { DEFAULT_CLUBS, DEFAULT_ROSTERS, PLAYER_NAMES } from '@fm/data'
-import { loadGame, saveGame } from '@fm/persistence'
-import { DEFAULT_LANGUAGE, isLanguage, type Language } from './i18n/index.ts'
+import {
+  AUTOSAVE_SLOT,
+  deleteGame,
+  listSaves,
+  loadGame,
+  nameFor,
+  type SaveDetails,
+  type SaveSummary,
+  saveGame,
+  slotFor,
+  StorageBlockedError,
+} from '@fm/persistence'
+import { DEFAULT_LANGUAGE, isLanguage, type Language, translate } from './i18n/index.ts'
 
 /**
  * The UI's view of the game.
@@ -65,6 +76,27 @@ interface Store {
    * state it holds is a real game or the placeholder season built at module load.
    */
   readonly needsSetup: boolean
+  /**
+   * Every named save, for the picker. Refreshed rather than watched: IndexedDB
+   * has no subscription, and the only thing that writes slots is this store.
+   */
+  readonly saves: readonly SaveSummary[]
+  /**
+   * The slot this career came from, or was last written to. `null` means it has
+   * never been named, in which case it lives in the unnamed slot.
+   *
+   * Mirrored into `localStorage` for the same reason `language` is: it belongs to
+   * the **player** rather than to a career, it has to be readable synchronously
+   * before the first `loadGame` can be issued, and putting it in the envelope
+   * would mean a save that knows which save it is.
+   */
+  readonly currentSlot: string | null
+  /**
+   * Another tab is holding the database at an older version, so nothing could be
+   * loaded. Distinct from "no save" because the answer is different: close the
+   * other tab, rather than start a career.
+   */
+  readonly storageBlocked: boolean
 
   /**
    * Returns the events the reducer emitted, for the caller that needs to react
@@ -87,8 +119,18 @@ interface Store {
   inspect(playerId: string | null): void
   /** Lay one of your own players over the ficha's chart, or `null` to clear. */
   compare(playerId: string | null): void
+  /** Quick save — writes back to whichever slot this career is in. */
   save(): Promise<void>
   restore(): Promise<boolean>
+  /** Reads every named save into `saves`. Safe to call when storage is unavailable. */
+  refreshSaves(): Promise<void>
+  /** Gives a career from the unnamed slot a name, so the picker can show it. */
+  adopt(game: GameState): Promise<void>
+  /** Writes this career to a named slot, creating it or overwriting it. */
+  saveAs(name: string): Promise<void>
+  /** Replaces the current career with a saved one. Returns false if the slot has gone. */
+  load(slot: string): Promise<boolean>
+  remove(slot: string): Promise<void>
   newGame(managedClubId?: string): void
   /** Back to the club picker, leaving any saved career on disk untouched. */
   restart(): void
@@ -110,14 +152,53 @@ interface Store {
  */
 const LANGUAGE_KEY = 'fm.language'
 
-function storedLanguage(): Language {
+/**
+ * Which slot to pick back up on the next visit.
+ *
+ * Beside the language rather than in the save envelope, and for the same reasons:
+ * it is about the player rather than about a career, and it has to be readable
+ * *before* the first `loadGame` — a pointer stored inside the thing it points at
+ * cannot be followed.
+ */
+const SLOT_KEY = 'fm.lastSlot'
+
+function readPreference(key: string): string | null {
   try {
-    const saved: unknown = globalThis.localStorage?.getItem(LANGUAGE_KEY)
-    return isLanguage(saved) ? saved : DEFAULT_LANGUAGE
+    return globalThis.localStorage?.getItem(key) ?? null
   } catch {
     // Private browsing, a blocked origin, or a test environment with no storage.
     // A missing preference is a normal state, exactly as a missing save is.
-    return DEFAULT_LANGUAGE
+    return null
+  }
+}
+
+function writePreference(key: string, value: string | null): void {
+  try {
+    if (value === null) globalThis.localStorage?.removeItem(key)
+    else globalThis.localStorage?.setItem(key, value)
+  } catch {
+    // Unavailable storage costs you the preference next time, not this time.
+  }
+}
+
+function storedLanguage(): Language {
+  const saved = readPreference(LANGUAGE_KEY)
+  return isLanguage(saved) ? saved : DEFAULT_LANGUAGE
+}
+
+/**
+ * What the picker shows for this career, without opening the save.
+ *
+ * The round is the one the manager is *about to play* — the same number the title
+ * bar shows, so a save's description and the bar can never disagree. `null` once
+ * the season is over, which is a real state and not a missing value.
+ */
+function summaryFor(game: GameState, name: string): SaveDetails {
+  return {
+    name,
+    clubName: game.clubs.find((c) => c.id === game.managedClubId)?.name ?? '',
+    currentDate: game.season.currentDate,
+    round: nextFixtureFor(game.season.fixtures, game.managedClubId)?.round ?? null,
   }
 }
 
@@ -150,6 +231,9 @@ export const useGame = create<Store>((set, get) => ({
   language: storedLanguage(),
   saving: false,
   needsSetup: true,
+  saves: [],
+  currentSlot: readPreference(SLOT_KEY),
+  storageBlocked: false,
 
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
@@ -159,11 +243,7 @@ export const useGame = create<Store>((set, get) => ({
 
   setLanguage(language) {
     set({ language })
-    try {
-      globalThis.localStorage?.setItem(LANGUAGE_KEY, language)
-    } catch {
-      // Unavailable storage costs you the preference next time, not this time.
-    }
+    writePreference(LANGUAGE_KEY, language)
   },
 
   advanceToMatchday() {
@@ -215,9 +295,21 @@ export const useGame = create<Store>((set, get) => ({
   },
 
   async save() {
+    // Writes back where this career came from. A career that has never been named
+    // keeps going to the unnamed slot, which is exactly what it did before named
+    // saves existed — and it stays out of the picker until it is given a name.
+    const { currentSlot, game } = get()
+    const name = currentSlot === null ? null : nameFor(currentSlot)
+
     set({ saving: true })
     try {
-      await saveGame(get().game, rng.state())
+      await saveGame(
+        game,
+        rng.state(),
+        currentSlot ?? AUTOSAVE_SLOT,
+        name === null ? undefined : summaryFor(game, name),
+      )
+      if (name !== null) await get().refreshSaves()
     } finally {
       set({ saving: false })
     }
@@ -227,17 +319,137 @@ export const useGame = create<Store>((set, get) => ({
     // Storage being unavailable is not a crash. A private-browsing window, a
     // blocked origin or a test environment with no IndexedDB should all land the
     // player in a fresh season rather than a blank screen.
+    //
+    // The slot pointer is a *hint*: a save deleted from another tab leaves it
+    // dangling, and falling back to the unnamed slot is better than a blank
+    // screen. It is also what picks up a career that predates named saves.
+    const slot = get().currentSlot
     let loaded
+    let fromUnnamed = false
     try {
-      loaded = await loadGame()
-    } catch {
+      loaded = slot === null ? null : await loadGame(slot)
+      if (loaded === null) {
+        loaded = await loadGame(AUTOSAVE_SLOT)
+        fromUnnamed = loaded !== null
+      }
+      await get().refreshSaves()
+    } catch (reason) {
+      // Another tab holding an older version of the database is the one failure
+      // worth naming. Everything else here degrades to a fresh season, which is
+      // right — but a player with a career who is shown the club picker and told
+      // nothing will reasonably conclude the career is gone.
+      set({ storageBlocked: reason instanceof StorageBlockedError })
       return false
     }
 
     if (loaded === null) return false
     rng = createRng(loaded.rngState as RngState)
-    set({ game: loaded.payload as GameState, feed: [], needsSetup: false })
+    const game = loaded.payload as GameState
+    set({ game, feed: [], needsSetup: false })
+
+    // A career in the unnamed slot is one the picker cannot show, which is how
+    // the first player of this feature ended up with a list that stayed empty
+    // however often he pressed Save. Give it a name so it is visible, and move
+    // it: leaving the unnamed copy behind is a second 165 KB of the same career
+    // and a second thing to keep in step.
+    if (fromUnnamed) await get().adopt(game)
     return true
+  },
+
+  /**
+   * Moves a career out of the unnamed slot and into a named one.
+   *
+   * Silent by design — it is housekeeping, not an action the player took — but
+   * its result is not: the save appears in the picker under a default name the
+   * player can change by saving under a different one.
+   */
+  async adopt(game) {
+    // `translate` rather than `translatorFor`: `useT.ts` imports this module for
+    // its hook, so reaching back for it would close a cycle. `i18n/index.ts`
+    // depends on nothing but the three dictionaries.
+    const name = translate(get().language, 'saves.adoptedName')
+    const slot = slotFor(name)
+    try {
+      await saveGame(game, rng.state(), slot, summaryFor(game, name))
+      await deleteGame(AUTOSAVE_SLOT)
+    } catch {
+      // The career is loaded and playable; it simply has no row yet. Failing to
+      // tidy up is not a reason to refuse to start.
+      return
+    }
+    set({ currentSlot: slot })
+    writePreference(SLOT_KEY, slot)
+    await get().refreshSaves()
+  },
+
+  async refreshSaves() {
+    try {
+      set({ saves: await listSaves() })
+    } catch {
+      // Same posture as `restore`: no storage means no saves, not a broken screen.
+      set({ saves: [] })
+    }
+  },
+
+  async saveAs(name) {
+    const slot = slotFor(name)
+    const { game } = get()
+
+    set({ saving: true })
+    try {
+      await saveGame(game, rng.state(), slot, summaryFor(game, name.trim()))
+      set({ currentSlot: slot })
+      writePreference(SLOT_KEY, slot)
+      await get().refreshSaves()
+    } finally {
+      set({ saving: false })
+    }
+  },
+
+  async load(slot) {
+    let loaded
+    try {
+      loaded = await loadGame(slot)
+    } catch {
+      return false
+    }
+
+    // The row was there a moment ago and its save is not. Refresh rather than
+    // report: the honest answer is the list the player is looking at is stale.
+    if (loaded === null) {
+      await get().refreshSaves()
+      return false
+    }
+
+    rng = createRng(loaded.rngState as RngState)
+    set({
+      game: loaded.payload as GameState,
+      feed: [],
+      screen: 'hub',
+      inspectedPlayerId: null,
+      comparedPlayerId: null,
+      needsSetup: false,
+      currentSlot: slot,
+    })
+    writePreference(SLOT_KEY, slot)
+    return true
+  },
+
+  async remove(slot) {
+    try {
+      await deleteGame(slot)
+    } catch {
+      return
+    }
+
+    // Deleting the career you are playing does not end it — the game in memory is
+    // untouched. It simply stops having somewhere to go back to, so the pointer
+    // has to drop or the next visit follows it to nothing.
+    if (get().currentSlot === slot) {
+      set({ currentSlot: null })
+      writePreference(SLOT_KEY, null)
+    }
+    await get().refreshSaves()
   },
 
   newGame(managedClubId) {
@@ -248,7 +460,11 @@ export const useGame = create<Store>((set, get) => ({
       inspectedPlayerId: null,
       comparedPlayerId: null,
       needsSetup: false,
+      // A new career has not been saved anywhere yet. Leaving the pointer would
+      // make the first Grabar silently overwrite the career you just left.
+      currentSlot: null,
     })
+    writePreference(SLOT_KEY, null)
   },
 
   restart() {

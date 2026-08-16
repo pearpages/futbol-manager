@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { type ClubId, computeTable, isSeasonComplete, recentResultsFor } from '@fm/domain'
 import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
@@ -8,7 +8,9 @@ import { type Screen, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import { HubFigure } from './HubFigure.tsx'
+import { Modal } from './Modal.tsx'
 import { NotificationList } from './NotificationList.tsx'
+import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { type FigureKey } from './sprites.ts'
 import { type IconKey, TileIcon } from './TileIcon.tsx'
 import './HubScreen.css'
@@ -126,11 +128,16 @@ export function HubScreen() {
   const dispatch = useGame((s) => s.dispatch)
   const advanceToMatchday = useGame((s) => s.advanceToMatchday)
   const startNewSeason = useGame((s) => s.startNewSeason)
-  const save = useGame((s) => s.save)
   const saving = useGame((s) => s.saving)
   const restart = useGame((s) => s.restart)
   const translator = useT()
   const { t, plural, date, money, season } = translator
+
+  // Both dialogs are the hub's own business: the picker is opened from here, and
+  // leaving for the club picker is a press made here. Neither is store state —
+  // an open dialog belongs to this sitting more narrowly than `screen` does.
+  const [saveManager, setSaveManager] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
@@ -308,16 +315,68 @@ export function HubScreen() {
           <NotificationList notices={notices} empty={t('hub.noNews')} />
         </section>
 
-        {/* Grabar la liga and leaving were hub buttons in the original too. */}
+        {/* Grabar la liga and leaving were hub buttons in the original too.
+            Grabar opens the dialog rather than writing silently. It used to be a
+            quick save with naming behind a second button, and the first person to
+            use it could neither name a game nor find one to load: a button that
+            produces no visible result is indistinguishable from a broken one. */}
         <div className="panel hub__utilities">
-          <button type="button" className="button" disabled={saving} onClick={() => void save()}>
+          <button
+            type="button"
+            className="button"
+            disabled={saving}
+            onClick={() => {
+              setSaveManager(true)
+            }}
+          >
             {saving ? t('action.saving') : t('action.save')}
           </button>
-          <button type="button" className="button" onClick={restart}>
+          {/* Asked before, not after: this used to drop the career on the first
+              press, and there is no undo behind it. */}
+          <button
+            type="button"
+            className="button"
+            onClick={() => {
+              setLeaving(true)
+            }}
+          >
             {t('action.newCareer')}
           </button>
         </div>
       </aside>
+
+      {saveManager && (
+        <SaveManagerModal
+          onClose={() => {
+            setSaveManager(false)
+          }}
+        />
+      )}
+
+      {leaving && (
+        <Modal
+          title={t('action.newCareer')}
+          onClose={() => {
+            setLeaving(false)
+          }}
+        >
+          <p className="hub__question">{t('hub.confirmNewCareer')}</p>
+          <div className="screen-actions">
+            <button
+              type="button"
+              className="button"
+              onClick={() => {
+                setLeaving(false)
+              }}
+            >
+              {t('action.cancel')}
+            </button>
+            <button type="button" className="button is-primary" onClick={restart}>
+              {t('action.newCareer')}
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

@@ -1,5 +1,11 @@
 import { cleanup } from '@testing-library/react'
+// `/auto` rather than the named export alone: `idb` wraps `IDBRequest` and
+// `IDBTransaction` off the global, so handing over only `indexedDB` fails at the
+// first call with a bare ReferenceError.
+import 'fake-indexeddb/auto'
+import { IDBFactory } from 'fake-indexeddb'
 import { afterEach, beforeEach } from 'vitest'
+import { closeDb } from '@fm/persistence'
 import { useGame } from './store.ts'
 
 /**
@@ -29,5 +35,29 @@ Element.prototype.scrollIntoView ??= function scrollIntoView() {}
  * covers the switching itself.
  */
 beforeEach(() => {
-  useGame.setState({ language: 'en' })
+  /*
+   * The store is a module-level singleton, so anything a test leaves on it is the
+   * next test's starting state. Language is pinned for the reason above; the three
+   * storage fields are reset because **swapping the database below can strand an
+   * in-flight save**. A `saveGame` still running when the factory is replaced never
+   * settles against the old one, so `save()`'s `finally` never fires and `saving`
+   * stays true — and the next test finds the hub's button reading "Saving…" and
+   * permanently disabled. That cost an afternoon; it is an artefact of swapping
+   * storage under a live promise, not something the product can do.
+   */
+  useGame.setState({ language: 'en', saving: false, saves: [], currentSlot: null })
+  globalThis.localStorage?.removeItem('fm.lastSlot')
+
+  /*
+   * A real IndexedDB, fresh per test.
+   *
+   * jsdom implements none, which every screen test relied on without saying so:
+   * `restore()` failed, returned false, and left the fresh season the store had
+   * already built. That is still what happens with an empty database, so nothing
+   * changes for a test that never saves — but a save picker needs storage that
+   * actually stores, and a test inheriting the previous one's slots would be
+   * asserting the wrong thing.
+   */
+  closeDb()
+  globalThis.indexedDB = new IDBFactory()
 })

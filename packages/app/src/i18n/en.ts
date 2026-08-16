@@ -36,6 +36,7 @@ export const en: Dictionary = {
   'action.save': 'Save',
   'action.saving': 'Saving…',
   'action.newCareer': 'New career',
+  'action.cancel': 'Cancel',
   'action.close': 'Close',
   'action.settings': 'Settings',
   'action.language': 'Language',
@@ -74,6 +75,26 @@ export const en: Dictionary = {
   'hub.advanceDay': 'Advance day',
   'hub.news': 'News',
   'hub.noNews': 'Nothing has happened yet.',
+  'hub.confirmNewCareer':
+    'Leave for the club picker? Anything you have not saved in this career is lost.',
+
+  // ── Saved games ──────────────────────────────────────────────────────────
+  'saves.title': 'Saved games',
+  // What a career that predates named saves gets called.
+  'saves.adoptedName': 'My career',
+  'saves.nameLabel': 'Name this save',
+  'saves.empty': 'Nothing saved yet.',
+  'saves.column.name': 'Save',
+  'saves.column.career': 'Career',
+  'saves.column.action': 'Action',
+  'saves.summary': '{date} · {club} · matchday {round}',
+  'saves.summaryOver': '{date} · {club} · season over',
+  'saves.current': 'Playing',
+  'saves.load': 'Load',
+  'saves.delete': 'Delete',
+  'saves.confirmOverwrite': 'Write over “{name}”? What it holds now is gone.',
+  'saves.confirmLoad': 'Load “{name}”? Anything you have not saved in this career is lost.',
+  'saves.confirmDelete': 'Delete “{name}”? There is no way back to it.',
 
   // ── Classification ───────────────────────────────────────────────────────
   'table.band.champion': 'Champion',
@@ -253,6 +274,9 @@ export const en: Dictionary = {
 
   // ── Setup ────────────────────────────────────────────────────────────────
   'setup.heading': 'Choose a club',
+  // Another tab is holding the database open at an older version.
+  'setup.storageBlocked':
+    'Your career could not be read: the game is open in another tab. Close it and reload this page.',
   'setup.note': 'You manage one club for the season. The rest are run by the game.',
   'setup.column.club': 'Club',
   'setup.column.attack': 'Att',

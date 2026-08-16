@@ -1,0 +1,81 @@
+/*
+ * The save picker.
+ *
+ * Two materials inside one dialog, and the split is the usual one: the box and the
+ * name field are `.panel`, because they are controls; the list of saves is a
+ * `.screen`, because it is data. That is also what makes `.data-table` correct here
+ * without a single override — it is written for the dark material.
+ */
+
+.save-manager__row {
+  display: flex;
+  gap: var(--fm-space-2);
+  align-items: stretch;
+}
+
+.save-manager__input {
+  flex: 1;
+  min-width: 0;
+  /* `.number-input` is right in every respect but its width, which is sized for a
+     fee. A name is the widest thing this dialog holds. */
+  width: auto;
+  text-align: left;
+}
+
+.save-manager__list {
+  min-height: 0;
+  max-height: 22rem;
+  padding: var(--fm-space-2);
+  overflow: auto;
+}
+
+/* A name is user input up to forty characters, so it wraps rather than pushing the
+   table past the panel and taking the buttons off the edge with it. `.data-table__row
+   td` is `nowrap`, which is right for the numbers it was written for and wrong here. */
+/* `td.` rather than a bare class: `.data-table__row td` in `chrome.css` is one
+   class *and* one element, so it outranks `.save-manager__slot` and the wrap below
+   would never apply. Matching its specificity and coming later in the cascade is
+   what makes these two rules do anything at all. */
+td.save-manager__slot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2);
+  align-items: baseline;
+  white-space: normal;
+}
+
+/* Which save you are actually in. The row already takes `.is-you`, but that is a
+   colour, and colour is never the only signal. */
+.save-manager__badge {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* The description is the long column and the one that may wrap; `.data-table__row
+   td` sets `nowrap` for numeric cells, which this is not.
+   `width: 100%` makes it the column that absorbs the slack, so the name and the
+   two buttons stay at their content width instead of the table growing past the
+   panel and taking the buttons off the edge with it. */
+/* Wrapping, but not greedy. `width: 100%` here made the description take every
+   spare pixel and starved the action column until the two buttons stacked and
+   every row doubled in height — the table's own distribution is better than a
+   hint, once both text columns are actually allowed to wrap. */
+td.save-manager__career {
+  white-space: normal;
+}
+
+/* Deliberately not wrapping: two buttons on one line is the row's whole shape, and
+   letting them stack is what made every row twice as tall. */
+.save-manager__actions {
+  display: flex;
+  gap: var(--fm-space-1);
+  justify-content: flex-end;
+}
+
+.save-manager__question {
+  font-size: var(--fm-text-md);
+  line-height: 1.4;
+}

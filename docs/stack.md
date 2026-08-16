@@ -42,6 +42,11 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 | @vitest/coverage-v8    | **4.1.10** | Must track Vitest exactly.                                                                                              |
 | jsdom                  | **30.0.1** | `app` only                                                                                                              |
 | @testing-library/react | **16.3.2** | `app` only                                                                                                              |
+| fake-indexeddb         | **6.2.5**  | `persistence` and `app`, dev only                                                                                       |
+
+**`fake-indexeddb` is test-only and exists because neither Node nor jsdom implements IndexedDB at all.** Until named save slots landed, the storage layer had never had a test: `restore()` swallows the failure and starts a fresh season, which is correct behaviour and also meant the whole of `store.ts` was uncovered. A save picker is mostly storage, so the loop — write, list, load, delete — is now driven against a real implementation.
+
+Declared in **both** packages rather than once at the root, and that is the strict-`node_modules` boundary doing its job rather than duplication. A root devDependency would resolve from either package by walking up, which is exactly the undeclared import pnpm's layout exists to prevent — and the ESLint boundary rule would not catch it, because that one matches `@fm/*` specifiers.
 
 ## UI
 

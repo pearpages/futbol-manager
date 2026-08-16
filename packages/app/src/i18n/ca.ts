@@ -27,6 +27,7 @@ export const ca: Dictionary = {
   'action.save': 'Desar',
   'action.saving': 'Desant…',
   'action.newCareer': 'Nova carrera',
+  'action.cancel': 'Cancel·lar',
   'action.close': 'Tancar',
   'action.settings': 'Configuració',
   'action.language': 'Idioma',
@@ -63,6 +64,27 @@ export const ca: Dictionary = {
   'hub.advanceDay': 'Avançar un dia',
   'hub.news': 'Notícies',
   'hub.noNews': 'Encara no ha passat res.',
+  'hub.confirmNewCareer':
+    'Vols tornar a la tria de club? Tot el que no hagis desat d’aquesta carrera es perdrà.',
+
+  // ── Partides desades ─────────────────────────────────────────────────────
+  'saves.title': 'Partides desades',
+  // El nom que rep una carrera que ja existia abans dels desats amb nom.
+  'saves.adoptedName': 'La meva carrera',
+  'saves.nameLabel': 'Posa un nom a la partida',
+  'saves.empty': 'Encara no has desat res.',
+  'saves.column.name': 'Partida',
+  'saves.column.career': 'Carrera',
+  'saves.column.action': 'Acció',
+  'saves.summary': '{date} · {club} · jornada {round}',
+  'saves.summaryOver': '{date} · {club} · temporada acabada',
+  'saves.current': 'En joc',
+  'saves.load': 'Carregar',
+  'saves.delete': 'Esborrar',
+  'saves.confirmOverwrite': 'Vols escriure sobre «{name}»? El que hi ha ara es perdrà.',
+  'saves.confirmLoad':
+    'Vols carregar «{name}»? Tot el que no hagis desat d’aquesta carrera es perdrà.',
+  'saves.confirmDelete': 'Vols esborrar «{name}»? No hi ha manera de recuperar-la.',
 
   // ── Classificació ────────────────────────────────────────────────────────
   'table.band.champion': 'Campió',
@@ -240,6 +262,9 @@ export const ca: Dictionary = {
 
   // ── Tria de club ─────────────────────────────────────────────────────────
   'setup.heading': 'Tria un club',
+  // Un altre pestanya té la base de dades oberta amb una versió anterior.
+  'setup.storageBlocked':
+    'No s’ha pogut llegir la teva carrera: el joc està obert en una altra pestanya. Tanca-la i torna a carregar aquesta pàgina.',
   'setup.note': 'Dirigeixes un club durant la temporada. La resta els porta el joc.',
   'setup.column.club': 'Club',
   'setup.column.attack': 'Atac',

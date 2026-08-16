@@ -336,14 +336,23 @@
   background: #d4594a;
 }
 
+/* Two buttons, one row. There was briefly a third — a separate `Partides desades`
+   — which is what the full-width row here existed for; folding naming back into
+   Desar removed both the button and the reason. */
 .hub__utilities {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--fm-space-2);
   padding: var(--fm-space-2);
 }
 
 .hub__utilities .button {
-  flex: 1;
+  min-width: 0;
+}
+
+.hub__question {
+  font-size: var(--fm-text-md);
+  line-height: 1.4;
 }
 
 @media (width < 68rem) {

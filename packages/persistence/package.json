@@ -10,5 +10,8 @@
     "@fm/data": "workspace:*",
     "@fm/domain": "workspace:*",
     "idb": "8.0.3"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.5"
   }
 }
