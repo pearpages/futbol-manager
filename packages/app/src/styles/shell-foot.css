@@ -1,0 +1,56 @@
+/*
+ * The bottom bar.
+ *
+ * `.panel` like the title bar, so the stage is a recessed display held between
+ * two pieces of hardware. Full width is the whole point: the controls this
+ * replaces were in an 18rem column, which is why they had nowhere to go when the
+ * window narrowed.
+ */
+
+.shell__foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2) var(--fm-space-4);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--fm-space-2) var(--fm-space-4);
+}
+
+/*
+ * Three groups: leave · the game · the clock. The left group keeps its box even
+ * when empty — on the hub there is no back button, and without this the
+ * utilities would slide left and the bar would look like a different bar on the
+ * one screen you see most.
+ */
+.shell__foot-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2);
+  align-items: center;
+  min-height: 1px;
+}
+
+.shell__foot-group:first-child,
+.shell__foot-group:last-child {
+  flex: 1 0 auto;
+}
+
+.shell__foot-group:last-child {
+  justify-content: flex-end;
+}
+
+/* The quick-save confirmation. Deliberately quiet — it is reassurance, not news,
+   and it clears itself. */
+.shell__saved {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+  color: var(--fm-ink-soft);
+  white-space: nowrap;
+}
+
+.shell__question {
+  font-size: var(--fm-text-md);
+  line-height: 1.4;
+}

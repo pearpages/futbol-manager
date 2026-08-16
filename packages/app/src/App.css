@@ -5,7 +5,11 @@
   /* One column. Navigation is the hub, not a rail — see ADR 0008 and the
      reference in assets/pcfutbol-5.0/. */
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  /* Bar · stage · foot. The stage is the only row that flexes, and it already
+     carried `min-height: 0` with every screen root delegating scroll to
+     `.screen` — which is why the foot needs no fixed positioning and cannot
+     push anything off the bottom. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: var(--fm-space-2);
   height: 100%;
   padding: var(--fm-space-2);
@@ -99,6 +103,11 @@
   min-width: 0;
 }
 
+/* No career, so nothing to save and nowhere to go back to. */
+.shell--setup {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
 /* ── The transfer window, in the title bar ───────────────────────────────── */
 
 /* The only live state left in the corner, and it renders solely while the window
@@ -106,23 +115,4 @@
 .shell__window {
   color: var(--fm-accent-ink);
   font-weight: 700;
-}
-
-/* Distinct from Advance day: this one is not reversible. */
-.shell__play {
-  background: var(--fm-relegation);
-  color: #fff;
-}
-
-.shell__play:hover {
-  background: #d4594a;
-}
-
-.shell__warning {
-  margin: var(--fm-space-1) 0 0;
-  color: #7a2f26;
-  font-family: var(--fm-font-condensed);
-  font-size: var(--fm-text-xs);
-  letter-spacing: var(--fm-track-wide);
-  text-transform: uppercase;
 }

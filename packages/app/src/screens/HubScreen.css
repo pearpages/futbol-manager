@@ -102,8 +102,11 @@
   grid-column: 2;
   grid-row: 1 / -1;
   display: grid;
-  /* identity · next match · news · utilities */
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  /* identity · next match · news. The utilities used to be a fourth row here, and
+     that is what this change removed: below 68rem the centre becomes a
+     three-column band, so a fourth child fell into an implicit cell nobody had
+     designed. Game-level controls belong to the shell, not to an 18rem column. */
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: var(--fm-space-3);
   min-height: 0;
 }
@@ -319,6 +322,51 @@
   overflow: auto;
 }
 
+/* Heading on the left, the way into the full list on the right. The heading stays
+   a plain `<h2>` rather than becoming the control, which is what keeps its
+   accessible name stable while the count beside it changes — two other test files
+   find this panel by that name.
+
+   The rule moves from the heading to this row. Left on `.screen__heading` it ends
+   where the button begins, and a panel whose underline stops two thirds of the
+   way across reads as unfinished rather than as deliberate. */
+.hub__news-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fm-space-2);
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+.hub__news-title {
+  flex: 1;
+  min-width: 0;
+  border-bottom: 0;
+}
+
+/* A `.button`, so it needs no inherits — the trap that shipped a mixed-case
+   heading when `.player-link` first landed inside one only applies to a control
+   that has to *look* like the text around it. This one is hardware. */
+.hub__news-open {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+  flex: none;
+  margin: 0 var(--fm-space-4) 0 0;
+}
+
+/* The unread count, moved off the shell footer with the news itself. A number
+   rather than a dot: "something happened" is less use than "three things did". */
+.hub__unread {
+  padding: 0 0.35em;
+  border-radius: 999px;
+  background: var(--fm-relegation);
+  color: #fff;
+  font-size: var(--fm-text-xs);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
 /* The day controls stack rather than sit in a row: the primary action wants the
    full width, and "To matchday" is a smaller decision beneath it. */
 .hub__controls {
@@ -334,25 +382,6 @@
 
 .hub__play:hover {
   background: #d4594a;
-}
-
-/* Two buttons, one row. There was briefly a third — a separate `Partides desades`
-   — which is what the full-width row here existed for; folding naming back into
-   Desar removed both the button and the reason. */
-.hub__utilities {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--fm-space-2);
-  padding: var(--fm-space-2);
-}
-
-.hub__utilities .button {
-  min-width: 0;
-}
-
-.hub__question {
-  font-size: var(--fm-text-md);
-  line-height: 1.4;
 }
 
 @media (width < 68rem) {

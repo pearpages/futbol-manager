@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createRng, type Event, newSeason, type PlayerId } from '@fm/domain'
 import { DEFAULT_CLUBS, PLAYER_NAMES } from '@fm/data'
 import { translatorFor } from './i18n/useT.ts'
-import { describe as describeEvent, lookupFor, noticesFrom } from './notifications.ts'
+import { describe as describeEvent, isNotable, lookupFor, noticesFrom } from './notifications.ts'
 
 /**
  * The event-to-sentence layer, tested without rendering — the same pattern
@@ -240,5 +240,130 @@ describe('the transfer window', () => {
     const closed = describeEvent(change(false), game, names, t)
     expect(opened?.key).not.toBe(closed?.key)
     expect(noticesFrom([change(true), change(false)], game, t)).toHaveLength(2)
+  })
+})
+
+describe('isNotable agrees with describe', () => {
+  /**
+   * The drift guard.
+   *
+   * `isNotable` exists because the unread count is kept in the store, which has
+   * no translator and cannot get one without closing an import cycle. That makes
+   * it a second copy of `describe`'s silent set, and a second copy is only safe
+   * while something checks it.
+   *
+   * One of every event type, including both sides of each conditional — a
+   * predicate keyed on `type` alone would pass a list of distinct types and still
+   * be wrong about the other club's match, the withdrawn bid and the transfer
+   * between two clubs, which are exactly the three cases that are conditional.
+   */
+  const OTHER = DEFAULT_CLUBS[0]?.id
+  if (OTHER === undefined || OTHER === MID) throw new Error('need a second club')
+
+  const cases: readonly Event[] = [
+    { type: 'DayAdvanced', date: game.season.currentDate },
+    { type: 'LineupChanged', clubId: MID },
+    { type: 'TacticsChanged', clubId: MID },
+    { type: 'TicketPriceSet', clubId: MID, price: 0.01 },
+    { type: 'SeasonEnded', startYear: 2026 },
+    { type: 'SeasonStarted', startYear: 2027 },
+    {
+      type: 'MatchPlayed',
+      fixtureId: 'f1',
+      homeId: MID,
+      awayId: OTHER,
+      score: { home: 1, away: 0 },
+    },
+    {
+      type: 'MatchPlayed',
+      fixtureId: 'f2',
+      homeId: OTHER,
+      awayId: OTHER,
+      score: { home: 1, away: 0 },
+    },
+    { type: 'BidMade', bidId: 'b1', playerId: somebody.id, fee: 500 },
+    { type: 'BidAnswered', bidId: 'b1', playerId: somebody.id, status: 'accepted' },
+    { type: 'BidAnswered', bidId: 'b1', playerId: somebody.id, status: 'rejected' },
+    {
+      type: 'BidAnswered',
+      bidId: 'b1',
+      playerId: somebody.id,
+      status: 'countered',
+      counterFee: 900,
+    },
+    { type: 'BidAnswered', bidId: 'b1', playerId: somebody.id, status: 'withdrawn' },
+    { type: 'OfferReceived', bidId: 'b2', playerId: somebody.id, from: OTHER, fee: 400 },
+    { type: 'TermsRejected', playerId: somebody.id },
+    { type: 'PlayerListed', playerId: somebody.id, on: true },
+    { type: 'TransferCompleted', playerId: somebody.id, from: OTHER, to: MID, fee: 100 },
+    { type: 'TransferCompleted', playerId: somebody.id, from: MID, to: OTHER, fee: 100 },
+    { type: 'TransferCompleted', playerId: somebody.id, from: OTHER, to: OTHER, fee: 100 },
+    { type: 'BoardVerdict', met: true, target: 10, finished: 8, sacked: false, warned: false },
+    { type: 'ExpansionStarted', clubId: MID, seats: 2000, readyYear: 2028 },
+    { type: 'ExpansionOpened', clubId: MID, seats: 2000 },
+    { type: 'TransferWindowChanged', open: true, date: game.season.currentDate },
+    { type: 'TransferWindowClosing', daysLeft: 7, date: game.season.currentDate },
+  ] as unknown as Event[]
+
+  it('answers the same for every event type, on both sides of each condition', () => {
+    for (const event of cases) {
+      expect({ type: event.type, notable: isNotable(event, MID) }).toEqual({
+        type: event.type,
+        notable: describeEvent(event, game, names, t) !== null,
+      })
+    }
+  })
+
+  it('covers every member of the Event union', () => {
+    // A guard on the guard: the list above is hand-written, so a new event type
+    // would otherwise be checked by nothing at all and default to notable.
+    const covered = new Set(cases.map((event) => event.type))
+    expect([...covered].sort()).toEqual(
+      [
+        'BidAnswered',
+        'BidMade',
+        'BoardVerdict',
+        'DayAdvanced',
+        'ExpansionOpened',
+        'ExpansionStarted',
+        'LineupChanged',
+        'MatchPlayed',
+        'OfferReceived',
+        'PlayerListed',
+        'SeasonEnded',
+        'SeasonStarted',
+        'TacticsChanged',
+        'TermsRejected',
+        'TicketPriceSet',
+        'TransferCompleted',
+        'TransferWindowChanged',
+        'TransferWindowClosing',
+      ].sort(),
+    )
+  })
+})
+
+describe('a feed from another build', () => {
+  it('says nothing about an event type it does not recognise, rather than crashing', () => {
+    // The feed is saved now, and it rides in the envelope where nothing migrates
+    // it — so a save can hand back an event type this build has no case for.
+    // `describe`'s switch is exhaustive over the union at *compile* time, so an
+    // unknown type at runtime falls off the end and returns `undefined`. Checking
+    // only `!== null` would push that into the list and crash on `.text`.
+    const stranger = { type: 'AnEventFromTheFuture', wat: true } as unknown as Event
+
+    expect(describeEvent(stranger, game, names, t)).toBeUndefined()
+    expect(noticesFrom([stranger], game, t)).toEqual([])
+  })
+
+  it('still reports the events beside it', () => {
+    // Guard on the guard: skipping the stranger must not skip the rest of the
+    // feed, which a `return []` on the first oddity would.
+    const stranger = { type: 'AnEventFromTheFuture' } as unknown as Event
+    const real = { type: 'BidMade', bidId: 'b1', playerId: somebody.id, fee: 500 } as Event
+
+    const notices = noticesFrom([stranger, real, stranger], game, t)
+    expect(notices).toHaveLength(1)
+    expect(notices[0]?.text).toContain(somebody.name)
   })
 })

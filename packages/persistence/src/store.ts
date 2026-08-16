@@ -1,6 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb'
 import { type SaveEnvelope, readSave, wrapSave } from './index.ts'
-import type { RngState } from '@fm/domain'
+import type { Event, RngState } from '@fm/domain'
 
 /**
  * Save and load, against IndexedDB.
@@ -67,6 +67,17 @@ export interface SaveSummary {
 
 /** Everything a caller supplies; the slot is derived from the name. */
 export type SaveDetails = Omit<SaveSummary, 'slot'>
+
+/**
+ * The news log that travels with a save, outside the payload.
+ *
+ * Optional on {@link saveGame} because `exportSave` and the tests write envelopes
+ * without one, and an absent log reads back as empty rather than as an error.
+ */
+export interface SaveLog {
+  readonly feed: readonly Event[]
+  readonly unread: number
+}
 
 const NAMED_PREFIX = 'named:'
 
@@ -206,9 +217,10 @@ export async function saveGame(
   rngState: RngState,
   slot = AUTOSAVE_SLOT,
   details?: SaveDetails,
+  log?: SaveLog,
 ) {
   const transaction = (await db()).transaction([STORE, SUMMARIES], 'readwrite')
-  await transaction.objectStore(STORE).put(wrapSave(payload, rngState), slot)
+  await transaction.objectStore(STORE).put(wrapSave(payload, rngState, log), slot)
   if (details !== undefined) {
     await transaction.objectStore(SUMMARIES).put({ ...details, slot } satisfies SaveSummary, slot)
   }

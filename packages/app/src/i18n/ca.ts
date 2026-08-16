@@ -24,8 +24,12 @@ export const ca: Dictionary = {
   'quadrant.finanzas': 'Finances',
 
   'action.back': 'Tornar',
-  'action.save': 'Desar',
+  'action.save': 'Desar ràpid',
   'action.saving': 'Desant…',
+  'action.saved': 'Desat · {date}',
+  'action.saves': 'Partides',
+  'action.unread.one': '{count} sense llegir',
+  'action.unread.other': '{count} sense llegir',
   'action.newCareer': 'Nova carrera',
   'action.cancel': 'Cancel·lar',
   'action.close': 'Tancar',
@@ -63,6 +67,7 @@ export const ca: Dictionary = {
   'hub.toMatchday': 'Fins la jornada',
   'hub.advanceDay': 'Avançar un dia',
   'hub.news': 'Notícies',
+  'hub.readNews': 'Veure-ho tot',
   'hub.noNews': 'Encara no ha passat res.',
   'hub.confirmNewCareer':
     'Vols tornar a la tria de club? Tot el que no hagis desat d’aquesta carrera es perdrà.',
@@ -71,6 +76,9 @@ export const ca: Dictionary = {
   'saves.title': 'Partides desades',
   // El nom que rep una carrera que ja existia abans dels desats amb nom.
   'saves.adoptedName': 'La meva carrera',
+  // The dialog's own button. Plain `Desar`, not `action.save` — that one is the
+  // footer's quick save, and "Quick save" reads wrong on a form that names a file.
+  'saves.write': 'Desar',
   'saves.nameLabel': 'Posa un nom a la partida',
   'saves.empty': 'Encara no has desat res.',
   'saves.column.name': 'Partida',

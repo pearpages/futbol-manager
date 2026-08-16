@@ -151,7 +151,6 @@ export function PlayerScreen() {
   const game = useGame((s) => s.game)
   const playerId = useGame((s) => s.inspectedPlayerId)
   const comparedId = useGame((s) => s.comparedPlayerId)
-  const inspect = useGame((s) => s.inspect)
   const compare = useGame((s) => s.compare)
   const { t, percent, money } = useT()
 
@@ -219,11 +218,6 @@ export function PlayerScreen() {
             <ClubBadge club={owner} labelled />
           )}
         </div>
-        {/* Contextual, not a route home: a ficha opened from a two-hundred-row
-            market list returns to that list, never to the hub. */}
-        <button className="button" type="button" onClick={() => inspect(null)}>
-          {t('action.back')}
-        </button>
       </header>
 
       <dl className="ficha__vitals">

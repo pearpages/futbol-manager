@@ -170,10 +170,14 @@ describe('refusals are translated too', () => {
   })
 })
 
-describe('nothing is left of the news drawer', () => {
-  it('has no button, no badge and no drawer', () => {
+describe('the news drawer', () => {
+  it('is gone from the title bar, where it used to hang', () => {
+    // The old drawer's markup, not the news itself. The news came back to the
+    // shell when the day clock did — it lives in the footer now, as a button
+    // that opens the list in the modal primitive, and the reason is the same one
+    // that removed the drawer in reverse: whichever chrome carries the clock has
+    // to carry the news, or advancing days stops showing you what happened.
     render(<App />)
-    expect(screen.queryByRole('button', { name: /Noticias|News/ })).toBeNull()
     expect(document.querySelector('.shell__news')).toBeNull()
     expect(document.querySelector('.shell__badge')).toBeNull()
     expect(document.querySelector('.shell__drawer')).toBeNull()

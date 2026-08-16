@@ -40,7 +40,6 @@ interface Standing {
 export function TableScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
-  const go = useGame((s) => s.go)
   const { t, date, locale } = useT()
 
   /** `null` is the classification itself — the order the league is actually in. */
@@ -189,11 +188,6 @@ export function TableScreen() {
             </ul>
           )}
         </section>
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

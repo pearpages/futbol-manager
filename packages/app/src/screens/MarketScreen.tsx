@@ -170,7 +170,6 @@ export function listingValue(
 export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const go = useGame((s) => s.go)
   const translator = useT()
   const { t, money, locale } = translator
 
@@ -642,11 +641,6 @@ export function MarketScreen() {
             </ul>
           )}
         </section>
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

@@ -14,7 +14,6 @@ import './DecisionesScreen.css'
 
 export function DecisionesScreen() {
   const game = useGame((s) => s.game)
-  const go = useGame((s) => s.go)
   const { t } = useT()
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
@@ -89,12 +88,6 @@ export function DecisionesScreen() {
           <p className="screen__note">{t('board.whatCountsNote')}</p>
           <p className="screen__note">{t('board.targetNote')}</p>
         </section>
-
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

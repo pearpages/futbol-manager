@@ -7,6 +7,7 @@ import { type Screen, useGame } from './store.ts'
 import { BadgeDefs } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { SettingsMenu } from './screens/SettingsMenu.tsx'
+import { ShellFoot } from './screens/ShellFoot.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
@@ -147,6 +148,12 @@ export function App() {
       <main className="shell__stage">
         <Current />
       </main>
+
+      {/* Every screen's way out, and everything you do to the game rather than
+          inside it. Owned by the shell so it is in the same two corners on every
+          screen — it used to be eight separate buttons in three different
+          places, one of them at the top. */}
+      <ShellFoot />
     </div>
   )
 }

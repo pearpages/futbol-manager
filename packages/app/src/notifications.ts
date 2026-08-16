@@ -223,7 +223,51 @@ export function describe(
   }
 }
 
-/** Every notice worth showing, newest first — the order the feed is already in. */
+/**
+ * Whether {@link describe} would say anything about this event.
+ *
+ * Exists because the unread count is kept in the store, and the store has no
+ * translator — `describe` needs one, and reaching for `useT` from there would
+ * close an import cycle. Counting raw events instead is not an option:
+ * `DayAdvanced` fires on every single tick, so the badge would never be zero.
+ *
+ * **This must agree with `describe` exactly**, and it is duplicated logic, so
+ * `notifications.test.ts` drives one of every event type through both and
+ * asserts they answer the same. Change one, change the other, and the test is
+ * what will tell you if you forgot.
+ */
+export function isNotable(event: Event, you: ClubId): boolean {
+  switch (event.type) {
+    case 'DayAdvanced':
+    case 'LineupChanged':
+    case 'TacticsChanged':
+    case 'TicketPriceSet':
+      return false
+    // Nineteen other results a week would bury everything else.
+    case 'MatchPlayed':
+      return event.homeId === you || event.awayId === you
+    // Withdrawn is your own hand.
+    case 'BidAnswered':
+      return event.status !== 'withdrawn'
+    // Two clubs trading with each other is not your business.
+    case 'TransferCompleted':
+      return event.to === you || event.from === you
+    default:
+      return true
+  }
+}
+
+/**
+ * Every notice worth showing, newest first — the order the feed is already in.
+ *
+ * **Skips anything that is not a notice, not merely `null`.** The feed is now
+ * saved, and it rides in the envelope where nothing migrates it — so a save can
+ * hand back an event type this build no longer has a case for. `describe`'s
+ * switch has no `default`: it is exhaustive over the `Event` union at compile
+ * time, which means an unrecognised type at *runtime* falls off the end and
+ * returns `undefined`. Checking only `!== null` would push that undefined
+ * straight into the list and crash on `.text`.
+ */
 export function noticesFrom(
   feed: readonly Event[],
   game: GameState,
@@ -232,8 +276,8 @@ export function noticesFrom(
   const names = lookupFor(game, translator)
   const notices: Notice[] = []
   for (const event of feed) {
-    const notice = describe(event, game, names, translator)
-    if (notice !== null) notices.push(notice)
+    const notice = describe(event, game, names, translator) as Notice | null | undefined
+    if (notice != null) notices.push(notice)
   }
   return notices
 }

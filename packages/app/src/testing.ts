@@ -19,6 +19,10 @@ import { useGame } from './store.ts'
  *
  * Round one is dated on the season start, so a brand new career opens on
  * **Play match**, never on Advance day.
+ *
+ * The three no longer share one button — Play match and Start season are the
+ * hub's, Advance day is the footer's — but they still never render together, so
+ * the alternation still resolves to exactly one control.
  */
 export const ADVANCE = () => {
   const { t } = translatorFor(useGame.getState().language)
@@ -58,8 +62,14 @@ export function back(): void {
 /**
  * Presses whatever the primary button currently says, `times` times.
  *
- * **Only works on the hub.** The day controls live there and nowhere else, so a
- * test standing on another screen must `back()` first.
+ * **Works on any screen now.** The day controls used to live on the hub and
+ * nowhere else; `ShellFoot` carries Advance day and To matchday everywhere else,
+ * so this no longer needs a `back()` first.
+ *
+ * One asymmetry worth knowing: **playing a match is still hub-only.** Off the
+ * hub, on a day your fixture is due, the footer's button navigates to the hub
+ * rather than kicking off — so that press costs an iteration and the next one
+ * plays. `advanceUntil` absorbs it; a test counting exact presses would not.
  */
 export function advance(times = 1): void {
   for (let i = 0; i < times; i++) {

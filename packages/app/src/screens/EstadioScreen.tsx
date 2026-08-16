@@ -32,7 +32,6 @@ export function fillFor(fraction: number): number {
 export function EstadioScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const go = useGame((s) => s.go)
   const { t, plural, money, ticket, count, season } = useT()
 
   const [seats, setSeats] = useState(4000)
@@ -182,12 +181,6 @@ export function EstadioScreen() {
             </p>
           </section>
         )}
-
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

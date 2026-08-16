@@ -33,8 +33,12 @@ export const en: Dictionary = {
   'quadrant.finanzas': 'Finances',
 
   'action.back': 'Back',
-  'action.save': 'Save',
+  'action.save': 'Quick save',
   'action.saving': 'Saving…',
+  'action.saved': 'Saved · {date}',
+  'action.saves': 'Saved games',
+  'action.unread.one': '{count} unread',
+  'action.unread.other': '{count} unread',
   'action.newCareer': 'New career',
   'action.cancel': 'Cancel',
   'action.close': 'Close',
@@ -74,6 +78,7 @@ export const en: Dictionary = {
   'hub.toMatchday': 'To matchday',
   'hub.advanceDay': 'Advance day',
   'hub.news': 'News',
+  'hub.readNews': 'See all',
   'hub.noNews': 'Nothing has happened yet.',
   'hub.confirmNewCareer':
     'Leave for the club picker? Anything you have not saved in this career is lost.',
@@ -82,6 +87,9 @@ export const en: Dictionary = {
   'saves.title': 'Saved games',
   // What a career that predates named saves gets called.
   'saves.adoptedName': 'My career',
+  // The dialog's own button. Plain `Desar`, not `action.save` — that one is the
+  // footer's quick save, and "Quick save" reads wrong on a form that names a file.
+  'saves.write': 'Save',
   'saves.nameLabel': 'Name this save',
   'saves.empty': 'Nothing saved yet.',
   'saves.column.name': 'Save',

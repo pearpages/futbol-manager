@@ -6,7 +6,7 @@ import { AUTOSAVE_SLOT, loadGame, saveGame, slotFor } from '@fm/persistence'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance } from '../testing.ts'
+import { advance, advanceUntil } from '../testing.ts'
 
 /**
  * Naming a save, picking one back up, and throwing one away.
@@ -27,17 +27,17 @@ beforeEach(() => {
 })
 
 /**
- * Opens the dialog from the hub and waits for the list to come back from storage.
+ * Opens the dialog from the shell footer and waits for the list to arrive.
  *
- * Through `action.save` — the hub's Save button *is* the way in. It used to be a
- * silent quick-save with a second button for naming, which is how the first
- * person to use this could neither name a game nor find one.
+ * `action.saves` — the footer names the two halves apart, which is the fix for
+ * the round where one button did both jobs and neither was findable.
+ * `action.save` beside it is now the one-click quick save.
  */
 async function openPicker(): Promise<HTMLElement> {
-  // The button carries the `saving` label, so a press issued while a write is
-  // still settling looks for a name that is not on screen yet.
+  // The quick-save button carries the `saving` label, so a press issued while a
+  // write is still settling looks for a name that is not on screen yet.
   await settled()
-  fireEvent.click(screen.getByRole('button', { name: t('action.save') }))
+  fireEvent.click(screen.getByRole('button', { name: t('action.saves') }))
   const dialog = screen.getByRole('dialog')
   await settled()
   return dialog
@@ -60,7 +60,7 @@ async function settled(): Promise<void> {
 async function saveAs(name: string): Promise<void> {
   fireEvent.change(screen.getByLabelText(t('saves.nameLabel')), { target: { value: name } })
   fireEvent.click(
-    within(screen.getByRole('dialog')).getByRole('button', { name: t('action.save') }),
+    within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.write') }),
   )
   await waitFor(() => {
     expect(useGame.getState().saves.some((save) => save.name === name)).toBe(true)
@@ -112,7 +112,7 @@ describe('the save picker', () => {
   it('refuses to save until the field says something', async () => {
     render(<App />)
     const dialog = await openPicker()
-    const save = within(dialog).getByRole('button', { name: t('action.save') })
+    const save = within(dialog).getByRole('button', { name: t('saves.write') })
 
     expect((save as HTMLButtonElement).disabled).toBe(true)
     // Whitespace is not a name — trimming happens before the check, not after.
@@ -161,12 +161,12 @@ describe('the save picker', () => {
       target: { value: 'Same name' },
     })
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.save') }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.write') }),
     )
     expect(screen.getByText(t('saves.confirmOverwrite', { name: 'Same name' }))).toBeDefined()
 
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.save') }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.write') }),
     )
     await waitFor(() => {
       expect(useGame.getState().saves[0]?.currentDate).toBeGreaterThan(first)
@@ -260,11 +260,11 @@ describe('saving again', () => {
     expect((screen.getByLabelText(t('saves.nameLabel')) as HTMLInputElement).value).toBe('Career')
 
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.save') }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.write') }),
     )
     expect(screen.getByText(t('saves.confirmOverwrite', { name: 'Career' }))).toBeDefined()
     fireEvent.click(
-      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.save') }),
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.write') }),
     )
 
     await waitFor(() => {
@@ -366,5 +366,60 @@ describe('saving again', () => {
 
     expect(useGame.getState().saves).toHaveLength(1)
     expect(await loadGame(AUTOSAVE_SLOT)).toBeNull()
+  })
+})
+
+describe('the news survives the save', () => {
+  it('comes back with the career, instead of the reload throwing it away', async () => {
+    // Until this, `restore` and `load` both reset the feed to `[]`, so every
+    // reload silently lost the record of what had happened in the career — and
+    // took TableScreen's "latest results" with it, which reads the same feed.
+    render(<App />)
+    advanceUntil(() => useGame.getState().feed.length > 0, 120)
+    const feed = useGame.getState().feed
+    const unread = useGame.getState().unread
+    expect(unread).toBeGreaterThan(0)
+
+    await openPicker()
+    await saveAs('With news')
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.close') }),
+    )
+
+    // A fresh visit: the store forgets, storage does not.
+    useGame.setState({ feed: [], unread: 0 })
+    expect(await useGame.getState().restore()).toBe(true)
+
+    expect(useGame.getState().feed).toEqual(feed)
+    expect(useGame.getState().unread).toBe(unread)
+  })
+
+  it("comes back when an older save is loaded, and is that save's news", async () => {
+    render(<App />)
+    // The baseline has to be non-empty, or a `load` that wipes the feed to `[]`
+    // satisfies the assertion below and the test proves nothing.
+    advanceUntil(() => useGame.getState().feed.length > 0, 120)
+    await openPicker()
+    await saveAs('Quiet')
+    const quiet = useGame.getState().feed.length
+    expect(quiet).toBeGreaterThan(0)
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('action.close') }),
+    )
+
+    await act(async () => {
+      advance(6)
+    })
+    expect(useGame.getState().feed.length).toBeGreaterThan(quiet)
+
+    await openPicker()
+    fireEvent.click(within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.load') }))
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.load') }),
+    )
+
+    await waitFor(() => {
+      expect(useGame.getState().feed).toHaveLength(quiet)
+    })
   })
 })

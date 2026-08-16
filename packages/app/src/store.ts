@@ -25,6 +25,7 @@ import {
   StorageBlockedError,
 } from '@fm/persistence'
 import { DEFAULT_LANGUAGE, isLanguage, type Language, translate } from './i18n/index.ts'
+import { isNotable } from './notifications.ts'
 
 /**
  * The UI's view of the game.
@@ -51,17 +52,37 @@ interface Store {
   /**
    * A second player laid over the ficha's chart, from your own squad.
    *
-   * Store-only, like `screen` and `feed`: it belongs to this sitting rather than to
-   * a career, so it stays out of the save envelope and needs no migration.
+   * Store-only, like `screen`: it belongs to this sitting rather than to a career,
+   * so it stays out of the save envelope entirely. (`feed` used to be listed here
+   * and no longer belongs — it travels with the save now.)
    */
   readonly comparedPlayerId: string | null
-  /** Most recent events, newest first — what the hub's news panel reads. */
+  /**
+   * Most recent events, newest first — what the news panel reads.
+   *
+   * Saved, since the round where reloading a career silently threw away the
+   * record of what had happened in it. It rides in the save *envelope* rather
+   * than in `GameState`: the reducer emits events and never reads one back, so a
+   * log of them is not state, and the sixty-item cap in `dispatch` is a
+   * presentation decision `domain` should not be making.
+   */
   readonly feed: readonly Event[]
+  /**
+   * Notable events since the news was last read.
+   *
+   * This existed once and was deleted, because at the time the hub was the only
+   * place the day could be advanced and the hub cleared it on sight — so it
+   * could never light up. Moving the clock into the shell footer is exactly the
+   * decision that neutered it being reversed, and it restores its original job:
+   * telling you something happened while you were looking at another screen.
+   */
+  readonly unread: number
   /**
    * The interface language.
    *
    * A third category of state, and the store had only two. `game` belongs to a
-   * career and is saved; `screen` and `feed` belong to this sitting and are not.
+   * career and is saved — as, now, is `feed`; `screen` belongs to this sitting and
+   * is not.
    * A language belongs to the **player**, across every career — so it outlives
    * both, and lives in `localStorage` rather than the save. Putting it in the
    * envelope would mean deleting a career reset your language, importing a
@@ -122,6 +143,8 @@ interface Store {
   /** Quick save — writes back to whichever slot this career is in. */
   save(): Promise<void>
   restore(): Promise<boolean>
+  /** Clears the unread count — the news has been looked at. */
+  markRead(): void
   /** Reads every named save into `saves`. Safe to call when storage is unavailable. */
   refreshSaves(): Promise<void>
   /** Gives a career from the unnamed slot a name, so the picker can show it. */
@@ -187,6 +210,17 @@ function storedLanguage(): Language {
 }
 
 /**
+ * The news log a save carries, taken straight off the store.
+ *
+ * It rides in the envelope rather than in `GameState` because `reduce` emits
+ * events and never reads one back — a log is not state — and because the sixty-
+ * item cap below is a presentation decision that has no business in `domain`.
+ */
+function logOf(state: { readonly feed: readonly Event[]; readonly unread: number }) {
+  return { feed: state.feed, unread: state.unread }
+}
+
+/**
  * What the picker shows for this career, without opening the save.
  *
  * The round is the one the manager is *about to play* — the same number the title
@@ -228,6 +262,7 @@ export const useGame = create<Store>((set, get) => ({
   inspectedFrom: 'squad',
   comparedPlayerId: null,
   feed: [],
+  unread: 0,
   language: storedLanguage(),
   saving: false,
   needsSetup: true,
@@ -237,8 +272,20 @@ export const useGame = create<Store>((set, get) => ({
 
   dispatch(command) {
     const { state, events } = reduce(get().game, command, rng)
-    set({ game: state, feed: [...events, ...get().feed].slice(0, 60) })
+    set({
+      game: state,
+      feed: [...events, ...get().feed].slice(0, 60),
+      // Counted here rather than derived in the component, because the count has
+      // to survive navigating away from wherever the day was advanced. Only
+      // notable events count — `DayAdvanced` fires every tick, so raw events
+      // would leave the badge permanently lit and therefore meaningless.
+      unread: get().unread + events.filter((e) => isNotable(e, state.managedClubId)).length,
+    })
     return events
+  },
+
+  markRead() {
+    set({ unread: 0 })
   },
 
   setLanguage(language) {
@@ -308,6 +355,7 @@ export const useGame = create<Store>((set, get) => ({
         rng.state(),
         currentSlot ?? AUTOSAVE_SLOT,
         name === null ? undefined : summaryFor(game, name),
+        logOf(get()),
       )
       if (name !== null) await get().refreshSaves()
     } finally {
@@ -345,7 +393,7 @@ export const useGame = create<Store>((set, get) => ({
     if (loaded === null) return false
     rng = createRng(loaded.rngState as RngState)
     const game = loaded.payload as GameState
-    set({ game, feed: [], needsSetup: false })
+    set({ game, feed: loaded.feed ?? [], unread: loaded.unread ?? 0, needsSetup: false })
 
     // A career in the unnamed slot is one the picker cannot show, which is how
     // the first player of this feature ended up with a list that stayed empty
@@ -370,7 +418,7 @@ export const useGame = create<Store>((set, get) => ({
     const name = translate(get().language, 'saves.adoptedName')
     const slot = slotFor(name)
     try {
-      await saveGame(game, rng.state(), slot, summaryFor(game, name))
+      await saveGame(game, rng.state(), slot, summaryFor(game, name), logOf(get()))
       await deleteGame(AUTOSAVE_SLOT)
     } catch {
       // The career is loaded and playable; it simply has no row yet. Failing to
@@ -397,7 +445,7 @@ export const useGame = create<Store>((set, get) => ({
 
     set({ saving: true })
     try {
-      await saveGame(game, rng.state(), slot, summaryFor(game, name.trim()))
+      await saveGame(game, rng.state(), slot, summaryFor(game, name.trim()), logOf(get()))
       set({ currentSlot: slot })
       writePreference(SLOT_KEY, slot)
       await get().refreshSaves()
@@ -424,7 +472,8 @@ export const useGame = create<Store>((set, get) => ({
     rng = createRng(loaded.rngState as RngState)
     set({
       game: loaded.payload as GameState,
-      feed: [],
+      feed: loaded.feed ?? [],
+      unread: loaded.unread ?? 0,
       screen: 'hub',
       inspectedPlayerId: null,
       comparedPlayerId: null,
@@ -456,6 +505,7 @@ export const useGame = create<Store>((set, get) => ({
     set({
       game: freshGame(managedClubId),
       feed: [],
+      unread: 0,
       screen: 'hub',
       inspectedPlayerId: null,
       comparedPlayerId: null,
@@ -474,6 +524,7 @@ export const useGame = create<Store>((set, get) => ({
       inspectedPlayerId: null,
       comparedPlayerId: null,
       feed: [],
+      unread: 0,
     })
   },
 

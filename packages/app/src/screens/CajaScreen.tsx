@@ -71,7 +71,6 @@ export const PROJECTED: readonly { key: ProjectedKey; label: string; out: boolea
 
 export function CajaScreen() {
   const game = useGame((s) => s.game)
-  const go = useGame((s) => s.go)
   const { t, money } = useT()
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
@@ -195,12 +194,6 @@ export function CajaScreen() {
           </div>
           <p className="screen__note">{t('caja.wagesNote')}</p>
         </section>
-
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

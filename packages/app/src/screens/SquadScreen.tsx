@@ -45,7 +45,6 @@ export function positionChip(position: Position, label: string) {
 export function SquadScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const go = useGame((s) => s.go)
   const { t, money, locale } = useT()
 
   /** `null` is position-then-overall, the order a team sheet is written in. */
@@ -183,11 +182,6 @@ export function SquadScreen() {
           })}
         </tbody>
       </table>
-      <div className="screen-actions">
-        <button type="button" className="button" onClick={() => go('hub')}>
-          {t('action.back')}
-        </button>
-      </div>
     </section>
   )
 }

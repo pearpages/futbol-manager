@@ -109,7 +109,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
       ? ''
       : t(
           pending.kind === 'overwrite'
-            ? 'action.save'
+            ? 'saves.write'
             : pending.kind === 'delete'
               ? 'saves.delete'
               : 'saves.load',
@@ -182,7 +182,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
               void saveAs(typed)
             }}
           >
-            {saving ? t('action.saving') : t('action.save')}
+            {saving ? t('action.saving') : t('saves.write')}
           </button>
         </div>
       </div>

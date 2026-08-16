@@ -22,7 +22,6 @@ const POSITIONS: readonly Position[] = ['GK', 'DF', 'MF', 'FW']
 export function LineupScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const go = useGame((s) => s.go)
   const { t } = useT()
 
   const clubId = game.managedClubId
@@ -169,11 +168,6 @@ export function LineupScreen() {
           </div>
           <p className="lineup-screen__hint lineup-screen__hint--pad">{t('lineup.ratingHint')}</p>
         </section>
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => go('hub')}>
-            {t('action.back')}
-          </button>
-        </div>
       </aside>
     </div>
   )

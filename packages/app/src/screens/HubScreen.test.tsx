@@ -331,3 +331,84 @@ describe('the position stat', () => {
     expect(bandFor(20, 20)?.className).toBe('is-relegation')
   })
 })
+
+describe('the unread count', () => {
+  const newsButton = () => screen.getByRole('button', { name: new RegExp(t('hub.readNews')) })
+  const panel = () =>
+    screen.getByRole('heading', { name: t('hub.news') }).closest('section') as HTMLElement
+
+  it('counts what happened and survives navigating away and back', () => {
+    // The condition that makes the day clock living in the footer safe: news
+    // arrives on ordinary ticks, and the count has to still be there when you
+    // come home rather than being cleared by the journey.
+    useGame.getState().newGame(MID)
+    render(<App />)
+    expect(useGame.getState().unread).toBe(0)
+
+    advanceUntil(() => useGame.getState().unread > 0, 120)
+    const count = useGame.getState().unread
+    expect(count).toBeGreaterThan(0)
+
+    openScreen('nav.squad')
+    back()
+
+    expect(useGame.getState().unread).toBe(count)
+    expect(within(panel()).getByText(String(count))).toBeDefined()
+  })
+
+  it('clears on a press, not on arriving at the hub', () => {
+    // The panel is always on screen here, so clearing on sight is what made the
+    // first version of this badge useless — it could never be seen.
+    useGame.getState().newGame(MID)
+    render(<App />)
+    advanceUntil(() => useGame.getState().unread > 0, 120)
+    openScreen('nav.squad')
+    back()
+    expect(useGame.getState().unread).toBeGreaterThan(0)
+
+    fireEvent.click(newsButton())
+
+    expect(useGame.getState().unread).toBe(0)
+    expect(screen.getByRole('dialog')).toBeDefined()
+  })
+
+  it('does not light up for your own clicks', () => {
+    // `DayAdvanced` fires on every tick and `TacticsChanged` fires because you
+    // just did that. Counting raw events would leave the pill permanently lit,
+    // which is the same as having no pill.
+    useGame.getState().newGame(MID)
+    render(<App />)
+    openScreen('nav.lineup')
+    const before = useGame.getState().unread
+
+    fireEvent.change(
+      screen.getByLabelText(new RegExp(t('lineup.approach', { approach: '' }).trim())),
+      { target: { value: '70' } },
+    )
+
+    expect(useGame.getState().unread).toBe(before)
+  })
+
+  it('says the number once, not twice', () => {
+    useGame.getState().newGame(MID)
+    render(<App />)
+    advanceUntil(() => useGame.getState().unread > 0, 120)
+    const count = useGame.getState().unread
+
+    const button = newsButton()
+    expect(
+      within(button).getByText(new RegExp(t('action.unread.other', { count }))).className,
+    ).toBe('visually-hidden')
+    expect(document.querySelector('.hub__unread')?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('leaves the panel heading alone, which other screens find it by', () => {
+    // The count lived inside the `<h2>` for one iteration and made its accessible
+    // name "News3 unread" — which two other test files look this panel up by.
+    useGame.getState().newGame(MID)
+    render(<App />)
+    advanceUntil(() => useGame.getState().unread > 0, 120)
+
+    expect(screen.getByRole('heading', { name: t('hub.news') })).toBeDefined()
+  })
+})

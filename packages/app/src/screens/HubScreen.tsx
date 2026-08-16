@@ -10,7 +10,6 @@ import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import { HubFigure } from './HubFigure.tsx'
 import { Modal } from './Modal.tsx'
 import { NotificationList } from './NotificationList.tsx'
-import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { type FigureKey } from './sprites.ts'
 import { type IconKey, TileIcon } from './TileIcon.tsx'
 import './HubScreen.css'
@@ -124,20 +123,15 @@ export const QUADRANTS: readonly Quadrant[] = [
 export function HubScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
+  const unread = useGame((s) => s.unread)
+  const markRead = useGame((s) => s.markRead)
   const go = useGame((s) => s.go)
   const dispatch = useGame((s) => s.dispatch)
   const advanceToMatchday = useGame((s) => s.advanceToMatchday)
   const startNewSeason = useGame((s) => s.startNewSeason)
-  const saving = useGame((s) => s.saving)
   const restart = useGame((s) => s.restart)
   const translator = useT()
   const { t, plural, date, money, season } = translator
-
-  // Both dialogs are the hub's own business: the picker is opened from here, and
-  // leaving for the club picker is a press made here. Neither is store state —
-  // an open dialog belongs to this sitting more narrowly than `screen` does.
-  const [saveManager, setSaveManager] = useState(false)
-  const [leaving, setLeaving] = useState(false)
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
@@ -158,6 +152,7 @@ export function HubScreen() {
   const band = bandFor(standing.position, standing.total)
   const weak = weakLineup(game)
   const finished = isSeasonComplete(game)
+  const [newsOpen, setNewsOpen] = useState(false)
   const notices = noticesFrom(feed, game, translator).slice(0, 12)
 
   return (
@@ -266,11 +261,18 @@ export function HubScreen() {
           )}
 
           {/*
-            The clock lives here and nowhere else, which is the point: every tick
-            routes you past the news and the fixture above it. Three states, in
-            priority order — the season ending is the door to the summer; a
-            fixture being due makes kicking off a deliberate press rather than a
-            side effect of advancing a day; otherwise the clock just runs.
+            The clock, beside the fixture it is about. Four states in priority
+            order — the sack ends the career, the season ending is the door to the
+            summer, a fixture being due makes kicking off a deliberate press
+            rather than a side effect of advancing a day; otherwise it just runs.
+
+            **Advancing a day is not here.** It is the footer's, on every screen
+            including this one, so the press that runs the clock is always in the
+            same corner. What stays is what belongs *beside the fixture*: kicking
+            off, which is the one irreversible press and wants to be made where
+            you can see who you are playing; skipping ahead to the match; and the
+            two season boundaries. The four states below are still mutually
+            exclusive with the footer's one, so no label is ever on screen twice.
           */}
           <div className="screen-actions hub__controls">
             {game.board.sacked ? (
@@ -292,87 +294,78 @@ export function HubScreen() {
                 {t('hub.playMatch', { opponent: describeOpponent(translator, matchday) })}
               </button>
             ) : (
-              <>
-                {matchday !== null && (
-                  <button type="button" className="button" onClick={advanceToMatchday}>
-                    {t('hub.toMatchday')}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="button is-primary"
-                  onClick={() => dispatch({ type: 'AdvanceDay' })}
-                >
-                  {t('hub.advanceDay')}
+              matchday !== null && (
+                <button type="button" className="button" onClick={advanceToMatchday}>
+                  {t('hub.toMatchday')}
                 </button>
-              </>
+              )
             )}
           </div>
         </section>
 
         <section className="screen hub__news">
-          <h2 className="screen__heading">{t('hub.news')}</h2>
+          {/* The heading stays a heading, and the control sits beside it.
+              *
+              Making the `<h2>` itself the button folded the count into its
+              accessible name — "News3 unread" — and two other test files find
+              this panel by that name. They were right to: the heading is the
+              panel's identity and should not change every time something
+              happens. The button carries the count instead.
+              *
+              A press rather than a glance is deliberate: this panel is always on
+              screen here, so clearing on sight is exactly what made the first
+              version of this badge useless. */}
+          <div className="hub__news-head">
+            <h2 className="screen__heading hub__news-title">{t('hub.news')}</h2>
+            <button
+              type="button"
+              className="button hub__news-open"
+              onClick={() => {
+                setNewsOpen(true)
+                markRead()
+              }}
+            >
+              {t('hub.readNews')}
+              {unread > 0 && (
+                <>
+                  {/* `aria-hidden` on the pill, because the sentence beside it
+                      says the same number. Both rendered plainly announces
+                      "See all 3 3 unread" — the fourth instance of that defect
+                      here after `CanteraM7`, `20Relegated` and the footer
+                      button this replaces. The explicit `{' '}` matters: a
+                      literal leading space inside the span is eaten the moment
+                      the formatter breaks the line. */}
+                  <span className="hub__unread" aria-hidden="true">
+                    {unread}
+                  </span>
+                  <span className="visually-hidden"> {plural('action.unread', unread)}</span>
+                </>
+              )}
+            </button>
+          </div>
           <NotificationList notices={notices} empty={t('hub.noNews')} />
         </section>
-
-        {/* Grabar la liga and leaving were hub buttons in the original too.
-            Grabar opens the dialog rather than writing silently. It used to be a
-            quick save with naming behind a second button, and the first person to
-            use it could neither name a game nor find one to load: a button that
-            produces no visible result is indistinguishable from a broken one. */}
-        <div className="panel hub__utilities">
-          <button
-            type="button"
-            className="button"
-            disabled={saving}
-            onClick={() => {
-              setSaveManager(true)
-            }}
-          >
-            {saving ? t('action.saving') : t('action.save')}
-          </button>
-          {/* Asked before, not after: this used to drop the career on the first
-              press, and there is no undo behind it. */}
-          <button
-            type="button"
-            className="button"
-            onClick={() => {
-              setLeaving(true)
-            }}
-          >
-            {t('action.newCareer')}
-          </button>
-        </div>
       </aside>
 
-      {saveManager && (
-        <SaveManagerModal
-          onClose={() => {
-            setSaveManager(false)
-          }}
-        />
-      )}
-
-      {leaving && (
+      {newsOpen && (
         <Modal
-          title={t('action.newCareer')}
+          title={t('hub.news')}
           onClose={() => {
-            setLeaving(false)
+            setNewsOpen(false)
           }}
         >
-          <p className="hub__question">{t('hub.confirmNewCareer')}</p>
+          {/* The whole feed. The panel behind it shows the latest twelve, which is
+              what makes this worth opening rather than a second copy of it. */}
+          <NotificationList notices={noticesFrom(feed, game, translator)} empty={t('hub.noNews')} />
           <div className="screen-actions">
             <button
               type="button"
               className="button"
               onClick={() => {
-                setLeaving(false)
+                setNewsOpen(false)
               }}
             >
-              {t('action.cancel')}
-            </button>
-            <button type="button" className="button is-primary" onClick={restart}>
-              {t('action.newCareer')}
+              {t('action.close')}
             </button>
           </div>
         </Modal>

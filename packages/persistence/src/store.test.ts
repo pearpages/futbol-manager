@@ -2,7 +2,7 @@ import { deleteDB, openDB } from 'idb'
 import { describe, expect, it } from 'vitest'
 import { createRng } from '@fm/domain'
 import v7 from './fixtures/v7.json' with { type: 'json' }
-import { SCHEMA_VERSION, type SaveEnvelope } from './index.ts'
+import { readSave, SCHEMA_VERSION, type SaveEnvelope } from './index.ts'
 import {
   AUTOSAVE_SLOT,
   DB_VERSION,
@@ -10,6 +10,7 @@ import {
   listSaves,
   loadGame,
   type SaveDetails,
+  type SaveLog,
   saveGame,
   slotFor,
 } from './store.ts'
@@ -262,5 +263,55 @@ describe('deleting', () => {
 
   it('is quiet about a slot that was never there', async () => {
     await expect(deleteGame(slotFor('never existed'))).resolves.toBeUndefined()
+  })
+})
+
+describe('the news log', () => {
+  const someEvents = [
+    { type: 'BidMade', bidId: 'b1', playerId: 'p1', fee: 500 },
+    {
+      type: 'MatchPlayed',
+      fixtureId: 'f1',
+      homeId: 'c1',
+      awayId: 'c2',
+      score: { home: 1, away: 0 },
+    },
+  ] as unknown as SaveLog['feed']
+
+  it('travels with the save, because a career that forgets what happened is poorer', async () => {
+    await saveGame({ day: 1 }, rngState, slotFor('with news'), details(), {
+      feed: someEvents,
+      unread: 2,
+    })
+
+    const loaded = await loadGame(slotFor('with news'))
+    expect(loaded?.feed).toEqual(someEvents)
+    expect(loaded?.unread).toBe(2)
+  })
+
+  it('reads back empty from a save written before it existed', async () => {
+    // Every save on disk today has no log. An absent one is a normal state, and
+    // it is the reason the envelope's fields are optional rather than required.
+    await saveGame({ day: 1 }, rngState)
+
+    const loaded = await loadGame()
+    expect(loaded?.feed).toEqual([])
+    expect(loaded?.unread).toBe(0)
+  })
+
+  it('is carried, not migrated — which is the cost of living outside the payload', () => {
+    // `migratePayload` walks the payload and nothing else, so a saved log can
+    // outlive the `Event` union that produced it. Stated as a test rather than
+    // only as a comment, because the reading end has to cope and this is what
+    // says so out loud.
+    const envelope = {
+      schemaVersion: SCHEMA_VERSION,
+      rngState,
+      payload: {},
+      feed: [{ type: 'SomethingThisBuildNeverHeardOf' }],
+      unread: 1,
+    } as unknown as SaveEnvelope<unknown>
+
+    expect(readSave(envelope).feed).toEqual([{ type: 'SomethingThisBuildNeverHeardOf' }])
   })
 })
