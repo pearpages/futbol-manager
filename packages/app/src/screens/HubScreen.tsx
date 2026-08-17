@@ -91,7 +91,7 @@ export const QUADRANTS: readonly Quadrant[] = [
     title: 'quadrant.seguimiento',
     tiles: [
       { key: 'nav.table', to: 'table', icon: 'table' },
-      { key: 'nav.results', to: 'table', icon: 'results' },
+      { key: 'nav.results', to: 'results', icon: 'results' },
       { key: 'nav.calendar', to: null, icon: 'calendar' },
     ],
     figure: 'assistant',

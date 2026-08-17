@@ -250,6 +250,35 @@ const v7ToV8: Migration = {
 }
 
 /**
+ * v8 → v9: a career gets a past.
+ *
+ * Every version up to v8 threw the finished season away. `rolloverSeason`
+ * replaced `season.fixtures` with a freshly generated empty set, so the moment a
+ * v8 save pressed *start season* its results and its final table stopped
+ * existing anywhere. From v9 the closing season is archived whole and the
+ * palmarés is derived from it.
+ *
+ * **An old save arrives with an empty history, and that is deliberate.** A v8
+ * career may well have played a decade, but nothing in the payload records any of
+ * it — there is no table, no champion and no scoreline to recover. Inventing one
+ * is exactly what the board migration above refuses to do, and for the same
+ * reason: a fabricated past would be indistinguishable from a real one forever
+ * after. The roll of honour starts from the next season this save completes.
+ */
+const v8ToV9: Migration = {
+  from: 8,
+  to: 9,
+  describe: 'archived seasons, so a career has a palmarés',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v8 save payload is not an object')
+    }
+
+    return { ...payload, history: [] }
+  },
+}
+
+/**
  * Howard Hinnant's `days_from_civil`, duplicated from `domain/time.ts`.
  *
  * `persistence` must not import `domain` for this: a migration has to keep
@@ -274,6 +303,7 @@ export const MIGRATIONS: readonly Migration[] = [
   v5ToV6,
   v6ToV7,
   v7ToV8,
+  v8ToV9,
 ]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)

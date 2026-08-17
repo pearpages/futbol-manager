@@ -78,6 +78,16 @@ export {
 
 export { computeTable, type TableRow } from './table.ts'
 
+export {
+  type ArchivedSeason,
+  championOf,
+  finalTableOf,
+  finishOf,
+  type Honours,
+  honoursFor,
+  titlesByClub,
+} from './history.ts'
+
 export { expectedGoals, MODEL, resolveFixture } from './resolve.ts'
 
 export {

@@ -1,0 +1,350 @@
+/*
+ * Results and palmarés.
+ *
+ * Two columns, like every other data screen: the main panel carries whichever tab
+ * is showing, the rail carries the honours, which belong to the career rather than
+ * to a season and so are true whichever tab you are on.
+ */
+
+.results-screen {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--fm-space-3);
+  height: 100%;
+}
+
+.results-screen__main {
+  /* The grid is the thing that scrolls, in its own container below. This panel
+     keeps its heading, tabs and picker still. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+  min-width: 0;
+}
+
+.results-screen__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.results-screen__panel {
+  flex: none;
+}
+
+/*
+ * The tab pair and the season picker share a row, and wrap rather than squeeze.
+ *
+ * Same rule `.caja-screen__stats` and `.lineup-screen__ratings` already state:
+ * wrap the row, never the control. `Palmarés` and `Transfer window` are both
+ * longer in English than in Catalan, so the row has to give somewhere.
+ */
+.results-screen__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fm-space-2);
+}
+
+.results-screen__tabs {
+  display: flex;
+  gap: var(--fm-space-1);
+}
+
+.results-screen__season {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-1);
+}
+
+.results-screen__season-label {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
+.results-screen__vitals {
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+.results-screen__date {
+  font-size: var(--fm-text-md);
+  white-space: nowrap;
+}
+
+/*
+ * Where you finished, with the qualification band beside it.
+ *
+ * The band is a `.swatch`, not a class on the number. `is-champion` and friends
+ * only paint under `.data-table__band` and `.swatch` in `chrome.css`, so putting
+ * one on a `.data-table__num` is silently inert — measured at
+ * `background: rgba(0,0,0,0)` with the muted ink, which is exactly the kind of
+ * class that looks right and does nothing. `.swatch` exists so a band colour
+ * always has a legend form, which is what this is.
+ */
+.results-screen__finish {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--fm-space-1);
+}
+
+/*
+ * The cross-table.
+ *
+ * Twenty columns is about 770px including the row header, so it fits 1280 and has
+ * to scroll below that. **Its own scroll container**, because `.screen` already
+ * carries `overflow: auto` and would otherwise take the tabs and the picker along
+ * with the grid. Never a silent column cap — the market screen had one of those
+ * and it hid exactly the rows that mattered.
+ */
+.results-grid__scroll {
+  overflow: auto;
+  /* Both minimums, not just the height, so a 20-column table cannot set this
+     box's width. */
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  flex: 1;
+}
+
+.results-grid {
+  border-collapse: collapse;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.results-grid th,
+.results-grid td {
+  border: 1px solid var(--fm-screen-rule);
+  padding: 0;
+}
+
+/* Both headers stay put while the grid scrolls under them — the whole point of a
+   cross-table is knowing which club a cell belongs to. */
+.results-grid__head,
+.results-grid__corner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--fm-screen-raised);
+  width: 2.1rem;
+  padding: var(--fm-space-1) 0;
+  text-align: center;
+}
+
+.results-grid__corner {
+  left: 0;
+  z-index: 3;
+}
+
+.results-grid__side {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--fm-screen-raised);
+  text-align: left;
+  font-weight: 400;
+  padding: 0 var(--fm-space-2) 0 var(--fm-space-1);
+  max-width: 9rem;
+}
+
+.results-grid__club {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 6.5rem;
+}
+
+.results-grid__cell {
+  width: 2.1rem;
+  height: 1.6rem;
+  text-align: center;
+  color: var(--fm-screen-ink);
+}
+
+/*
+ * A win, a draw and a defeat, always from the row club's point of view — the row
+ * club is the home side, which is what makes reading `result.home` correct here.
+ *
+ * Aliases onto the form strip's tokens rather than new colours, and deliberately
+ * not the qualification bands: `tokens.css` is emphatic that a band colour is named
+ * for its competition, not for a role, and writing `--fm-uecl` to mean "won" is
+ * precisely the mistake that comment is a monument to.
+ */
+.results-grid__cell.is-home-win {
+  color: var(--fm-win);
+}
+
+.results-grid__cell.is-away-win {
+  color: var(--fm-loss);
+}
+
+.results-grid__cell.is-draw {
+  color: var(--fm-draw);
+}
+
+.results-grid__cell.is-unplayed {
+  background: color-mix(in srgb, var(--fm-screen), #000 18%);
+}
+
+/* The diagonal — a club does not play itself. Blocked out rather than empty, so it
+   reads as structure rather than as a hole in the data. */
+.results-grid__self {
+  background: repeating-linear-gradient(45deg, var(--fm-screen-rule) 0 1px, transparent 1px 4px);
+}
+
+.results-grid__row.is-you .results-grid__side,
+.results-grid__head.is-you {
+  background: color-mix(in srgb, var(--fm-screen-raised), var(--fm-accent) 22%);
+}
+
+.results-grid__row.is-you .results-grid__cell {
+  background: color-mix(in srgb, var(--fm-screen), var(--fm-accent) 8%);
+}
+
+/*
+ * Your honours: one row per competition, the trophy carrying the weight.
+ *
+ * No small trophy variant exists, deliberately — see `trophies.css`. That is what
+ * fixes this as a list of a few large rows rather than a grid of many small ones,
+ * and it is also what makes the cup and the supercup additive: two more rows.
+ */
+/* `.screen` carries no padding of its own — every screen pads its own content,
+   and `.screen__heading` is the only child that brings its own. Measured before
+   fixing: the honours list and the roll both sat 1px off the panel border. */
+.honours {
+  list-style: none;
+  margin: 0;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+}
+
+.honours__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}
+
+.honours__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.honours__name {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
+.honours__count {
+  font-size: var(--fm-text-lg);
+  color: var(--fm-screen-ink);
+}
+
+.honours__years {
+  font-size: var(--fm-text-xs);
+  color: var(--fm-screen-ink-soft);
+}
+
+/* A competition nobody has won keeps its shape and loses its emphasis. */
+.honours__item.is-empty .honours__count {
+  font-size: var(--fm-text-md);
+  color: var(--fm-screen-ink-soft);
+}
+
+.honours__aside {
+  font-size: var(--fm-text-xs);
+  color: var(--fm-screen-ink-soft);
+  padding-top: var(--fm-space-1);
+  border-top: 1px solid var(--fm-screen-rule);
+}
+
+/* The league's roll of honour. */
+.roll {
+  list-style: none;
+  margin: 0;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-1);
+}
+
+.roll__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'club count' 'years years';
+  align-items: center;
+  gap: 0 var(--fm-space-1);
+  font-size: var(--fm-text-sm);
+}
+
+.roll__item .club-cell {
+  grid-area: club;
+  overflow: hidden;
+}
+
+.roll__count {
+  grid-area: count;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--fm-champion);
+}
+
+.roll__years {
+  grid-area: years;
+  font-size: var(--fm-text-xs);
+  color: var(--fm-screen-ink-soft);
+}
+
+.roll__item.is-you {
+  color: var(--fm-accent);
+}
+
+@media (width < 68rem) {
+  .results-screen {
+    grid-template-columns: minmax(0, 1fr);
+    /* `max-content` rather than `auto`: the container's height is definite, so
+       `auto` tracks compress toward min-content — and a `.screen` carries
+       `overflow: auto`, which makes its min-content nearly nothing. That is the
+       lesson the lineup screen paid for at 960px. */
+    grid-template-rows: max-content max-content;
+    /*
+     * Both axes named rather than relying on `overflow-y: auto` computing
+     * `overflow-x` to `auto` for us.
+     *
+     * **Known limit, measured rather than assumed:** at a 500px viewport — Chrome's
+     * minimum window, and about half the 960px every screen's breakpoint targets —
+     * the shell still ends up 14px wider than the window on this screen, where the
+     * classification and the squad contain themselves. Neither `min-width: 0` on the
+     * scroller nor clipping x here moves it, so the cause is further up and is not
+     * worth chasing for a width the game does not aim at. Everything from 900px up
+     * is clean: no page scrolls sideways and nothing lands outside the viewport.
+     */
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .results-screen__side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .results-screen__panel {
+    flex: 1 1 14rem;
+  }
+}

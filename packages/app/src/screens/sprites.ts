@@ -59,6 +59,8 @@
  * overlap.
  */
 
+import { gridSize, scanRuns } from './pixels.ts'
+
 /**
  * An ink is a *role*, never a colour — `garment` rather than `green`. The value
  * is chosen per figure in CSS, which is what lets four people share one grid
@@ -356,25 +358,19 @@ export interface DecodedSprite {
 export function decodeSprite(rows: readonly string[]): DecodedSprite {
   const found = new Map<`${PartKey}/${InkKey}`, SpriteRun[]>()
 
-  rows.forEach((row, y) => {
-    let x = 0
-    while (x < row.length) {
-      const char = row[x] as string
-      const lower = char.toLowerCase()
-      const ink = INK_BY_CHAR[lower]
-      if (ink === undefined) {
-        x += 1
-        continue
-      }
-      const part: PartKey = PART_BY_CHAR[lower] ?? (char === lower ? 'body' : 'prop')
-      let w = 1
-      while (row[x + w] === char) w += 1
-      const runs = found.get(`${part}/${ink}`)
-      if (runs === undefined) found.set(`${part}/${ink}`, [{ x, y, w }])
-      else runs.push({ x, y, w })
-      x += w
-    }
-  })
+  // The scan lives in `pixels.ts` — shared with the trophies, which group by ink
+  // alone. Its merging is case-sensitive, which is what keeps a prop from
+  // rejoining the body beside it; the grouping below is what needs both axes.
+  for (const { char, x, y, w } of scanRuns(rows)) {
+    const lower = char.toLowerCase()
+    const ink = INK_BY_CHAR[lower]
+    if (ink === undefined) continue
+
+    const part: PartKey = PART_BY_CHAR[lower] ?? (char === lower ? 'body' : 'prop')
+    const runs = found.get(`${part}/${ink}`)
+    if (runs === undefined) found.set(`${part}/${ink}`, [{ x, y, w }])
+    else runs.push({ x, y, w })
+  }
 
   // Iterated in PART_KEYS × INK_KEYS order rather than insertion order, so the
   // emitted groups do not depend on which pixel a figure happens to draw first.
@@ -386,7 +382,7 @@ export function decodeSprite(rows: readonly string[]): DecodedSprite {
     return inks.length === 0 ? [] : [{ part, inks }]
   })
 
-  return { width: rows[0]?.length ?? 0, height: rows.length, parts }
+  return { ...gridSize(rows), parts }
 }
 
 /**

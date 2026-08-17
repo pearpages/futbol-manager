@@ -8,6 +8,7 @@ import v4Fixture from './fixtures/v4.json' with { type: 'json' }
 import v5Fixture from './fixtures/v5.json' with { type: 'json' }
 import v6Fixture from './fixtures/v6.json' with { type: 'json' }
 import v7Fixture from './fixtures/v7.json' with { type: 'json' }
+import v8Fixture from './fixtures/v8.json' with { type: 'json' }
 
 describe('the migration chain', () => {
   it('is contiguous and forward-only', () => {
@@ -407,6 +408,60 @@ describe('the v7 fixture save', () => {
     const playedBefore = before.season.fixtures.filter((f) => f.result !== null).length
     expect(after.season.fixtures.filter((f) => f.result !== null)).toHaveLength(playedBefore)
     expect(Object.values(after.squads).flat()).toHaveLength(460)
+  })
+
+  it('carries the rng state through untouched', () => {
+    expect(readSave(envelope).rngState).toEqual(envelope.rngState)
+  })
+
+  it('is deterministic — migrating twice gives the same result', () => {
+    expect(readSave(envelope).payload).toEqual(readSave(envelope).payload)
+  })
+})
+
+describe('the v8 fixture save', () => {
+  // v8 is the last version with no memory of a finished season. Captured by
+  // `pnpm fixture` against that build, before `v8ToV9` existed — the only moment
+  // it could have been.
+  const envelope = v8Fixture as unknown as SaveEnvelope<unknown>
+
+  it('is genuinely a v8 save — a board, but no past', () => {
+    expect(envelope.schemaVersion).toBe(8)
+    const payload = envelope.payload as { board?: unknown; history?: unknown }
+    // M5b's field is there…
+    expect(payload).toHaveProperty('board')
+    // …and v9's is not.
+    expect(payload).not.toHaveProperty('history')
+  })
+
+  it('starts the roll of honour empty rather than inventing a past', () => {
+    // A v8 career may have played a decade, but nothing in the payload records a
+    // table, a champion or a scoreline — so there is nothing to recover, and a
+    // fabricated palmarés would be indistinguishable from a real one forever.
+    const after = readSave(envelope).payload as { history: unknown[] }
+    expect(after.history).toEqual([])
+  })
+
+  it('preserves the career it was saved in', () => {
+    const before = envelope.payload as {
+      season: { startYear: number; currentDate: number; fixtures: { result: unknown }[] }
+      managedClubId: string
+      board: { target: number; strikes: number }
+      clubs: { budget: number; ticketPrice: number }[]
+    }
+    const after = readSave(envelope).payload as typeof before
+
+    expect(after.season.startYear).toBe(before.season.startYear)
+    expect(after.season.currentDate).toBe(before.season.currentDate)
+    expect(after.managedClubId).toBe(before.managedClubId)
+    expect(after.board).toEqual(before.board)
+    expect(after.clubs.map((c) => c.budget)).toEqual(before.clubs.map((c) => c.budget))
+    expect(after.clubs.map((c) => c.ticketPrice)).toEqual(before.clubs.map((c) => c.ticketPrice))
+    // The results that *were* in flight survive — the archive is about seasons
+    // already closed, and this save is mid-season.
+    const playedBefore = before.season.fixtures.filter((f) => f.result !== null).length
+    expect(playedBefore).toBeGreaterThan(0)
+    expect(after.season.fixtures.filter((f) => f.result !== null)).toHaveLength(playedBefore)
   })
 
   it('carries the rng state through untouched', () => {

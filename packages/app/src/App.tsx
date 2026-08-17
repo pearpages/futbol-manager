@@ -9,6 +9,7 @@ import { HubScreen } from './screens/HubScreen.tsx'
 import { SettingsMenu } from './screens/SettingsMenu.tsx'
 import { ShellCredit } from './screens/ShellCredit.tsx'
 import { ShellFoot } from './screens/ShellFoot.tsx'
+import { ResultsScreen } from './screens/ResultsScreen.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
@@ -39,6 +40,7 @@ import './App.css'
 const SCREEN_TITLES: Record<Screen, string> = {
   hub: 'nav.hub',
   table: 'nav.table',
+  results: 'nav.results',
   squad: 'nav.squad',
   lineup: 'nav.lineup',
   market: 'nav.market',
@@ -51,6 +53,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
 const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
   hub: HubScreen,
   table: TableScreen,
+  results: ResultsScreen,
   squad: SquadScreen,
   lineup: LineupScreen,
   market: MarketScreen,

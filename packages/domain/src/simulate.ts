@@ -92,6 +92,9 @@ export function newSeason(
     // The board's first target is the club's own standing, softened — there is
     // no last season to blend with yet.
     board: openingBoard(managedClubId, clubs),
+    // A career starts with no past. The palmarés fills from this season forward,
+    // one entry per rollover.
+    history: [],
   }
 }
 

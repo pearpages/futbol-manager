@@ -1,6 +1,7 @@
 import type { Bid } from './bids.ts'
 import type { Board } from './board.ts'
 import type { Club, ClubId, Competition, Fixture, Season } from './entities.ts'
+import type { ArchivedSeason } from './history.ts'
 import type { Lineup, Tactics } from './lineup.ts'
 import type { Player, PlayerId } from './player.ts'
 import type { DayNumber } from './time.ts'
@@ -62,6 +63,21 @@ export interface GameState {
    * and simply never reads it, so the harness measures the same football.
    */
   readonly board: Board
+  /**
+   * Seasons already played out, oldest first. Added at schema v9.
+   *
+   * The rollover used to discard the finished season's fixtures outright, so a
+   * career had no past at all and a palmarés was not merely unbuilt but
+   * underivable. Each entry keeps the fixtures; **the final table is derived from
+   * them and never stored** — see `history.ts` for why, and for what the retention
+   * costs a save.
+   *
+   * Written in `rolloverSeason` rather than in the command handler, for the same
+   * reason prize money is: `simulateCareer` calls the rollover directly, so an
+   * archive written only in the reducer would be missing from every headless
+   * career.
+   */
+  readonly history: readonly ArchivedSeason[]
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {

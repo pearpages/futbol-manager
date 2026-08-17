@@ -12,6 +12,7 @@ import {
 import { App } from './App.tsx'
 import { translatorFor } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
+import { QUADRANTS } from './screens/HubScreen.tsx'
 import { useGame } from './store.ts'
 import { advance, advanceUntil, back, openScreen } from './testing.ts'
 
@@ -77,12 +78,29 @@ describe('the shell', () => {
     // become unreachable.
     render(<App />)
 
-    for (const [tile, heading] of [
+    const legs = [
       ['nav.table', /Primera División/i],
+      ['nav.results', /Every result/i],
       ['nav.squad', /Squad/i],
       ['nav.lineup', /Starting XI/],
       ['nav.market', /Transfer market/],
-    ] as const) {
+      ['nav.caja', /Accounts/i],
+      ['nav.decisiones', /The objective/i],
+      ['nav.estadio', /The ground/i],
+    ] as const
+
+    // Guard on the guard, and it earned its keep immediately: this test is named
+    // "every live section" and was walking five of eight, because the three
+    // Finances tiles were never added when M5b built them. The legs are
+    // hand-written, since only a person can say what heading a screen ought to
+    // show — so without this, adding a live tile and forgetting a leg leaves the
+    // walk green while the new screen is never opened once.
+    const live = QUADRANTS.flatMap((quadrant) => quadrant.tiles)
+      .filter((tile) => tile.to !== null && tile.to !== 'hub')
+      .map((tile) => tile.key)
+    expect([...legs.map(([tile]) => tile)].sort()).toEqual([...live].sort())
+
+    for (const [tile, heading] of legs) {
       openScreen(tile)
       // Scoped to the stage: the bar's title and a screen's own heading are now
       // the same word in English for some screens, which they were not while the

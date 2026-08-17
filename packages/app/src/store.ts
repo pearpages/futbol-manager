@@ -40,7 +40,16 @@ import { isNotable } from './notifications.ts'
  */
 
 export type Screen =
-  'hub' | 'table' | 'squad' | 'lineup' | 'market' | 'player' | 'caja' | 'decisiones' | 'estadio'
+  | 'hub'
+  | 'table'
+  | 'results'
+  | 'squad'
+  | 'lineup'
+  | 'market'
+  | 'player'
+  | 'caja'
+  | 'decisiones'
+  | 'estadio'
 
 interface Store {
   readonly game: GameState

@@ -235,6 +235,24 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
   return {
     ...state,
     clubs: settleSeason(state, nextYear),
+    // The season being closed, kept before its fixtures are replaced — this is the
+    // only instant at which they still exist. A season with nothing played is not
+    // archived, mirroring `settleSeason` awarding it no prize money: naming a
+    // champion of nothing would be a lie the palmarés then repeats forever.
+    //
+    // This retains the array rather than copying it, and draws no randomness, so
+    // it is inert for everything already calibrated.
+    history: state.season.fixtures.some((fixture) => fixture.result !== null)
+      ? [
+          ...state.history,
+          {
+            startYear: state.season.startYear,
+            clubIds: state.competition.clubIds,
+            fixtures: state.season.fixtures,
+            managedClubId: state.managedClubId,
+          },
+        ]
+      : state.history,
     squads,
     lineups,
     freeAgents,
