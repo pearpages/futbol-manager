@@ -24,7 +24,7 @@ export type IconKey =
   | 'results'
   | 'calendar'
   | 'pitch'
-  | 'tactics'
+  | 'training'
   | 'scout'
   | 'contract'
   | 'roster'
@@ -83,12 +83,23 @@ const ICONS: Readonly<Record<IconKey, React.JSX.Element>> = {
     </g>
   ),
 
-  // A coach's board: a clipboard with a run of play drawn on it.
-  tactics: (
+  // Entrenaments: two cones on a line — a drill, not a match. The clipboard that
+  // used to sit here went with the Tàctiques tile, and would have collided with
+  // `pitch` next door anyway.
+  //
+  // **Two, and solid.** Drawn first as three cones each split into a tip and a
+  // skirt, which rasterised as a smudge at 18px and as three little trees when
+  // enlarged — the gap meant to read as the reflective band is what did it. The
+  // file's own rule is three or four primitives because the drawing is 18px, and
+  // three banded cones is nine. A stopwatch reads better than either at both
+  // sizes and is still wrong here: `scout` is a magnifier, and the two sit in the
+  // same quadrant, so the hub would carry two circles-with-a-stem side by side.
+  // Nothing else in the set is triangular.
+  training: (
     <g>
-      <path d="M9 1h6v3H9z" />
-      <path d="M4 3h4v3h8V3h4v19H4z M6 5v15h12V5h-2v3H8V5z" fillRule="evenodd" />
-      <path d="M7 17.5c2-5 5-5 7-2l1.4-1.6.9 4.4-4.3-1 1.3-1.4c-1.5-2.1-3.4-2-4.9 2z" />
+      <path d="M2.4 17 L5.5 5 h3 L11.6 17 z" />
+      <path d="M12.4 17 L15.5 5 h3 L21.6 17 z" />
+      <rect x="1" y="17.5" width="22" height="3" rx="1" />
     </g>
   ),
 

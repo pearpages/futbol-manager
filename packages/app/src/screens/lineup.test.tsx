@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { canField, FORMATION_NAMES } from '@fm/domain'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { bestXI, canField, FORMATION_NAMES, FORMATIONS } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
@@ -100,8 +100,8 @@ describe('the team sheet', () => {
     const first = squadOf().find((p) => starters.includes(p.id))
     if (first === undefined) throw new Error('nobody in the XI')
 
-    // A bench man is `<option>` text of the form `Name (83)`, which no button
-    // query can reach — so this resolves the starter row and nothing else.
+    // Nobody is selected, so no substitute buttons are rendered — this resolves
+    // the starter's own row link and nothing else.
     fireEvent.click(screen.getByRole('button', { name: first.name }))
     expect(screen.getByRole('heading', { name: first.name })).toBeDefined()
 
@@ -163,6 +163,182 @@ describe('the tempo readout', () => {
 
     fireEvent.change(screen.getByLabelText(/Approach/), { target: { value: '0' } })
     expect(readTempo()).toBe(t('tempo.tight'))
+    back()
+  })
+})
+
+describe('the pitch', () => {
+  const slots = (position?: string) => [
+    ...document.querySelectorAll(
+      position === undefined ? '.pitch__slot' : `.pitch__slot[data-position='${position}']`,
+    ),
+  ]
+
+  const starterAt = (position: string) => {
+    const ids = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+    const player = squadOf().find((p) => p.position === position && ids.has(p.id))
+    if (player === undefined) throw new Error(`no ${position} in the XI`)
+    return player
+  }
+
+  const label = (player: { position: string; name: string }) =>
+    new RegExp(`${t(`position.${player.position}`)}.*${player.name}`)
+
+  it('draws the shape that is on the pitch, in every formation', () => {
+    render(<App />)
+    openScreen('nav.lineup')
+
+    for (const formation of FORMATION_NAMES) {
+      fireEvent.click(screen.getByRole('button', { name: formation }))
+      const shape = FORMATIONS[formation]
+
+      expect(slots(), formation).toHaveLength(11)
+      for (const position of ['GK', 'DF', 'MF', 'FW'] as const) {
+        expect(slots(position).length, `${formation} ${position}`).toBe(shape[position])
+      }
+    }
+    back()
+  })
+
+  it('reads the shape off the players, not off the lineup’s own label', () => {
+    // `setLineup` validates that an XI is *legal* and never that it matches the
+    // formation it declares — the same hole `teamRatingRaw` derives around. A
+    // pitch that trusted the label would draw two forwards here.
+    render(<App />)
+    const clubId = game().managedClubId
+    useGame.getState().dispatch({
+      type: 'SetLineup',
+      clubId,
+      lineup: { formation: '4-4-2', starters: bestXI(squadOf(), '4-3-3').starters },
+    })
+    openScreen('nav.lineup')
+
+    expect(slots('FW')).toHaveLength(3)
+    expect(slots('MF')).toHaveLength(3)
+    back()
+  })
+
+  it('offers only same-position reserves, and names the man going off', () => {
+    render(<App />)
+    openScreen('nav.lineup')
+
+    const out = starterAt('DF')
+    fireEvent.click(screen.getByRole('button', { name: label(out) }))
+
+    expect(screen.getByText(t('lineup.replacing', { name: out.name }))).toBeDefined()
+
+    const ids = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+    const reserves = squadOf().filter((p) => p.position === 'DF' && !ids.has(p.id))
+    expect(reserves.length).toBeGreaterThan(0)
+    for (const sub of reserves) {
+      expect(screen.getByRole('button', { name: new RegExp(sub.name) }), sub.name).toBeDefined()
+    }
+    // The guard on the guard: a keeper must not be offered for a defender.
+    const keeper = squadOf().find((p) => p.position === 'GK' && !ids.has(p.id))
+    if (keeper !== undefined) {
+      expect(screen.queryByRole('button', { name: new RegExp(`^${keeper.name}`) })).toBeNull()
+    }
+    back()
+  })
+
+  it('swaps the man, and only him', () => {
+    render(<App />)
+    openScreen('nav.lineup')
+
+    const clubId = game().managedClubId
+    const before = game().lineups[clubId]?.starters ?? []
+    const out = starterAt('MF')
+    fireEvent.click(screen.getByRole('button', { name: label(out) }))
+
+    const sub = squadOf().find((p) => p.position === 'MF' && !before.includes(p.id))
+    if (sub === undefined) throw new Error('no midfield reserve')
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(sub.name) }))
+
+    const after = game().lineups[clubId]?.starters ?? []
+    expect(after).toHaveLength(11)
+    expect(after).toContain(sub.id)
+    expect(after).not.toContain(out.id)
+    // In place: the man coming on takes the slot the man going off vacated, so
+    // nobody else on the pitch moves.
+    expect(after.filter((id, i) => id !== before[i])).toHaveLength(1)
+    expect(after.indexOf(sub.id)).toBe(before.indexOf(out.id))
+    back()
+  })
+
+  it('answers Enter and Space, and nothing else', () => {
+    // A `<g role="button">` gets neither for free — only a real button does.
+    render(<App />)
+    openScreen('nav.lineup')
+    const out = starterAt('FW')
+    const slot = screen.getByRole('button', { name: label(out) })
+
+    const replacing = () => screen.queryByText(t('lineup.replacing', { name: out.name }))
+
+    fireEvent.keyDown(slot, { key: 'a' })
+    expect(replacing()).toBeNull()
+
+    fireEvent.keyDown(slot, { key: 'Enter' })
+    expect(replacing()).not.toBeNull()
+
+    fireEvent.keyDown(slot, { key: ' ' })
+    expect(replacing()).toBeNull()
+    back()
+  })
+
+  it('lets go of a selection the XI no longer contains', () => {
+    // The `NegotiationPanel` defect in a new costume: a target resolved against
+    // the squad rather than the live XI keeps the last man's name on screen.
+    render(<App />)
+    openScreen('nav.lineup')
+
+    const clubId = game().managedClubId
+    const out = starterAt('DF')
+    fireEvent.click(screen.getByRole('button', { name: label(out) }))
+    expect(screen.getByText(t('lineup.replacing', { name: out.name }))).toBeDefined()
+
+    const kept = (game().lineups[clubId]?.starters ?? []).filter((id) => id !== out.id)
+    const sub = squadOf().find(
+      (p) => p.position === 'DF' && !kept.includes(p.id) && p.id !== out.id,
+    )
+    if (sub === undefined) throw new Error('no defensive reserve')
+    // `act` because this is a store write from outside React, standing in for
+    // the reducer's own re-pick after a sale. Without it the assertion below
+    // reads a stale render and passes for the wrong reason.
+    act(() => {
+      useGame.getState().dispatch({
+        type: 'SetLineup',
+        clubId,
+        lineup: { formation: '4-4-2', starters: [...kept, sub.id] },
+      })
+    })
+
+    expect(screen.queryByText(t('lineup.replacing', { name: out.name }))).toBeNull()
+    back()
+  })
+
+  it('lists the whole bench until somebody is picked', () => {
+    // The panel is titled Suplents and is always on screen, so idle it says who
+    // is available rather than holding a sentence asking you to press something.
+    render(<App />)
+    openScreen('nav.lineup')
+
+    const ids = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+    const reserves = squadOf().filter((p) => !ids.has(p.id))
+    const bench = () => document.querySelectorAll('.lineup-screen__sub')
+
+    expect(reserves.length).toBeGreaterThan(0)
+    expect(bench()).toHaveLength(reserves.length)
+    // Idle rows are not controls — there is nobody to swap them for yet.
+    expect(document.querySelectorAll('button.lineup-screen__sub')).toHaveLength(0)
+
+    const out = starterAt('DF')
+    fireEvent.click(screen.getByRole('button', { name: label(out) }))
+
+    const defenders = reserves.filter((p) => p.position === 'DF')
+    // The narrowing has to be a real narrowing, or this proves nothing.
+    expect(defenders.length).toBeLessThan(reserves.length)
+    expect(bench()).toHaveLength(defenders.length)
+    expect(document.querySelectorAll('button.lineup-screen__sub')).toHaveLength(defenders.length)
     back()
   })
 })

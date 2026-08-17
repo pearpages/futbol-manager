@@ -1,0 +1,103 @@
+/*
+ * The lineup pitch.
+ *
+ * Same arrangement as `club-badges.css` and `radar.css`: every rule reads a
+ * custom property and the component file holds no colour at all.
+ *
+ * The properties live on `.pitch` rather than in `tokens.css` because nothing
+ * outside the chart shares them — `--fm-series-*` went to the tokens file only
+ * because the attribute rows beside the radar are its *siblings* and inherit
+ * nothing from it. Everything here is inside the one SVG.
+ *
+ * **No colour is invented.** The turf is mixed from the screen material rather
+ * than picked by hand, which is the lesson the badge rim paid for: six
+ * hand-chosen neutrals looked fine and were wrong, and the fix was deriving them
+ * from a colour that was already right. The four position inks are the same four
+ * `.chip` already uses for GK/DF/MF/FW, so a chip in the list and a disc on the
+ * pitch agree rather than being two opinions about the same player.
+ *
+ * Note what is deliberately *not* reached for: `--fm-win` for grass. `tokens.css`
+ * says band colours are named for the competition and not the role, and aliasing
+ * one to a new meaning is the mistake that once lost a whole position.
+ */
+
+.pitch {
+  --pitch-turf: color-mix(in srgb, var(--fm-screen-raised), var(--fm-uecl) 14%);
+  --pitch-line: color-mix(in srgb, var(--fm-screen-ink-soft), transparent 45%);
+  --pitch-slot: var(--fm-screen-ink);
+  --pitch-ink: var(--fm-void);
+
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  /* The pitch is a control, not decoration. `.hub-figure` is `display: none`
+     below 68rem because it is scenery; hiding this would make the screen
+     undrivable on a narrow window. */
+  min-block-size: 0;
+}
+
+.pitch__turf {
+  fill: var(--pitch-turf);
+}
+
+.pitch__line {
+  fill: none;
+  stroke: var(--pitch-line);
+  stroke-width: 1;
+}
+
+/* ── The eleven ──────────────────────────────────────────────────────────── */
+
+.pitch__slot {
+  cursor: pointer;
+}
+
+.pitch__disc {
+  fill: var(--pitch-slot);
+  stroke: var(--pitch-turf);
+  stroke-width: 1;
+}
+
+.pitch__slot[data-position='GK'] {
+  --pitch-slot: var(--fm-champion);
+}
+
+.pitch__slot[data-position='DF'] {
+  --pitch-slot: var(--fm-ucl);
+}
+
+.pitch__slot[data-position='MF'] {
+  --pitch-slot: var(--fm-uecl);
+}
+
+.pitch__slot[data-position='FW'] {
+  --pitch-slot: var(--fm-relegation);
+}
+
+/* Two digits on the disc: the number you are choosing on. A name does not fit —
+   five across leaves a 16.8-unit lane, which is about four characters. */
+.pitch__ovr {
+  fill: var(--pitch-ink);
+  font-family: var(--fm-font-condensed);
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* Brass is the codebase's one interactive accent, and it is already what the
+   ficha highlights with. */
+.pitch__slot.is-selected .pitch__disc {
+  stroke: var(--fm-accent);
+  stroke-width: 2.5;
+}
+
+.pitch__slot:focus-visible {
+  outline: none;
+}
+
+.pitch__slot:focus-visible .pitch__disc {
+  stroke: var(--fm-accent);
+  stroke-width: 2.5;
+}

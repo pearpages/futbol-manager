@@ -1,21 +1,100 @@
+/*
+ * Two columns. **Left is the team sheet** — what it is worth, who is in, who is
+ * out — and **right is the system and the system drawn**.
+ *
+ * The grouping is the point. `Sistema` and `El camp` are cause and effect: you
+ * press 4-2-4 and the pitch is what changes. They shipped in different columns
+ * with the whole roster between them, which is the M4b adjacency bug wearing a
+ * layout instead of a scroll offset.
+ *
+ * **Each column owns its own rows, rather than the screen owning shared ones.**
+ * `Sistema` is roughly three times the height of the vitals strip, so a shared
+ * first row would stretch that strip into a mostly-empty panel. The two columns
+ * have nothing to align.
+ */
 .lineup-screen {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 20rem;
-  gap: var(--fm-space-3);
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: var(--fm-space-2);
   height: 100%;
+  min-height: 0;
+}
+
+/* auto / 1fr / auto — the eleven is the part that scrolls, so the bench below it
+   is always on screen. That is what makes it safe for the bench to sit across
+   the screen from the pitch that selects into it. */
+.lineup-screen__sheet {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--fm-space-2);
+  min-height: 0;
+}
+
+.lineup-screen__system {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--fm-space-3);
   min-height: 0;
 }
 
 .lineup-screen__xi {
   min-height: 0;
-  padding-bottom: var(--fm-space-4);
+  padding-bottom: var(--fm-space-2);
 }
 
-.lineup-screen__controls {
+/* The heading is fixed and the pitch takes the rest; the SVG letterboxes itself
+   with `preserveAspectRatio`, which is what makes every breakpoint free. */
+.lineup-screen__pitch-panel {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: var(--fm-space-3);
+  grid-template-rows: auto minmax(0, 1fr);
   min-height: 0;
+}
+
+.lineup-screen__bench {
+  min-height: 0;
+}
+
+.lineup-screen__bench-body {
+  display: grid;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-1) var(--fm-space-4) var(--fm-space-3);
+}
+
+.lineup-screen__subs {
+  display: grid;
+  gap: var(--fm-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  /* The bench is a reference list; the eleven above it is the screen's job. Capped
+     so a 17-man bench cannot push a striker below the fold, and it scrolls itself. */
+  max-height: 6rem;
+  overflow-y: auto;
+}
+
+.lineup-screen__sub {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 2.5rem;
+  align-items: center;
+  gap: var(--fm-space-2);
+  width: 100%;
+  text-align: left;
+}
+
+/* `.button`'s own padding is `space-2 space-4`, which makes a swap row taller
+   than an idle one — and this panel sits *under* the eleven, so a panel that
+   grows on selection pushes a striker out of the list above it. Both states are
+   the same height on purpose. */
+button.lineup-screen__sub {
+  padding: var(--fm-space-1) var(--fm-space-2);
+}
+
+/* Idle the row states who is available rather than offering an action, so it is
+   a `<div>` and has to be given the button's padding back. */
+.lineup-screen__sub.is-idle {
+  padding: var(--fm-space-1) var(--fm-space-2);
+  font-size: var(--fm-text-sm);
+  border-top: 1px solid var(--fm-screen-rule);
 }
 
 .lineup-screen__panel {
@@ -50,7 +129,27 @@
 }
 
 /*
- * Three stats in a 20rem rail, and the third is a word rather than two digits.
+ * The vitals, as a strip rather than a panel. It sits on top of the eleven —
+ * the tallest thing on the screen — so the heading and the figures share a line
+ * and the explanatory sentence is the element's `title` instead of three more
+ * rows. The heading and the figures stay siblings: `App.test.tsx` walks from the
+ * heading to `parentElement` and expects the numbers there.
+ */
+.lineup-screen__vitals {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2) var(--fm-space-4);
+  padding: var(--fm-space-2) var(--fm-space-4);
+}
+
+.lineup-screen__vitals .screen__heading {
+  padding: 0;
+  border: 0;
+}
+
+/*
+ * Three stats, and the third is a word rather than two digits.
  * `CajaScreen` hit this exact wall going from two figures to three and the rule it
  * arrived at holds here: **wrap the row, never the value.** A word broken across
  * two lines reads as a rendering fault; a row that wraps reads as a row.
@@ -59,7 +158,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--fm-space-2) var(--fm-space-4);
-  padding: var(--fm-space-4);
 }
 
 /* `.stat__value` is sized and tabular for a number. A word needs neither. */
@@ -71,14 +169,14 @@
 /* ── Groups ──────────────────────────────────────────────────────────────── */
 
 .lineup-group {
-  padding: var(--fm-space-3) var(--fm-space-4) 0;
+  padding: var(--fm-space-2) var(--fm-space-4) 0;
 }
 
 .lineup-group__title {
   display: flex;
   align-items: center;
   gap: var(--fm-space-2);
-  margin-bottom: var(--fm-space-2);
+  margin-bottom: var(--fm-space-1);
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
   font-weight: 700;
@@ -109,37 +207,78 @@
   text-align: right;
 }
 
-.lineup-row__swap {
-  display: flex;
-  align-items: center;
-  gap: var(--fm-space-2);
+.lineup-row.is-selected {
+  background: var(--fm-screen-raised);
 }
 
-.lineup-row__swap-label {
-  font-family: var(--fm-font-condensed);
+.lineup-row__pick {
   font-size: var(--fm-text-xs);
-  letter-spacing: var(--fm-track-wide);
-  text-transform: uppercase;
-  color: var(--fm-screen-ink-soft);
+  padding: var(--fm-space-1) var(--fm-space-2);
 }
 
-/* Appearance graduated to `.select` in chrome.css; what stays here is the one
-   thing that is about this row's layout rather than about a select. */
-.lineup-row__select {
-  max-width: 14rem;
-}
-
+/*
+ * One column, and the five panels have to be reordered across the two that hold
+ * them — so the wrappers become `display: contents` and their children are grid
+ * items again, placed by name.
+ *
+ * The order is not the source order. The pitch stays high, because it is the
+ * fastest read on the screen and is now a control rather than scenery; dropping
+ * it to the foot behind a full roster is the one arrangement to avoid.
+ */
 @media (width < 64rem) {
+  /*
+   * Every row is `max-content` and **the screen itself scrolls**. Five stacked
+   * panels do not fit 900px, and a `1fr` row among them is not a compromise —
+   * it is crushed to nothing: measured at 960px the eleven collapsed to 10px
+   * and the bench drew straight over it.
+   *
+   * `auto` is not enough either, and that is the part worth remembering. The
+   * container's height is definite, so `auto` tracks are compressed toward
+   * min-content when the content overflows — and a `.screen` carries
+   * `overflow: auto`, so its min-content is nearly nothing. `max-content` is
+   * what makes each panel keep its own height and hand the overflow up here.
+   */
   .lineup-screen {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'vitals'
+      'pitch'
+      'shape'
+      'xi'
+      'bench';
+    grid-template-rows: max-content 18rem max-content max-content max-content;
+    overflow-y: auto;
   }
 
-  .lineup-row {
-    grid-template-columns: minmax(0, 1fr) 2.5rem;
+  /* The panels size to their content here, so nothing scrolls inside anything. */
+  .lineup-screen__xi,
+  .lineup-screen__subs {
+    max-height: none;
+    overflow: visible;
   }
 
-  .lineup-row__swap {
-    grid-column: 1 / -1;
+  .lineup-screen__sheet,
+  .lineup-screen__system {
+    display: contents;
+  }
+
+  .lineup-screen__vitals {
+    grid-area: vitals;
+  }
+
+  .lineup-screen__pitch-panel {
+    grid-area: pitch;
+  }
+
+  .lineup-screen__panel {
+    grid-area: shape;
+  }
+
+  .lineup-screen__xi {
+    grid-area: xi;
+  }
+
+  .lineup-screen__bench {
+    grid-area: bench;
   }
 }

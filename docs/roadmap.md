@@ -294,7 +294,13 @@ Each was found by looking, not by testing. The lesson the milestones keep re-lea
 
 **What it cost, honestly:** the ~40-screen UI estimate in the cross-cutting tracks below is the line item this phase drew down, and it added a permanent per-screen tax in the form of three dictionaries. Both are recorded there rather than here.
 
-The blow-by-blow lives in `CLAUDE.md`'s session log; this section exists so the roadmap is not silent about two days of work.
+**It did not stop there**, and the honest label is that the polish phase is still running. Since the section above was written the phase has also taken every table sortable, added four formations and given the shape a tempo, made the tempo visible, and **merged Alineació and Tàctiques into one tile with a pitch on the screen** — the reference's own arrangement, a squad table beside a shape. That last one closed a two-tile-one-screen arrangement the hub had carried since the quadrants landed, and freed the slot for **Entrenaments, badged M6** — the first time the hub has named a milestone it has not reached.
+
+**What that says about the hub as a roadmap:** it works, and it is a commitment. A disabled tile is a promise with a date on it, so a milestone that slips is now visible to the player rather than only to this file.
+
+**The phase also finally answered its own recurring complaint.** Twenty entries in this log end with some version of "not seen in a browser". The Chrome extension has connected once in twenty attempts, and the way through turned out not to need it: `pnpm build && vite preview`, headless Chrome with `--remote-debugging-port`, and a throwaway driving CDP over Node 24's native `WebSocket`. The first screen driven that way — the relaid lineup screen — had **three** layout defects that a green suite, a DOM dump and an SVG raster had all missed, including the entire forward line sitting below the fold. **Treat "verified by tests and a DOM dump" as unverified for anything about size, order or overflow**; the tooling to do better is now a known quantity and costs a few minutes.
+
+The blow-by-blow lives in `CLAUDE.md`'s session log; this section exists so the roadmap is not silent about the work.
 
 ---
 

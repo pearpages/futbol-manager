@@ -1108,3 +1108,63 @@ Also worth recording: **reversing the sort in `listSaves` fails nothing in the a
 **Two environmental things were cleared first and both could have been the whole story on their own:** seven stray dev servers on 5173–5179 (oldest from the previous evening), and a `packages/app/dist/` dated Aug 15 containing **zero** occurrences of `save-manager` or `modal__box` — anyone on `pnpm preview` saw a hub with a silent Desar and no picker at all, which is symptom 1 verbatim. Check those before suspecting the code.
 
 **The lesson to keep: the suite was green, the CDP run was green, and the first person to use the feature could not save a game.** A save button that produces no visible result is indistinguishable from a broken one, and "documented, deliberate, and tested" is not the same as "usable".
+
+### 2026-08-16 — one tile for the team sheet, and a pitch to read it on
+
+**Prompted by "alineació i tàctiques are showing the same".** They were: both tiles carried `to: 'lineup'`. 871 tests, `SCHEMA_VERSION` still 8, no migration, and **every changed file is under `packages/app`** — so determinism holds by construction rather than by diff, which is the argument the sorting and hub-figures sessions both accepted.
+
+**Splitting was the obvious answer and it is the wrong one.** The tactical lever set is closed at two by ground rule 5 (`lineup.ts` — "one slider rather than five"), so a Tàctiques screen would have been eight buttons and a slider. The reference settles it: `squad-alineacion-formacion.png` is a **single** screen holding a squad table _beside a pitch_, and the asset set contains no tactics screen at all. So one tile, and the screen finally gets the pitch half it never had — `grep pitch` used to return an icon name and a colour token.
+
+**The freed slot went to `Entrenaments`, badged M6.** The quadrant had to stay at three: `HubScreen.css` says a quadrant is a heading plus three tiles, and the pixel figure takes the slack below with `margin-top: auto`. Training was also the one milestone item the roadmap assigns that the hub had never named — and this is the hub's first non-M7 badge.
+
+**Two traps the merge walks into, both previously paid for:**
+
+- **`hub-sections.test.tsx` asserts "declares none the hub does not use"**, so dropping the tile and leaving the clipboard glyph fails the suite. That is the guard working; the intermediate state was run deliberately to watch it fire.
+- **`dictionaries.test.ts` enforces parity and cannot see a key nobody uses.** `nav.tactics` was deleted from all three dictionaries in the same commit, along with `lineup.replaceWith` and `lineup.keep` which the `<select>` took with it. **Three orphan keys have shipped in this project and all three were found by hand.** Parity is not coverage.
+
+**The pitch is SVG with geometry in `pitch.ts` and colour in `styles/pitch.css`** — `badges.ts`/`radar.ts`/`sprites.ts` for the fourth time. The alternative, real `<button>`s in a CSS grid, gets keyboard support free but puts slot geometry in the stylesheet, which is the split those three exist to hold. **The cost is real and is not hidden: a `<g role="button">` gets neither Enter nor Space for free**, so `PitchView` synthesises both, and the test covers `'a'` doing nothing — a handler firing on any key satisfies the other two arms perfectly.
+
+**Lanes are one formula for all eight shapes, and the naive one is wrong.** Spreading a bank across the full width puts two strikers on the touchlines. Each man gets a fixed lane and the bank only clamps once it outgrows the pitch, so two sit at 39/61 and five at 16.4…83.6 — **16.8 units of spacing against a 15-unit disc, the tightest case in the game.** A test walks all eight formations asserting no pair is closer than a diameter; dropping `SLOT_SPAN` to 8 fails it and the two-striker case, and nothing else.
+
+**Depth is fixed per position and deliberately not derived from the counts.** A formation here is only its bank counts, so sliding the midfield deeper in 4-2-4 would draw a distinction the resolver cannot see.
+
+**Bank order is `starters` order, never `overall`.** `swap` is an in-place replacement, so the man coming on inherits the slot the man going off vacated and nobody else moves; sorting by rating would slide a whole back four sideways every time a weaker full-back came on. The pitch also reads its shape **off the players, not off `lineup.formation`** — `setLineup` validates that an XI is legal and never that it matches its own label, the same hole `teamRatingRaw` derives around. A mislabelled lineup is driven in a test and the pitch draws three forwards.
+
+**The selection is resolved against the live XI, not the squad** — `NegotiationPanel`'s defect in a new costume, and the test for it needed `act()` around the store write or it read a stale render and passed for the wrong reason.
+
+**Every new test was checked against broken code, and one was thrown away for passing free.** A "moves exactly one slot" test compared an array to itself; it is now "assigns lanes in encounter order", which a grouping implementation fails while passing everything else in the file. Mutations run: grouping the input, `SLOT_SPAN` 8, swap as a no-op, the keyboard guard removed, the keyboard guard firing on every key, and the live-XI check removed — each failed exactly its own test and no others.
+
+**Seen, finally — by rasterising, not in a browser.** Eighteenth failed extension connection (`list_connected_browsers` → `[]`). A throwaway in the scratchpad reads the real `pitch.ts`, the real `pitch.css` and the real glyph out of `TileIcon.tsx`, and screenshots them through **headless Chrome**, which renders `color-mix()` properly — worth reaching for again, and cheaper than the app. It settled four things reasoning had not:
+
+- **The first training glyph was unusable.** Three cones each split into a tip and a skirt rasterised as a smudge at 18px and as three little trees enlarged — the gap meant to read as a reflective band did it. Two solid cones on a slab read at both sizes. The file's own rule is three or four primitives _because_ the drawing is 18px; three banded cones is nine.
+- **A stopwatch reads better than any cone at both sizes and is still wrong**, because `scout` is a magnifier and the two share the Entrenador quadrant — two circles-with-a-stem side by side.
+- The four position inks separate on the turf, including the midfield green against a turf mixed from the same token, which was the pairing most likely to fail.
+- Two digits fit a 15-unit disc, and five across still shows daylight.
+
+**Unverified:** the three-column layout above 84rem — whether the roster column still reads as a roster rather than a strip — and the two new breakpoints, none of which a raster of the SVG alone can settle.
+
+### 2026-08-16 (b) — the lineup screen relaid, and finally driven in a browser
+
+**Prompted by "we need to improve the page layout", with the arrangement specified.** Two columns instead of three: left is the team sheet — `Aquest onze` · `Onze titular` · `Suplents` — and right is `Sistema` above `El camp`. 872 tests, `SCHEMA_VERSION` still 8, everything under `packages/app`.
+
+**It fixes something the merge got wrong.** `Sistema` and `El camp` are cause and effect — you press 4-2-4 and the _pitch_ is what changes — and they shipped in different columns with the whole roster between them. That is the M4b adjacency bug wearing a layout instead of a scroll offset. The bench got that lesson and the formation buttons did not.
+
+**Suplents leaving the pitch's side is safe only because of how the rows are sized.** It is `auto`, pinned, with the eleven above it on `minmax(0,1fr)` — so the _list_ scrolls and the bench never goes under the fold. Eye travel is not the M4b bug; content outside the viewport is.
+
+**Each column owns its rows; the screen does not own shared ones.** `Sistema` is ~3× the vitals strip, so a shared first row would stretch the strip into a mostly-empty panel. The two columns have nothing to align.
+
+**Idle, `Suplents` now lists the whole bench** — the reference's third section is literally the not-called-up list — narrowing to the selected man's position only once somebody is picked. Idle rows are `<div>`s, not buttons: a dozen extra controls would collide with the `getByRole('button', { name })` queries this screen leans on, and the old `<select>` accepted the same ficha gap for the same reason.
+
+**`lineup.pickSlot` was deleted the moment production stopped rendering it.** It survived only in three test assertions, which is precisely the orphan-key shape this project has now shipped four times. **Tests referencing a key do not keep it alive** — the assertions moved to `queryByText(...replacing...)` being null, which is the actual claim anyway.
+
+---
+
+**The real find: this is the first time the app has been driven in a browser here, and the layout was wrong in three ways nothing else could have caught.** The extension failed for the nineteenth time, so the route was `pnpm build && vite preview` plus headless Chrome over CDP, driven by a throwaway on Node 24's native `WebSocket` — there is no router, so `Runtime.evaluate` clicking the tile is the only way onto the screen. **Reach for this rather than the extension.** Three notes for next time: `about:blank` has no origin so `localStorage` throws before the first navigation; the club picker needs a row click _and_ the primary button; and `pick` toggles, so a stray probe click silently inverts what the next measurement means.
+
+- **Four rows of the eleven were below the fold, the whole forward line among them.** Measured, not guessed: the XI wanted 541px and had 417. Tightened the vitals into a strip, the group padding, and the bench cap until `scrollHeight - clientHeight` was 0 and all eleven rows rendered inside the panel. **The XI's height is constant** — always 11 rows and 4 group headings, in every formation and every language — so once it fits it stays fitting.
+- **Selecting a player resized the bench and pushed a striker out of the list above it.** `.button`'s padding is `space-2 space-4` against the idle row's `space-1 space-2`, and the "who comes on for X?" line appeared from nothing. Both states are now the same height, and the line is always present — carrying `{count} disponibles` idle, which is also the only thing saying there are thirteen more below a four-row cap.
+- **At 960px the eleven collapsed to 10px and the bench drew straight over it.** Five stacked panels do not fit 900px, and `1fr` among them is not a compromise, it is crushed. `auto` is not enough either and this is the part worth keeping: **the container's height is definite, so `auto` tracks compress toward min-content — and a `.screen` carries `overflow: auto`, so its min-content is nearly nothing.** `max-content` rows plus `overflow-y: auto` on the screen is what makes each panel keep its height and hand the overflow up.
+
+**One thing measurement got right that the eye got wrong**, worth remembering in both directions: the pitch looked clipped at the foot in the first screenshot and is not — SVG bottom 832 against a panel bottom of 833. `preserveAspectRatio` cannot crop. The missing "touchline" was the panel border.
+
+**Unverified:** at the narrow breakpoint the pitch letterboxes to a strip in a full-width panel and looks a little lost. It is reachable, scrollable and correct; it is not pretty.

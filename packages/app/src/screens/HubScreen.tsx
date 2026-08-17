@@ -73,9 +73,17 @@ interface Quadrant {
 }
 
 /**
- * Two tiles landing on one screen is deliberate and matches the reference:
- * "where am I in the league" and "what happened at the weekend" are different
- * questions, even though one screen currently answers both.
+ * Seguimiento's two tiles landing on one screen is deliberate and matches the
+ * reference: "where am I in the league" and "what happened at the weekend" are
+ * different questions, even though one screen currently answers both.
+ *
+ * **Entrenador used to do the same with Alineació and Tàctiques, and no longer
+ * does.** That pair never grew into two screens, because the tactical lever set
+ * is closed at two by ground rule 5 (`lineup.ts` — "one slider rather than
+ * five"), so the second screen would have been eight buttons and a slider. The
+ * reference agrees: `squad-alineacion-formacion.png` is a single screen holding
+ * the squad table *and* the shape. One tile now, and the freed slot went to
+ * Entrenaments, which M6 assigns and the hub had never named.
  */
 export const QUADRANTS: readonly Quadrant[] = [
   {
@@ -93,7 +101,7 @@ export const QUADRANTS: readonly Quadrant[] = [
     title: 'quadrant.entrenador',
     tiles: [
       { key: 'nav.lineup', to: 'lineup', icon: 'pitch' },
-      { key: 'nav.tactics', to: 'lineup', icon: 'tactics' },
+      { key: 'nav.training', to: null, milestone: 'M6', icon: 'training' },
       { key: 'nav.scout', to: null, milestone: 'M7', icon: 'scout' },
     ],
     figure: 'trainer',

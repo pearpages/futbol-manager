@@ -108,6 +108,33 @@ describe('every section has its figure', () => {
   })
 })
 
+describe('the Entrenador quadrant', () => {
+  const entrenador = QUADRANTS.find((q) => q.key === 'entrenador')
+  if (entrenador === undefined) throw new Error('no Entrenador quadrant')
+
+  it('sends one tile to the lineup screen, not two', () => {
+    // Alineació and Tàctiques both pointed at `lineup` until the two were
+    // merged. The screen holds the shape *and* the eleven, which is what the
+    // reference does, so a second tile was a second label for one place — and
+    // an untested one: nothing ever clicked it.
+    const live = entrenador.tiles.filter((tile) => tile.to !== null)
+
+    expect(entrenador.tiles).toHaveLength(3)
+    expect(live.map((tile) => tile.key)).toEqual(['nav.lineup'])
+  })
+
+  it('promises training for M6, disabled', () => {
+    // The slot the merge freed. The hub doubles as a roadmap you can see, and
+    // training was the one milestone item the roadmap assigns that it had
+    // never named.
+    render(<App />)
+    const tile = screen.getByRole('button', { name: `${t('nav.training')}M6` })
+
+    expect(tile.hasAttribute('disabled')).toBe(true)
+    expect(tile.getAttribute('title')).toMatch(/M6/)
+  })
+})
+
 describe('the tiles are still findable by name', () => {
   it('resolves all twelve by their label exactly', () => {
     // The regression guard for the icons. `openScreen()` matches the whole
