@@ -68,6 +68,118 @@
   color: var(--fm-screen-ink-soft);
 }
 
+/*
+ * The matchday navigator: back, which round, forward.
+ *
+ * The label is the `<h2>` for this tab, so it sits between the two controls rather
+ * than above them — a heading and a pager saying the same number twice is the sort
+ * of duplicate this project keeps having to remove.
+ */
+.results-screen__rounds {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-2) 0;
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+/* The heading and its date stack, but they are siblings rather than nested — see
+   the comment at the markup for why that matters to the accessible name. */
+.results-screen__round {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 9rem;
+}
+
+.results-screen__round-label {
+  margin: 0;
+  text-align: center;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.results-screen__round-date {
+  font-size: var(--fm-text-xs);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--fm-screen-ink-soft);
+  /* The round moves and the date's width changes with it; a fixed line keeps the
+     two arrows from stepping sideways as you page. */
+  white-space: nowrap;
+}
+
+/*
+ * Ten fixtures, home on the left and away on the right, meeting at the score.
+ *
+ * A three-column grid rather than a table: there is no column to sort and no
+ * header to carry, and the middle track is the one thing that has to line up
+ * down the list. `1fr auto 1fr` puts the score dead centre whatever the names do.
+ */
+.round-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--fm-space-2) var(--fm-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.round-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-2) var(--fm-space-3);
+  background: color-mix(in srgb, var(--fm-screen), #fff 4%);
+}
+
+/* Your own fixture, the same gold wash the classification gives your row. */
+.round-list__item.is-you {
+  background: color-mix(in srgb, var(--fm-screen), var(--fm-accent) 12%);
+}
+
+.round-list__side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--fm-space-2);
+  min-width: 0;
+}
+
+/* The home club reads *towards* the score, so its name and badge are right-aligned
+   and the badge sits innermost — the arrangement a printed fixture list uses. */
+.round-list__side.is-home {
+  justify-content: flex-end;
+}
+
+.round-list__club {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.round-list__score {
+  min-width: 4.5rem;
+  text-align: center;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.round-list__score.is-unplayed {
+  color: var(--fm-screen-ink-soft);
+  font-weight: 400;
+}
+
 .results-screen__vitals {
   padding: var(--fm-space-3) var(--fm-space-4);
 }
@@ -163,11 +275,25 @@
   max-width: 6.5rem;
 }
 
+/*
+ * A played cell has to read as *marked*, not as slightly lighter.
+ *
+ * It used to differ from an empty one only by the empty one being 18% darker, and
+ * with ten results among 390 blanks that was reported as "I don't see the result"
+ * — accurately. Three changes, none of which touch the geometry, so the twenty
+ * columns still fit 1280: the score is bold, it is lifted off the field, and the
+ * blanks are pushed much further back.
+ *
+ * **Bold rather than bigger.** `font-size` here changes the row height and the
+ * column width, and the grid's whole argument is that it fits at 20 columns.
+ */
 .results-grid__cell {
   width: 2.1rem;
   height: 1.6rem;
   text-align: center;
   color: var(--fm-screen-ink);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--fm-screen), #fff 7%);
 }
 
 /*
@@ -191,8 +317,12 @@
   color: var(--fm-draw);
 }
 
+/* Pushed well back, so the field reads as empty and the scores as the content.
+   `font-weight` resets too: the cell has no text, but it would otherwise inherit
+   the bold and change nothing visible while being a lie about the element. */
 .results-grid__cell.is-unplayed {
-  background: color-mix(in srgb, var(--fm-screen), #000 18%);
+  background: color-mix(in srgb, var(--fm-screen), #000 45%);
+  font-weight: 400;
 }
 
 /* The diagonal — a club does not play itself. Blocked out rather than empty, so it

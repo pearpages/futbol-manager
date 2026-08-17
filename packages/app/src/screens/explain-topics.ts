@@ -1,4 +1,4 @@
-import { FINANCE, MAX_SQUAD, MIN_SQUAD } from '@fm/domain'
+import { FINANCE, MAX_SQUAD, MIN_SQUAD, WINDOW_WARNING_DAYS } from '@fm/domain'
 import type { Params } from '../i18n/index.ts'
 import type { Translator } from '../i18n/useT.ts'
 
@@ -62,6 +62,19 @@ export const EXPLAIN_TOPICS = {
   squadTable: {
     paragraphs: 9,
     params: ({ count }) => ({ min: count(MIN_SQUAD), max: count(MAX_SQUAD) }),
+  },
+
+  /*
+   * ── The season ───────────────────────────────────────────────────────────
+   *
+   * The one screen whose subject is dates, so this is where the deadlines get
+   * explained rather than beside the corner badge that counts one of them down.
+   * `WINDOW_WARNING_DAYS` is read live for the same reason every other number
+   * here is: it can move, and three dictionaries would go on saying "a week".
+   */
+  calendar: {
+    paragraphs: 4,
+    params: ({ count }) => ({ warning: count(WINDOW_WARNING_DAYS) }),
   },
 
   // ── The team sheet ──────────────────────────────────────────────────────

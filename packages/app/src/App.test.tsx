@@ -80,7 +80,9 @@ describe('the shell', () => {
 
     const legs = [
       ['nav.table', /Primera División/i],
-      ['nav.results', /Every result/i],
+      // The screen opens on the matchday tab, not the cross-table.
+      ['nav.results', /Matchday \d+/i],
+      ['nav.calendar', /Calendar ·/i],
       ['nav.squad', /Squad/i],
       ['nav.lineup', /Starting XI/],
       ['nav.market', /Transfer market/],

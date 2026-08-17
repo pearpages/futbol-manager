@@ -20,9 +20,22 @@ beforeEach(() => {
   useGame.getState().newGame()
 })
 
+/**
+ * Opens the screen, which lands on the **matchday** tab.
+ *
+ * That default is deliberate and is what most of the grid tests below have to step
+ * past: the cross-table is the season-shaped view and the matchday list is the one
+ * that answers "what happened", so the matchday list is the one that opens.
+ */
 const openResults = () => {
   render(<App />)
   openScreen('nav.results')
+}
+
+/** …and then onto the cross-table, for the tests that are about the grid. */
+const openGrid = () => {
+  openResults()
+  fireEvent.click(screen.getByRole('button', { name: t('results.tab.grid') }))
 }
 
 /**
@@ -36,6 +49,12 @@ const openPlayedResults = (days = 1) => {
   render(<App />)
   advance(days)
   openScreen('nav.results')
+}
+
+/** The same, continuing onto the grid. */
+const openPlayedGrid = (days = 1) => {
+  openPlayedResults(days)
+  fireEvent.click(screen.getByRole('button', { name: t('results.tab.grid') }))
 }
 
 /** The grid, as a map from `HOME|AWAY` club name to the rendered cell text. */
@@ -76,7 +95,7 @@ function playASeason() {
 
 describe('the tile no longer lands on the classification', () => {
   it('opens a screen of its own', () => {
-    openResults()
+    openGrid()
     const stage = document.querySelector('.shell__stage') as HTMLElement
 
     expect(document.querySelector('.results-grid')).not.toBeNull()
@@ -85,23 +104,167 @@ describe('the tile no longer lands on the classification', () => {
   })
 })
 
+/*
+ * The tab that exists because the cross-table could not answer the question.
+ *
+ * Reported after one match: the result was nowhere to be found. It was in the grid
+ * — ten scores among 390 blank cells — which is the grid being the wrong instrument
+ * for one matchday rather than the grid being wrong.
+ */
+describe('the matchday tab', () => {
+  /**
+   * Each row as **only what is on the screen** — home name, visible score, away
+   * name.
+   *
+   * Reading `textContent` here is a trap, and it cost a test that proved nothing:
+   * every row also carries the whole result as a `visually-hidden` sentence, so
+   * `"Madrid MAD 0–7 Madrid 7–0 Málaga, matchday 1 MAL Málaga"` contains the
+   * *correct* score even when the rendered one is reversed. A mutation flipping
+   * the visible score passed cleanly against the hidden copy.
+   */
+  const rows = () =>
+    [...document.querySelectorAll('.round-list__item')].map((li) => {
+      const clubs = [...li.querySelectorAll('.round-list__club')].map(
+        (el) => el.textContent?.trim() ?? '',
+      )
+      return {
+        home: clubs[0] ?? '',
+        away: clubs[1] ?? '',
+        score:
+          li.querySelector('.round-list__score [aria-hidden="true"]')?.textContent?.trim() ?? '',
+      }
+    })
+
+  it('is the tab the screen opens on', () => {
+    openResults()
+
+    expect(document.querySelector('.round-list')).not.toBeNull()
+    expect(document.querySelector('.results-grid')).toBeNull()
+  })
+
+  it('shows all ten of the round’s fixtures', () => {
+    openResults()
+    expect(document.querySelectorAll('.round-list__item')).toHaveLength(10)
+  })
+
+  it('shows the score of a match that has been played', () => {
+    // The whole complaint, as a test: play round one, open the screen, see it.
+    openPlayedResults()
+
+    const { game } = managed()
+    const mine = game.season.fixtures.find(
+      (f) =>
+        f.result !== null && (f.homeId === game.managedClubId || f.awayId === game.managedClubId),
+    )
+    if (mine?.result == null) throw new Error('your match was not played')
+
+    const yours = document.querySelector('.round-list__item.is-you')
+    expect(yours).not.toBeNull()
+    // The *visible* score, not the row's text — that carries the hidden sentence too.
+    expect(yours?.querySelector('.round-list__score [aria-hidden="true"]')?.textContent).toBe(
+      `${String(mine.result.home)}–${String(mine.result.away)}`,
+    )
+  })
+
+  it('lands on the latest round with a result rather than on round one', () => {
+    openPlayedResults(30)
+
+    const { game } = managed()
+    const latest = Math.max(
+      ...game.season.fixtures.filter((f) => f.result !== null).map((f) => f.round),
+    )
+    expect(latest).toBeGreaterThan(1)
+    expect(
+      screen.getByRole('heading', { name: t('results.roundLabel', { round: latest }) }),
+    ).toBeDefined()
+  })
+
+  it('pages back and forward, and stops at both ends', () => {
+    openResults()
+    const back = () => screen.getByRole('button', { name: t('results.prevRound') })
+    const on = () => screen.getByRole('button', { name: t('results.nextRound') })
+
+    // Nothing played, so it opens on round one — where back is the end of the road.
+    expect(
+      screen.getByRole('heading', { name: t('results.roundLabel', { round: 1 }) }),
+    ).toBeDefined()
+    expect(back().hasAttribute('disabled')).toBe(true)
+
+    fireEvent.click(on())
+    expect(
+      screen.getByRole('heading', { name: t('results.roundLabel', { round: 2 }) }),
+    ).toBeDefined()
+    expect(back().hasAttribute('disabled')).toBe(false)
+
+    fireEvent.click(back())
+    expect(
+      screen.getByRole('heading', { name: t('results.roundLabel', { round: 1 }) }),
+    ).toBeDefined()
+  })
+
+  it('stops at the last round too', () => {
+    // The other end, and it needs its own test: asserting only the near bound let
+    // an unbounded forward button through the whole mutation sweep.
+    openResults()
+    const on = () => screen.getByRole('button', { name: t('results.nextRound') })
+    const last = Math.max(...useGame.getState().game.season.fixtures.map((f) => f.round))
+
+    for (let round = 1; round < last; round++) {
+      expect(on().hasAttribute('disabled'), `stuck at ${String(round)}`).toBe(false)
+      fireEvent.click(on())
+    }
+
+    expect(
+      screen.getByRole('heading', { name: t('results.roundLabel', { round: last }) }),
+    ).toBeDefined()
+    expect(on().hasAttribute('disabled')).toBe(true)
+  })
+
+  it('reads home on the left and away on the right, never flipped', () => {
+    // The same hazard the grid's axes have: swap the two sides and every line is
+    // reversed, plausibly, with nothing contradicting it.
+    openPlayedResults()
+
+    const { game } = managed()
+    const names = new Map(game.clubs.map((c) => [c.id, c.name]))
+    const decisive = game.season.fixtures.find(
+      (f) => f.round === 1 && f.result !== null && f.result.home !== f.result.away,
+    )
+    if (decisive?.result == null) throw new Error('no decisive fixture in round one')
+
+    const row = rows().find((r) => r.home === names.get(decisive.homeId))
+    expect(row, 'no row led by the home club').toBeDefined()
+    expect(row?.away).toBe(names.get(decisive.awayId))
+    expect(row?.score).toBe(`${String(decisive.result.home)}–${String(decisive.result.away)}`)
+  })
+
+  it('shows a dash for a fixture not yet played', () => {
+    openResults()
+    const scores = [...document.querySelectorAll('.round-list__score')]
+
+    expect(scores).toHaveLength(10)
+    expect(scores.every((s) => s.classList.contains('is-unplayed'))).toBe(true)
+    expect(scores[0]?.textContent).toContain('—')
+  })
+})
+
 describe('the cross-table', () => {
   it('lists every club down the side and along the top', () => {
-    openResults()
+    openGrid()
 
     expect(document.querySelectorAll('.results-grid__row')).toHaveLength(20)
     expect(document.querySelectorAll('.results-grid__head')).toHaveLength(20)
   })
 
   it('blocks out the diagonal — a club does not play itself', () => {
-    openResults()
+    openGrid()
 
     expect(document.querySelectorAll('.results-grid__self')).toHaveLength(20)
   })
 
   it('puts each score in the cell for that home club against that away club', () => {
     // Round one is dated on the season start, so one press plays it.
-    openPlayedResults()
+    openPlayedGrid()
 
     const { game } = managed()
     const names = new Map(game.clubs.map((c) => [c.id, c.name]))
@@ -121,7 +284,7 @@ describe('the cross-table', () => {
     // The one thing here that could be wrong while looking entirely plausible:
     // transpose the axes and every score is reversed, and nothing contradicts it.
     // So this asserts a *decisive* fixture appears one way round and not the other.
-    openPlayedResults()
+    openPlayedGrid()
 
     const { game } = managed()
     const names = new Map(game.clubs.map((c) => [c.id, c.name]))
@@ -143,7 +306,7 @@ describe('the cross-table', () => {
   })
 
   it('orders both axes by the classification, not alphabetically', () => {
-    openPlayedResults(20)
+    openPlayedGrid(20)
 
     const { game } = managed()
     const table = computeTable(game.competition.clubIds, game.season.fixtures)
@@ -159,7 +322,7 @@ describe('the cross-table', () => {
   })
 
   it('marks your own row and column', () => {
-    openResults()
+    openGrid()
     const { game, clubId } = managed()
     const club = game.clubs.find((c) => c.id === clubId)
 
@@ -169,7 +332,10 @@ describe('the cross-table', () => {
   })
 
   it('says what a cell means in words, for a reader who cannot see colour', () => {
-    openPlayedResults()
+    // Pointed at the grid deliberately. The matchday list renders the same
+    // sentence, so without the tab step this would pass on either view and stop
+    // saying anything about the cells.
+    openPlayedGrid()
 
     const { game } = managed()
     const names = new Map(game.clubs.map((c) => [c.id, c.name]))
@@ -278,6 +444,7 @@ describe('the season picker', () => {
     render(<App />)
     playASeason()
     openScreen('nav.results')
+    fireEvent.click(screen.getByRole('button', { name: t('results.tab.grid') }))
 
     const picker = document.querySelector('.results-screen__season select') as HTMLSelectElement
     expect(picker).not.toBeNull()

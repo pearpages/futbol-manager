@@ -60,7 +60,6 @@ export const en: Dictionary = {
   'fixture.unknownClub': '???',
 
   // ── The hub ──────────────────────────────────────────────────────────────
-  'hub.notBuilt': 'Not built yet',
   'hub.arrivesAt': 'Arrives at {milestone}',
   'hub.date': 'Date',
   'hub.budget': 'Budget',
@@ -128,6 +127,10 @@ export const en: Dictionary = {
   'table.noResults': 'Advance the day to play the next round.',
 
   // ── Results and honours ──────────────────────────────────────────────────
+  'results.tab.round': 'Matchday',
+  'results.roundLabel': 'Matchday {round}',
+  'results.prevRound': 'Previous matchday',
+  'results.nextRound': 'Next matchday',
   'results.tab.grid': 'Results',
   'results.tab.palmares': 'Honours',
   'results.season': 'Season',
@@ -158,6 +161,20 @@ export const en: Dictionary = {
   'palmares.column.runnerUp': 'Runner-up',
   'palmares.column.you': 'You',
   'form.notPlayed': 'Not played yet',
+
+  // ── Calendar ────────────────────────────────────────────────────
+  'calendar.heading': 'Calendar · {season}',
+  'calendar.column.round': 'Matchday',
+  'calendar.column.date': 'Date',
+  'calendar.column.opponent': 'Opponent',
+  'calendar.column.result': 'Result',
+  'calendar.windowOpens': 'The transfer window opens',
+  'calendar.windowCloses': 'The transfer window closes',
+  'calendar.settlement': 'Wages, television and sponsorship',
+  'calendar.seasonEnds': 'Season ends, and the board decides',
+  'calendar.won': 'Won',
+  'calendar.drew': 'Drew',
+  'calendar.lost': 'Lost',
 
   // ── Squad ────────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Squad',
@@ -506,6 +523,15 @@ export const en: Dictionary = {
     'Sliding towards attack takes strength out of your defence and puts it into your attack; sliding the other way does the reverse. It does not make the team better.',
   'explain.approach.p2':
     'Nor is it an even trade in either direction — you always give up more than you gain, and the further you push the worse the rate. Committing to attack suits a side good enough to win the game outright; a weaker one does better shutting it down. A middling team is usually punished for doing either.',
+  'explain.calendar.title': 'The dates that matter',
+  'explain.calendar.p1':
+    'Your thirty-eight matches in order, with the dates the league and the board impose on you set among them. Matchdays come one a week; nothing else does.',
+  'explain.calendar.p2':
+    'The window is only open in summer and in January. You can see when it is open in the top corner, and you get a warning {warning} days before it shuts. Once shut you can neither buy nor sell until it opens again.',
+  'explain.calendar.p3':
+    'On the first of every month the whole squad’s wages go out, and the television and sponsorship money comes in. All at once: a balance that looks healthy on the thirtieth can be thin on the second. Building work and transfer fees are paid separately, on the day you sign them.',
+  'explain.calendar.p4':
+    'The last match closes the season, and it is the same day the board judges where you finished. Then the summer begins and the market opens again.',
 
   // ── Refusals ─────────────────────────────────────────────────────────────
   // Keyed off the codes the reducer throws. The English here is word for word

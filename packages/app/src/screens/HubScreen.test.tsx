@@ -68,13 +68,43 @@ describe('the hub', () => {
     }
   })
 
-  it('promises nothing for what has no milestone', () => {
+  /*
+   * This used to be "promises nothing for what has no milestone", pointed at
+   * Calendari — the only tile that had no milestone — and asserting it was
+   * disabled with a bare "not built yet". Building the screen made it the second
+   * tile to break this way, after Caja, and the second time is what turned the
+   * escape hatch into a rule: **a disabled tile now has to name a milestone**, the
+   * `Tile` union enforces it, and `hub.notBuilt` is gone from all three
+   * dictionaries rather than left as an orphan key.
+   *
+   * So what is worth asserting is no longer the fallback but its absence: every
+   * unbuilt tile is dated, and there is nothing left that merely says "later".
+   */
+  it('dates every promise it makes', () => {
+    render(<App />)
+    const unbuilt = QUADRANTS.flatMap((q) => q.tiles).filter((tile) => tile.to === null)
+    expect(unbuilt.length).toBeGreaterThan(0)
+
+    for (const tile of unbuilt) {
+      const button = screen.getByRole('button', { name: `${t(tile.key)}${tile.milestone}` })
+      expect(button.hasAttribute('disabled'), tile.key).toBe(true)
+      expect(button.getAttribute('title'), tile.key).toBe(
+        t('hub.arrivesAt', { milestone: tile.milestone }),
+      )
+    }
+  })
+
+  it('opens the calendar Seguiment had been promising', () => {
+    // The third Seguiment tile was disabled from the hub's first day, which makes
+    // this the first quadrant where every tile leads somewhere.
     render(<App />)
     const calendar = within(quadrant(t('quadrant.seguimiento'))).getByRole('button', {
       name: t('nav.calendar'),
     })
-    expect(calendar.hasAttribute('disabled')).toBe(true)
-    expect(calendar.getAttribute('title')).toBe(t('hub.notBuilt'))
+
+    expect(calendar.hasAttribute('disabled')).toBe(false)
+    fireEvent.click(calendar)
+    expect(screen.getByRole('heading', { name: /Calendar ·/i })).toBeDefined()
   })
 })
 

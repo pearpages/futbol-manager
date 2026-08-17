@@ -76,6 +76,8 @@ export {
   TOTAL_ROUNDS,
 } from './fixtures.ts'
 
+export { type SeasonEvent, seasonEvents, type SeasonEventKind } from './calendar.ts'
+
 export { computeTable, type TableRow } from './table.ts'
 
 export {

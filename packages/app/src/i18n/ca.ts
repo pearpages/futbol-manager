@@ -49,7 +49,6 @@ export const ca: Dictionary = {
   'fixture.unknownClub': '???',
 
   // ── El menú ──────────────────────────────────────────────────────────────
-  'hub.notBuilt': 'Encara no fet',
   'hub.arrivesAt': 'Arriba a {milestone}',
   'hub.date': 'Data',
   'hub.budget': 'Pressupost',
@@ -118,6 +117,10 @@ export const ca: Dictionary = {
   'table.noResults': 'Avança el dia per jugar la propera jornada.',
 
   // ── Resultats i palmarés ─────────────────────────────────────────────────
+  'results.tab.round': 'Jornada',
+  'results.roundLabel': 'Jornada {round}',
+  'results.prevRound': 'Jornada anterior',
+  'results.nextRound': 'Jornada següent',
   'results.tab.grid': 'Resultats',
   'results.tab.palmares': 'Palmarés',
   'results.season': 'Temporada',
@@ -148,6 +151,20 @@ export const ca: Dictionary = {
   'palmares.column.runnerUp': 'Segon',
   'palmares.column.you': 'Tu',
   'form.notPlayed': 'Encara no jugat',
+
+  // ── Calendari ───────────────────────────────────────────────────
+  'calendar.heading': 'Calendari · {season}',
+  'calendar.column.round': 'Jornada',
+  'calendar.column.date': 'Data',
+  'calendar.column.opponent': 'Rival',
+  'calendar.column.result': 'Resultat',
+  'calendar.windowOpens': 'S’obre el mercat de fitxatges',
+  'calendar.windowCloses': 'Es tanca el mercat de fitxatges',
+  'calendar.settlement': 'Sous, televisió i patrocini',
+  'calendar.seasonEnds': 'Final de temporada i veredicte de la junta',
+  'calendar.won': 'Victòria',
+  'calendar.drew': 'Empat',
+  'calendar.lost': 'Derrota',
 
   // ── Plantilla ────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Plantilla',
@@ -496,6 +513,15 @@ export const ca: Dictionary = {
     'Desplaçar-la cap a l’atac treu força de la defensa i la posa a l’atac; cap a l’altra banda, al revés. No fa millor l’equip.',
   'explain.approach.p2':
     'I no és un intercanvi just en cap direcció: sempre cedeixes més del que guanyes, i com més forces pitjor és el canvi. Apostar per l’atac va bé a un equip prou bo per guanyar el partit; un de més feble en treu més tancant-lo. Un equip mitjà normalment surt castigat fent qualsevol de les dues coses.',
+  'explain.calendar.title': 'Les dates que compten',
+  'explain.calendar.p1':
+    'Els teus trenta-vuit partits en ordre, amb les dates que la lliga i la junta t’imposen intercalades allà on cauen. Les jornades van d’una en una cada setmana; la resta, no.',
+  'explain.calendar.p2':
+    'El mercat només és obert a l’estiu i al gener. Mentre és obert ho veus al cantó de dalt, i t’avisem {warning} dies abans que es tanqui. Un cop tancat no pots ni comprar ni vendre fins que torni a obrir-se.',
+  'explain.calendar.p3':
+    'L’u de cada mes surten els sous de tota la plantilla i entren la televisió i el patrocini. Tot de cop: un saldo que fa bona cara el dia trenta pot quedar-se curt el dia dos. Les obres i els traspassos es paguen a part, el dia que els signes.',
+  'explain.calendar.p4':
+    'L’últim partit tanca la temporada, i és el mateix dia que la junta jutja on has quedat. Després comença l’estiu i el mercat torna a obrir-se.',
 
   // ── Negatives ────────────────────────────────────────────────────────────
   'error.unknown': 'Això no es pot fer',

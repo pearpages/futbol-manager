@@ -27,26 +27,41 @@ import './HubScreen.css'
  *
  * **Unbuilt sections are shown, disabled, with the milestone that brings them.**
  * An empty quadrant would look broken; a labelled one says the shape of the
- * finished game out loud and turns the hub into a roadmap you can see. Only
- * milestones the roadmap actually assigns are named — Calendario has none, so it
- * promises nothing.
+ * finished game out loud and turns the hub into a roadmap you can see. That is now
+ * enforced by the `Tile` type rather than left to care — see below.
  */
 
-interface Tile {
-  /**
-   * Names the destination for the dictionary *and* for the tests.
-   *
-   * It was a Spanish literal, typed again in `App.tsx`'s title map — so the two
-   * could drift, and every test clicked a tile by a word that only exists in one
-   * language. The key is the stable thing; the label is a rendering of it.
-   */
+/**
+ * Names the destination for the dictionary *and* for the tests.
+ *
+ * It was a Spanish literal, typed again in `App.tsx`'s title map — so the two
+ * could drift, and every test clicked a tile by a word that only exists in one
+ * language. The key is the stable thing; the label is a rendering of it.
+ */
+interface TileBase {
   readonly key: string
-  /** Where it goes, or `null` when it is not built yet. */
-  readonly to: Screen | null
-  /** Shown on a disabled tile. Omitted when nothing has been scheduled. */
-  readonly milestone?: string
   readonly icon: IconKey
 }
+
+/**
+ * A tile is either built or promised, and **a promise names its milestone.**
+ *
+ * That used to be a `milestone?: string` on one shape, with a `t('hub.notBuilt')`
+ * fallback for a tile nobody had scheduled. Calendari was the only tile using it,
+ * and building it left the branch unreachable and the key an orphan — the fifth
+ * this project would have shipped, all four earlier ones found by hand because
+ * `dictionaries.test.ts` enforces parity across languages and cannot see a key
+ * nobody calls.
+ *
+ * So the doc comment above ("a disabled tile is a promise with a date on it")
+ * became the type instead of a convention: an unbuilt tile with no milestone is now
+ * a compile error rather than a silent "not built yet". If a section ever needs
+ * naming before the roadmap budgets it, that is three dictionary lines and a
+ * deliberate decision, which is the right price.
+ */
+type Tile =
+  | (TileBase & { readonly to: Screen })
+  | (TileBase & { readonly to: null; readonly milestone: string })
 
 /**
  * Names the section for the CSS, which uses it for **both** the colour and the
@@ -92,7 +107,7 @@ export const QUADRANTS: readonly Quadrant[] = [
     tiles: [
       { key: 'nav.table', to: 'table', icon: 'table' },
       { key: 'nav.results', to: 'results', icon: 'results' },
-      { key: 'nav.calendar', to: null, icon: 'calendar' },
+      { key: 'nav.calendar', to: 'calendar', icon: 'calendar' },
     ],
     figure: 'assistant',
   },
@@ -180,19 +195,13 @@ export function HubScreen() {
                 className="button hub__tile"
                 disabled={tile.to === null}
                 title={
-                  tile.to === null
-                    ? tile.milestone === undefined
-                      ? t('hub.notBuilt')
-                      : t('hub.arrivesAt', { milestone: tile.milestone })
-                    : undefined
+                  tile.to === null ? t('hub.arrivesAt', { milestone: tile.milestone }) : undefined
                 }
                 onClick={() => tile.to !== null && go(tile.to)}
               >
                 <TileIcon icon={tile.icon} />
                 <span className="hub__tile-label">{t(tile.key)}</span>
-                {tile.milestone !== undefined && (
-                  <span className="hub__tile-milestone">{tile.milestone}</span>
-                )}
+                {tile.to === null && <span className="hub__tile-milestone">{tile.milestone}</span>}
               </button>
             ))}
           </div>

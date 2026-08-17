@@ -46,9 +46,23 @@ import './ResultsScreen.css'
  * which is what the season picker spends. That was the whole argument for storing
  * results rather than only champions: a palmarés that lists years tells you who
  * won, and this tells you how.
+ *
+ * ## Why the matchday tab is the one that opens
+ *
+ * **The cross-table was the only view, and it is the wrong instrument for the
+ * question a manager asks most.** Reported after one match had been played: the
+ * result was nowhere to be found. It was there — the grid, the classification and
+ * the calendar all agreed — but it was *ten 11px scores scattered across 390 blank
+ * cells*, and a played cell differed from an empty one only by being a little
+ * lighter. The grid is built for a finished season, where 380 of its cells carry
+ * something; at matchday 1 the signal is 2.5% of the field.
+ *
+ * So a matchday tab leads, showing one round as ten readable lines, and the grid
+ * keeps its own tab for the season-shaped question it is actually good at. Both
+ * read the same `Viewing`, so both work for an archived season too.
  */
 
-type Tab = 'grid' | 'palmares'
+type Tab = 'round' | 'grid' | 'palmares'
 
 /** The live season, or one out of the archive. Both answer the same questions. */
 interface Viewing {
@@ -63,9 +77,19 @@ export function ResultsScreen() {
   const game = useGame((s) => s.game)
   const { t, plural, date, season, count } = useT()
 
-  const [tab, setTab] = useState<Tab>('grid')
+  const [tab, setTab] = useState<Tab>('round')
   /** `null` is the season being played. */
   const [year, setYear] = useState<number | null>(null)
+  /**
+   * Which matchday the round tab is showing, or `null` for "the latest one with a
+   * result in it".
+   *
+   * `null` rather than a number so the default *follows the season* — it has to
+   * mean "latest" rather than a round chosen when the component mounted, or the
+   * view would stop moving with the clock and would show matchday 1 of a season
+   * picked out of the archive.
+   */
+  const [round, setRound] = useState<number | null>(null)
 
   const clubs = useMemo(() => new Map(game.clubs.map((c) => [c.id, c])), [game.clubs])
 
@@ -115,34 +139,36 @@ export function ResultsScreen() {
             owe nothing and are keyboard-reachable for free.
           */}
           <div className="results-screen__tabs">
-            <button
-              type="button"
-              className={`button${tab === 'grid' ? ' is-primary' : ''}`}
-              aria-pressed={tab === 'grid'}
-              onClick={() => setTab('grid')}
-            >
-              {t('results.tab.grid')}
-            </button>
-            <button
-              type="button"
-              className={`button${tab === 'palmares' ? ' is-primary' : ''}`}
-              aria-pressed={tab === 'palmares'}
-              onClick={() => setTab('palmares')}
-            >
-              {t('results.tab.palmares')}
-            </button>
+            {(['round', 'grid', 'palmares'] as const).map((key) => (
+              <button
+                key={key}
+                type="button"
+                className={`button${tab === key ? ' is-primary' : ''}`}
+                aria-pressed={tab === key}
+                onClick={() => {
+                  setTab(key)
+                }}
+              >
+                {t(`results.tab.${key}`)}
+              </button>
+            ))}
           </div>
 
-          {/* The grid's control, not the screen's: the Palmarés lists every season
-              at once, so a season selector there would appear to do nothing.
-              Measured on the built app, where it sat on both tabs. */}
-          {tab === 'grid' && seasons.length > 1 && (
+          {/* A season control for the two tabs that show *one* season. The Palmarés
+              lists every season at once, so a selector there would appear to do
+              nothing — measured on the built app, where it sat on all of them.
+              Changing season drops the chosen matchday back to "latest", since
+              round 30 of a season that reached round 4 is not a view of anything. */}
+          {tab !== 'palmares' && seasons.length > 1 && (
             <label className="results-screen__season">
               <span className="results-screen__season-label">{t('results.season')}</span>
               <select
                 className="select"
                 value={year ?? ''}
-                onChange={(e) => setYear(e.target.value === '' ? null : Number(e.target.value))}
+                onChange={(e) => {
+                  setYear(e.target.value === '' ? null : Number(e.target.value))
+                  setRound(null)
+                }}
               >
                 {seasons.map((entry) => (
                   <option key={entry.year ?? 'live'} value={entry.year ?? ''}>
@@ -154,14 +180,20 @@ export function ResultsScreen() {
           )}
         </div>
 
-        {tab === 'grid' ? (
-          viewing === null ? (
-            <p className="screen__note">{t('results.noSeason')}</p>
-          ) : (
-            <ResultGrid viewing={viewing} clubs={clubs} managed={game.managedClubId} />
-          )
-        ) : (
+        {tab === 'palmares' ? (
           <SeasonHistory history={game.history} clubs={clubs} managed={game.managedClubId} />
+        ) : viewing === null ? (
+          <p className="screen__note">{t('results.noSeason')}</p>
+        ) : tab === 'round' ? (
+          <RoundResults
+            viewing={viewing}
+            clubs={clubs}
+            managed={game.managedClubId}
+            round={round}
+            onRound={setRound}
+          />
+        ) : (
+          <ResultGrid viewing={viewing} clubs={clubs} managed={game.managedClubId} />
         )}
       </section>
 
@@ -193,6 +225,156 @@ export function ResultsScreen() {
         </section>
       </aside>
     </div>
+  )
+}
+
+/**
+ * One matchday, as ten lines you can actually read.
+ *
+ * The answer to "I played a match and cannot see the result". Ten rows beats ten
+ * cells in a four-hundred-cell grid, and it is how a results page has always been
+ * read: a round, its date, and the fixtures under it.
+ *
+ * **The rounds are walked, not assumed to be 1..38.** `TOTAL_ROUNDS` would be the
+ * obvious bound and it would be an assumption about a fixture set this component
+ * does not generate — an archived season, or M7's second division, need not match.
+ * The first and last round present in `viewing.fixtures` are the bounds.
+ */
+function RoundResults({
+  viewing,
+  clubs,
+  managed,
+  round,
+  onRound,
+}: {
+  readonly viewing: Viewing
+  readonly clubs: ReadonlyMap<ClubId, Club>
+  readonly managed: ClubId
+  readonly round: number | null
+  readonly onRound: (round: number) => void
+}) {
+  const { t, date } = useT()
+
+  const rounds = useMemo(() => {
+    let first: number | null = null
+    let last: number | null = null
+    /** The furthest round with a result in it — where a manager wants to land. */
+    let latestPlayed: number | null = null
+    for (const fixture of viewing.fixtures) {
+      if (first === null || fixture.round < first) first = fixture.round
+      if (last === null || fixture.round > last) last = fixture.round
+      if (fixture.result !== null && (latestPlayed === null || fixture.round > latestPlayed)) {
+        latestPlayed = fixture.round
+      }
+    }
+    return { first, last, latestPlayed }
+  }, [viewing.fixtures])
+
+  /** Position in the classification, so the rows read in the grid's row order. */
+  const rank = useMemo(() => new Map(viewing.order.map((id, i) => [id, i])), [viewing.order])
+
+  if (rounds.first === null || rounds.last === null) {
+    return <p className="screen__note">{t('results.noSeason')}</p>
+  }
+
+  // Nothing played yet is a real state on day one, and matchday 1 is the right
+  // thing to show then — a fixture list rather than an empty screen.
+  const showing = Math.min(
+    Math.max(round ?? rounds.latestPlayed ?? rounds.first, rounds.first),
+    rounds.last,
+  )
+
+  const fixtures = viewing.fixtures
+    .filter((f) => f.round === showing)
+    .toSorted((a, b) => (rank.get(a.homeId) ?? 0) - (rank.get(b.homeId) ?? 0))
+
+  const when = fixtures[0]?.date ?? null
+
+  return (
+    <>
+      <div className="results-screen__rounds">
+        <button
+          type="button"
+          className="button"
+          disabled={showing <= rounds.first}
+          aria-label={t('results.prevRound')}
+          onClick={() => {
+            onRound(showing - 1)
+          }}
+        >
+          <span aria-hidden="true">◀</span>
+        </button>
+        {/* The date is a *sibling* of the heading, not inside it. Nothing in the DOM
+            separates two spans, so a date within the `<h2>` makes its accessible
+            name `Matchday 12026-08-15` — the fifth instance of a defect this
+            project has shipped four times (`CanteraM7`, `20Relegated`,
+            `Temporada 1En joc`, and the calendar's own score cell). Caught here by
+            a test resolving the heading by exact name. */}
+        <div className="results-screen__round">
+          <h2 className="results-screen__round-label">
+            {t('results.roundLabel', { round: showing })}
+          </h2>
+          {when !== null && <span className="results-screen__round-date">{date(when)}</span>}
+        </div>
+        <button
+          type="button"
+          className="button"
+          disabled={showing >= rounds.last}
+          aria-label={t('results.nextRound')}
+          onClick={() => {
+            onRound(showing + 1)
+          }}
+        >
+          <span aria-hidden="true">▶</span>
+        </button>
+      </div>
+
+      <ul className="round-list">
+        {fixtures.map((fixture) => {
+          const home = clubs.get(fixture.homeId)
+          const away = clubs.get(fixture.awayId)
+          const yours = fixture.homeId === managed || fixture.awayId === managed
+          const name = (id: ClubId) => clubs.get(id)?.name ?? id
+
+          // One whole sentence per the i18n rule, and it doubles as what a screen
+          // reader gets — the same shape the grid's cells and `FormStrip` use.
+          const told =
+            fixture.result === null
+              ? t('results.unplayed', { home: name(fixture.homeId), away: name(fixture.awayId) })
+              : t('results.cell', {
+                  home: name(fixture.homeId),
+                  away: name(fixture.awayId),
+                  ours: fixture.result.home,
+                  theirs: fixture.result.away,
+                  round: fixture.round,
+                })
+
+          return (
+            <li key={fixture.id} className={`round-list__item${yours ? ' is-you' : ''}`}>
+              <span className="round-list__side is-home">
+                <span className="round-list__club">{name(fixture.homeId)}</span>
+                {home !== undefined && <ClubBadge club={home} />}
+              </span>
+              <span
+                className={`round-list__score${fixture.result === null ? ' is-unplayed' : ''}`}
+                title={told}
+              >
+                <span aria-hidden="true">
+                  {fixture.result === null
+                    ? '—'
+                    : `${String(fixture.result.home)}–${String(fixture.result.away)}`}
+                </span>
+                <span className="visually-hidden">{told}</span>
+              </span>
+              <span className="round-list__side">
+                {away !== undefined && <ClubBadge club={away} />}
+                <span className="round-list__club">{name(fixture.awayId)}</span>
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </>
   )
 }
 

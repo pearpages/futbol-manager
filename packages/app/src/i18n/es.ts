@@ -49,7 +49,6 @@ export const es: Dictionary = {
   'fixture.unknownClub': '???',
 
   // ── El menú ──────────────────────────────────────────────────────────────
-  'hub.notBuilt': 'Aún no está hecho',
   'hub.arrivesAt': 'Llega en {milestone}',
   'hub.date': 'Fecha',
   'hub.budget': 'Presupuesto',
@@ -117,6 +116,10 @@ export const es: Dictionary = {
   'table.noResults': 'Avanza el día para jugar la próxima jornada.',
 
   // ── Resultados y palmarés ────────────────────────────────────────────────
+  'results.tab.round': 'Jornada',
+  'results.roundLabel': 'Jornada {round}',
+  'results.prevRound': 'Jornada anterior',
+  'results.nextRound': 'Jornada siguiente',
   'results.tab.grid': 'Resultados',
   'results.tab.palmares': 'Palmarés',
   'results.season': 'Temporada',
@@ -147,6 +150,20 @@ export const es: Dictionary = {
   'palmares.column.runnerUp': 'Segundo',
   'palmares.column.you': 'Tú',
   'form.notPlayed': 'Aún no jugado',
+
+  // ── Calendario ──────────────────────────────────────────────────
+  'calendar.heading': 'Calendario · {season}',
+  'calendar.column.round': 'Jornada',
+  'calendar.column.date': 'Fecha',
+  'calendar.column.opponent': 'Rival',
+  'calendar.column.result': 'Resultado',
+  'calendar.windowOpens': 'Se abre el mercado de fichajes',
+  'calendar.windowCloses': 'Se cierra el mercado de fichajes',
+  'calendar.settlement': 'Salarios, televisión y patrocinio',
+  'calendar.seasonEnds': 'Fin de temporada y veredicto de la junta',
+  'calendar.won': 'Victoria',
+  'calendar.drew': 'Empate',
+  'calendar.lost': 'Derrota',
 
   // ── Plantilla ────────────────────────────────────────────────────────────
   'squad.heading': '{club} · Plantilla',
@@ -494,6 +511,15 @@ export const es: Dictionary = {
     'Desplazarla hacia el ataque quita fuerza a la defensa y la pone en el ataque; hacia el otro lado, al revés. No hace mejor al equipo.',
   'explain.approach.p2':
     'Y no es un intercambio justo en ninguna dirección: siempre cedes más de lo que ganas, y cuanto más fuerzas peor es el cambio. Apostar por el ataque le va bien a un equipo lo bastante bueno para ganar el partido; uno más débil saca más cerrándolo. Un equipo medio suele salir castigado haciendo cualquiera de las dos cosas.',
+  'explain.calendar.title': 'Las fechas que cuentan',
+  'explain.calendar.p1':
+    'Tus treinta y ocho partidos en orden, con las fechas que la liga y la junta te imponen intercaladas donde caen. Las jornadas van de una en una cada semana; lo demás, no.',
+  'explain.calendar.p2':
+    'El mercado solo está abierto en verano y en enero. Mientras está abierto lo ves en la esquina de arriba, y te avisamos {warning} días antes de que se cierre. Una vez cerrado no puedes comprar ni vender hasta que vuelva a abrirse.',
+  'explain.calendar.p3':
+    'El uno de cada mes salen los salarios de toda la plantilla y entran la televisión y el patrocinio. Todo de golpe: un saldo que pinta bien el día treinta puede quedarse corto el día dos. Las obras y los traspasos se pagan aparte, el día que los firmas.',
+  'explain.calendar.p4':
+    'El último partido cierra la temporada, y es el mismo día en que la junta juzga dónde has quedado. Después empieza el verano y el mercado vuelve a abrirse.',
 
   // ── Negativas ────────────────────────────────────────────────────────────
   'error.unknown': 'Eso no se puede hacer',

@@ -145,10 +145,13 @@ describe('the tiles are still findable by name', () => {
     // it is why the hub's own tests reach for /Caja/ rather than an exact name —
     // and it is left alone here so this test pins what the icons changed, which
     // is nothing.
+    //
+    // Narrowed on `to` rather than on `milestone`: an unbuilt tile now *always*
+    // carries one, which is what the `Tile` union enforces.
     render(<App />)
     for (const tile of TILES) {
       const label = t(tile.key)
-      const name = tile.milestone === undefined ? label : `${label}${tile.milestone}`
+      const name = tile.to === null ? `${label}${tile.milestone}` : label
       expect(screen.getByRole('button', { name }), name).toBeDefined()
     }
   })

@@ -1,0 +1,144 @@
+/*
+ * The season as a list of dates.
+ *
+ * One table on one `.screen`, which is why there is no grid here: the screen has
+ * no rail, deliberately, so there is nothing to lay out against. `.screen` already
+ * carries `overflow: auto`, and that is what scrolls — the table is fifty-odd rows
+ * and the next fixture is scrolled to on mount.
+ */
+
+.calendar-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/*
+ * The table scrolls; the heading does not.
+ *
+ * `.screen` carries `overflow: auto` of its own, so without this the whole screen
+ * is the scroller and the heading goes up and out of view with the fixtures —
+ * taking the "i" that explains the deadline rows with it, which is the one control
+ * on the screen. A screenshot at matchday 14 had scrolled 218px and the explainer
+ * was simply absent. `.results-grid__scroll` exists for exactly this reason.
+ *
+ * `min-height: 0` is what lets a flex child actually shrink and scroll rather than
+ * growing to its content — the same trap `LineupScreen` records for its own rows.
+ */
+.calendar-screen__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/*
+ * Capped, and aligned with the heading rather than centred.
+ *
+ * Four columns across 1440px puts a date and an opponent at opposite ends of the
+ * window with a hand's width of nothing between them, and the eye stops being able
+ * to carry a row. Every other table in the game has ten columns or a rail beside
+ * it and needs no cap; this is the first that is four columns on its own.
+ *
+ * **Centring it was the first attempt and looked wrong.** `.screen__heading` is
+ * full-width with a rule under it, as it is on every screen, so a centred table
+ * left the heading at the far left and its own table starting a third of the way
+ * across — two left edges disagreeing with nothing between them. Sharing the
+ * heading's padding reads as "this heading, then its table".
+ */
+.calendar-screen__table {
+  max-width: 46rem;
+  margin-left: var(--fm-space-4);
+}
+
+/*
+ * A deadline is not a fixture, and it has to read as a different kind of thing
+ * before it is read as a sentence.
+ *
+ * An accent rule down the left says "the league did this, not you" — the same
+ * device `.notice-list__item` uses for the feed, where the border carries the kind
+ * and the text always says it too.
+ */
+.calendar-screen__event td {
+  font-family: var(--fm-font-condensed);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: var(--fm-text-xs);
+}
+
+.calendar-screen__event td:first-child {
+  border-left: 2px solid var(--fm-accent);
+}
+
+/*
+ * Nine of these a season, one a month, so they are the quiet ones.
+ *
+ * **`--fm-screen-ink-soft`, never `--fm-ink-soft`.** The latter is mixed for the
+ * grey panel face and disappears on this near-black ground — which is how a
+ * disabled hub tile lost its label on a coloured quadrant and why `ShellCredit`
+ * had to be corrected the same way. Nine rows is nine chances to get it wrong.
+ */
+.calendar-screen__event.is-quiet td {
+  color: var(--fm-screen-ink-soft);
+}
+
+.calendar-screen__event.is-quiet td:first-child {
+  border-left-color: var(--fm-screen-rule);
+}
+
+/*
+ * The match you are about to play.
+ *
+ * `is-you` from `chrome.css` already gives it the gold wash the classification
+ * uses for your own row, so this only adds the marker on the leading edge — the
+ * same 2px channel the deadline rows use, so the two never fight for the gutter.
+ */
+.calendar-screen__next td:first-child {
+  border-left: 2px solid var(--fm-accent);
+}
+
+/*
+ * `.data-table__row.is-you td` in `chrome.css` is two classes and an element, so it
+ * outranks these single-class rules and paints the next match's cells white.
+ *
+ * That collision is unreachable rather than tolerated: `is-you` is only ever on the
+ * *next* fixture, and the next fixture is by definition unplayed, so it carries no
+ * outcome class at all. Worth knowing before anyone marks a played row this way.
+ */
+.calendar-screen__score {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/*
+ * Reuses the form strip's tokens rather than inventing three colours. Those are
+ * deliberately aliases (`--fm-win: var(--fm-uecl)`) because `tokens.css` is
+ * emphatic that a band colour is named for its competition, not its role — so
+ * writing `--fm-uecl` here to mean "won" is exactly the mistake that comment is a
+ * monument to.
+ */
+.calendar-screen__score.is-win {
+  color: var(--fm-win);
+}
+
+.calendar-screen__score.is-draw {
+  color: var(--fm-draw);
+}
+
+.calendar-screen__score.is-loss {
+  color: var(--fm-loss);
+}
+
+/*
+ * A row is a jornada, a date, an opponent and a score, and the first two stop
+ * earning their width before the other two do.
+ */
+@media (max-width: 40rem) {
+  .calendar-screen__table {
+    max-width: none;
+  }
+
+  .calendar-screen__event td {
+    font-size: 0.625rem;
+  }
+}

@@ -43,6 +43,7 @@ export type Screen =
   | 'hub'
   | 'table'
   | 'results'
+  | 'calendar'
   | 'squad'
   | 'lineup'
   | 'market'

@@ -10,6 +10,7 @@ import { SettingsMenu } from './screens/SettingsMenu.tsx'
 import { ShellCredit } from './screens/ShellCredit.tsx'
 import { ShellFoot } from './screens/ShellFoot.tsx'
 import { ResultsScreen } from './screens/ResultsScreen.tsx'
+import { CalendarScreen } from './screens/CalendarScreen.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
@@ -41,6 +42,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   hub: 'nav.hub',
   table: 'nav.table',
   results: 'nav.results',
+  calendar: 'nav.calendar',
   squad: 'nav.squad',
   lineup: 'nav.lineup',
   market: 'nav.market',
@@ -54,6 +56,7 @@ const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
   hub: HubScreen,
   table: TableScreen,
   results: ResultsScreen,
+  calendar: CalendarScreen,
   squad: SquadScreen,
   lineup: LineupScreen,
   market: MarketScreen,
