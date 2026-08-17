@@ -1,0 +1,58 @@
+/*
+ * The maker's plate.
+ *
+ * Sits directly on `--fm-void` rather than on a `.panel`, unlike the title bar and
+ * the bottom bar. Those two are the hardware the stage is held between; a third
+ * piece for a one-line credit would be a lot of chrome, and outside the machine is
+ * where a maker's plate belongs.
+ *
+ * That choice decides the colour, and it is a trap this project has paid for once
+ * already: `--fm-ink-soft` is a dark neutral mixed for the grey panel face and
+ * disappears entirely on the near-black void — which is exactly how a disabled hub
+ * tile lost its label on a coloured quadrant. The screen inks are the ones that
+ * read here.
+ */
+
+.shell__credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-2);
+  /* No vertical padding: the 16px mark sets the line box, and the shell's own
+     grid gap above and frame padding below already space it. Every pixel here is
+     taken off the stage on *every* screen, so the strip is as short as its
+     contents. */
+  padding: 0 var(--fm-space-4);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: 0.06em;
+  color: var(--fm-screen-ink-soft);
+}
+
+/* `flex: none` or the mark is squeezed by the text beside it — both cerdanya and
+   masiablanca declare it for the same reason. The attributes are on the element
+   too, so the row does not reflow once the image loads. */
+.shell__credit-icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+/*
+ * The app's first and only `<a>`. Left block-scoped rather than promoted to
+ * `chrome.css`, which graduates a primitive on its *second* use — and there is no
+ * second link anywhere in the app.
+ *
+ * A colour is not optional here: with no anchor rule in the shared chrome, the
+ * browser default paints this bright blue on a near-black ground. `css: false` and
+ * jsdom's lack of layout mean no test in the suite could see that, so
+ * `chrome.test.ts` reads this file instead.
+ */
+.shell__credit-link {
+  color: var(--fm-screen-ink);
+  text-decoration: underline;
+}
+
+.shell__credit-link:hover {
+  color: var(--fm-accent);
+}

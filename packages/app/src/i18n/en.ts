@@ -50,6 +50,7 @@ export const en: Dictionary = {
   'shell.matchday': 'Matchday {round}',
   'shell.windowOpen.one': 'Transfer window open · {count} day',
   'shell.windowOpen.other': 'Transfer window open · {count} days',
+  'shell.madeBy': 'Made by',
 
   // ── Fixtures ─────────────────────────────────────────────────────────────
   // Home and away as whole phrases: the letter in brackets is an abbreviation of

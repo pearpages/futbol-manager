@@ -41,6 +41,7 @@ export const es: Dictionary = {
   'shell.matchday': 'Jornada {round}',
   'shell.windowOpen.one': 'Mercado abierto · {count} día',
   'shell.windowOpen.other': 'Mercado abierto · {count} días',
+  'shell.madeBy': 'Hecho por',
 
   // ── Partidos ─────────────────────────────────────────────────────────────
   'fixture.home': 'contra {club} (C)',

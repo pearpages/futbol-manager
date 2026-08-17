@@ -7,6 +7,7 @@ import { type Screen, useGame } from './store.ts'
 import { BadgeDefs } from './screens/ClubBadge.tsx'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { SettingsMenu } from './screens/SettingsMenu.tsx'
+import { ShellCredit } from './screens/ShellCredit.tsx'
 import { ShellFoot } from './screens/ShellFoot.tsx'
 import { TableScreen } from './screens/TableScreen.tsx'
 import { SquadScreen } from './screens/SquadScreen.tsx'
@@ -104,6 +105,7 @@ export function App() {
         <main className="shell__stage">
           <SetupScreen />
         </main>
+        <ShellCredit />
       </div>
     )
   }
@@ -154,6 +156,10 @@ export function App() {
           screen — it used to be eight separate buttons in three different
           places, one of them at the top. */}
       <ShellFoot />
+
+      {/* Below the hardware rather than on it — the plate on the underside of the
+          machine, not a control. Carried by both branches of the shell. */}
+      <ShellCredit />
     </div>
   )
 }

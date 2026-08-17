@@ -5,11 +5,12 @@
   /* One column. Navigation is the hub, not a rail — see ADR 0008 and the
      reference in assets/pcfutbol-5.0/. */
   grid-template-columns: minmax(0, 1fr);
-  /* Bar · stage · foot. The stage is the only row that flexes, and it already
-     carried `min-height: 0` with every screen root delegating scroll to
-     `.screen` — which is why the foot needs no fixed positioning and cannot
-     push anything off the bottom. */
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  /* Bar · stage · foot · credit. The stage is the only row that flexes, and it
+     already carried `min-height: 0` with every screen root delegating scroll to
+     `.screen` — which is why neither the foot nor the credit needs fixed
+     positioning and neither can push anything off the bottom. Both are `auto`,
+     so they take their height and the stage pays for it. */
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: var(--fm-space-2);
   height: 100%;
   padding: var(--fm-space-2);
@@ -103,9 +104,10 @@
   min-width: 0;
 }
 
-/* No career, so nothing to save and nowhere to go back to. */
+/* No career, so nothing to save and nowhere to go back to — but the credit stays.
+   Bar · stage · credit. */
 .shell--setup {
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 /* ── The transfer window, in the title bar ───────────────────────────────── */

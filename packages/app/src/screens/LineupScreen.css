@@ -37,9 +37,12 @@
   min-height: 0;
 }
 
+/* No bottom padding. This is the panel the layout designates as the one that
+   scrolls, so trailing space inside it buys nothing and costs a row: the credit
+   strip added at the foot of the shell is paid for here and out of the group
+   padding below, which leaves this screen exactly as tall as it was. */
 .lineup-screen__xi {
   min-height: 0;
-  padding-bottom: var(--fm-space-2);
 }
 
 /* The heading is fixed and the pitch takes the rest; the SVG letterboxes itself
@@ -168,8 +171,11 @@ button.lineup-screen__sub {
 
 /* ── Groups ──────────────────────────────────────────────────────────────── */
 
+/* Four groups on the screen, so every step of top padding here is four rows'
+   worth of height. The uppercase title and the rows' own rules already separate
+   the banks; the extra 4px was doing very little for what it cost. */
 .lineup-group {
-  padding: var(--fm-space-2) var(--fm-space-4) 0;
+  padding: var(--fm-space-1) var(--fm-space-4) 0;
 }
 
 .lineup-group__title {

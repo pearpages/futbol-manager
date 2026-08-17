@@ -39,15 +39,22 @@ const RUNS = 6
  *
  * The second half of that used to be free. While capacity was a curve on rating,
  * picking a club mid-table on the pitch picked one mid-table in the bank as well.
- * Real grounds broke the equivalence: this was `c14`, which now has the ninth
- * biggest stadium in the division behind the fourteenth best squad — the most
- * over-housed club in the league, and so the one with the most to gain from a
- * market its rivals cannot afford to enter. It measured **+10.6 points** against
- * +7.0 to +8.4 for every other mid-table club, on an identical control arm.
+ * Real grounds broke the equivalence, and the subject has to be chosen on both
+ * axes now: **`c13` is thirteenth by rating and thirteenth by seats.** `c14`, which
+ * this used to be, is fourteenth by rating and eleventh by seats — over-housed, and
+ * so holding money its rivals do not have in a market they cannot enter.
  *
- * `c13` is the closest the division has to proportionate: thirteenth by rating,
- * eleventh by seats. Picking it measures the market rather than one club's luck
- * with a landlord.
+ * That is not a theory, it is what the arm measures. `c14` came out at **+10.6,
+ * +11.4 and +13.8** as the TV pool rose, against a ceiling of 10, while `c13` held
+ * between **+8.2 and +8.4** throughout. Every other mid-table club sat at +7.0 to
+ * +8.4 too, so `c14` is the outlier rather than the rule.
+ *
+ * **The control arm is what rules out the other explanation.** It does not move —
+ * 44.5 points under every economy setting tried — so this is not M4c's trap, where
+ * a number rose because the club standing still was quietly getting worse.
+ *
+ * Re-derive both ranks if the league is ever rescaled; they are facts about the
+ * current `TEST_CLUBS`, not permanent properties of an index.
  */
 const MANAGED_INDEX = 12
 const MANAGED = TEST_CLUBS[MANAGED_INDEX]?.id ?? ('c13' as ClubId)

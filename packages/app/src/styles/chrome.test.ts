@@ -78,6 +78,36 @@ describe('the sortable column header', () => {
   })
 })
 
+describe('the credit, which holds the only real link in the app', () => {
+  // Read separately: this one is block-scoped rather than shared chrome, because
+  // the house rule graduates a primitive on its second use and there is no second
+  // link anywhere.
+  const sheet = readFileSync(
+    resolve(process.cwd(), 'packages/app/src/styles/shell-credit.css'),
+    'utf8',
+  )
+
+  it('gives the anchor a colour, or the browser paints it its own blue', () => {
+    // `.player-link` is a `<button>`; this is the app's first and only `<a>`, and
+    // an anchor with no colour rule is bright blue and underlined by UA default —
+    // on a near-black ground. `css: false` and jsdom's lack of layout mean nothing
+    // else in the suite can see it.
+    const start = sheet.indexOf('.shell__credit-link {')
+    expect(start, '.shell__credit-link has no rule').toBeGreaterThan(-1)
+    expect(sheet.slice(start, sheet.indexOf('}', start))).toMatch(/color:\s*var\(--fm-/)
+  })
+
+  it('inks itself for the void it sits on, not for the panel face', () => {
+    // The strip is on `--fm-void`, so the panel inks are the wrong material —
+    // `--fm-ink-soft` is mixed for the grey face and vanishes here, which is
+    // exactly how a disabled hub tile lost its label on a coloured quadrant.
+    const start = sheet.indexOf('.shell__credit {')
+    expect(start, '.shell__credit has no rule').toBeGreaterThan(-1)
+    const rule = sheet.slice(start, sheet.indexOf('}', start))
+    expect(rule).toMatch(/color:\s*var\(--fm-screen-ink-soft\)/)
+  })
+})
+
 describe("a player's name as a control", () => {
   it('inherits the type it stands in for, or it renders in the browser default font', () => {
     // The same trap `.data-table__sort` documents, but across more materials: this

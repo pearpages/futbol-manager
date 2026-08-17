@@ -304,6 +304,24 @@ The blow-by-blow lives in `CLAUDE.md`'s session log; this section exists so the 
 
 ---
 
+## M5c — Sponsorship
+
+**~1 week**
+
+`BASE_SPONSOR` is one constant standing in for a club's whole commercial life. M5c makes it a set of **named deals** — shirt, kit, training, cars, clothing — each with a value and a term, and each able to arrive and to end.
+
+**Deals come and go in proportion to performance, and purely deterministically.** A run of form or a league position earns a deal and holds it; falling away loses it. No `rng` anywhere in it, so no second stream, no change to the save envelope, and `pnpm season` stays byte-identical — the same discipline `bids.ts` lives under. It is unpredictable to a manager without being random to the engine.
+
+**The warning is the feature, not a nicety.** A deal that is about to end has to be announced far enough ahead that the manager can sell or release before the loss lands. A sponsor that simply vanishes on a settlement day is a bug report, not a decision.
+
+**Why sponsorship and not the gate or TV.** The three revenue lines now do three different jobs — see [market-model.md](./market-model.md). The gate rewards an inherited ground, TV is the flat floor that keeps a small-stadium club solvent, and **sponsorship is the only line still shaped by how good you are**. That makes it the one that can be volatile without bankrupting anybody: what you lose when a sponsor leaves is what you earned by being good, and the floor underneath is untouched. It is also why `BASE_SPONSOR` was deliberately left alone when the TV pool was raised.
+
+**One design question to settle at the start, not now:** deterministic is not stateless. A three-year deal signed in 2028 is state on `Club`, which means a schema bump and a migration — or the term is derived from form history the game already keeps, and it is not. Decide that before writing anything.
+
+**Exit:** a club can name its sponsors and what each is worth, a good season attracts one, a bad run loses one, and no deal ever ends without a warning first.
+
+---
+
 ## M6 — Living squad
 
 **~3 weeks**

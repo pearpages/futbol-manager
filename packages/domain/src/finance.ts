@@ -101,10 +101,13 @@ export const FINANCE = {
    * not fix them, because their own grounds fell far further than the average.
    *
    * At 2× both arms of the human harness clear their overdrafts with the worst
-   * club at 0.17× its limit, and the league total lands at 2.30× over fifty
-   * seasons against 2.15× before — `WAGE_INFLATION` taxes the extra income back,
-   * which is the brake working as designed. €13.80 a seat is also the more
-   * plausible figure; €6.90 was a number chosen to balance imaginary stadiums.
+   * club at 0.17× its limit — `WAGE_INFLATION` taxes the extra income back, which
+   * is the brake working as designed. €13.80 a seat is also the more plausible
+   * figure; €6.90 was a number chosen to balance imaginary stadiums.
+   *
+   * **This lever fixed solvency and skewed the distribution**, because the gate
+   * rewards whoever inherited a big ground. `TV_POOL` is the correction; the two
+   * were tuned together and should be read together.
    */
   TICKET: 0.0138,
   /** How far a manager may move the price, as a multiple of the default. */
@@ -133,11 +136,39 @@ export const FINANCE = {
   /** Floor and ceiling on how full a ground gets, whatever the form. */
   MIN_OCCUPANCY: 0.45,
   MAX_OCCUPANCY: 0.98,
-  /** The league's television money for a season, before it is split. */
-  TV_POOL: 78_000,
+  /**
+   * The league's television money for a season, before it is split.
+   *
+   * **TV is the equaliser, and raising it is how the league's money is kept from
+   * pooling at the top.** It is the only line paid for being in the division
+   * rather than for what a club owns: the gate rewards an inherited ground and
+   * sponsorship rewards a good squad, so neither can do this job.
+   *
+   * **Raised from 78,000 by half when the grounds became real.** Real capacities
+   * plus the doubled `TICKET` left richest-to-poorest at 6.1× and the top three
+   * holding 31% of the money — against the 3× and 24% M5a had achieved. At 117,000
+   * that comes back to **4.8× and 29%**, which is short of M5a's figure and
+   * deliberately so; see below.
+   *
+   * **Two things bound it, and both are why it is not higher.** TV's equal share
+   * adds the *same absolute amount* to Madrid and to Almería, so it erodes
+   * `debtLimit(BIG) > debtLimit(SMALL) × 2` in `finance.test.ts` — 3.80× before,
+   * **3.24× here**, failing somewhere past ×3. And more income means a bigger
+   * league total: 2.50× over fifty seasons against a ceiling of 3×. Closing the
+   * rest of the distribution gap costs more than those two have to give.
+   */
+  TV_POOL: 117_000,
   /** How much of that pool is shared equally; the rest goes on merit. */
   TV_EQUAL_SHARE: 0.3,
-  /** Sponsorship for a club of exactly average rating, per season. */
+  /**
+   * Sponsorship for a club of exactly average rating, per season.
+   *
+   * **Untouched on purpose when the grounds became real.** Sponsorship is now the
+   * only income line still shaped by rating — the gate stopped being one — and
+   * M5c turns this constant into a set of named deals that come and go with form.
+   * Tuning it now would calibrate something about to be replaced, and the income
+   * that keeps a club alive has to be the one it cannot lose.
+   */
   BASE_SPONSOR: 1_215,
   SPONSOR_EXPONENT: 3.2,
   /** The season's prize fund, before the position ladder splits it. */
