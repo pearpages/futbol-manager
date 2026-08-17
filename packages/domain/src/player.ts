@@ -82,6 +82,29 @@ export function contractExpiry(year: number): DayNumber {
 }
 
 /**
+ * True when this deal runs out at the end of the season starting in `startYear`.
+ *
+ * A contract always expires on a 30 June, and `rolloverSeason` decides who stays
+ * by comparing against the *next* 15 August — so "his deal is up this season" is
+ * exactly `until <= contractExpiry(startYear + 1)`. The comparison is `<=` rather
+ * than `===` so that an already-expired deal, which no live career should hold,
+ * still reads as expiring rather than as safe.
+ */
+export function expiresThisSeason(player: Player, startYear: number): boolean {
+  return player.contract.until <= contractExpiry(startYear + 1)
+}
+
+/**
+ * How far ahead a deal running out is announced — half a year, counted back from
+ * the contract itself rather than from a calendar date.
+ *
+ * Lives beside the contract rather than in `reduce.ts` for the same reason
+ * `WINDOW_WARNING_DAYS` lives beside the window predicate: the constant and the
+ * thing it describes should not be able to drift apart.
+ */
+export const CONTRACT_WARNING_DAYS = 182
+
+/**
  * Position weights from docs/attribute-model.md. Each row sums to exactly 1.00 —
  * a test asserts it, because a row that drifts changes every rating in the game
  * silently.

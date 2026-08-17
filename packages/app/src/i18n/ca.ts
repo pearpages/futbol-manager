@@ -184,6 +184,16 @@ export const ca: Dictionary = {
   'squad.listed': 'En venda',
   'squad.cannotList.lineup': "És a l'onze titular — treu-lo de l'equip primer",
   'squad.cannotList.coverKeeper': 'Et quedaries amb un sol porter',
+  'squad.column.contractAction': 'Contracte',
+  'squad.renew': 'Renovar',
+  'squad.expiring': 'El contracte s’acaba aquesta temporada',
+
+  // ── Renovació ────────────────────────────────────────────────────────────
+  'renew.title': 'Renovar {player}',
+  'renew.current': 'Ara cobra {wage} i té contracte fins al {year}',
+  'renew.hint':
+    'Un contracte que s’acaba no val res com a traspàs — se’n va lliure. Renovar-lo no costa diners avui, però et compromets amb el sou fins al final.',
+  'renew.offer': 'Oferir renovació',
 
   'position.GK': 'POR',
   'position.DF': 'DEF',
@@ -435,6 +445,10 @@ export const ca: Dictionary = {
   'news.signedFree': '{player} fitxat lliure',
   'news.sold': '{player} venut al {club} per {fee}',
   'news.soldFree': '{player} traspassat al {club} lliure',
+  'news.contractRenewed': '{player} ha renovat {years} anys més, per {wage} per temporada',
+  'news.contractExpiring': 'El contracte de {player} s’acaba al final de la temporada',
+  'news.playerReleased': '{player} se’n va lliure — no li han renovat el contracte',
+  'news.playerRetired': '{player} es retira als {age} anys',
   'news.listed': '{player} està en venda',
   'news.unlisted': '{player} ja no està en venda',
   'news.seasonEnded': 'La temporada s’ha acabat',
@@ -487,13 +501,15 @@ export const ca: Dictionary = {
   'explain.squadTable.p5':
     'El sou és el que et costa tota una temporada, pagat a terminis cada mes. Tots els sous d’aquesta llista sumats són la massa salarial dels teus comptes.',
   'explain.squadTable.p6':
-    'Fins és la temporada en què s’acaba el contracte. Quan s’acaba, o bé renova o bé marxa lliure, i no ho tries tu: qui se’n va és qui al club ja no li fa falta.',
+    'Fins és la temporada en què s’acaba el contracte, i es marca en vermell quan és aquesta. Si arribes a l’estiu sense fer res, el club renova qui encara li fa falta i la resta marxa lliure — però pots renovar-lo tu abans, quan vulguis.',
   'explain.squadTable.p7':
     'Posar-lo a la llista diu als altres dinou clubs que està disponible. Sense això la teva plantilla és gairebé invisible: encara poden venir a buscar algú de qui clarament puguis prescindir, però un jugador llistat els costa molt menys de decidir.',
   'explain.squadTable.p8':
     'La llista és el consentiment. Un jugador llistat que trobi comprador es ven, i no se’t torna a preguntar.',
   'explain.squadTable.p9':
     'No pots llistar ningú del teu onze titular —treu-lo primer— ni quedar-te amb un sol porter. Les plantilles van de {min} a {max}: ningú no compra si ja és al sostre, i els clubs deixen de vendre a prop del terra.',
+  'explain.squadTable.p10':
+    'Renovar és una negociació, no un botó: has de posar-hi un sou i uns anys que ell accepti, i pot dir que no. No et costa res avui i no cal cap mercat obert. El que compres és temps —i que torni a valer alguna cosa si el vols vendre.',
   'explain.teamRating.title': 'Atac, defensa i ritme',
   'explain.teamRating.p1':
     'Aquests tres números són tot el que veu el partit. Ni els noms ni el sistema: el teu onze es redueix a això, el del rival al seu, i els gols surten de la trobada dels dos.',
@@ -540,6 +556,8 @@ export const ca: Dictionary = {
   'error.contract.wholeYears': 'La durada del contracte ha de ser en anys sencers',
   'error.contract.range': 'Un contracte va de {min} a {max} anys',
   'error.contract.negativeWage': 'Un sou no pot ser negatiu',
+  'error.renew.notYours': 'Només pots renovar els teus jugadors',
+  'error.renew.shorter': '{player} ja té contracte per més temps del que li ofereixes',
   'error.offer.notYours': 'Aquesta oferta no et toca respondre-la',
   'error.offer.settled': 'Aquesta oferta ja està resolta',
   'error.offer.cannotSpare': 'Ja no te’n pots desprendre',

@@ -139,6 +139,22 @@ The season runs from 15 August to May, and `StartNewSeason` jumps straight to th
 
 ---
 
+## Keeping one
+
+`RenewContract` is `OfferContract` with the transfer taken out: no fee, no `applyTransfers`, no money moves at all. What it keeps is the negotiation — the same `offerTerms` a signing goes through, so he can refuse the wage or the length, and a refusal is an event with the state untouched rather than a throw.
+
+Three clauses differ from a signing, and each is deliberate:
+
+- **No transfer window.** A deadline protects the club you would be buying from, and there is no such club. The rollover judges his deal whether or not a window is open, so gating the only answer to it on a window would make the flag on the squad screen unactionable for most of the year.
+- **He must already be yours.** The inverse of `OfferContract`'s `error.player.yours`.
+- **The new deal may not be shorter than the old one.** With renewal available at any moment, one year offered to a man contracted for four would quietly cut three off him. That is a slip, not a decision.
+
+**The rollover rule is unchanged, and the manager is still subject to it.** Reach the summer having done nothing and `rolloverSeason` renews whoever the club still needs by `RETAIN_THRESHOLD` and lets the rest walk — for your club exactly as for the other nineteen. What changed is that it is no longer silent: `ContractExpiring` names each deal half a year out, and `PlayerReleased` / `PlayerRetired` say who actually went. Those are derived by diffing the squad either side of `rolloverSeason` inside `StartNewSeason`, **before `runTransferWindow` runs in the same handler** — after it, anyone the AI bought from you counts as released.
+
+**The fee arbitrage is real and self-limiting**, which is why there is no rule against it. `contractFactor` is 0.25 under six months and 1 above two years, so renewing a run-down player multiplies his asking price by exactly **4×** — measured. But the AI buys on `VALUE_FOR_MONEY`, which is need divided by fee plus wages, so the same 4× makes him _harder_ to sell: across a mid-season league, candidates clearing the filter fell from **4 before renewal to 2 after**. Buying cheap, renewing and selling on shrinks your market rather than growing it. Re-measure before adding a rule; do not add one on the reasoning alone.
+
+---
+
 ## What a club earns
 
 In [`finance.ts`](../packages/domain/src/finance.ts), all figures in **thousands**. Added at M5a, when money stopped being a fixed allowance.

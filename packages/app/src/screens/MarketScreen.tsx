@@ -4,7 +4,6 @@ import {
   askingPrice,
   type Bid,
   canAfford,
-  isGameError,
   bidIsLive,
   type ClubId,
   createRng,
@@ -32,7 +31,7 @@ import {
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
-import { describe as describeEvent, lookupFor } from '../notifications.ts'
+import { useAttempt } from '../attempt.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
 import { SortHeader } from './SortHeader.tsx'
@@ -174,7 +173,7 @@ export function MarketScreen() {
   const { t, money, locale } = translator
 
   const [target, setTarget] = useState<PlayerId | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const { error, attempt, clear: clearError } = useAttempt(game, translator)
   const [onlyShortlist, setOnlyShortlist] = useState(false)
   const [onlyAffordable, setOnlyAffordable] = useState(false)
   const [onlyFree, setOnlyFree] = useState(false)
@@ -269,43 +268,6 @@ export function MarketScreen() {
       p,
     ]),
   )
-
-  /**
-   * Run a command and say what came of it.
-   *
-   * Two different things can go wrong and only one of them throws. A command the
-   * reducer *refuses* throws a `GameError` — a rule you broke, and that message
-   * is the useful one. A command it *accepts* can still not get you what you
-   * wanted: terms a player turns down come back as a `TermsRejected` event with
-   * the state untouched, and nothing is thrown at all.
-   *
-   * Before the shell's news drawer went, that second case at least lit a badge.
-   * Now the only feed is on the hub — a different screen from the one you
-   * pressed the button on — so without this the button reads as broken.
-   */
-  function attempt(action: () => readonly Event[] | void) {
-    try {
-      const events = action() ?? []
-      const outcome = events.find((event) => event.type === 'TermsRejected')
-      // Reuse the feed's own sentence rather than writing a second one for the
-      // same event; `describe` already resolves his name and what he wants.
-      setError(
-        outcome === undefined
-          ? null
-          : (describeEvent(outcome, game, lookupFor(game, translator), translator)?.text ?? null),
-      )
-    } catch (thrown) {
-      // A refusal carries a code; the sentence it also carries is the fallback
-      // for anything that has not been given one.
-      setError(
-        isGameError(thrown)
-          ? t(thrown.code, thrown.params)
-          : thrown instanceof Error
-            ? thrown.message
-            : t('error.unknown'),
-      )
-    }
-  }
 
   /**
    * The deal on the table, if any.
@@ -452,7 +414,7 @@ export function MarketScreen() {
                         disabled={!open}
                         onClick={() => {
                           setTarget(player.id)
-                          setError(null)
+                          clearError()
                         }}
                       >
                         {listing.from === null ? t('market.sign') : t('market.bid')}
@@ -621,7 +583,7 @@ export function MarketScreen() {
                       className="button market-screen__mini"
                       onClick={() => {
                         setTarget(bid.playerId)
-                        setError(null)
+                        clearError()
                       }}
                     >
                       {t('market.openNegotiation')}

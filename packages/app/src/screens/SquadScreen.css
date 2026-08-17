@@ -14,6 +14,17 @@
   font-size: var(--fm-text-xs);
 }
 
+/* A deal running out this season. Red because it is a loss you have not taken
+   yet, and the cell also says so in words — colour is never the only signal.
+
+   Deliberately screen-local rather than reaching for `.is-out` in `CajaScreen.css`,
+   which means *money out* and is already borrowed unscoped by three screens.
+   Folding a fourth, differently-meaning use into it would muddy a class doing a
+   different job; graduating that pair into `chrome.css` is its own cleanup. */
+.squad-screen__expiry.is-expiring {
+  color: var(--fm-relegation);
+}
+
 .squad-screen__selected {
   color: var(--fm-champion);
   font-family: var(--fm-font-condensed);

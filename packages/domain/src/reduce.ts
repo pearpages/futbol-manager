@@ -47,7 +47,13 @@ import {
   transferWindowDaysLeft,
   WINDOW_WARNING_DAYS,
 } from './market.ts'
-import { contractExpiry, type Player, type PlayerId } from './player.ts'
+import {
+  ageOn,
+  CONTRACT_WARNING_DAYS,
+  contractExpiry,
+  type Player,
+  type PlayerId,
+} from './player.ts'
 import { resolveFixture } from './resolve.ts'
 import type { Rng } from './rng.ts'
 import { rolloverSeason } from './season.ts'
@@ -121,6 +127,20 @@ export interface OfferContract {
   readonly years: number
 }
 
+/**
+ * New terms for a player already yours.
+ *
+ * Deliberately *not* gated on the transfer window. A deadline exists to protect
+ * the clubs you would be buying from; renewing your own player involves nobody
+ * else, and the rollover judges his deal whether or not a window is open.
+ */
+export interface RenewContract {
+  readonly type: 'RenewContract'
+  readonly playerId: PlayerId
+  readonly wage: number
+  readonly years: number
+}
+
 /** Answer an AI club's offer for one of your players. */
 export interface RespondToOffer {
   readonly type: 'RespondToOffer'
@@ -175,6 +195,7 @@ export type Command =
   | MakeBid
   | WithdrawBid
   | OfferContract
+  | RenewContract
   | RespondToOffer
   | Shortlist
   | ListPlayer
@@ -246,6 +267,53 @@ export interface TermsRejected {
   readonly playerId: PlayerId
   readonly reason: 'wage' | 'length'
   readonly wanted: number
+}
+
+/** One of yours signed again. `years` is the length agreed, not the year it ends. */
+export interface ContractRenewed {
+  readonly type: 'ContractRenewed'
+  readonly playerId: PlayerId
+  readonly wage: number
+  readonly years: number
+}
+
+/**
+ * One of your deals runs out at the end of this season. Emitted once per contract,
+ * on the day the count passes `CONTRACT_WARNING_DAYS` exactly.
+ */
+export interface ContractExpiring {
+  readonly type: 'ContractExpiring'
+  readonly playerId: PlayerId
+}
+
+/**
+ * He came to the end of his deal and the club did not renew it, so he left for
+ * nothing. Managed club only — nineteen other clubs shedding players every summer
+ * would bury the feed.
+ *
+ * **Carries his name.** A released player is in `freeAgents`, so `lookupFor` would
+ * in fact still find him — but `PlayerRetired` beside it genuinely cannot be looked
+ * up, and a pair of events describing the same moment should not resolve their
+ * subject by two different routes.
+ */
+export interface PlayerReleased {
+  readonly type: 'PlayerReleased'
+  readonly playerId: PlayerId
+  readonly name: string
+}
+
+/**
+ * He hung up the boots at the rollover. Managed club only.
+ *
+ * **The name is not optional here.** `lookupFor` builds its map from every squad
+ * plus the free-agent pool, and a retired player is in neither — he is gone from
+ * the state entirely, so an id alone would render as "unknown player".
+ */
+export interface PlayerRetired {
+  readonly type: 'PlayerRetired'
+  readonly playerId: PlayerId
+  readonly name: string
+  readonly age: number
 }
 
 export interface PlayerListed {
@@ -328,6 +396,10 @@ export type Event =
   | BidAnswered
   | OfferReceived
   | TermsRejected
+  | ContractRenewed
+  | ContractExpiring
+  | PlayerReleased
+  | PlayerRetired
   | PlayerListed
   | TransferCompleted
   | BoardVerdict
@@ -358,6 +430,8 @@ export function reduce(state: GameState, command: Command, rng: Rng): ReduceResu
       return withdrawBid(state, command)
     case 'OfferContract':
       return offerContract(state, command)
+    case 'RenewContract':
+      return renewContract(state, command)
     case 'RespondToOffer':
       return respondToOffer(state, command)
     case 'Shortlist':
@@ -437,6 +511,19 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
     })
   }
 
+  // Who left your squad over the summer, and why.
+  //
+  // Both are read off `rolled` rather than `next`, and the ordering is
+  // load-bearing: the AI window runs in this same handler, so a player sold in it
+  // would otherwise be counted as released and reported twice — once here and once
+  // as a `TransferCompleted` below.
+  //
+  // This is derived by diffing rather than reported by `rolloverSeason`, which
+  // keeps that function's signature and its rng draw count untouched. It is called
+  // directly by `simulateCareer`, so a change there is a change to every
+  // calibrated band in the project.
+  for (const gone of departures(state, rolled)) events.push(gone)
+
   for (const transfer of transfers) {
     events.push({
       type: 'TransferCompleted',
@@ -449,6 +536,41 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
 
   // Last season's bids belong to last season. Anything unresolved is gone.
   return { state: { ...next, bids: [] }, events }
+}
+
+/**
+ * Everyone who was in your squad before the rollover and is not in it after.
+ *
+ * Two fates, told apart by where he ended up: the free-agent pool means the club
+ * declined to renew an expiring deal, and nowhere at all means he retired. Until
+ * this existed both were silent — a player was simply gone from the list the next
+ * time you looked, which is the least a season rollover should be able to say.
+ *
+ * Managed club only. Nineteen other clubs shed players every summer too, and
+ * reporting them would bury everything worth reading.
+ */
+function departures(before: GameState, after: GameState): readonly Event[] {
+  const kept = new Set((after.squads[after.managedClubId] ?? []).map((p) => p.id))
+  const free = new Set(after.freeAgents.map((p) => p.id))
+  const events: Event[] = []
+
+  for (const player of before.squads[before.managedClubId] ?? []) {
+    if (kept.has(player.id)) continue
+    events.push(
+      free.has(player.id)
+        ? { type: 'PlayerReleased', playerId: player.id, name: player.name }
+        : {
+            type: 'PlayerRetired',
+            playerId: player.id,
+            name: player.name,
+            // His age on the day he stopped, which is the rollover's own reference
+            // date rather than the last day of the season just finished.
+            age: ageOn(player, after.season.currentDate),
+          },
+    )
+  }
+
+  return events
 }
 
 /** Locates a player anywhere in the league, and who holds him. */
@@ -663,6 +785,94 @@ function offerContract(state: GameState, command: OfferContract): ReduceResult {
         from: found.club,
         to: state.managedClubId,
         fee,
+      },
+    ],
+  }
+}
+
+/**
+ * New terms for a player already yours.
+ *
+ * `offerContract` minus the transfer: no fee, no `applyTransfers`, no money. What
+ * it keeps is the part that matters — the player still has to accept, judged by
+ * the same `offerTerms` a signing goes through, so a renewal is a negotiation
+ * rather than a button that always works.
+ *
+ * **Three clauses differ from `offerContract` and each is deliberate.** There is no
+ * window check, because a deadline protects the club you would be buying from and
+ * there is no such club here. `found.club === managedClubId` is required rather
+ * than forbidden. And the new deal may not be shorter than the one he is on: with
+ * renewal available at any moment, offering one year to a man contracted to 2031
+ * would quietly cut four years off him, which is a slip rather than a decision.
+ */
+function renewContract(state: GameState, command: RenewContract): ReduceResult {
+  const date = state.season.currentDate
+  const squad = state.squads[state.managedClubId] ?? []
+  const player = squad.find((p) => p.id === command.playerId)
+
+  if (player === undefined) {
+    throw new GameError('error.renew.notYours', `${command.playerId} is not one of yours`)
+  }
+  if (!Number.isInteger(command.years)) {
+    throw new GameError(
+      'error.contract.wholeYears',
+      `A contract runs a whole number of years, got ${command.years}`,
+    )
+  }
+  if (command.years < MIN_CONTRACT_YEARS || command.years > MAX_CONTRACT_YEARS) {
+    throw new GameError(
+      'error.contract.range',
+      `A contract runs ${MIN_CONTRACT_YEARS}–${MAX_CONTRACT_YEARS} years, got ${command.years}`,
+      { min: MIN_CONTRACT_YEARS, max: MAX_CONTRACT_YEARS },
+    )
+  }
+  if (!Number.isFinite(command.wage) || command.wage < 0) {
+    throw new GameError(
+      'error.contract.negativeWage',
+      `A wage cannot be negative, got ${command.wage}`,
+    )
+  }
+
+  const until = contractExpiry(state.season.startYear + command.years)
+  if (until <= player.contract.until) {
+    throw new GameError(
+      'error.renew.shorter',
+      `${player.name} is already contracted at least that long`,
+      { player: player.name },
+    )
+  }
+
+  const verdict = offerTerms(player, { wage: command.wage, years: command.years }, date)
+  if (!verdict.accepted) {
+    // A refusal is an outcome, not a mistake — the state is untouched so the terms
+    // can be improved. `TermsRejected` is reused rather than duplicated: it already
+    // says who, why, and what he would sign for, and the feed already has a
+    // sentence for it.
+    return {
+      state,
+      events: [
+        {
+          type: 'TermsRejected',
+          playerId: command.playerId,
+          reason: verdict.reason === 'agreed' ? 'wage' : verdict.reason,
+          wanted: verdict.wanted,
+        },
+      ],
+    }
+  }
+
+  const renewed = squad.map((p) =>
+    p.id === command.playerId ? { ...p, contract: { until, wage: Math.round(command.wage) } } : p,
+  )
+
+  return {
+    state: { ...state, squads: { ...state.squads, [state.managedClubId]: renewed } },
+    events: [
+      {
+        type: 'ContractRenewed',
+        playerId: command.playerId,
+        wage: Math.round(command.wage),
+        years: command.years,
       },
     ],
   }
@@ -1195,6 +1405,21 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   const left = transferWindowDaysLeft(next.season.currentDate)
   if (left === WINDOW_WARNING_DAYS) {
     events.push({ type: 'TransferWindowClosing', daysLeft: left, date: next.season.currentDate })
+  }
+
+  // Your own deals running out this summer, announced far enough ahead to sell or
+  // renew. Exact equality for the same reason the window warning above uses it: the
+  // tick moves one day, so a contract passes through the threshold once and only
+  // once, where a `<=` would repeat every name every day for six months.
+  //
+  // Because a contract always expires on a 30 June, counting back from `until`
+  // lands on 30 December — inside the season, and reachable. Anything keyed on the
+  // *calendar* rather than on the contract risks July, which the clock never
+  // enters; that fact has cost this project three separate defects.
+  for (const player of next.squads[next.managedClubId] ?? []) {
+    if (player.contract.until - next.season.currentDate === CONTRACT_WARNING_DAYS) {
+      events.push({ type: 'ContractExpiring', playerId: player.id })
+    }
   }
 
   // Emitted once, on the transition — not on every subsequent day.

@@ -6,6 +6,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { back, openScreen } from '../testing.ts'
 import { listingsFor } from './MarketScreen.tsx'
+import { translatorFor } from '../i18n/useT.ts'
 
 /**
  * The ficha — the radar, the comparison, and the block that says what any of the
@@ -278,6 +279,33 @@ describe('whose player this is', () => {
     openFicha(at('MF'))
 
     expect(document.querySelector('.ficha__status')?.textContent).toMatch(/starting XI|bench/)
+  })
+})
+
+describe('renewing from the card', () => {
+  const { t } = translatorFor('en')
+
+  it('offers a renewal for one of your own', () => {
+    openFicha(at('MF'))
+    expect(screen.getByRole('button', { name: t('squad.renew') })).toBeDefined()
+  })
+
+  it('offers nothing for a rival, because you cannot renew him', () => {
+    // The pair is the constraint. Hiding the button for everybody would satisfy
+    // the test above on its own.
+    openListedFicha()
+    expect(screen.queryByRole('button', { name: t('squad.renew') })).toBeNull()
+  })
+
+  it('opens the same dialog the squad screen uses', () => {
+    const player = at('MF')
+    openFicha(player)
+    fireEvent.click(screen.getByRole('button', { name: t('squad.renew') }))
+
+    const dialog = within(screen.getByRole('dialog'))
+    expect(
+      dialog.getByRole('heading', { name: t('renew.title', { player: player.name }) }),
+    ).toBeDefined()
   })
 })
 

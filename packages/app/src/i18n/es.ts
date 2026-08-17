@@ -183,6 +183,16 @@ export const es: Dictionary = {
   'squad.listed': 'En venta',
   'squad.cannotList.lineup': 'Está en tu once titular — sácalo del equipo primero',
   'squad.cannotList.coverKeeper': 'Te quedarías con un solo portero',
+  'squad.column.contractAction': 'Contrato',
+  'squad.renew': 'Renovar',
+  'squad.expiring': 'El contrato termina esta temporada',
+
+  // ── Renovación ───────────────────────────────────────────────────────────
+  'renew.title': 'Renovar a {player}',
+  'renew.current': 'Ahora cobra {wage} y tiene contrato hasta {year}',
+  'renew.hint':
+    'Un contrato que se acaba no vale nada como traspaso — se va libre. Renovarlo no cuesta dinero hoy, pero te comprometes con el sueldo hasta el final.',
+  'renew.offer': 'Ofrecer renovación',
 
   'position.GK': 'POR',
   'position.DF': 'DEF',
@@ -433,6 +443,10 @@ export const es: Dictionary = {
   'news.signedFree': '{player} fichado libre',
   'news.sold': '{player} vendido al {club} por {fee}',
   'news.soldFree': '{player} traspasado al {club} libre',
+  'news.contractRenewed': '{player} ha renovado {years} años más, por {wage} por temporada',
+  'news.contractExpiring': 'El contrato de {player} termina al final de la temporada',
+  'news.playerReleased': '{player} se va libre — no le han renovado el contrato',
+  'news.playerRetired': '{player} se retira a los {age} años',
   'news.listed': '{player} está en venta',
   'news.unlisted': '{player} ya no está en venta',
   'news.seasonEnded': 'La temporada ha terminado',
@@ -485,13 +499,15 @@ export const es: Dictionary = {
   'explain.squadTable.p5':
     'El sueldo es lo que te cuesta una temporada entera, pagado a plazos cada mes. Todos los sueldos de esta lista sumados son la masa salarial de tus cuentas.',
   'explain.squadTable.p6':
-    'Hasta es la temporada en que termina el contrato. Cuando termina, o renueva o se va libre, y no lo eliges tú: el que se va es el que en el club ya no hace falta.',
+    'Hasta es la temporada en que termina el contrato, y se marca en rojo cuando es esta. Si llegas al verano sin hacer nada, el club renueva a quien todavía le hace falta y el resto se va libre — pero puedes renovarlo tú antes, cuando quieras.',
   'explain.squadTable.p7':
     'Ponerlo en la lista dice a los otros diecinueve clubes que está disponible. Sin eso tu plantilla es casi invisible: todavía pueden venir a por alguien de quien claramente puedas prescindir, pero un jugador listado les cuesta mucho menos de decidir.',
   'explain.squadTable.p8':
     'La lista es el consentimiento. Un jugador listado que encuentre comprador se vende, y no se te vuelve a preguntar.',
   'explain.squadTable.p9':
     'No puedes listar a nadie de tu once titular —sácalo primero— ni quedarte con un solo portero. Las plantillas van de {min} a {max}: nadie compra si ya está en el techo, y los clubes dejan de vender cerca del suelo.',
+  'explain.squadTable.p10':
+    'Renovar es una negociación, no un botón: tienes que poner un sueldo y unos años que él acepte, y puede decir que no. No te cuesta nada hoy y no hace falta ningún mercado abierto. Lo que compras es tiempo — y que vuelva a valer algo si quieres venderlo.',
   'explain.teamRating.title': 'Ataque, defensa y ritmo',
   'explain.teamRating.p1':
     'Estos tres números son todo lo que ve el partido. Ni los nombres ni el sistema: tu once se reduce a esto, el del rival al suyo, y los goles salen del encuentro de ambos.',
@@ -538,6 +554,8 @@ export const es: Dictionary = {
   'error.contract.wholeYears': 'La duración del contrato tiene que ser en años enteros',
   'error.contract.range': 'Un contrato va de {min} a {max} años',
   'error.contract.negativeWage': 'Un sueldo no puede ser negativo',
+  'error.renew.notYours': 'Solo puedes renovar a tus jugadores',
+  'error.renew.shorter': '{player} ya tiene contrato para más tiempo del que le ofreces',
   'error.offer.notYours': 'Esa oferta no te toca responderla',
   'error.offer.settled': 'Esa oferta ya está resuelta',
   'error.offer.cannotSpare': 'Ya no puedes prescindir de él',

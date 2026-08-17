@@ -15,11 +15,13 @@ import {
   type TeamRating,
   toCivil,
 } from '@fm/domain'
+import { useState } from 'react'
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
 import { AttributeRadar } from './AttributeRadar.tsx'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
+import { RenewPanel } from './RenewPanel.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import './PlayerScreen.css'
 
@@ -153,6 +155,7 @@ export function PlayerScreen() {
   const comparedId = useGame((s) => s.comparedPlayerId)
   const compare = useGame((s) => s.compare)
   const { t, percent, money } = useT()
+  const [renewing, setRenewing] = useState(false)
 
   const squad = game.squads[game.managedClubId] ?? []
   // The ficha reads anyone in the game, not only your own players — the market
@@ -368,6 +371,21 @@ export function PlayerScreen() {
 
       {isYours && (
         <p className="ficha__status">{t(isStarting ? 'player.inXI' : 'player.onBench')}</p>
+      )}
+
+      {/* The card's first action, and gated on his being yours for the same reason
+          the status line is: renewing somebody else's player is not a thing you
+          can do, and the reducer would refuse it anyway. */}
+      {isYours && (
+        <div className="screen-actions">
+          <button type="button" className="button" onClick={() => setRenewing(true)}>
+            {t('squad.renew')}
+          </button>
+        </div>
+      )}
+
+      {isYours && renewing && (
+        <RenewPanel key={player.id} player={player} onClose={() => setRenewing(false)} />
       )}
     </section>
   )

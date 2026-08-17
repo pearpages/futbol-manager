@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { bestXI, surplus, toCivil, wageBill } from '@fm/domain'
+import {
+  bestXI,
+  contractExpiry,
+  overall,
+  suggestedTerms,
+  surplus,
+  toCivil,
+  wageBill,
+} from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
@@ -316,5 +324,189 @@ describe('sorting the squad', () => {
 
     fireEvent.click(header(t('squad.column.player')))
     expect(listable()).toEqual(before)
+  })
+})
+
+describe('a contract running out', () => {
+  const { t } = translatorFor('en')
+
+  /** Put one of your players on a deal that ends with this season. */
+  function expireSomebody() {
+    const state = useGame.getState()
+    const squad = state.game.squads[state.game.managedClubId] ?? []
+    const player = squad[0]
+    if (player === undefined) throw new Error('empty squad')
+
+    const until = contractExpiry(state.game.season.startYear + 1)
+    useGame.setState({
+      game: {
+        ...state.game,
+        squads: {
+          ...state.game.squads,
+          [state.game.managedClubId]: squad.map((p) =>
+            p.id === player.id ? { ...p, contract: { ...p.contract, until } } : p,
+          ),
+        },
+      },
+    })
+    return player
+  }
+
+  it('marks the year red only for the season it actually ends in', () => {
+    const expiring = expireSomebody()
+    openSquad()
+
+    const cell = (name: string) =>
+      within(rowFor(name)).getByText(String(useGame.getState().game.season.startYear + 1), {
+        selector: 'span',
+      }).parentElement
+
+    expect(rowFor(expiring.name).querySelector('.is-expiring')).not.toBeNull()
+
+    // And a guard on the guard: a rule that painted every row would satisfy the
+    // assertion above whenever the first player happened to be expiring anyway.
+    const safe = (useGame.getState().game.squads[useGame.getState().game.managedClubId] ?? []).find(
+      (p) => p.id !== expiring.id && toCivil(p.contract.until).y > game().season.startYear + 1,
+    )
+    if (safe === undefined) throw new Error('everyone is expiring')
+    expect(rowFor(safe.name).querySelector('.is-expiring')).toBeNull()
+    expect(cell).toBeDefined()
+  })
+
+  it('says so in words, not only in colour', () => {
+    const expiring = expireSomebody()
+    openSquad()
+
+    const cell = rowFor(expiring.name).querySelector('.squad-screen__expiry')
+    expect(cell?.textContent).toContain(t('squad.expiring'))
+    // The leading space is what keeps the year and the sentence from running
+    // together into "2027His contract expires this season" — the defect this
+    // project has now shipped five times in other places.
+    expect(cell?.textContent).not.toMatch(/\d(?=[A-Za-z])/)
+  })
+
+  it('still prints the bare year, so the column reads as a column', () => {
+    const expiring = expireSomebody()
+    openSquad()
+    const year = String(useGame.getState().game.season.startYear + 1)
+    expect(within(rowFor(expiring.name)).getAllByText(year).length).toBeGreaterThan(0)
+  })
+})
+
+describe('renewing from the squad', () => {
+  const { t } = translatorFor('en')
+
+  const renewButtonIn = (name: string) =>
+    within(rowFor(name)).getByRole('button', { name: t('squad.renew') })
+
+  it('offers a renewal on every row', () => {
+    openSquad()
+    const squad = game().squads[game().managedClubId] ?? []
+    for (const player of squad) {
+      expect((renewButtonIn(player.name) as HTMLButtonElement).disabled).toBe(false)
+    }
+  })
+
+  it('opens a dialog for the man whose row you pressed', () => {
+    openSquad()
+    const player = aSpare()
+    fireEvent.click(renewButtonIn(player.name))
+
+    const dialog = within(screen.getByRole('dialog'))
+    expect(
+      dialog.getByRole('heading', { name: t('renew.title', { player: player.name }) }),
+    ).toBeDefined()
+  })
+
+  it('opens on each player’s own suggested terms', () => {
+    // The claim this actually constrains. Closing the dialog unmounts it, so the
+    // `key` on the panel is not what makes this work and removing it fails
+    // nothing — but a prefill that ignored the player would fail here, which is
+    // the defect `NegotiationPanel` shipped in the market.
+    openSquad()
+    const squad = game().squads[game().managedClubId] ?? []
+    const [first, second] = [squad[0], squad.find((p) => overall(p) !== overall(squad[0]!))]
+    if (first === undefined || second === undefined) throw new Error('need two unlike players')
+
+    const wageField = () => screen.getByLabelText(/Wage a season/) as HTMLInputElement
+
+    fireEvent.click(renewButtonIn(first.name))
+    const firstWage = wageField().value
+    fireEvent.click(screen.getByRole('button', { name: t('action.cancel') }))
+
+    fireEvent.click(renewButtonIn(second.name))
+    expect(wageField().value).toBe(String(suggestedTerms(second, game().season.currentDate).wage))
+    expect(wageField().value).not.toBe(firstWage)
+  })
+
+  it('renews him, and the year stops being red', () => {
+    openSquad()
+    const state = useGame.getState()
+    const squad = state.game.squads[state.game.managedClubId] ?? []
+    const player = squad[0]!
+    const until = contractExpiry(state.game.season.startYear + 1)
+    useGame.setState({
+      game: {
+        ...state.game,
+        squads: {
+          ...state.game.squads,
+          [state.game.managedClubId]: squad.map((p) =>
+            p.id === player.id ? { ...p, contract: { ...p.contract, until } } : p,
+          ),
+        },
+      },
+    })
+
+    fireEvent.click(renewButtonIn(player.name))
+    fireEvent.click(screen.getByRole('button', { name: t('renew.offer') }))
+
+    const after = (game().squads[game().managedClubId] ?? []).find((p) => p.id === player.id)
+    expect(toCivil(after!.contract.until).y).toBeGreaterThan(game().season.startYear + 1)
+    expect(rowFor(player.name).querySelector('.is-expiring')).toBeNull()
+  })
+
+  it('closes once the deal is done, and stays open when it is refused', () => {
+    // The two halves are one claim: a dialog that closes either way looks the
+    // same on success and on refusal, and a dialog that never closes leaves you
+    // wondering whether the press did anything.
+    openSquad()
+    const player = aSpare()
+
+    fireEvent.click(renewButtonIn(player.name))
+    fireEvent.change(screen.getByLabelText(/Wage a season/), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: t('renew.offer') }))
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+
+    fireEvent.change(screen.getByLabelText(/Wage a season/), {
+      target: { value: String(suggestedTerms(player, game().season.currentDate).wage) },
+    })
+    fireEvent.click(screen.getByRole('button', { name: t('renew.offer') }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('writes the year plainly, with no thousands separator', () => {
+    // A year is an identifier, not a quantity. Run through `count` it renders as
+    // "2,027" — the same mistake as pricing a ticket through a formatter that
+    // works in thousands.
+    openSquad()
+    const player = aSpare()
+    fireEvent.click(renewButtonIn(player.name))
+
+    const note = screen.getByRole('dialog').querySelector('.screen__note')
+    expect(note?.textContent).toContain(String(toCivil(player.contract.until).y))
+    expect(note?.textContent).not.toMatch(/\d,\d{3}/)
+  })
+
+  it('says why when he turns the terms down, rather than doing nothing', () => {
+    // The refusal path returns an event and throws nothing, so a screen that only
+    // watches for throws shows a button that did not work.
+    openSquad()
+    const player = aSpare()
+    fireEvent.click(renewButtonIn(player.name))
+
+    fireEvent.change(screen.getByLabelText(/Wage a season/), { target: { value: '1' } })
+    fireEvent.click(screen.getByRole('button', { name: t('renew.offer') }))
+
+    expect(screen.getByRole('alert').textContent).toMatch(/refused your terms/i)
   })
 })

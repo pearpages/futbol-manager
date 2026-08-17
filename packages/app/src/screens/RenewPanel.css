@@ -1,0 +1,16 @@
+/* The renewal form. `Modal` already gives the box its material and its column;
+   this only sets the rhythm between the two fields and the copy around them. */
+.renew {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+}
+
+/* Both primitives are padded for sitting inside a `.screen`, which supplies no
+   padding of its own. A dialog box already is the frame, so that inset only
+   pushes the prose and the buttons out of line with the two fields between them —
+   visible as a ragged left edge, and only visible by looking. */
+.renew > .screen__note,
+.renew__actions {
+  padding-inline: 0;
+}

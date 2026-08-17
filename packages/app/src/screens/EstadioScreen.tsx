@@ -4,12 +4,12 @@ import {
   expansionCost,
   FINANCE,
   gateReceipts,
-  isGameError,
   occupancy,
   ROUNDS_PER_HALF,
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { useAttempt } from '../attempt.ts'
 import { Explain } from './Explain.tsx'
 import { stadiumTierFor } from './stadium.ts'
 import { StadiumView } from './StadiumView.tsx'
@@ -35,10 +35,12 @@ export function fillFor(fraction: number): number {
 export function EstadioScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const { t, plural, money, ticket, count, season } = useT()
+  const translator = useT()
+  const { t, plural, money, ticket, count, season } = translator
 
   const [seats, setSeats] = useState(4000)
-  const [error, setError] = useState<string | null>(null)
+  // The screen never decides anything: it dispatches and reports the refusal.
+  const { error, attempt } = useAttempt(game, translator)
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   if (club === undefined) return null
@@ -55,22 +57,6 @@ export function EstadioScreen() {
   const low = FINANCE.TICKET * FINANCE.MIN_TICKET_FACTOR
   const high = FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR
   const step = (high - low) / 40
-
-  // The screen never decides anything: it dispatches and reports the refusal.
-  const attempt = (action: () => void) => {
-    try {
-      action()
-      setError(null)
-    } catch (thrown) {
-      setError(
-        isGameError(thrown)
-          ? t(thrown.code, thrown.params)
-          : thrown instanceof Error
-            ? thrown.message
-            : t('error.unknown'),
-      )
-    }
-  }
 
   return (
     <div className="estadio-screen">

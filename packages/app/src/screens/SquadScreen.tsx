@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   ageOn,
   askingPrice,
+  expiresThisSeason,
   overall,
   type Player,
   type Position,
@@ -13,6 +14,7 @@ import { type Sort, sortedBy } from '../sorting.ts'
 import { useGame } from '../store.ts'
 import { Explain } from './Explain.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
+import { RenewPanel } from './RenewPanel.tsx'
 import { SortHeader } from './SortHeader.tsx'
 import './SquadScreen.css'
 
@@ -50,6 +52,8 @@ export function SquadScreen() {
 
   /** `null` is position-then-overall, the order a team sheet is written in. */
   const [sort, setSort] = useState<Sort<SortKey> | null>(null)
+  /** Whose renewal dialog is open. Held by id so a rollover cannot strand a stale player. */
+  const [renewing, setRenewing] = useState<string | null>(null)
 
   const roster = game.squads[game.managedClubId] ?? []
   const lineup = game.lineups[game.managedClubId]
@@ -72,6 +76,11 @@ export function SquadScreen() {
   // because the stored squad is still the honest thing to ask about.
   const blocks = new Map(roster.map((player) => [player.id, saleBlock(roster, lineup, player)]))
   const listed = new Set(game.transferList)
+
+  // Resolved against the live roster rather than held as an object. A player who
+  // leaves while his dialog is open — sold, or retired across a rollover — closes
+  // it rather than editing terms for somebody the club no longer has.
+  const renewingPlayer = roster.find((player) => player.id === renewing) ?? null
 
   const ordered = [...roster].sort(
     (a, b) => POSITION_ORDER[a.position] - POSITION_ORDER[b.position] || overall(b) - overall(a),
@@ -134,8 +143,9 @@ export function SquadScreen() {
             {column('wage', t('squad.column.wage'))}
             {column('contract', t('squad.column.contract'))}
             {column('selected', t('squad.column.selected'))}
-            {/* A column of buttons — nothing to sort on. */}
+            {/* Two columns of buttons — nothing to sort on. */}
             <th className="is-text">{t('squad.column.sale')}</th>
+            <th className="is-text">{t('squad.column.contractAction')}</th>
           </tr>
         </thead>
         <tbody>
@@ -143,6 +153,7 @@ export function SquadScreen() {
             const block = blocks.get(player.id) ?? null
             const canSell = block === null
             const onSale = listed.has(player.id)
+            const expiring = expiresThisSeason(player, game.season.startYear)
             return (
               <tr key={player.id} className="data-table__row">
                 <td className="data-table__num">{index + 1}</td>
@@ -159,8 +170,16 @@ export function SquadScreen() {
                 <td>{money(askingPrice(player, date))}</td>
                 <td>{money(player.contract.wage)}</td>
                 {/* Contracts run to 30 June, so the year is the whole of it — a
-                    full date would be four characters of noise on every row. */}
-                <td>{toCivil(player.contract.until).y}</td>
+                    full date would be four characters of noise on every row.
+                    Red when that year is this season's: the one deal you can still
+                    do something about. The year stays in its own text node so the
+                    sentence beside it cannot be folded into the number, and the
+                    leading space inside the hidden span is what keeps the cell's
+                    accessible name from reading "2027His contract expires". */}
+                <td className={expiring ? 'squad-screen__expiry is-expiring' : undefined}>
+                  <span>{toCivil(player.contract.until).y}</span>
+                  {expiring && <span className="visually-hidden"> {t('squad.expiring')}</span>}
+                </td>
                 <td className="is-text squad-screen__selected">
                   {starting.has(player.id) ? t('squad.starting') : t('squad.notSelected')}
                 </td>
@@ -181,11 +200,31 @@ export function SquadScreen() {
                     {onSale ? t('squad.listed') : t('squad.list')}
                   </button>
                 </td>
+                <td className="is-text squad-screen__sale">
+                  {/* Never disabled. Renewal is available at any point in a deal,
+                      and the reducer refuses the one case that would be a slip —
+                      an offer shorter than the contract he is already on. */}
+                  <button
+                    type="button"
+                    className="button squad-screen__list"
+                    onClick={() => setRenewing(player.id)}
+                  >
+                    {t('squad.renew')}
+                  </button>
+                </td>
               </tr>
             )
           })}
         </tbody>
       </table>
+
+      {renewingPlayer !== null && (
+        <RenewPanel
+          key={renewingPlayer.id}
+          player={renewingPlayer}
+          onClose={() => setRenewing(null)}
+        />
+      )}
     </section>
   )
 }

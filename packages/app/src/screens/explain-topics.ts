@@ -60,7 +60,7 @@ export const EXPLAIN_TOPICS = {
    * heading is the only place left.
    */
   squadTable: {
-    paragraphs: 9,
+    paragraphs: 10,
     params: ({ count }) => ({ min: count(MIN_SQUAD), max: count(MAX_SQUAD) }),
   },
 

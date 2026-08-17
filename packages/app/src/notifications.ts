@@ -160,6 +160,45 @@ export function describe(
       return null
     }
 
+    case 'ContractRenewed':
+      // Your own click, and yet not silent like `TacticsChanged`. A tactic is a
+      // setting you can see on the screen you set it from; a renewal is a
+      // multi-year commitment made in a dialog that closes behind you.
+      return {
+        key: `renewed-${event.playerId}-${day}`,
+        text: t('news.contractRenewed', {
+          player: names.player(event.playerId),
+          years: count(event.years),
+          wage: money(event.wage),
+        }),
+        tone: 'good',
+      }
+
+    case 'ContractExpiring':
+      return {
+        key: `expiring-${event.playerId}-${day}`,
+        text: t('news.contractExpiring', { player: names.player(event.playerId) }),
+        tone: 'bad',
+      }
+
+    case 'PlayerReleased':
+      // The name comes off the event rather than the lookup. He is in the
+      // free-agent pool so `names.player` would in fact still find him, but the
+      // retirement beside this one cannot be looked up at all, and one moment
+      // should not resolve its subject two different ways.
+      return {
+        key: `released-${event.playerId}-${day}`,
+        text: t('news.playerReleased', { player: event.name }),
+        tone: 'bad',
+      }
+
+    case 'PlayerRetired':
+      return {
+        key: `retired-${event.playerId}-${day}`,
+        text: t('news.playerRetired', { player: event.name, age: count(event.age) }),
+        tone: 'plain',
+      }
+
     case 'PlayerListed':
       return {
         key: `listed-${event.playerId}-${String(event.on)}-${day}`,
