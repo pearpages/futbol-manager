@@ -10,6 +10,7 @@ import {
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { Explain } from './Explain.tsx'
 import './EstadioScreen.css'
 
 /**
@@ -81,7 +82,10 @@ export function EstadioScreen() {
               <span className="stat__value estadio-screen__figure">{count(club.capacity)}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">{t('estadio.occupancy')}</span>
+              <span className="stat__label">
+                {t('estadio.occupancy')}
+                <Explain topic="occupancy" />
+              </span>
               <span className="stat__value estadio-screen__figure">{Math.round(full * 100)}%</span>
             </div>
             <div className="stat">
@@ -107,9 +111,15 @@ export function EstadioScreen() {
           </div>
 
           <div className="field estadio-screen__field">
-            <label className="field__label" htmlFor="ticket">
-              {t('estadio.price', { price: ticket(club.ticketPrice) })}
-            </label>
+            {/* The "i" is a sibling of the label rather than inside it: a
+                `<label for>` forwards a click to its control, so a button nested
+                in one would focus the slider on the way to opening the dialog. */}
+            <div className="estadio-screen__label-row">
+              <label className="field__label" htmlFor="ticket">
+                {t('estadio.price', { price: ticket(club.ticketPrice) })}
+              </label>
+              <Explain topic="ticket" />
+            </div>
             <input
               id="ticket"
               className="slider"
@@ -124,14 +134,17 @@ export function EstadioScreen() {
                 })
               }
             />
-            <p className="estadio-screen__hint">{t('estadio.priceHint')}</p>
+            <p className="hint">{t('estadio.priceHint')}</p>
           </div>
         </div>
       </section>
 
       <aside className="estadio-screen__side">
         <section className="screen estadio-screen__panel">
-          <h2 className="screen__heading">{t('estadio.works')}</h2>
+          <h2 className="screen__heading">
+            {t('estadio.works')}
+            <Explain topic="expansion" />
+          </h2>
           {club.expansion !== null ? (
             <p className="screen__note">
               {plural('estadio.underWay', club.expansion.seats, {
@@ -156,7 +169,7 @@ export function EstadioScreen() {
                   onChange={(event) => setSeats(Number(event.target.value))}
                 />
               </div>
-              <p className="estadio-screen__hint">{t('estadio.seatsHint')}</p>
+              <p className="hint">{t('estadio.seatsHint')}</p>
               <div className="screen-actions estadio-screen__build">
                 <button
                   type="button"

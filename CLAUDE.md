@@ -1214,3 +1214,33 @@ Also worth recording: **reversing the sort in `listSaves` fails nothing in the a
 **Not committed, and the tree is shared:** another session was editing `CLAUDE.md`, `docs/roadmap.md`, `docs/market-model.md`, `finance.ts` and `market.human.harness.test.ts` throughout this one, and had staged its work. Every file here is under `packages/app`, so `pnpm season` reads none of it and determinism holds by construction rather than by diff.
 
 **Unverified:** whether the mark reads as a pear at 16px on a dark ground rather than as a smudge — it renders and loads, but it is a 64×64 illustration shown at a quarter size.
+
+### 2026-08-17 (b) — the game starts explaining itself
+
+**A full read of `domain` against every screen found ~30 mechanics with a number on screen and no explanation anywhere in the app** — squad `Worth` and wage units, the attribute bars' floor, what `Tempo` is and why there is no control for it, how the overdraft limit is derived, that the market list is a deliberate shuffle rather than a ranking, that "Within budget" counts the overdraft. The app was never silent; explanation had gone where there happened to be room rather than where the decisions are. **Squad and Lineup, the two screens a manager lives on, had almost none** — and Lineup's one sentence about the match model was hidden in a `title`.
+
+**The rule the copy is written to, and it is the whole design:** the screen states the _mechanism_, the modal adds a _direction_, neither states the number. "A dearer ticket takes more per head and empties seats" on the screen; "dearer than the default rather than cheaper, but the top of the slider is worse than leaving it alone" in the modal; never "the best price is 1.5×". A mechanic nobody can see is a bad game, and a lookup table of right answers is not a game at all.
+
+**Two pieces of chrome.** `.hint` graduated at last — the same three declarations existed as `.lineup-screen__hint`, `.estadio-screen__hint` and `.model-group__note`, and this work was about to write a sixth. Two holdouts stayed and are asserted to stay: `.market-screen__hint` is a padding override on `.screen__note` and `.ficha__model-note` runs a size larger, so folding either in would be a silent restyle. Then `<Explain topic>` — an "i" that opens the existing `Modal`, never a second dialog.
+
+**`explain-topics.ts` keeps the live values.** Prose in the dictionaries with `{placeholders}`, figures read from `FINANCE`, `MIN_SQUAD`/`MAX_SQUAD` and friends, so a rebalance cannot make the help lie. A test walks the registry and asserts no rendered topic contains a brace, and that every topic is used by a screen — `dictionaries.test.ts` proves the three languages agree with each other and **cannot see a key that exists in all three and says nothing**, which is how three orphan keys have already shipped.
+
+**The accessible-name discipline shaped the markup, and it was not optional.** The glyph is `aria-hidden` and the button carries its own label, because two dozen assertions resolve controls by exact name and `openScreen()` matches whole strings. `SortHeader` states its own contract outright — _"the header's accessible name is the column label and several tests resolve headers by it"_ — so **no "i" goes inside a sortable `<th>`**. That is why the squad screen has one button on its heading opening one nine-paragraph topic rather than four beside four columns: it has no note region either, so the heading was the only place left. 891 tests, and not one existing assertion had to move.
+
+**Both real defects were found by a screenshot, and neither was visible to the suite.** The app project runs `css: false` and jsdom does no layout, so this is the standing lesson rather than a new one:
+
+- **The dialog was rendering inside the `<h2>` it was opened from**, so it inherited `text-transform: uppercase` and the condensed face — nine paragraphs of body copy in shouting capitals, and invalid markup besides. `Explain` now portals to `document.body`. `Modal`'s own note that a portal is unnecessary is true for _its_ callers, which all render from an ordinary `<div>`; this one hangs off a heading. **A regression test asserts the structure** (`box.closest('h2')` is null) even though nothing in the suite can see the type.
+- **The close button sat below nine paragraphs of scroll.** Escape and the backdrop worked, but an affordance you have to go looking for is not one. `.explain__actions` is sticky now.
+
+**Verified in a browser**, by the CDP route the roadmap records: three explainers on Estadio, one on Squad, three on Lineup, all visible and none overflowing; and at 900×613 in Spanish the longest modal still fits both ways with its close button in view.
+
+**Six things found that should be fixed rather than explained**, because writing help text for them would be documenting a defect. Each needs its own decision and none is in this change:
+
+1. **A season reaches only nine settlement days.** Settlement is "day of month is the 1st" and the clock runs 15 August to 1 May — verified Sep through May. **Every club pays 9/12 of its contractual wage bill and collects 9/12 of its TV money and sponsorship, every season.** Gate and prize are paid in full. A silent, uniform 25% discount on the largest cost in the game.
+2. **Occupancy can read over 100%** — the price multiplier is applied after the 0.98 cap, so a top club at the cheapest ticket computes **127.4%**, verified. `fillFor` clamps the bar to 20, so the gauge saturates while the number keeps climbing and the two disagree.
+3. **`ageFactor`'s docstring says values peak at 24–27; the table peaks at 19–21** (`valuation.ts`). 24–27 is the 1.00 baseline.
+4. **`valuation.ts` says "that is, 69.54"** where its own constants give 70.04.
+5. **The youth premium buys nothing.** A 20-year-old costs 1.30× a 25-year-old of identical rating and attributes never change, because training is M6.
+6. **Bidding below the asking price is never correct.** `answerBid` is deterministic — at or above, accepted; at 80–99%, countered at exactly the asking price two days later; below, rejected. The fee field looks like a negotiation and is not one.
+
+**Pending:** phase 2 fills in the rest against the same pattern — Hub, Classification, Ficha, Market, Caja, Estadio's payback, Decisiones and Setup. The inventory is in the plan and needs no second audit.

@@ -14,6 +14,7 @@ import {
 import { useState } from 'react'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { Explain } from './Explain.tsx'
 import { PitchView } from './PitchView.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
@@ -102,7 +103,10 @@ export function LineupScreen() {
             under them is the `title`: still said, but not costing three rows of
             the eleven below. */}
         <section className="screen lineup-screen__vitals" title={t('lineup.ratingHint')}>
-          <h2 className="screen__heading">{t('lineup.thisXI')}</h2>
+          <h2 className="screen__heading">
+            {t('lineup.thisXI')}
+            <Explain topic="teamRating" />
+          </h2>
           <div className="lineup-screen__ratings">
             <div className="stat">
               <span className="stat__label">{t('lineup.attack')}</span>
@@ -113,7 +117,10 @@ export function LineupScreen() {
               <span className="stat__value">{rating.defence}</span>
             </div>
             <div className="stat">
-              <span className="stat__label">{t('lineup.tempo')}</span>
+              <span className="stat__label">
+                {t('lineup.tempo')}
+                <Explain topic="tempo" />
+              </span>
               <span className="stat__value lineup-screen__word">
                 {t(describeTempo(rating.tempo))}
               </span>
@@ -172,13 +179,13 @@ export function LineupScreen() {
                 man is picked. A line that comes and goes would resize this panel
                 on every click, and the panel below the eleven resizing means a
                 striker drops out of the list above it. */}
-            <p className="lineup-screen__hint">
+            <p className="hint">
               {selectedPlayer === null
                 ? plural('lineup.available', substitutes.length)
                 : t('lineup.replacing', { name: selectedPlayer.name })}
             </p>
             {substitutes.length === 0 ? (
-              <p className="lineup-screen__hint">{t('lineup.noSubs')}</p>
+              <p className="hint">{t('lineup.noSubs')}</p>
             ) : (
               <ul className="lineup-screen__subs">
                 {substitutes.map((sub) => (
@@ -241,7 +248,7 @@ export function LineupScreen() {
                   )
                 })}
               </div>
-              <p className="lineup-screen__hint">{t('lineup.formationHint')}</p>
+              <p className="hint">{t('lineup.formationHint')}</p>
             </div>
 
             <div className="field">
@@ -264,7 +271,10 @@ export function LineupScreen() {
                   })
                 }
               />
-              <p className="lineup-screen__hint">{t('lineup.approachHint')}</p>
+              <p className="hint">
+                {t('lineup.approachHint')}
+                <Explain topic="approach" />
+              </p>
             </div>
           </div>
         </section>

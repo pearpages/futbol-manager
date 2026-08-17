@@ -108,6 +108,71 @@ describe('the credit, which holds the only real link in the app', () => {
   })
 })
 
+describe('the caption under a control', () => {
+  it('carries the three declarations the copies all had', () => {
+    const rule = ruleFor('.hint')
+    expect(rule, '.hint has no rule').not.toBeNull()
+    expect(rule).toMatch(/color:\s*var\(--fm-screen-ink-soft\)/)
+    expect(rule).toMatch(/font-size:\s*var\(--fm-text-xs\)/)
+    expect(rule).toMatch(/line-height:\s*1\.4/)
+  })
+
+  it('left all three screens it was graduated from', () => {
+    // Three names for one style, and a fourth was about to be written for the
+    // explainer work. A copy left behind is how two of them drift.
+    for (const [file, name] of [
+      ['screens/LineupScreen.css', 'lineup-screen__hint'],
+      ['screens/EstadioScreen.css', 'estadio-screen__hint'],
+      ['screens/PlayerScreen.css', 'model-group__note'],
+    ] as const) {
+      const sheet = readFileSync(resolve(process.cwd(), `packages/app/src/${file}`), 'utf8')
+      expect(sheet, file).not.toContain(name)
+    }
+  })
+
+  it('leaves the two holdouts alone, because they are a different size', () => {
+    // `.market-screen__hint` is a padding override on `.screen__note` and
+    // `.ficha__model-note` runs at --fm-text-sm. Folding either into `.hint`
+    // would be a silent restyle of a screen this change was not asked to touch.
+    const market = readFileSync(
+      resolve(process.cwd(), 'packages/app/src/screens/MarketScreen.css'),
+      'utf8',
+    )
+    const ficha = readFileSync(
+      resolve(process.cwd(), 'packages/app/src/screens/PlayerScreen.css'),
+      'utf8',
+    )
+    expect(market).toContain('market-screen__hint')
+    expect(ficha).toContain('ficha__model-note')
+  })
+})
+
+describe('the explainer button', () => {
+  it('sets its own type rather than inheriting it', () => {
+    // The opposite of `.player-link` and `.data-table__sort`, on purpose: those
+    // stand in for the text around them, while this is a mark that has to stay
+    // the same size beside a 2rem stat and beside a caption. It sits inside
+    // uppercase condensed headings, so every inherited property is named.
+    const rule = ruleFor('.explain')
+    expect(rule, '.explain has no rule').not.toBeNull()
+    expect(rule).toMatch(/font-family:\s*var\(--fm-font\)/)
+    expect(rule).toMatch(/text-transform:\s*none/)
+    expect(rule).toMatch(/letter-spacing:\s*0/)
+    expect(rule).toMatch(/cursor:\s*pointer/)
+    expect(rule).toMatch(/border-radius:\s*50%/)
+  })
+
+  it('keeps the way out in view when the body scrolls', () => {
+    // The longest topic runs to nine paragraphs and past the height of the box,
+    // which left the close button below the fold. Escape and the backdrop still
+    // worked; an affordance you have to go looking for is not one.
+    const rule = ruleFor('.explain__actions')
+    expect(rule, '.explain__actions has no rule').not.toBeNull()
+    expect(rule).toMatch(/position:\s*sticky/)
+    expect(rule).toMatch(/background:\s*var\(--fm-panel\)/)
+  })
+})
+
 describe("a player's name as a control", () => {
   it('inherits the type it stands in for, or it renders in the browser default font', () => {
     // The same trap `.data-table__sort` documents, but across more materials: this

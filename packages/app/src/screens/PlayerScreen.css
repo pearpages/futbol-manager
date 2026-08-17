@@ -116,12 +116,6 @@
   color: var(--fm-screen-ink);
 }
 
-.model-group__note {
-  margin-top: var(--fm-space-1);
-  font-size: var(--fm-text-xs);
-  color: var(--fm-screen-ink-soft);
-}
-
 .model-group__list {
   margin: var(--fm-space-2) 0 0;
   padding: 0;

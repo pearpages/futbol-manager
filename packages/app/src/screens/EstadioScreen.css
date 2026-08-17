@@ -45,11 +45,11 @@
   border-top: 1px solid var(--fm-screen-rule);
 }
 
-.estadio-screen__hint {
-  margin: var(--fm-space-2) 0 0;
-  color: var(--fm-screen-ink-soft);
-  font-size: var(--fm-text-xs);
-  line-height: 1.4;
+/* `.field` is a column, so a label and its "i" need a row of their own. First
+   use — it graduates into chrome.css the second time a screen wants it. */
+.estadio-screen__label-row {
+  display: flex;
+  align-items: center;
 }
 
 /* The action sits inside the panel body rather than at the foot of the rail,

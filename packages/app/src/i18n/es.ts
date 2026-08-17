@@ -408,6 +408,62 @@ export const es: Dictionary = {
   'news.freeAgents': 'los agentes libres',
   'news.unknownClub': 'otro club',
 
+  // ── Explicaciones ────────────────────────────────────────────────────────
+  'explain.open': 'Explicar: {topic}',
+  'explain.occupancy.title': 'Cómo se llena el campo',
+  'explain.occupancy.p1':
+    'Es una previsión, no una taquilla que ya hayas hecho. Es lo que llenarían la plantilla de hoy, la posición de hoy y el precio de hoy, si se jugara ahora mismo.',
+  'explain.occupancy.p2':
+    'La calidad hace la mayor parte y la clasificación el resto: subir llena asientos. Un buen club con el campo medio vacío normalmente cobra de más.',
+  'explain.ticket.title': 'Qué cobrar',
+  'explain.ticket.p1':
+    'Cada asiento vendido paga lo mismo, así que una entrada más cara recauda más por cabeza y deja más asientos vacíos. Las dos cosas tiran en sentidos contrarios y la taquilla es lo que queda.',
+  'explain.ticket.p2':
+    'En medio hay un precio mejor para tu club, y es más caro que el de la liga, no más barato. Pero no es el tope de la barra: si llegas ahí, pierdes más en asientos vacíos de lo que ganas por cabeza.',
+  'explain.expansion.title': 'Las obras',
+  'explain.expansion.p1':
+    'Los asientos se pagan en el momento en que los encargas y llegan a tiempo para la temporada siguiente. Solo una obra a la vez.',
+  'explain.expansion.p2':
+    'Una ampliación va de {min} a {max} asientos, y solo sale a cuenta si llenas el campo que ya tienes. Los asientos donde no se sienta nadie no dan nada, y ese dinero habría rendido más en la plantilla.',
+  'explain.squadTable.title': 'Cómo leer esta tabla',
+  'explain.squadTable.p1':
+    'Un solo número que resume ocho atributos, ponderados según el puesto que ocupa. La entrada de un defensa cuenta mucho más que su definición; en un delantero es al revés.',
+  'explain.squadTable.p2':
+    'Es lo que ordena esta lista y lo que fija un traspaso, pero no es exactamente lo que gana partidos. Abre su ficha para ver qué atributos lee el partido.',
+  'explain.squadTable.p3':
+    'Aproximadamente lo que pediría otro club por él: primero la calidad, después la edad y por último el contrato que le queda.',
+  'explain.squadTable.p4':
+    'El contrato es la parte que se mueve más deprisa. Va perdiendo valor a medida que se le acaba, y no vale nada como traspaso cuando vence: entonces se va gratis. Vende pronto o renueva pronto; los últimos meses son los caros de equivocar.',
+  'explain.squadTable.p5':
+    'El sueldo es lo que te cuesta una temporada entera, pagado a plazos cada mes. Todos los sueldos de esta lista sumados son la masa salarial de tus cuentas.',
+  'explain.squadTable.p6':
+    'Hasta es la temporada en que termina el contrato. Cuando termina, o renueva o se va libre, y no lo eliges tú: el que se va es el que en el club ya no hace falta.',
+  'explain.squadTable.p7':
+    'Ponerlo en la lista dice a los otros diecinueve clubes que está disponible. Sin eso tu plantilla es casi invisible: todavía pueden venir a por alguien de quien claramente puedas prescindir, pero un jugador listado les cuesta mucho menos de decidir.',
+  'explain.squadTable.p8':
+    'La lista es el consentimiento. Un jugador listado que encuentre comprador se vende, y no se te vuelve a preguntar.',
+  'explain.squadTable.p9':
+    'No puedes listar a nadie de tu once titular —sácalo primero— ni quedarte con un solo portero. Las plantillas van de {min} a {max}: nadie compra si ya está en el techo, y los clubes dejan de vender cerca del suelo.',
+  'explain.teamRating.title': 'Ataque, defensa y ritmo',
+  'explain.teamRating.p1':
+    'Estos tres números son todo lo que ve el partido. Ni los nombres ni el sistema: tu once se reduce a esto, el del rival al suyo, y los goles salen del encuentro de ambos.',
+  'explain.teamRating.p2':
+    'Tu ataque se mide contra su defensa, y el suyo contra la tuya. Unos pocos puntos de ventaja valen más de lo que parece, porque el efecto se multiplica en vez de sumarse.',
+  'explain.teamRating.p3':
+    'No todas las camisetas pesan igual. Un delantero tiene mucha más parte del ataque que un defensa, y el portero es más parte de la defensa que cualquier jugador de campo, lo que lo convierte en el fichaje que más lo cambia.',
+  'explain.tempo.title': 'El ritmo, y por qué no tienes barra',
+  'explain.tempo.p1':
+    'El ritmo es lo abierto que es el partido. No favorece a nadie: sube o baja los goles que esperan los dos bandos a la vez.',
+  'explain.tempo.p2':
+    'No lo pones tú directamente. El sistema marca la mayor parte y el planteamiento añade el resto: un equipo con mucha gente arriba juega rápido; cinco atrás, lento.',
+  'explain.tempo.p3':
+    'Y se decide entre los dos equipos, no solo tú: el tuyo se promedia con el del rival, así que siempre te queda la mitad. Un partido lento le va bien al más débil, porque menos goles significa más empates, y un empate le vale más a él que a ti.',
+  'explain.approach.title': 'La barra de planteamiento',
+  'explain.approach.p1':
+    'Desplazarla hacia el ataque quita fuerza a la defensa y la pone en el ataque; hacia el otro lado, al revés. No hace mejor al equipo.',
+  'explain.approach.p2':
+    'Y no es un intercambio justo en ninguna dirección: siempre cedes más de lo que ganas, y cuanto más fuerzas peor es el cambio. Apostar por el ataque le va bien a un equipo lo bastante bueno para ganar el partido; uno más débil saca más cerrándolo. Un equipo medio suele salir castigado haciendo cualquiera de las dos cosas.',
+
   // ── Negativas ────────────────────────────────────────────────────────────
   'error.unknown': 'Eso no se puede hacer',
   'error.window.closed': 'El mercado de fichajes está cerrado',

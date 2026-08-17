@@ -122,7 +122,7 @@ function ModelGroup({
   return (
     <div className="model-group">
       <h4 className="model-group__title">{title}</h4>
-      {note !== undefined && <p className="model-group__note">{note}</p>}
+      {note !== undefined && <p className="hint">{note}</p>}
       {used.length > 0 && (
         <ul className="model-group__list">
           {used.map((entry) => (

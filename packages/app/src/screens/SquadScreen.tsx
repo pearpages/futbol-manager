@@ -11,6 +11,7 @@ import {
 import { useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
 import { useGame } from '../store.ts'
+import { Explain } from './Explain.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { SortHeader } from './SortHeader.tsx'
 import './SquadScreen.css'
@@ -110,7 +111,10 @@ export function SquadScreen() {
 
   return (
     <section className="screen squad-screen">
-      <h2 className="screen__heading">{t('squad.heading', { club: club?.name ?? '' })}</h2>
+      <h2 className="screen__heading">
+        {t('squad.heading', { club: club?.name ?? '' })}
+        <Explain topic="squadTable" />
+      </h2>
       <table className="data-table">
         <thead className="data-table__head">
           <tr>

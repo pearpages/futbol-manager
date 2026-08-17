@@ -410,6 +410,62 @@ export const ca: Dictionary = {
   'news.freeAgents': 'els agents lliures',
   'news.unknownClub': 'un altre club',
 
+  // ── Explicacions ─────────────────────────────────────────────────────────
+  'explain.open': 'Explica: {topic}',
+  'explain.occupancy.title': 'Com s’omple el camp',
+  'explain.occupancy.p1':
+    'És una previsió, no una taquilla que ja hagis fet. És el que ompliria la plantilla d’avui, la posició d’avui i el preu d’avui, si es jugués ara mateix.',
+  'explain.occupancy.p2':
+    'La qualitat hi fa la major part i la classificació la resta: pujar omple seients. Un bon club amb el camp mig buit normalment cobra massa.',
+  'explain.ticket.title': 'Què cobrar',
+  'explain.ticket.p1':
+    'Cada seient venut paga el mateix, així que una entrada més cara recapta més per cap i deixa més seients buits. Les dues coses estiren en direccions contràries i la taquilla és el que en queda.',
+  'explain.ticket.p2':
+    'Entremig hi ha un preu millor per al teu club, i és més car que el de la lliga, no pas més barat. Però no és el màxim de la barra: si hi arribes, perds més en seients buits del que guanyes per cap.',
+  'explain.expansion.title': 'Les obres',
+  'explain.expansion.p1':
+    'Els seients es paguen en el moment que els encarregues i arriben a temps per a la temporada vinent. Només una obra alhora.',
+  'explain.expansion.p2':
+    'Una ampliació va de {min} a {max} seients, i només surt a compte si omples el camp que ja tens. Els seients on no s’asseu ningú no donen res, i aquells diners haurien rendit més a la plantilla.',
+  'explain.squadTable.title': 'Com llegir aquesta taula',
+  'explain.squadTable.p1':
+    'Un sol número que resumeix vuit atributs, ponderats segons la posició que ocupa. L’entrada d’un defensa compta molt més que la seva definició; en un davanter és a l’inrevés.',
+  'explain.squadTable.p2':
+    'És el que ordena aquesta llista i el que fixa un traspàs, però no és exactament el que guanya partits. Obre la seva fitxa per veure quins atributs llegeix el partit.',
+  'explain.squadTable.p3':
+    'Aproximadament el que en demanaria un altre club: primer la qualitat, després l’edat i finalment el contracte que li queda.',
+  'explain.squadTable.p4':
+    'El contracte és la part que es mou més de pressa. Va perdent valor a mesura que se li acaba, i no val res com a traspàs quan venç: aleshores marxa gratis. Ven aviat o renova aviat; els últims mesos són els cars d’equivocar.',
+  'explain.squadTable.p5':
+    'El sou és el que et costa tota una temporada, pagat a terminis cada mes. Tots els sous d’aquesta llista sumats són la massa salarial dels teus comptes.',
+  'explain.squadTable.p6':
+    'Fins és la temporada en què s’acaba el contracte. Quan s’acaba, o bé renova o bé marxa lliure, i no ho tries tu: qui se’n va és qui al club ja no li fa falta.',
+  'explain.squadTable.p7':
+    'Posar-lo a la llista diu als altres dinou clubs que està disponible. Sense això la teva plantilla és gairebé invisible: encara poden venir a buscar algú de qui clarament puguis prescindir, però un jugador llistat els costa molt menys de decidir.',
+  'explain.squadTable.p8':
+    'La llista és el consentiment. Un jugador llistat que trobi comprador es ven, i no se’t torna a preguntar.',
+  'explain.squadTable.p9':
+    'No pots llistar ningú del teu onze titular —treu-lo primer— ni quedar-te amb un sol porter. Les plantilles van de {min} a {max}: ningú no compra si ja és al sostre, i els clubs deixen de vendre a prop del terra.',
+  'explain.teamRating.title': 'Atac, defensa i ritme',
+  'explain.teamRating.p1':
+    'Aquests tres números són tot el que veu el partit. Ni els noms ni el sistema: el teu onze es redueix a això, el del rival al seu, i els gols surten de la trobada dels dos.',
+  'explain.teamRating.p2':
+    'El teu atac es mesura contra la seva defensa, i el seu contra la teva. Uns quants punts d’avantatge valen més del que sembla, perquè l’efecte es multiplica en comptes de sumar-se.',
+  'explain.teamRating.p3':
+    'No totes les samarretes pesen igual. Un davanter té molta més part de l’atac que un defensa, i el porter és més part de la defensa que cap jugador de camp, cosa que el converteix en el fitxatge que més ho canvia.',
+  'explain.tempo.title': 'El ritme, i per què no en tens barra',
+  'explain.tempo.p1':
+    'El ritme és com d’obert és el partit. No afavoreix ningú: puja o baixa els gols que esperen totes dues bandes alhora.',
+  'explain.tempo.p2':
+    'No el poses tu directament. El sistema en marca la major part i el plantejament hi afegeix la resta: un equip amb molta gent a dalt juga ràpid; cinc al darrere, lent.',
+  'explain.tempo.p3':
+    'I es decideix entre els dos equips, no només tu: el teu es fa la mitjana amb el del rival, així que sempre en tens només la meitat. Un partit lent va bé al més feble, perquè menys gols vol dir més empats, i un empat li val més a ell que a tu.',
+  'explain.approach.title': 'La barra de plantejament',
+  'explain.approach.p1':
+    'Desplaçar-la cap a l’atac treu força de la defensa i la posa a l’atac; cap a l’altra banda, al revés. No fa millor l’equip.',
+  'explain.approach.p2':
+    'I no és un intercanvi just en cap direcció: sempre cedeixes més del que guanyes, i com més forces pitjor és el canvi. Apostar per l’atac va bé a un equip prou bo per guanyar el partit; un de més feble en treu més tancant-lo. Un equip mitjà normalment surt castigat fent qualsevol de les dues coses.',
+
   // ── Negatives ────────────────────────────────────────────────────────────
   'error.unknown': 'Això no es pot fer',
   'error.window.closed': 'El mercat de fitxatges és tancat',

@@ -420,6 +420,62 @@ export const en: Dictionary = {
   'news.freeAgents': 'free agents',
   'news.unknownClub': 'another club',
 
+  // ── Explainers ───────────────────────────────────────────────────────────
+  'explain.open': 'Explain: {topic}',
+  'explain.occupancy.title': 'How full the ground gets',
+  'explain.occupancy.p1':
+    'A forecast, not a gate you have already taken. It is what today’s squad, today’s league position and today’s ticket price would fill, for a match played now.',
+  'explain.occupancy.p2':
+    'Quality does most of it and the table does the rest — climbing fills seats. A good club with the ground half empty is usually charging too much.',
+  'explain.ticket.title': 'What to charge',
+  'explain.ticket.p1':
+    'Every seat sold pays the same price, so a dearer ticket takes more per head and leaves more seats empty. The two pull against each other and the gate is what is left.',
+  'explain.ticket.p2':
+    'Somewhere between them is a better price for your club, and it is dearer than the league default rather than cheaper. It is not the top of the slider, though — push that far and you lose more in empty seats than you gain per head.',
+  'explain.expansion.title': 'Building work',
+  'explain.expansion.p1':
+    'Seats are paid for the moment you order them and arrive in time for next season. One job at a time.',
+  'explain.expansion.p2':
+    'An expansion runs from {min} to {max} seats, and only pays if you are filling the ground you already have. Seats nobody sits in earn nothing, and that money would have done more in the squad.',
+  'explain.squadTable.title': 'Reading this table',
+  'explain.squadTable.p1':
+    'One number standing in for eight attributes, weighted by the position he plays. A defender’s tackling counts for far more than his finishing; for a forward it is the other way round.',
+  'explain.squadTable.p2':
+    'It is what this list sorts by and what a fee is calculated from, but it is not quite what wins matches. Open his card to see which attributes the match itself reads.',
+  'explain.squadTable.p3':
+    'Roughly what another club would ask for him: his quality first, then his age, then how much contract is left.',
+  'explain.squadTable.p4':
+    'The contract is the part that moves fastest. He runs down in value as his deal runs out and is worth nothing as a fee once it expires — he leaves for nothing instead. Sell early or renew early; the last few months are the expensive ones to get wrong.',
+  'explain.squadTable.p5':
+    'A wage is what he costs you for a whole season, paid in monthly instalments. Every wage here added together is the wage bill on your accounts.',
+  'explain.squadTable.p6':
+    'Until is the season his contract ends. When it does he either signs again or leaves as a free agent, and you do not pick which — the man who goes is the one the club no longer needs.',
+  'explain.squadTable.p7':
+    'Listing tells the other nineteen clubs he is available. Without it your squad is nearly invisible to them: they may still come for someone you can clearly spare, but a listed player takes far less convincing.',
+  'explain.squadTable.p8':
+    'Listing is the consent. A listed player who attracts a buyer is sold, and you are not asked again.',
+  'explain.squadTable.p9':
+    'You cannot list a man in your starting eleven — drop him first — and you cannot leave yourself with one goalkeeper. Squads run from {min} to {max}: nobody buys at the ceiling, and clubs stop selling near the floor.',
+  'explain.teamRating.title': 'Attack, defence and tempo',
+  'explain.teamRating.p1':
+    'These three numbers are the whole of what the match sees. Not the names, not the shape — your eleven collapses into these, the opponent’s into theirs, and the goals come from the two meeting.',
+  'explain.teamRating.p2':
+    'Your attack is measured against their defence, and theirs against yours. A few points of advantage is worth more than it looks, because the effect multiplies rather than adds.',
+  'explain.teamRating.p3':
+    'Not every shirt weighs the same. A forward owns far more of the attack than a defender does, and your goalkeeper is a bigger share of the defence than any outfield player — which makes him the single upgrade that changes most.',
+  'explain.tempo.title': 'Tempo, and why there is no slider for it',
+  'explain.tempo.p1':
+    'Tempo is how open the game is. It favours nobody: it raises or lowers the goals both sides expect, together.',
+  'explain.tempo.p2':
+    'You never set it directly. Your shape settles most of it and your approach adds the rest — a front-heavy side plays a fast game, five at the back a slow one.',
+  'explain.tempo.p3':
+    'And it is settled between the two teams rather than by you alone: yours is averaged with the opponent’s, so you only ever get half of what you chose. A slow game suits the weaker side, because fewer goals means more draws, and a draw is worth more to them than to you.',
+  'explain.approach.title': 'The approach slider',
+  'explain.approach.p1':
+    'Sliding towards attack takes strength out of your defence and puts it into your attack; sliding the other way does the reverse. It does not make the team better.',
+  'explain.approach.p2':
+    'Nor is it an even trade in either direction — you always give up more than you gain, and the further you push the worse the rate. Committing to attack suits a side good enough to win the game outright; a weaker one does better shutting it down. A middling team is usually punished for doing either.',
+
   // ── Refusals ─────────────────────────────────────────────────────────────
   // Keyed off the codes the reducer throws. The English here is word for word
   // what `domain` still carries as its `Error.message`, so the two cannot drift

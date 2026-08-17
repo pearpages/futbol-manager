@@ -62,6 +62,75 @@
   font-size: var(--fm-text-sm);
 }
 
+/*
+ * A caption under a control, explaining what the control does.
+ *
+ * Distinct from `.screen__note`, which is a padded paragraph belonging to the
+ * whole screen. This one belongs to the thing directly above it, so it is
+ * smaller, unpadded, and carries its own top margin instead.
+ *
+ * Graduated long after it earned it: the same three declarations existed as
+ * `.lineup-screen__hint`, `.estadio-screen__hint` and `.model-group__note`
+ * before the explainer work was about to add a sixth. Two deliberate holdouts
+ * remain and are not copies — `.market-screen__hint` is a padding override on
+ * `.screen__note`, and `.ficha__model-note` runs at `--fm-text-sm`; both are a
+ * different size from this and would be a silent restyle rather than a merge.
+ */
+.hint {
+  margin: var(--fm-space-2) 0 0;
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-xs);
+  line-height: 1.4;
+}
+
+/*
+ * The "i" that opens an explanation. Shared chrome from its first use, because
+ * it lands on several screens at once rather than earning a second one.
+ *
+ * **It sets its own type instead of inheriting it**, which is the opposite of
+ * `.player-link` and `.data-table__sort` and deliberate: those two stand in for
+ * the text around them and must disappear into it, while this is a mark that has
+ * to stay the same size beside a 2rem stat and beside a caption. `em` units keep
+ * it proportional to whatever it sits next to without taking that thing's weight
+ * or letter-spacing.
+ */
+.explain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.25em;
+  block-size: 1.25em;
+  padding: 0;
+  margin-inline-start: var(--fm-space-2);
+  border: 1px solid currentcolor;
+  border-radius: 50%;
+  background: none;
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font);
+  font-size: var(--fm-text-xs);
+  font-style: italic;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: none;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.explain:hover {
+  color: var(--fm-champion);
+}
+
+/* The close button, pinned to the foot of a body that scrolls. The longest topic
+   is nine paragraphs and ran past the box, leaving the only visible way out
+   below the fold. */
+.explain__actions {
+  position: sticky;
+  bottom: 0;
+  padding-top: var(--fm-space-3);
+  background: var(--fm-panel);
+}
+
 /* ── Data tables ─────────────────────────────────────────────────────────── */
 
 .data-table {

@@ -121,16 +121,6 @@ button.lineup-screen__sub {
   gap: var(--fm-space-2);
 }
 
-.lineup-screen__hint {
-  color: var(--fm-screen-ink-soft);
-  font-size: var(--fm-text-xs);
-  line-height: 1.4;
-}
-
-.lineup-screen__hint--pad {
-  padding: 0 var(--fm-space-4) var(--fm-space-4);
-}
-
 /*
  * The vitals, as a strip rather than a panel. It sits on top of the eleven —
  * the tallest thing on the screen — so the heading and the figures share a line
