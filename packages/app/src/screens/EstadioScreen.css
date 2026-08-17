@@ -25,6 +25,12 @@
   padding: var(--fm-space-3) var(--fm-space-4);
 }
 
+/* The drawing carries its own size and centring; this is only the gap to the
+   figures beneath it. */
+.estadio-screen__ground {
+  padding-bottom: var(--fm-space-4);
+}
+
 .estadio-screen__stats {
   display: flex;
   flex-wrap: wrap;

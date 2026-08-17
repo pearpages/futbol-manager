@@ -1,0 +1,162 @@
+/*
+ * The ground.
+ *
+ * Same arrangement as `club-badges.css`, `radar.css`, `hub-figures.css` and
+ * `trophies.css`: **every colour lives here and `stadium.ts` holds none**, and
+ * every rule that paints reads a custom property rather than a value.
+ *
+ * ## Four colours, and everything else is derived
+ *
+ * `turf`, `line`, `concrete` and `roof` are declared. The seating comes from the
+ * club's own palette — `club-badges.css` sets `--badge-a` for whatever carries
+ * `data-colours`, and the seats are that **mixed toward the concrete**, never
+ * used raw: the `white` and `yellow` palettes would otherwise put a glaring blob
+ * on the near-black screen. Everything else — the mown band, the three lighting
+ * tones, the gangway, the apron — is `color-mix`ed from one of those four.
+ *
+ * That is the lesson the badge rim paid for: hand-chosen neighbours look fine
+ * and are wrong, and the fix is deriving them from a colour that is already
+ * right. `stadium.test.ts` refuses a literal on any derived value.
+ *
+ * ## Reading against the screen material
+ *
+ * This sits on the near-black `.screen` (`--fm-screen`), so **nothing may be
+ * dark enough to lose its silhouette** — the constraint `hub-figures.css` states
+ * and the reason the roof is a mid slate rather than the near-black it would be
+ * in life. `pitch.css`'s turf is deliberately murky because it is a tactics
+ * diagram carrying position discs; this is a picture of a ground and wants a
+ * green you can see. Neither may reach for a band colour (`--fm-win` and
+ * friends) for grass: those are named for the competition, not the role, which
+ * `tokens.css` explains at length.
+ *
+ * ## There is no small variant, deliberately
+ *
+ * 49 rows at `12.25rem` is four device pixels a row — the ratio that already
+ * makes the hub figures and the trophy read as pixel art. Shrunk to a badge's
+ * size the decks, the gangways and the roofs would collapse into a smear, which
+ * is what the trophy learned. So the ground appears once, on Estadio, and this
+ * file offers nobody an `is-sm` to try it with.
+ */
+
+.stadium {
+  --stadium-turf: #2f6b3a;
+  --stadium-line: #d2e2d5;
+  --stadium-concrete: #4b5560;
+  /* Mid slate rather than the near black a roof really is, so it still reads
+     against `--fm-screen`. */
+  --stadium-roof: #39434e;
+
+  /* The club's seats. `--badge-a` arrives via `data-colours`; the mix toward the
+     concrete is what keeps all thirteen palettes inside a usable band. */
+  --stadium-seat: color-mix(
+    in srgb,
+    var(--badge-a, var(--stadium-concrete)),
+    var(--stadium-concrete) 45%
+  );
+
+  /* Derived, never declared — see the note above. */
+  --stadium-lit: color-mix(in srgb, var(--stadium-seat), #fff 22%);
+  --stadium-mid: var(--stadium-seat);
+  --stadium-shade: color-mix(in srgb, var(--stadium-seat), #000 30%);
+  --stadium-seam: color-mix(in srgb, var(--stadium-seat), #000 55%);
+  --stadium-walk: var(--stadium-concrete);
+  --stadium-apron: color-mix(in srgb, var(--stadium-concrete), #000 55%);
+  --stadium-stripe: color-mix(in srgb, var(--stadium-turf), #fff 12%);
+
+  display: block;
+  /* The SVG has an intrinsic ratio from its viewBox, so height alone keeps it in
+     proportion. Shrinks rather than pushing the panel into scroll. */
+  width: auto;
+  height: 12.25rem;
+  min-height: 0;
+  flex: none;
+}
+
+/*
+ * The two drawings, side by side.
+ *
+ * They share a row and a height, and the section's grid is the same 49 rows as
+ * the plan's, so both render at one pixel scale — which is the whole reason they
+ * can sit together and be read as one ground.
+ */
+.stadium-pair {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--fm-space-2);
+  min-width: 0;
+}
+
+/*
+ * What you have not built yet.
+ *
+ * Four buckets, fading with distance: the next thing is plainly legible, the far
+ * end of the ladder is a hint. Anything already built carries no `data-ahead` at
+ * all, so the default is full strength and the ghost is the exception.
+ */
+.stadium [data-ahead='next'] {
+  opacity: 0.34;
+}
+
+.stadium [data-ahead='soon'] {
+  opacity: 0.2;
+}
+
+.stadium [data-ahead='far'] {
+  opacity: 0.12;
+}
+
+.stadium [data-ahead='distant'] {
+  opacity: 0.07;
+}
+
+.stadium [data-ink='roof'] {
+  fill: var(--stadium-roof);
+}
+
+.stadium [data-ink='walk'] {
+  fill: var(--stadium-walk);
+}
+
+.stadium [data-ink='lit'] {
+  fill: var(--stadium-lit);
+}
+
+.stadium [data-ink='mid'] {
+  fill: var(--stadium-mid);
+}
+
+.stadium [data-ink='shade'] {
+  fill: var(--stadium-shade);
+}
+
+.stadium [data-ink='seam'] {
+  fill: var(--stadium-seam);
+}
+
+.stadium [data-ink='apron'] {
+  fill: var(--stadium-apron);
+}
+
+.stadium [data-ink='turf'] {
+  fill: var(--stadium-turf);
+}
+
+.stadium [data-ink='stripe'] {
+  fill: var(--stadium-stripe);
+}
+
+.stadium [data-ink='line'] {
+  fill: var(--stadium-line);
+}
+
+/*
+ * Below Estadio's own breakpoint the two columns stack, so the drawings stop
+ * sharing a row with the building panel and start pushing it down the page. This
+ * file knows that breakpoint because the ground has exactly one home.
+ */
+@media (width < 60rem) {
+  .stadium {
+    height: 9.5rem;
+  }
+}

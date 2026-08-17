@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import {
   debtLimit,
   expansionCost,
@@ -16,6 +16,7 @@ import { useGame } from '../store.ts'
 import { advanceUntil, back, labelStem, openScreen } from '../testing.ts'
 import { LINES, PROJECTED, signed } from './CajaScreen.tsx'
 import { fillFor } from './EstadioScreen.tsx'
+import { STADIUM_TIERS } from './stadium.ts'
 
 /**
  * The three Finanzas screens, and the board behind them.
@@ -253,6 +254,112 @@ describe('Estadio', () => {
 
     expect(screen.getByRole('alert').textContent).toMatch(/runs from/)
     expect(club()?.expansion).toBeNull()
+  })
+
+  it('draws the ground the club actually has', () => {
+    render(<App />)
+    openScreen('nav.estadio')
+
+    const capacity = club()?.capacity
+    /* c8 ignore next */
+    if (capacity === undefined) throw new Error('no club')
+
+    // The ladder is restated by hand rather than read from `stadiumTierFor`.
+    // Asking the function under test what it expects is a test that passes for
+    // free — this one was written that way first and survived flattening the
+    // whole function to `return 1`.
+    const expected =
+      capacity <= 18_000
+        ? 1
+        : capacity <= 24_000
+          ? 2
+          : capacity <= 32_000
+            ? 3
+            : capacity <= 42_000
+              ? 4
+              : capacity <= 55_000
+                ? 5
+                : capacity <= 75_000
+                  ? 6
+                  : capacity <= 105_000
+                    ? 7
+                    : 8
+
+    for (const svg of document.querySelectorAll('.stadium')) {
+      expect(svg.getAttribute('data-tier')).toBe(String(expected))
+    }
+    // Both views, side by side — the plan for the footprint, the section for the
+    // height. One of them alone says nothing about the top half of the ladder.
+    expect(document.querySelectorAll('.stadium')).toHaveLength(2)
+  })
+
+  it('builds another module every time the seats arrive', () => {
+    // The point of the whole drawing. Capacity is set directly rather than built
+    // up through a rollover, because *that* composition is already covered — the
+    // test above takes the money and defers the seats, and the domain adds them
+    // when the season opens. What is unproven without this is that the picture
+    // follows the number.
+    //
+    // Counting *solid* modules rather than rects: every module is always in the
+    // markup, because the unbuilt ones are what the ghost is made of. A rect
+    // count is therefore constant, and the first version of this test asserted
+    // exactly that and failed.
+    render(<App />)
+    openScreen('nav.estadio')
+
+    const solid = () => document.querySelectorAll('.stadium [data-module]:not([data-ahead])').length
+
+    const seen = STADIUM_TIERS.map((threshold, i) => {
+      act(() => {
+        useGame.setState({
+          game: {
+            ...game(),
+            clubs: game().clubs.map((c) => (c.id === MID ? { ...c, capacity: threshold } : c)),
+          },
+        })
+      })
+      const svg = document.querySelector('.stadium')
+      expect(svg?.getAttribute('data-tier'), `${String(threshold)} seats`).toBe(String(i + 1))
+      return solid()
+    })
+
+    for (let i = 1; i < seen.length; i++) {
+      expect(seen[i], `tier ${String(i + 1)} built nothing new`).toBeGreaterThan(
+        seen[i - 1] as number,
+      )
+    }
+  })
+
+  it('shows what is not built yet, faded, and stops once it is', () => {
+    // "You can keep making it bigger" is the thing the drawing has to say at a
+    // small club, and it can only say it by showing the modules that are missing.
+    render(<App />)
+    openScreen('nav.estadio')
+
+    const ghosts = () => document.querySelectorAll('.stadium [data-module][data-ahead]').length
+    const setCapacity = (capacity: number) => {
+      act(() => {
+        useGame.setState({
+          game: {
+            ...game(),
+            clubs: game().clubs.map((c) => (c.id === MID ? { ...c, capacity } : c)),
+          },
+        })
+      })
+    }
+
+    setCapacity(15_000)
+    const small = ghosts()
+    expect(small).toBeGreaterThan(0)
+    // The nearest one is the most visible of them.
+    expect(document.querySelectorAll('.stadium [data-ahead="next"]').length).toBeGreaterThan(0)
+
+    setCapacity(90_000)
+    expect(ghosts()).toBeLessThan(small)
+
+    // Nothing left to build, so nothing left to fade.
+    setCapacity(500_000)
+    expect(ghosts()).toBe(0)
   })
 })
 

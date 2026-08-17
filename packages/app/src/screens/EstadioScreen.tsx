@@ -11,6 +11,8 @@ import {
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { Explain } from './Explain.tsx'
+import { stadiumTierFor } from './stadium.ts'
+import { StadiumView } from './StadiumView.tsx'
 import './EstadioScreen.css'
 
 /**
@@ -76,6 +78,14 @@ export function EstadioScreen() {
         <h2 className="screen__heading">{t('estadio.heading')}</h2>
 
         <div className="estadio-screen__body">
+          {/* The ground: what is built, solid, and what could be, faded. It reads
+              `capacity`, so it grows when the seats arrive at the rollover rather
+              than when the work is commissioned — which is what `estadio.underWay`
+              already promises while the building is going on. */}
+          <div className="estadio-screen__ground">
+            <StadiumView tier={stadiumTierFor(club.capacity)} clubId={club.id} />
+          </div>
+
           <div className="estadio-screen__stats">
             <div className="stat">
               <span className="stat__label">{t('estadio.capacity')}</span>
