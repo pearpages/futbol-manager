@@ -45,7 +45,20 @@ beforeEach(() => {
    * permanently disabled. That cost an afternoon; it is an artefact of swapping
    * storage under a live promise, not something the product can do.
    */
-  useGame.setState({ language: 'en', saving: false, saves: [], currentSlot: null })
+  /*
+   * `entry: 'app'` for the same reason as `language`. The landing is the front
+   * door now, and a market-screen test that also has to walk through a door fails
+   * for a reason it is not about. `LandingScreen.test.tsx` undoes this pin
+   * explicitly and walks the door three ways, and it also asserts the *initial*
+   * value in `store.ts` — which this line otherwise makes unreadable.
+   */
+  useGame.setState({
+    language: 'en',
+    entry: 'app',
+    saving: false,
+    saves: [],
+    currentSlot: null,
+  })
   globalThis.localStorage?.removeItem('fm.lastSlot')
 
   /*

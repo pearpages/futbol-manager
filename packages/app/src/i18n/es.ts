@@ -69,8 +69,6 @@ export const es: Dictionary = {
   'hub.news': 'Noticias',
   'hub.readNews': 'Verlo todo',
   'hub.noNews': 'Todavía no ha pasado nada.',
-  'hub.confirmNewCareer':
-    '¿Volver a la elección de club? Todo lo que no hayas grabado de esta carrera se perderá.',
 
   // ── Partidas grabadas ────────────────────────────────────────────────────
   'saves.title': 'Partidas grabadas',
@@ -591,4 +589,20 @@ export const es: Dictionary = {
   'error.ticket.range': 'Una entrada tiene que costar entre {low} y {high}',
   'error.expansion.underWay': 'Ya hay obras en marcha',
   'error.expansion.range': 'Una ampliación va de {min} a {max} asientos',
+
+  // ── La portada ──────────────────────────────────────────────────────────────
+  'action.quit': 'Salir de la carrera',
+  'hub.confirmQuit':
+    '¿Quieres salir de esta carrera? Se queda donde está y Continuar te traerá de vuelta, pero grábala si la quieres una vez hayas empezado otra.',
+  'landing.tagline': 'Dirige un club español. Una temporada cada vez.',
+  'landing.about.heading': 'Qué es esto',
+  'landing.about.p1':
+    'Un juego de gestión futbolística en el idioma de los CD-ROM españoles de los noventa. No hay partido que mirar: tú eliges el once, marcas el planteamiento y el resultado se resuelve con los números.',
+  'landing.about.p2':
+    'Llevas un solo club durante una temporada — la plantilla, las tácticas, el mercado de fichajes, la masa salarial, el campo y una junta que espera una posición en la liga. El resto de la división lo lleva el juego.',
+  'landing.about.p3':
+    'Una carrera es determinista: las mismas decisiones dan siempre la misma temporada. Graba cuando quieras: el calendario, el mercado y el sorteo viajan con el archivo.',
+  'landing.continue': 'Continuar',
+  'landing.load': 'Cargar partida',
+  'shell.build': 'Compilación',
 }

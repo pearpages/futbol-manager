@@ -39,7 +39,7 @@ describe('where the controls are', () => {
       openScreen(key)
       expect(foot()).not.toBeNull()
       // The three things you do to the game, reachable without going home.
-      for (const label of ['action.save', 'action.saves', 'action.newCareer']) {
+      for (const label of ['action.save', 'action.saves', 'action.quit']) {
         expect(within(foot()).getByRole('button', { name: new RegExp(t(label)) })).toBeDefined()
       }
       fireEvent.click(within(foot()).getByRole('button', { name: t('action.back') }))

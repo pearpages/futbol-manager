@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, within } from '@testing-library/react'
 import { computeTable } from '@fm/domain'
 import { BANDS, bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
@@ -117,7 +117,13 @@ describe('sorting the classification', () => {
     openScreen('nav.table')
   }
 
-  const header = (label: string) => screen.getByRole('button', { name: new RegExp(`^${label}`) })
+  // Scoped to the table. Unscoped, `^L` matched the footer's Leave career button
+  // as well as the Lost column — a one-letter header is not a unique name in a
+  // document that also holds a shell.
+  const header = (label: string) =>
+    within(document.querySelector('.data-table') as HTMLElement).getByRole('button', {
+      name: new RegExp(`^${label}`),
+    })
 
   it('keeps the real league position on the row when sorted by something else', () => {
     // The headline risk, and the reason `Standing` bakes position and band in before

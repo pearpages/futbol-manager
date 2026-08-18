@@ -1,0 +1,157 @@
+/*
+ * The cover's palette.
+ *
+ * Eleven colours declared and six mixed from them. **Nothing is derived by mixing
+ * toward `#000`**, which is the one habit that most separates competent pixel art
+ * from good: a shadow carries the ambient hue and a highlight carries the source
+ * hue, so here the darks shift toward the night sky and the lights toward the
+ * lamps. Every previous module in this project darkens with black; this one does
+ * not, and a test asserts each derived value names the base it came from.
+ *
+ * It is also the only art module in the app that takes no club colours. It paints
+ * the landing page, which is what you see *before* a club exists — so there is no
+ * `data-colours`, no `var(--badge-a)`, and a test that says so.
+ *
+ * Deliberately not aliased onto the band tokens either: `tokens.css` names those
+ * for the competition rather than the colour, and borrowing `--fm-ucl` to mean
+ * "night sky" is the mistake that comment is a monument to.
+ */
+
+.cover {
+  --cover-sky: #0c142c;
+  --cover-lamp: #ffeab4;
+  --cover-mast: #2b3a5e;
+  --cover-roof: #141c36;
+  --cover-stand: #546896;
+  --cover-crowd: #33446e;
+  --cover-turf: #2e7c46;
+  --cover-line: #e4efe2;
+  --cover-figure: #070b18;
+  --cover-rim: #e8c88a;
+  --cover-title: #f2e9d2;
+
+  /* Light, toward the lamps. */
+  --cover-glow: color-mix(in srgb, var(--cover-lamp), var(--cover-sky) 52%);
+  --cover-haze: color-mix(in srgb, var(--cover-lamp), var(--cover-sky) 74%);
+  --cover-stripe: color-mix(in srgb, var(--cover-turf), var(--cover-lamp) 26%);
+  /* Shadow, toward the night. */
+  --cover-shade: color-mix(in srgb, var(--cover-crowd), var(--cover-sky) 55%);
+  --cover-dusk: color-mix(in srgb, var(--cover-turf), var(--cover-sky) 42%);
+  --cover-seam: color-mix(in srgb, var(--cover-roof), var(--cover-figure) 55%);
+
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  /* Sized on the **width**, with the viewBox supplying the ratio, so exactly one
+     dimension is stated and the drawing can never letterbox.
+
+     Deliberately **larger than the house scale**, which the other art modules hold
+     at four device pixels per art pixel. Those are ornaments inside a screen; this
+     is the screen. At 40.25rem — the house figure — it sat in the middle of a
+     1440-wide page with a third of the column empty above and below it and read as
+     an afterthought. 64rem is ~6.4 device pixels per art pixel, which is still
+     unmistakably pixel art and actually fills the page it is the subject of. */
+  max-width: 64rem;
+}
+
+/*
+ * A height query, which nothing else in this app uses — and the distinction
+ * matters. The stadium steps down at `width < 60rem` because its constraint is
+ * horizontal: it stops sharing a row with the panel beside it. This one competes
+ * with the wordmark, three buttons and the credit for **viewport height**, and
+ * 364px of cover inside a 650px window is the same "second size was too big"
+ * failure the stadium shipped once already.
+ */
+/* Scoped, and that is not decoration: `seam`, `shade`, `turf`, `stripe`, `line`
+   and `roof` are ink names `stadium.css` and `hub-figures.css` also use, so a
+   bare `[data-ink='seam']` here would cross-paint both of them — and paint
+   nothing at all itself, since `--cover-*` only exists inside this element. */
+/* Two steps, both measured rather than picked. 64rem is 36.2rem tall, so it needs
+   about 50rem of window once the credit and the frame are paid for; below that the
+   cover gives way to the copy beside it, and below 42rem it gives way again or it
+   pushes both doors off the bottom of a stacked layout.
+
+   The first step was at 58rem and was wrong: a 900px window is 56.25rem, so it
+   fired on the commonest desktop size going and capped the cover at 768px inside
+   a 1000px column. Measure the breakpoint against the viewport it is meant to
+   spare, not against the drawing. */
+@media (height < 50rem) {
+  .cover {
+    max-width: 48rem;
+  }
+}
+
+@media (height < 42rem) {
+  .cover {
+    max-width: 34rem;
+  }
+}
+
+.cover [data-ink='sky'] {
+  fill: var(--cover-sky);
+}
+
+.cover [data-ink='haze'] {
+  fill: var(--cover-haze);
+}
+
+.cover [data-ink='glow'] {
+  fill: var(--cover-glow);
+}
+
+.cover [data-ink='lamp'] {
+  fill: var(--cover-lamp);
+}
+
+.cover [data-ink='mast'] {
+  fill: var(--cover-mast);
+}
+
+.cover [data-ink='roof'] {
+  fill: var(--cover-roof);
+}
+
+.cover [data-ink='stand'] {
+  fill: var(--cover-stand);
+}
+
+.cover [data-ink='crowd'] {
+  fill: var(--cover-crowd);
+}
+
+.cover [data-ink='shade'] {
+  fill: var(--cover-shade);
+}
+
+.cover [data-ink='seam'] {
+  fill: var(--cover-seam);
+}
+
+.cover [data-ink='turf'] {
+  fill: var(--cover-turf);
+}
+
+.cover [data-ink='dusk'] {
+  fill: var(--cover-dusk);
+}
+
+.cover [data-ink='stripe'] {
+  fill: var(--cover-stripe);
+}
+
+.cover [data-ink='line'] {
+  fill: var(--cover-line);
+}
+
+.cover [data-ink='figure'] {
+  fill: var(--cover-figure);
+}
+
+.cover [data-ink='rim'] {
+  fill: var(--cover-rim);
+}
+
+.cover [data-ink='title'] {
+  fill: var(--cover-title);
+}

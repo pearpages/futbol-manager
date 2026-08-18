@@ -80,8 +80,6 @@ export const en: Dictionary = {
   'hub.news': 'News',
   'hub.readNews': 'See all',
   'hub.noNews': 'Nothing has happened yet.',
-  'hub.confirmNewCareer':
-    'Leave for the club picker? Anything you have not saved in this career is lost.',
 
   // ── Saved games ──────────────────────────────────────────────────────────
   'saves.title': 'Saved games',
@@ -604,4 +602,20 @@ export const en: Dictionary = {
   'error.ticket.range': 'A ticket must be priced between {low} and {high}',
   'error.expansion.underWay': 'Building work is already under way',
   'error.expansion.range': 'An expansion runs from {min} to {max} seats',
+
+  // ── The front page ──────────────────────────────────────────────────────────
+  'action.quit': 'Leave career',
+  'hub.confirmQuit':
+    'Leave this career? It stays where it is and Continue will bring you back — but save it if you want it once you have started another.',
+  'landing.tagline': 'Take charge of a Spanish club. One season at a time.',
+  'landing.about.heading': 'What this is',
+  'landing.about.p1':
+    'A football management game in the idiom of the Spanish CD-ROMs of the nineties. There is no match to watch: you pick the eleven, set the approach, and the result is resolved on the numbers.',
+  'landing.about.p2':
+    'You run one club through a season — the squad, the tactics, the transfer market, the wage bill, the ground, and a board that expects a league position. The rest of the division is run by the game.',
+  'landing.about.p3':
+    'A career is deterministic: the same decisions always produce the same season. Save whenever you like — the day clock, the market and the draw all travel with the file.',
+  'landing.continue': 'Continue',
+  'landing.load': 'Load game',
+  'shell.build': 'Build',
 }

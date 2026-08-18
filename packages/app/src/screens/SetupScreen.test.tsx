@@ -85,27 +85,19 @@ describe('choosing a club', () => {
   })
 })
 
-describe('New career', () => {
-  /** The confirm the press now goes through. Two buttons share the label. */
-  const confirm = () =>
-    within(screen.getByRole('dialog')).getByRole('button', { name: t('action.newCareer') })
-
-  it('returns to the picker from an in-progress season', () => {
-    useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
-    render(<App />)
-    expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
-    fireEvent.click(confirm())
-    expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
-  })
-
+/**
+ * Leaving a career now lands on the front page rather than here, so the walk from
+ * a season to the picker is `LandingScreen.test.tsx`'s — it is two presses in two
+ * different places and belongs where the door is. What is still this file's is
+ * that the question gets asked at all, and that declining it changes nothing.
+ */
+describe('Leaving a career', () => {
   it('asks first, because there is no undo behind it', () => {
     useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
-    expect(screen.getByText(t('hub.confirmNewCareer'))).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: t('action.quit') }))
+    expect(screen.getByText(t('hub.confirmQuit'))).toBeDefined()
     // Still in the career at this point — the question has been asked, not answered.
     expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
   })
@@ -114,7 +106,7 @@ describe('New career', () => {
     useGame.getState().newGame(DEFAULT_CLUBS[0]?.id)
     render(<App />)
 
-    fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    fireEvent.click(screen.getByRole('button', { name: t('action.quit') }))
     fireEvent.click(screen.getByRole('button', { name: t('action.cancel') }))
 
     expect(screen.queryByRole('dialog')).toBeNull()

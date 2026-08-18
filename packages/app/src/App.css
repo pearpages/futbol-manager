@@ -110,6 +110,12 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
+/* The front door: no bar at all, because the cover carries the name and the cog
+   floats on the screen itself. Stage · credit. */
+.shell--landing {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
 /* ── The transfer window, in the title bar ───────────────────────────────── */
 
 /* The only live state left in the corner, and it renders solely while the window

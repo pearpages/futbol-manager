@@ -152,7 +152,7 @@ export function HubScreen() {
   const dispatch = useGame((s) => s.dispatch)
   const advanceToMatchday = useGame((s) => s.advanceToMatchday)
   const startNewSeason = useGame((s) => s.startNewSeason)
-  const restart = useGame((s) => s.restart)
+  const quitToLanding = useGame((s) => s.quitToLanding)
   const translator = useT()
   const { t, plural, date, money, season } = translator
 
@@ -295,8 +295,8 @@ export function HubScreen() {
             {game.board.sacked ? (
               // The end of the job, and the end of the career. There is no path
               // on from here — the only button left is a new one somewhere else.
-              <button type="button" className="button is-primary" onClick={restart}>
-                {t('action.newCareer')}
+              <button type="button" className="button is-primary" onClick={quitToLanding}>
+                {t('action.quit')}
               </button>
             ) : finished ? (
               <button type="button" className="button is-primary" onClick={() => startNewSeason()}>

@@ -382,10 +382,11 @@ describe('the sack', () => {
       }),
     ).toBeNull()
 
-    fireEvent.click(
-      screen.getAllByRole('button', { name: t('action.newCareer') })[0] as HTMLElement,
-    )
-    expect(useGame.getState().needsSetup).toBe(true)
+    fireEvent.click(screen.getAllByRole('button', { name: t('action.quit') })[0] as HTMLElement)
+    // Back at the front door, which is where a finished career ends. Deliberately
+    // not `needsSetup`: quitting leaves the career in memory. What makes this a
+    // dead end is the landing refusing to offer Continue once you are sacked.
+    expect(useGame.getState().entry).toBe('landing')
   })
 
   it('leaves one warning perfectly playable', () => {

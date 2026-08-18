@@ -16,6 +16,7 @@ import { SquadScreen } from './screens/SquadScreen.tsx'
 import { PlayerScreen } from './screens/PlayerScreen.tsx'
 import { LineupScreen } from './screens/LineupScreen.tsx'
 import { MarketScreen } from './screens/MarketScreen.tsx'
+import { LandingScreen } from './screens/LandingScreen.tsx'
 import { SetupScreen } from './screens/SetupScreen.tsx'
 import { CajaScreen } from './screens/CajaScreen.tsx'
 import { DecisionesScreen } from './screens/DecisionesScreen.tsx'
@@ -71,6 +72,7 @@ export function App() {
   const screen = useGame((s) => s.screen)
   const restore = useGame((s) => s.restore)
   const needsSetup = useGame((s) => s.needsSetup)
+  const entry = useGame((s) => s.entry)
   const translator = useT()
   const { t, plural, season, language } = translator
 
@@ -92,6 +94,24 @@ export function App() {
   // Null *is* the closed state, so this answers "is it open" and "for how long" in
   // one call rather than asking the predicate and then the count.
   const windowDaysLeft = transferWindowDaysLeft(game.season.currentDate)
+
+  // The front door, and the first thing anyone sees. Ahead of the club picker
+  // because it is what sends you there — and shown whether or not a career
+  // exists, since Continue is one of the ways through it.
+  //
+  // No title bar on this branch: the cover carries the game's name, and a second
+  // copy in a bar is the duplicate-navigation mistake this shell has shed twice.
+  // `restore()` above still runs, which is what lights Continue up.
+  if (entry === 'landing') {
+    return (
+      <div className="shell shell--landing">
+        <main className="shell__stage">
+          <LandingScreen />
+        </main>
+        <ShellCredit />
+      </div>
+    )
+  }
 
   // No career yet: the club picker replaces the whole shell rather than sitting
   // inside it, because none of the navigation means anything before a club exists.

@@ -69,8 +69,6 @@ export const ca: Dictionary = {
   'hub.news': 'Notícies',
   'hub.readNews': 'Veure-ho tot',
   'hub.noNews': 'Encara no ha passat res.',
-  'hub.confirmNewCareer':
-    'Vols tornar a la tria de club? Tot el que no hagis desat d’aquesta carrera es perdrà.',
 
   // ── Partides desades ─────────────────────────────────────────────────────
   'saves.title': 'Partides desades',
@@ -592,4 +590,20 @@ export const ca: Dictionary = {
   'error.ticket.range': 'Una entrada ha de costar entre {low} i {high}',
   'error.expansion.underWay': 'Ja hi ha obres en marxa',
   'error.expansion.range': 'Una ampliació va de {min} a {max} seients',
+
+  // ── La portada ──────────────────────────────────────────────────────────────
+  'action.quit': 'Sortir de la carrera',
+  'hub.confirmQuit':
+    'Vols sortir d’aquesta carrera? Es queda on és i Continua t’hi tornarà a portar, però desa-la si la vols un cop n’hagis començat una altra.',
+  'landing.tagline': 'Dirigeix un club espanyol. Una temporada cada cop.',
+  'landing.about.heading': 'Què és això',
+  'landing.about.p1':
+    'Un joc de gestió futbolística en l’idioma dels CD-ROM espanyols dels noranta. No hi ha cap partit per mirar: tu tries l’onze, marques el plantejament i el resultat es resol amb els números.',
+  'landing.about.p2':
+    'Portes un sol club durant una temporada — la plantilla, les tàctiques, el mercat de fitxatges, la massa salarial, el camp i una junta que espera una posició a la lliga. La resta de la divisió la porta el joc.',
+  'landing.about.p3':
+    'Una carrera és determinista: les mateixes decisions donen sempre la mateixa temporada. Desa quan vulguis: el calendari, el mercat i el sorteig viatgen amb el fitxer.',
+  'landing.continue': 'Continua',
+  'landing.load': 'Carregar partida',
+  'shell.build': 'Compilació',
 }

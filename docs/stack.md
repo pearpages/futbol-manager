@@ -48,6 +48,14 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 
 Declared in **both** packages rather than once at the root, and that is the strict-`node_modules` boundary doing its job rather than duplication. A root devDependency would resolve from either package by walking up, which is exactly the undeclared import pnpm's layout exists to prevent — and the ESLint boundary rule would not catch it, because that one matches `@fm/*` specifiers.
 
+### The build stamps its own commit
+
+`packages/app/vite.config.ts` carries the project's **first and only `define`**, and `packages/app/commit.ts` is the first thing anywhere that reads git state. It runs `git rev-parse --short HEAD` through `node:child_process`, catches everything, and answers `dev` — a tarball with no `.git`, or a container without git on the PATH, is not a reason to fail a build over a line in the footer. It sits at the package root rather than under `src/`, so it can never be pulled into the bundle.
+
+**Defined on `import.meta.env.VITE_COMMIT`, not as a bare `__COMMIT__` global, and that is not a style preference.** The root `vitest.config.ts` declares the `app` project **inline** — its own `plugins` and `root` — and does not extend `packages/app/vite.config.ts`. A bare global would therefore not exist under Vitest, and every test that renders the footer would throw a `ReferenceError` at import. An absent `import.meta.env` key is simply `undefined`, which the call site's `?? 'dev'` absorbs, so one expression is correct in a build, under `pnpm dev` and in a test. `packages/app/src/vite-env.d.ts` types it as optional for the same reason: the type should say it can be missing rather than let a call site skip the fallback.
+
+This is a **version in the sense of a build identifier, not a dependency pin** — it says which commit a running page came from when something is reported. The pins in this document are still the only versions anyone decides.
+
 ## UI
 
 |                      | Version     |

@@ -2,6 +2,16 @@ import { useT } from '../i18n/useT.ts'
 import '../styles/shell-credit.css'
 
 /**
+ * Which build this is.
+ *
+ * Read once at module load — it is a literal substituted by `define`, so there is
+ * nothing to re-evaluate. The fallback is not defensive padding: the key is
+ * genuinely absent under `pnpm dev` and under Vitest, which is why the test
+ * asserts the *shape* rather than a value that changes every commit.
+ */
+const COMMIT = import.meta.env.VITE_COMMIT ?? 'dev'
+
+/**
  * The signature every site in the family carries — same mark, same wording, same
  * destination. It is a network credit, not an authorship claim: it says this page
  * belongs with the others.
@@ -37,6 +47,15 @@ export function ShellCredit(): React.JSX.Element {
       >
         pearpages
       </a>
+      {/* A real text node, not a CSS gap. The gap spaces it on screen and
+          contributes nothing to `textContent`, which is what assistive technology
+          reads — and `pearpages7f1e3eb` is the exact defect this project has now
+          shipped five times (`CanteraM7`, `20Relegated`, `Temporada 1En joc`, the
+          calendar score cell, `Matchday 12026-08-15`). */}
+      {' · '}
+      <span className="shell__credit-version" title={t('shell.build')}>
+        {COMMIT}
+      </span>
     </footer>
   )
 }

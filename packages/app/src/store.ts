@@ -64,6 +64,21 @@ export type Screen =
 
 export type MarketTab = 'forSale' | 'clubs'
 
+/**
+ * Which side of the front door the player is on.
+ *
+ * Deliberately **not** a `Screen`. The two exhaustive `Record<Screen, …>` maps in
+ * `App.tsx` describe screens that live inside the career shell — a title bar
+ * above, `ShellFoot` below — and the landing has neither, no career behind it and
+ * nothing to save. It is a branch of the shell, the way the club picker is.
+ *
+ * It is also not derivable from `needsSetup`, which answers a different question:
+ * *is `game` a real career or the placeholder built at module load?* All four
+ * combinations are reachable and mean something — the landing shows a Continue
+ * button precisely when `needsSetup` is false while `entry` is still `'landing'`.
+ */
+export type Entry = 'landing' | 'app'
+
 interface Store {
   readonly game: GameState
   readonly screen: Screen
@@ -132,6 +147,11 @@ interface Store {
    */
   readonly needsSetup: boolean
   /**
+   * Landing or app. See `Entry` — this is *where the player is*, where
+   * `needsSetup` is *what the store is holding*.
+   */
+  readonly entry: Entry
+  /**
    * Every named save, for the picker. Refreshed rather than watched: IndexedDB
    * has no subscription, and the only thing that writes slots is this store.
    */
@@ -195,6 +215,15 @@ interface Store {
   newGame(managedClubId?: string): void
   /** Back to the club picker, leaving any saved career on disk untouched. */
   restart(): void
+  /**
+   * Back to the front door. The career in memory is **untouched**, so Continue
+   * resumes it — this is leaving the room, not ending the job.
+   */
+  quitToLanding(): void
+  /** Continue — the career is already in memory, so this just walks back in. */
+  continueCareer(): void
+  /** New career: abandon whatever is in memory and go to the club picker. */
+  startNewCareer(): void
   /**
    * Roll into next season. Separate from `dispatch` only because the command
    * carries a name pool, and `domain` owns no word lists — the store is where
@@ -329,6 +358,7 @@ export const useGame = create<Store>((set, get) => ({
   language: storedLanguage(),
   saving: false,
   needsSetup: true,
+  entry: 'landing',
   saves: [],
   currentSlot: readPreference(SLOT_KEY),
   storageBlocked: false,
@@ -551,6 +581,10 @@ export const useGame = create<Store>((set, get) => ({
       marketTab: 'forSale',
       browsingClubId: null,
       needsSetup: false,
+      // Loading a save *is* entering the game, so this belongs here rather than
+      // at the call site — which is what lets `SaveManagerModal` open from the
+      // landing with no change to it at all.
+      entry: 'app',
       currentSlot: slot,
     })
     writePreference(SLOT_KEY, slot)
@@ -585,6 +619,15 @@ export const useGame = create<Store>((set, get) => ({
       marketTab: 'forSale',
       browsingClubId: null,
       needsSetup: false,
+      /*
+       * Redundant on today's only route — `startNewCareer` opens the door before
+       * the picker is ever shown, so this is already `'app'` by the time a club is
+       * chosen, and a mutation removing it fails nothing. It stays because
+       * `newGame` is the store's public "start this career" verb: a future caller
+       * that reaches for it directly should end up in the game rather than
+       * stranded on the landing with the career silently begun behind it.
+       */
+      entry: 'app',
       // A new career has not been saved anywhere yet. Leaving the pointer would
       // make the first Grabar silently overwrite the career you just left.
       currentSlot: null,
@@ -603,6 +646,36 @@ export const useGame = create<Store>((set, get) => ({
       feed: [],
       unread: 0,
     })
+  },
+
+  /*
+   * Quitting to the door is not abandoning the career, and the difference is
+   * load-bearing: this must **not** call `restart()`.
+   *
+   * `restart()` sets `needsSetup` and clears the feed. Doing that here would make
+   * Continue vanish for the career you had open a second ago — and if you did get
+   * back in, you would resume with an empty news log. What is reset is only the
+   * per-sitting navigation, the same set `load()` and `newGame()` clear, so
+   * walking back in does not land you on a ficha belonging to nobody.
+   */
+  quitToLanding() {
+    set({
+      entry: 'landing',
+      screen: 'hub',
+      inspectedPlayerId: null,
+      comparedPlayerId: null,
+      marketTab: 'forSale',
+      browsingClubId: null,
+    })
+  },
+
+  continueCareer() {
+    set({ entry: 'app' })
+  },
+
+  startNewCareer() {
+    get().restart()
+    set({ entry: 'app' })
   },
 
   startNewSeason() {

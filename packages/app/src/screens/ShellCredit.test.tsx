@@ -57,8 +57,25 @@ describe('the pearpages credit', () => {
     // `{t('shell.madeBy')}{' '}<a>` — drop that `{' '}` and this reads
     // "Made bypearpages", which is what assistive technology announces and what
     // three earlier defects in this project looked like.
+    //
+    // The build hash is separated by a real ` · ` text node for exactly the same
+    // reason: a CSS gap spaces it on screen and contributes nothing here, which
+    // would give `pearpages7f1e3eb`. Matched loosely because the hash changes
+    // every commit and is absent under Vitest, where the fallback fires.
     render(<App />)
-    expect(credit()?.textContent?.trim()).toBe(`${t('shell.madeBy')} pearpages`)
+    expect(credit()?.textContent?.trim()).toMatch(
+      new RegExp(`^${t('shell.madeBy')} pearpages · (dev|[0-9a-f]{7,})$`),
+    )
+  })
+
+  it('says which build this is, in a form you can read back over the phone', () => {
+    // `define` substitutes the real hash at build time and leaves the key absent
+    // under Vitest, so this asserts the shape rather than a value that changes
+    // every commit — and that the fallback is a word rather than `undefined`.
+    render(<App />)
+    const version = credit()?.querySelector('.shell__credit-version')
+    expect(version?.textContent).toMatch(/^(dev|[0-9a-f]{7,})$/)
+    expect(version?.getAttribute('title')).toBe(t('shell.build'))
   })
 
   it('sends you to pearpages.com, and the mark contributes nothing to the name', () => {

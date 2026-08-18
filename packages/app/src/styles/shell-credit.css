@@ -56,3 +56,16 @@
 .shell__credit-link:hover {
   color: var(--fm-accent);
 }
+
+/*
+ * Which build this is. Quieter than the name beside it — it is for the one
+ * conversation that starts "it does this on my machine", and furniture the rest
+ * of the time. Tabular figures because a hash is half digits and a proportional
+ * `1` beside a `7` reads as a typo.
+ */
+.shell__credit-version {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--fm-screen-ink-soft);
+  opacity: 0.75;
+}

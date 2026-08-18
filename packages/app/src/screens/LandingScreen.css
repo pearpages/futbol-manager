@@ -1,0 +1,126 @@
+/*
+ * Two columns: the cover, and what the game is with the ways in.
+ *
+ * The aside is a `.screen` rather than a `.panel` — the material rule is that a
+ * panel is raised hardware holding controls and a screen is a recessed display
+ * holding data, and this is the one place the game explains itself.
+ */
+
+.landing {
+  position: relative;
+  display: grid;
+  /* The cover takes what it needs; the aside is capped, because its copy is
+     capped at 42ch and a wider panel just puts air to the right of every line. */
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 25rem);
+  gap: var(--fm-space-2);
+  height: 100%;
+  min-height: 0;
+}
+
+/* The cog, floating rather than in a bar. This branch has no title bar, because
+   the cover already carries the name and a second copy is furniture. */
+.landing__settings {
+  position: absolute;
+  top: var(--fm-space-2);
+  right: var(--fm-space-2);
+  z-index: 5;
+}
+
+.landing__hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: var(--fm-space-2);
+}
+
+.landing__aside {
+  display: flex;
+  flex-direction: column;
+  /* Centred against the cover, which is centred in its own column. Left at the
+     top, the panel had four hundred pixels of nothing between the last paragraph
+     and the buttons pinned to its foot. */
+  justify-content: center;
+  gap: var(--fm-space-3);
+  min-height: 0;
+  padding: var(--fm-space-4);
+  overflow-y: auto;
+}
+
+.landing__tagline {
+  margin: 0;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--fm-champion);
+}
+
+/*
+ * Body copy, which this app has never had — every other screen is tables and
+ * stats. Block-scoped rather than promoted: `chrome.css` graduates a primitive on
+ * its second use, and there is no second run of prose anywhere.
+ */
+.landing__copy {
+  margin: 0;
+  max-width: 42ch;
+  font-size: var(--fm-text-sm);
+  line-height: 1.55;
+  color: var(--fm-screen-ink-soft);
+}
+
+/* A step below the copy rather than pinned to the panel's foot: the block is
+   vertically centred now, so `margin-top: auto` would only reopen the hole it was
+   put there to fill. */
+.landing__actions {
+  padding-top: var(--fm-space-2);
+  flex-wrap: wrap;
+}
+
+/*
+ * Stacked. The cover leads, the copy and the buttons follow, and the whole thing
+ * scrolls as one — the aside's own scroller is for the two-column case, where it
+ * is the short column beside a fixed-height picture.
+ */
+@media (width < 60rem) {
+  .landing {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    overflow-y: auto;
+  }
+
+  .landing__aside {
+    overflow-y: visible;
+    /*
+     * Back to the top when stacked, and this one is not cosmetic. `center` on a
+     * flex column whose content is taller than its box pushes the overflow off
+     * **both** ends, so at 900 x 650 the heading was unreachable above the panel
+     * and the tagline was cut in half by its own border. Centring is only safe
+     * while there is slack, which is the two-column case.
+     */
+    justify-content: flex-start;
+  }
+
+  /*
+   * Stacked, the three ways in come **before** the explanation.
+   *
+   * Measured at 900 x 650 and 820 x 600: cover, heading, tagline and three
+   * paragraphs put both buttons below the fold, so the only two controls on the
+   * first screen anyone sees had to be scrolled for. The prose is what you scroll
+   * for; the doors are not. `margin-top: auto` goes with it — there is no slack
+   * left to push into once the column outgrows the viewport, and it would fight
+   * the reorder.
+   */
+  .landing__tagline {
+    order: 1;
+  }
+
+  .landing__actions {
+    order: 2;
+  }
+
+  .landing__copy {
+    order: 3;
+  }
+}

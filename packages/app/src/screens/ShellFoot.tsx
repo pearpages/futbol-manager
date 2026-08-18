@@ -33,7 +33,7 @@ export function ShellFoot(): React.JSX.Element {
   const save = useGame((s) => s.save)
   const saving = useGame((s) => s.saving)
   const currentSlot = useGame((s) => s.currentSlot)
-  const restart = useGame((s) => s.restart)
+  const quitToLanding = useGame((s) => s.quitToLanding)
 
   const { t, date } = useT()
 
@@ -119,7 +119,7 @@ export function ShellFoot(): React.JSX.Element {
               setLeaving(true)
             }}
           >
-            {t('action.newCareer')}
+            {t('action.quit')}
           </button>
           {/* Says it worked. The label flicking to "Desant…" is over too fast to
               read, and a save with no visible result is indistinguishable from a
@@ -162,12 +162,12 @@ export function ShellFoot(): React.JSX.Element {
 
       {leaving && (
         <Modal
-          title={t('action.newCareer')}
+          title={t('action.quit')}
           onClose={() => {
             setLeaving(false)
           }}
         >
-          <p className="shell__question">{t('hub.confirmNewCareer')}</p>
+          <p className="shell__question">{t('hub.confirmQuit')}</p>
           <div className="screen-actions">
             <button
               type="button"
@@ -178,8 +178,8 @@ export function ShellFoot(): React.JSX.Element {
             >
               {t('action.cancel')}
             </button>
-            <button type="button" className="button is-primary" onClick={restart}>
-              {t('action.newCareer')}
+            <button type="button" className="button is-primary" onClick={quitToLanding}>
+              {t('action.quit')}
             </button>
           </div>
         </Modal>
