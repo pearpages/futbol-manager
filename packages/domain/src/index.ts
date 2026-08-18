@@ -73,6 +73,7 @@ export {
   type Outcome,
   recentResultsFor,
   ROUNDS_PER_HALF,
+  seasonSchedule,
   TOTAL_ROUNDS,
 } from './fixtures.ts'
 

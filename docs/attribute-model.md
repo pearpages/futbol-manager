@@ -91,7 +91,7 @@ Applied to `teamAttack` / `teamDefence` after step 3, in this order, so each mil
 1. **The tactical slider** (M3) — one control, 0–100, doing two things at once:
    - **Split.** Trades attack against defence, with both extremes surrendering 1.6× what they gain. The asymmetry exists because a symmetric trade was strictly exploitable: under three-points-for-a-win, converting a draw into a 50/50 result is worth +0.5 points, so all-out attack was a free +2.1 points a season until M3a fixed it.
    - **Tempo.** `(attacking − 50) / 50`, so −1 at a full low block and +1 at all-out attack. This is how open the game is, and it is the half that makes the slider a decision rather than a cost.
-2. **The formation's own tempo** — `FORMATION_TEMPO` in `lineup.ts`, **added to** the slider's. 4-4-2 and 3-5-2 are exactly zero; the range is +0.4 at 4-2-4 to −0.7 at 5-4-1. Without it the containment shapes were dead buttons — 4-5-1 measured −1.6 points and was optimal at none of the twenty clubs — because a midfielder is a half-contributor to both weighted means, so trading forwards _and_ defenders for midfielders dilutes both. The asymmetric range is deliberate: an attacking shape is already paid by bank concentration, a defensive one has to clear that debt first. **The shape is read off the players on the pitch, not off the lineup's `formation` label**, which cannot disagree with itself.
+2. **The formation's own tempo** — `FORMATION_TEMPO` in `lineup.ts`, **added to** the slider's. 4-4-2 and 3-5-2 are exactly zero; the range is +0.4 at 4-2-4 to −0.7 at 5-4-1, and **it cannot go deeper**: `formations.test.ts` holds every shape's tempo inside the slider's own ±1, so that a team sheet cannot out-swing a deliberate tactical choice. Without it the containment shapes were dead buttons — 4-5-1 measured −1.6 points and was optimal at none of the twenty clubs — because a midfielder is a half-contributor to both weighted means, so trading forwards _and_ defenders for midfielders dilutes both. The asymmetric range is deliberate: an attacking shape is already paid by bank concentration, a defensive one has to clear that debt first. **The shape is read off the players on the pitch, not off the lineup's `formation` label**, which cannot disagree with itself.
 3. **Home advantage** (M2) — lives in the resolver, not here.
 4. **Form, morale, fatigue** (M6) — multipliers in roughly 0.9–1.1.
 5. **Missing players** (M6) — injuries and suspensions change the XI, so they change these numbers by construction. No separate penalty term.
@@ -150,16 +150,18 @@ Measured 2026-08-15, real rosters, 10–16 paired seasons per club.
 
 This section said for a long time that formation did not matter — "under 1.5 points across all four" — and added that it "becomes a real decision once M4 lets a squad become unbalanced." M4 shipped, real rosters shipped, and nobody re-measured. **The claim was stale: the spread across the original four is 5.4 points at Villarreal and at least 2.0 at eight of the twenty clubs**, with the per-club best already split three ways. The old figure was measured on generated squads, which scale every position from one club rating and so cannot be lopsided by construction — the harness still runs on those, which is why it never saw this.
 
-Since the second batch of shapes, formation also feeds `tempo` (`FORMATION_TEMPO` in `lineup.ts`), and the best shape runs with club strength the way the slider does:
+Since the second batch of shapes, formation also feeds `tempo` (`FORMATION_TEMPO` in `lineup.ts`). **It is the junior of the two tempo levers and deliberately so** — `formations.test.ts` holds every shape inside the slider's own ±1, so a team sheet can never out-swing a deliberate tactical choice.
 
-| Club            | 4-4-2 | 5-4-1 | 4-2-4    | Best  |
-| --------------- | ----- | ----- | -------- | ----- |
-| Madrid (88)     | 87.8  | 83.0  | **88.9** | 4-2-4 |
-| Villarreal (81) | 62.4  | 60.8  | **65.2** | 4-2-4 |
-| Getafe (74)     | 45.7  | 41.3  | 42.4     | 4-4-2 |
-| Málaga (70)     | 31.0  | 34.0  | 29.0     | 5-4-1 |
+That has a consequence which was mis-stated here for two milestones: **the shape alone does not flip the answer for a weak club.** Holding the slider at its default and varying only the formation, containment costs the weakest club 0.5 points on the shipped league — it does not reward it. The claim that it did came from a ten-season sample reading +3.4; the same measurement reads +0.55 at forty seasons and −1.18 at eighty.
 
-Mid-table is punished either way, exactly as it is by the slider. **Still small next to a signing** — a keeper is +10.5 — which remains the point.
+What does run with club strength is the **approach** — shape and slider together, which is what a manager actually picks. Measured over 50 seasons of the shipped league (`packages/data/src/formations.harness.test.ts`):
+
+| Club        | 4-4-2 @ 50 | contain 4-5-1 @ 0 | open 4-2-4 @ 100 |
+| ----------- | ---------- | ----------------- | ---------------- |
+| Madrid (88) | 84.4       | 70.3 (**−14.1**)  | 92.6 (**+8.2**)  |
+| Málaga (70) | 30.5       | 31.8 (**+1.4**)   | 24.3 (**−6.2**)  |
+
+Both directions reverse, which is M3c's criterion in its original wording. Note the asymmetry: containing is worth a little to the underdog and costs the favourite a great deal — a way to survive, not a way to win. **Still small next to a signing** — a keeper is +10.5 — which remains the point.
 
 **The goalkeeper is worth ~2.5× any other single signing.** That follows directly from 35% of the defensive rating resting on one player — a deliberate choice made so "a great keeper behind a poor back four should visibly matter", and this is the size of that decision. If a keeper being the most valuable player in a squad ever feels wrong, `KEEPER_WEIGHT` in `lineup.ts` is the dial, and the harness bands are what would have to stay green.
 

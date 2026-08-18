@@ -1458,3 +1458,48 @@ The case-sensitivity of the merge moved with it and is still the load-bearing bi
 **Driven in a browser over CDP** — `pnpm build && vite preview` plus headless Chrome, the extension not attempted. Verified at 1440×900, 1280×720 and 900×650 in all three languages: eleven columns with no horizontal scroll on the table or the page, the dialog 544px and wholly inside the viewport with no control outside its box, and a full career year — five deals warned on schedule, four of those men released at the rollover and reported by name, the fifth (a 90-rated midfielder) retained by the club. That last line is the feature working: the game now tells you, and if you do nothing it still costs you four players.
 
 **Known and left:** renewal is not reachable from the lineup screen's bench `<option>`s or the ficha's compare picker, for the same reason `PlayerLink` is not — an `<option>` cannot hold a control. And `.is-in`/`.is-out` in `CajaScreen.css` are now borrowed unscoped by three screens and remain a pending graduation into `chrome.css`; the expiry red is deliberately screen-local rather than a fourth, differently-meaning borrower.
+
+### 2026-08-18 — a different calendar every season
+
+**Prompted by "we should shuffle the matches every season, the calendar is exactly the same every season," with one condition attached: "remember we have the home and away games."** Both halves are now true. 1135 tests, `SCHEMA_VERSION` still 9, no migration.
+
+**The schedule's only degree of freedom is the club-id order.** `generateFixtures(clubIds, seasonStart)` is pure, draws no rng, and `state.competition.clubIds` never changed — so round 1 of 2026/27 and of 2076/77 were the same ten pairings at the same ten grounds. `seasonSchedule(clubIds, startYear, seasonStart)` permutes a copy and hands it on; `generateFixtures` keeps its two-argument signature and its "no rng involved at all" test, so all five existing direct call sites are untouched.
+
+**A permutation is a relabelling, which is why the home-and-away guarantees survive it for free.** The circle method's properties belong to a club's _carousel index_, not to its name, so the multiset of the twenty home/away patterns is identical under any order — only who gets which changes. Verified against the real generator and then in the browser: 380 fixtures, every ordered pair exactly once with its reverse, **19 home and 19 away for every club**, longest run of one venue still 2–3, reverse leg still exactly 19 rounds later, round 1 still on the season's opening day. One nice side effect: the carousel's fixed club at index 0 — the only one with a perfect H/A alternation — is now a different club each year instead of the same one forever.
+
+**The permutation is derived, never drawn**, seeded from the season's start year through a side stream, the same escape `marketSeed` takes on the market screen. That is what kept the change small: **no rng draw is added anywhere in the project**, so `rolloverSeason`'s frozen draw count stays frozen and its squads, youth intake and renewals are bit-identical; every paired A/B in the harness keeps both arms on one calendar, because both derive it from the same year; and nothing needs storing, since `startYear` is already in the save. Seeding on the year alone means a calendar is a league-wide fact rather than a private one — two careers begun in 2026 share the 2026/27 fixture list, as two supporters of different clubs share a real one. Per-career calendars would want a salt on `GameState`, which is a schema bump for something nobody asked for.
+
+**`pnpm season` is deliberately no longer byte-identical** — the league's calendar changed, which is the point. Measured on three seeds: 2.67 / 2.56 / 2.63 goals a game, home wins 46.6 / 47.1 / 50.5%. The squads that produced those tables _are_ bit-identical; only the fixture list moved.
+
+**Two tests re-picked their subject club, which is the documented response rather than a defect.** `market.human.test.ts` says so outright — check the league-wide seller count first, because a collapse to nought is a real bug. It measured **6 of 20 clubs selling against 7 before**, inside the 6/7/8/9 range this project has recorded across five model changes, so index 13 → 8 (ninth of twenty, still mid-table). `renew.test.ts` moved with it. **A season's results decide who needs whom in the summer, so a different schedule redraws the buyers** — expect to re-pick whenever the schedule or generation moves.
+
+---
+
+**Then the formation harness fell over, and what it exposed was worth more than the calendar work.**
+
+**Three of its six arms had been calibrated against a ten-season sample and were passing on luck.** Re-measuring the identical gaps on **unchanged code at HEAD** showed them swinging across their own bands purely with the count: `thinAtt` read −0.90 at ten seasons and −3.44 at a hundred, `stackedHigh` 0.10 and 5.85. The calendar shuffle re-rolled the sample and the luck ran out. `SEASONS` is 50 now, which is what makes any of these mean anything, and it matches `simulate.harness.test.ts`.
+
+**One arm was not noisy — it was false, and had always been.** It asserted a weak club _prefers_ 4-5-1 by more than 1.5 points, commented "measured ~3.4". At HEAD that same effect reads **+0.55 at forty seasons, −1.18 at eighty, and −0.69 averaged over six seeds**. So containment was correct for nobody and 4-4-2 was weakly best across the whole table — **the end-stop failure that file exists to catch, hiding inside the test written to catch it.**
+
+**Deepening `FORMATION_TEMPO` cannot fix it, and the reason is a hard invariant.** `formations.test.ts` holds every shape's tempo inside the slider's own ±1, so a team sheet can never out-swing a deliberate tactical choice — the shape is deliberately the junior lever. The arm needs about −1.8 to pass; **−1.0 is the legal ceiling and still measures −1.64**. Tried it at −1.8/−2.1 anyway to be sure: it broke that invariant _and_ a previously-green arm, and was reverted. **Do not reach for these figures again to satisfy that arm.**
+
+**What is actually true is the _approach_, not the shape alone** — shape and slider together, which is what a manager picks. Measured over 50 seasons of the shipped league:
+
+| Club        | 4-4-2 @ 50 | contain 4-5-1 @ 0 | open 4-2-4 @ 100 |
+| ----------- | ---------- | ----------------- | ---------------- |
+| Madrid (88) | 84.4       | 70.3 (**−14.1**)  | 92.6 (**+8.2**)  |
+| Málaga (70) | 30.5       | 31.8 (**+1.4**)   | 24.3 (**−6.2**)  |
+
+Both directions reverse, with margins of 14 and 8 points rather than a 1.5-point band on a noisy estimate. That is M3c's criterion in its original wording, and the arms now assert it. Note the asymmetry, which is the honest shape of the thing: containing is worth a little to the underdog and costs the favourite a great deal — **a way to survive, not a way to win.**
+
+**The harness moved to `packages/data/src/formations.harness.test.ts`, and that is the real fix.** It ran on `TEST_CLUBS` — generated squads, every position scaled uniformly from one club rating — and so measured a league the game does not ship. `simulateSeasons` gained a `rosters` passthrough; `domain` cannot import `@fm/data`, so the harness moves to the package that owns the rosters. **This closes the roadmap's "harness measures generated squads" item for the formation arms** — the ones asking what a _particular_ club should do, which is the question that needs the real league. The distribution bands stay on `TEST_CLUBS`, where generated squads are arguably right: they describe the shape of a league rather than this one.
+
+**A trap in that move, and it is why the squad arm changed shape.** On real rosters a squad already has a shape, so `keep: 5` is a deep cut at a club with eight midfielders and a scratch at one with six. Swept across six clubs, `gapThinAttack` runs from **+4.5 to −5.1** and no single club clears a fixed bar in both directions — so an absolute figure there measures the roster as much as the model. The arm asserts the **swing between the two trims** now (+8.5 against −0.8, a difference-in-differences that cancels the club, its strength, its fixtures and its seed). Do not put an absolute threshold back on it.
+
+**The end-stop sweep was re-run before and after**, since formation and the slider share the tempo channel and can stack: the full low-block corner (5-4-1 at slider 0) is best for nobody, ranking 23rd, 24th, 15th and 2nd of 24 cells across four clubs.
+
+**Seen in a browser**, over CDP against `vite preview` — the extension was not attempted. A full career at Sarrià: 2026/27 opens 15/08 away to Pamplona, 22/08 home to Elche, 29/08 away to San Sebastián; roll over and 2027/28 opens 15/08 **home to Vitoria**, 22/08 away to Madrid, 29/08 home to Bilbao. The rendered season-2 calendar counts **38 fixtures, 19 home, 19 away, longest run of one venue 2**. Same dates, different league.
+
+**The `ShellFoot.test.tsx` quick-save race reproduced twice, and now has a recipe.** It needs _two full suites running at once_ — under that load it failed both times and passed on every isolated run. Recorded at 2026-08-17 as "it will return"; it does, and the condition is CPU contention rather than anything in the product. The final isolated run is 56 files, 1135 tests, 82s.
+
+**Known and left:** the tempo ±1 invariant means formation alone will never reverse the answer for a weak club, and `docs/attribute-model.md` now says so rather than implying otherwise. If that is ever wanted, the lever is `MODEL.TEMPO` or the bank-concentration cost in the shares — both of which move M2's calibration, and neither of which is a formation problem.

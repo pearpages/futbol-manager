@@ -1,4 +1,5 @@
 import type { ClubId, Fixture, FixtureId } from './entities.ts'
+import { createRng, shuffle } from './rng.ts'
 import { addDays, type DayNumber } from './time.ts'
 
 /**
@@ -70,6 +71,53 @@ export function generateFixtures(clubIds: readonly ClubId[], seasonStart: DayNum
   }
 
   return fixtures.sort((a, b) => a.round - b.round || a.id.localeCompare(b.id))
+}
+
+/**
+ * One season's fixture list — the schedule as the game actually plays it.
+ *
+ * `generateFixtures` is a pure function of the club-id order, and that order was
+ * the same array every year, so every season of every career played the identical
+ * 380 pairings in the identical rounds. Ten seasons in you already knew your
+ * run-in. Permuting the order once per season is the whole fix: the club-id order
+ * is the schedule's only degree of freedom.
+ *
+ * **A permutation is a relabelling, so nothing structural moves.** The circle
+ * method's guarantees are properties of a club's *carousel index*, not of its
+ * name, so every one of them survives any permutation and is asserted per season
+ * in the tests: 380 fixtures, every ordered pair exactly once, 19 home and 19 away
+ * apiece, no home-or-away streak past three, the reverse leg exactly 19 rounds
+ * later, and round one on the season's opening day. What changes is which club
+ * sits at which index — including index 0, the fixed club, which alone gets a
+ * perfect home/away alternation and is now a different club each year rather than
+ * the same one forever.
+ *
+ * **The permutation is derived, never drawn.** `createRng(startYear)` is a side
+ * stream, so this adds no draw to the shared one — the same escape `marketSeed`
+ * takes on the market screen. That matters three times over: the rollover's draw
+ * count stays frozen, so squads, youth intake and renewals are bit-identical to
+ * what they were; every paired A/B in the harness keeps both arms on one calendar,
+ * because both derive it from the same year; and the schedule needs no storing,
+ * since `startYear` is already in the save.
+ *
+ * Seeding on the year alone means a calendar is a league-wide fact rather than a
+ * private one: two careers begun in 2026 share the 2026/27 fixture list, as two
+ * supporters of different clubs share a real one. Per-career calendars would mean
+ * a salt on `GameState`, which is a schema bump for nothing anybody asked for.
+ *
+ * `createRng` warms up before its first draw precisely so a low-entropy seed
+ * mixes, so adjacent years decorrelate and the year needs no hashing first.
+ */
+export function seasonSchedule(
+  clubIds: readonly ClubId[],
+  startYear: number,
+  seasonStart: DayNumber,
+): Fixture[] {
+  // A local copy. `competition.clubIds` is the league's membership *and* its
+  // canonical display order — the classification, the results cross-table's axes
+  // and the market's iteration all read it — so the schedule permutes a copy and
+  // that array is never touched.
+  return generateFixtures(shuffle(clubIds, createRng(startYear)), seasonStart)
 }
 
 function makeFixture(

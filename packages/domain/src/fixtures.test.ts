@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import type { ClubId } from './entities.ts'
+import type { ClubId, Fixture } from './entities.ts'
 import {
   CLUB_COUNT,
   FIXTURES_PER_ROUND,
+  ROUNDS_PER_HALF,
   TOTAL_ROUNDS,
   fixturesOn,
   generateFixtures,
   recentResultsFor,
+  seasonSchedule,
 } from './fixtures.ts'
 import { fromCivil } from './time.ts'
 
@@ -90,6 +92,108 @@ describe('generateFixtures', () => {
 
   it('rejects a league that is not 20 clubs', () => {
     expect(() => generateFixtures(clubIds.slice(0, 18), seasonStart)).toThrow(/Expected 20 clubs/)
+  })
+})
+
+describe('seasonSchedule', () => {
+  const YEARS = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035]
+  const scheduleFor = (year: number) => seasonSchedule(clubIds, year, seasonStart)
+
+  /** Who plays whom, and at whose ground, in a given round. */
+  const pairingsIn = (fixtures: readonly Fixture[], round: number) =>
+    fixtures
+      .filter((f) => f.round === round)
+      .map((f) => `${f.homeId}v${f.awayId}`)
+      .sort()
+
+  it('gives every season a different calendar', () => {
+    // The whole point. Before this, round 1 of 2026/27 and of 2035/36 were the
+    // same ten matches at the same ten grounds.
+    const seen = new Set(YEARS.map((year) => pairingsIn(scheduleFor(year), 1).join()))
+    expect(seen.size).toBe(YEARS.length)
+  })
+
+  it('changes who you open against, and where', () => {
+    // The player-visible form of the same claim: a manager reads his own row.
+    const opener = (year: number) => {
+      const first = scheduleFor(year).find(
+        (f) => f.round === 1 && (f.homeId === 'c1' || f.awayId === 'c1'),
+      )
+      /* c8 ignore next */
+      if (first === undefined) throw new Error('no opening fixture')
+      return `${first.homeId === 'c1' ? 'H' : 'A'} v ${first.homeId === 'c1' ? first.awayId : first.homeId}`
+    }
+    expect(new Set(YEARS.map(opener)).size).toBeGreaterThan(1)
+  })
+
+  it('gives the same season the same calendar, every time it is asked', () => {
+    // Derived from the year rather than drawn, so it needs no storing and a save
+    // reloaded in February cannot come back to a different March.
+    expect(scheduleFor(2027)).toEqual(scheduleFor(2027))
+    expect(scheduleFor(2027)).not.toEqual(scheduleFor(2028))
+  })
+
+  describe('a permutation is a relabelling — every guarantee survives it', () => {
+    // The circle method's properties belong to a club's carousel *index*, not to
+    // its name, so all of these hold for any order. Asserted per season rather
+    // than once, because it is now a different order every season.
+    it.each(YEARS)('keeps the double round-robin intact in %i', (year) => {
+      const fixtures = scheduleFor(year)
+      expect(fixtures).toHaveLength(380)
+
+      const pairs = fixtures.map((f) => `${f.homeId}v${f.awayId}`)
+      expect(new Set(pairs).size).toBe(380)
+      for (const f of fixtures) expect(pairs).toContain(`${f.awayId}v${f.homeId}`)
+    })
+
+    it.each(YEARS)('gives every club 19 home and 19 away in %i', (year) => {
+      const fixtures = scheduleFor(year)
+      for (const id of clubIds) {
+        expect(fixtures.filter((f) => f.homeId === id)).toHaveLength(ROUNDS_PER_HALF)
+        expect(fixtures.filter((f) => f.awayId === id)).toHaveLength(ROUNDS_PER_HALF)
+      }
+    })
+
+    it.each(YEARS)('never runs a club past three home or away in a row in %i', (year) => {
+      const fixtures = scheduleFor(year)
+      for (const id of clubIds) {
+        const venues = fixtures
+          .filter((f) => f.homeId === id || f.awayId === id)
+          .sort((a, b) => a.round - b.round)
+          .map((f) => (f.homeId === id ? 'H' : 'A'))
+
+        let longest = 1
+        let current = 1
+        for (let i = 1; i < venues.length; i++) {
+          current = venues[i] === venues[i - 1] ? current + 1 : 1
+          longest = Math.max(longest, current)
+        }
+        expect(longest).toBeLessThanOrEqual(3)
+      }
+    })
+
+    it.each(YEARS)('plays the reverse leg 19 rounds later in %i', (year) => {
+      // The Spanish mirror. Play someone at home in round 3 and you are at their
+      // ground in round 22.
+      const rounds = new Map<string, number[]>()
+      for (const f of scheduleFor(year)) {
+        const key = [f.homeId, f.awayId].sort().join('|')
+        rounds.set(key, [...(rounds.get(key) ?? []), f.round])
+      }
+      expect(rounds.size).toBe(190)
+      for (const [key, both] of rounds) {
+        const [first, second] = [...both].sort((a, b) => a - b)
+        expect(second, key).toBe((first ?? 0) + ROUNDS_PER_HALF)
+      }
+    })
+
+    it.each(YEARS)('still opens on the season start and runs weekly in %i', (year) => {
+      const fixtures = scheduleFor(year)
+      // Load-bearing beyond tidiness: round one being dated on the season start is
+      // what opens a new career on *Play match* rather than on *Advance day*.
+      expect(fixturesOn(fixtures, seasonStart)).toHaveLength(FIXTURES_PER_ROUND)
+      for (const f of fixtures) expect(f.date).toBe(seasonStart + (f.round - 1) * 7)
+    })
   })
 })
 

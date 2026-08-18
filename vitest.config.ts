@@ -19,8 +19,10 @@ export default defineConfig({
            * statistical harnesses simulate hundreds of seasons; `determinism at
            * scale` alone runs 50 twice and measures ~5.5s under load against the
            * 5s default, which `CLAUDE.md` had already recorded as a one-off flake.
-           * A second harness file — the formation sweep — makes that contention
-           * likelier, so the budget is stated rather than left to luck.
+           * The formation sweep that used to sit beside it now lives in `@fm/data`,
+           * because it has to measure the shipped league rather than generated
+           * squads — but it still competes for the same cores, so the budget stays
+           * stated rather than left to luck.
            *
            * The whole project is ~18s on its own. Anything here approaching 30s is
            * a real problem, not a scheduling one.
@@ -33,6 +35,14 @@ export default defineConfig({
           name: 'data',
           root: 'packages/data',
           environment: 'node',
+          /*
+           * `formations.harness.test.ts` simulates 600 seasons of the real league.
+           * That work happens at module scope — collection, not a test body — so
+           * `testTimeout` does not gate it and the assertions themselves are
+           * instant. The budget is here for the same reason as the domain
+           * project's: so a slow scheduler reads as slow rather than as broken.
+           */
+          testTimeout: 30_000,
         },
       },
       {

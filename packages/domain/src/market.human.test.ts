@@ -430,12 +430,15 @@ describe('the transfer list — putting your own players up for sale', () => {
    *
    * If this fails again, re-pick the club rather than loosening the assertion — but
    * check the league-wide seller count first, because a collapse to nought is a real
-   * bug and this is the test that would show it. It has been 6, 8, 9 and now **7 of
-   * 20** across four changes to the model — the trend is the health check, and which
+   * bug and this is the test that would show it. It has been 6, 8, 9, 7 and now **6 of
+   * 20** across five changes to the model — the trend is the health check, and which
    * particular club is in the set has moved every single time. **Expect to re-pick this
-   * index whenever generation changes; that is not a defect in the market.**
+   * index whenever generation *or the fixture schedule* changes; that is not a defect
+   * in the market.** Index 13 stopped selling when the calendar began reshuffling each
+   * season: a season's results decide who needs whom in the summer, so a different
+   * schedule redraws the buyers. Index 8 is ninth of twenty, so still mid-table.
    */
-  const MID = TEST_CLUBS[13]?.id ?? SELLER
+  const MID = TEST_CLUBS[8]?.id ?? SELLER
 
   beforeEach(() => {
     rng = createRng(4242)

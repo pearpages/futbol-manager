@@ -1,6 +1,6 @@
 import type { Club } from './entities.ts'
 import { credit, EMPTY_LEDGER, positionsFrom, prizeMoney } from './finance.ts'
-import { generateFixtures } from './fixtures.ts'
+import { seasonSchedule } from './fixtures.ts'
 import { bestXI, DEEPEST_BANK, fieldableFormation, keepsLineup } from './lineup.ts'
 import { needFor } from './market.ts'
 import {
@@ -260,7 +260,7 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
     season: {
       startYear: nextYear,
       currentDate: start,
-      fixtures: generateFixtures(state.competition.clubIds, start),
+      fixtures: seasonSchedule(state.competition.clubIds, nextYear, start),
     },
   }
 }

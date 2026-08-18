@@ -1,6 +1,6 @@
 import type { Club, ClubId, Competition } from './entities.ts'
 import { openingBoard } from './board.ts'
-import { generateFixtures } from './fixtures.ts'
+import { seasonSchedule } from './fixtures.ts'
 import { BALANCED, bestXI, type Formation, type Lineup, type Tactics } from './lineup.ts'
 import type { Player } from './player.ts'
 import { reduce } from './reduce.ts'
@@ -77,7 +77,7 @@ export function newSeason(
     season: {
       startYear,
       currentDate: start,
-      fixtures: generateFixtures(ids, start),
+      fixtures: seasonSchedule(ids, startYear, start),
     },
     squads,
     lineups,
@@ -152,6 +152,14 @@ export interface SeasonRun {
 /**
  * Runs `count` seasons from one master seed. Each season draws its own seed from
  * the master rng, so the whole run is reproducible from a single number.
+ *
+ * **`rosters` is the passthrough that lets a harness measure the league the game
+ * actually ships.** Without it every band here runs on generated squads, which
+ * scale every position uniformly from one club rating and so cannot be lopsided —
+ * `docs/roadmap.md` carried that as a known open item, and it cost a real finding
+ * twice. `domain` cannot import `@fm/data`, so a caller that wants the real thing
+ * has to live in `@fm/data` or above and hand it in; `packages/data/src/
+ * formations.harness.test.ts` is the first one that does.
  */
 export function simulateSeasons(
   clubs: readonly Club[],
@@ -161,6 +169,7 @@ export function simulateSeasons(
     names: readonly string[]
     firstYear?: number
     adjust?: (state: GameState) => GameState
+    rosters?: Readonly<Record<string, readonly RosterEntry[]>>
   },
 ): SeasonRun[] {
   const master = createRng(seed)
@@ -170,7 +179,11 @@ export function simulateSeasons(
   for (let i = 0; i < count; i++) {
     const startYear = firstYear + i
     const seasonRng = createRng(Math.floor(master.next() * 0x1_0000_0000))
-    const fresh = newSeason(clubs, startYear, { names: options.names, rng: seasonRng })
+    const fresh = newSeason(clubs, startYear, {
+      names: options.names,
+      rng: seasonRng,
+      ...(options.rosters === undefined ? {} : { rosters: options.rosters }),
+    })
     // `adjust` exists so a test can sabotage one club's lineup before kickoff —
     // that is how "picking a bad XI costs you points" gets measured.
     const start = options.adjust === undefined ? fresh : options.adjust(fresh)

@@ -75,24 +75,31 @@ export const FORMATION_NAMES = Object.keys(FORMATIONS) as Formation[]
  * *punished* by the same mechanism, so its tempo has to clear that debt before it
  * buys anything. Hence +0.4 at the attacking end against −0.7 at the defensive.
  *
- * Calibrated by measurement, over the real rosters at the default slider. At −0.3
- * the defensive end was still dominated — 4-5-1 stayed negative at all twenty
- * clubs, i.e. the term was decoration. At the values below the best shape runs
- * with club strength, which is the criterion:
+ * Calibrated by measurement, over the real rosters at the default slider, and the
+ * figures below are from the shipped league:
  *
- *     Madrid (88)     4-4-2 87.8   5-4-1 83.0   4-2-4 88.9   -> attacks
- *     Villarreal (81) 4-4-2 62.4   5-4-1 60.8   4-2-4 65.2   -> attacks
- *     Getafe (74)     4-4-2 45.7   5-4-1 41.3   4-2-4 42.4   -> neither
- *     Málaga (70)     4-4-2 31.0   5-4-1 34.0   4-2-4 29.0   -> contains
+ *     Madrid (88)     4-4-2 84.6   best 4-4-2 @ slider 100, 90.3   -> attacks
+ *     A Coruña (74)   4-4-2 44.7   best 5-3-2 @ slider  50, 45.1   -> neither
+ *     Málaga (70)     4-4-2 30.3   best 4-5-1 @ slider   0, 34.5   -> contains
  *
- * **The end-stop check that matters**, since formation and the slider now share
- * this channel and can stack: the full low block corner (5-4-1 at slider 0) is
- * best for *nobody*, Málaga included. Re-run that sweep if these move.
+ * **The end-stop check that matters**, since formation and the slider share this
+ * channel and can stack: the full low block corner (5-4-1 at slider 0) is best for
+ * *nobody* — it ranks 23rd, 24th, 15th and 2nd of 24 cells at those four clubs.
+ * Re-run that sweep if these move.
  *
- * 4-5-1 is the milder containment and is rarely the argmax — 5-4-1 gets both more
- * defence and more smothering. It is a live choice rather than a dead button now
- * (Málaga +1.3 on it against 4-4-2, where it was negative everywhere before), but
- * do not expect it to win a sweep.
+ * **These figures cannot go much deeper, and that is a hard ceiling rather than
+ * taste.** `formations.test.ts` requires every shape's tempo to stay inside the
+ * slider's own ±1, so that a team sheet cannot out-swing a deliberate tactical
+ * choice. That matters because the harness's weak-club arm — which asks a weak club
+ * to *prefer* 4-5-1 — cannot be satisfied from here: measured on TEST_CLUBS the gain
+ * is −0.8 at −0.6 and −1.6 at −1.0, and only clears the bar at −1.4 and beyond,
+ * which the invariant forbids. **On the real league the mechanism already works at
+ * the values below** (Málaga above, +4.2 for containing), so the gap is between the
+ * shipped league and the generated squads the harness runs on, not in this table.
+ * See the open item in `docs/roadmap.md`; do not "fix" it by deepening these.
+ *
+ * 4-5-1 is the milder containment; 5-4-1 gets both more defence and more
+ * smothering.
  */
 const FORMATION_TEMPO: Readonly<Record<Formation, number>> = {
   '4-4-2': 0,

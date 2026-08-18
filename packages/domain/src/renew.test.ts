@@ -26,7 +26,11 @@ import { addDays, toCivil } from './time.ts'
  * also advising you to "renew early", which you could not do.
  */
 
-const MID = TEST_CLUBS[13]?.id ?? ('c14' as ClubId)
+// Ninth of twenty, and a club that attracts a buyer in the summer window — which
+// only six of the twenty do, so `who left over the summer` below is vacuous
+// anywhere else. Re-pick it rather than loosening that arm if it ever stops
+// selling; `market.human.test.ts` carries the full note on why the set moves.
+const MID = TEST_CLUBS[8]?.id ?? ('c09' as ClubId)
 
 let state: GameState
 let rng: Rng
