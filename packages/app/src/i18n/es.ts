@@ -288,7 +288,7 @@ export const es: Dictionary = {
   'market.heading': 'Mercado de fichajes',
   'market.tab.forSale': 'En venta',
   'market.tab.clubs': 'Clubes',
-  'market.browseClub': 'Ver',
+  'market.allClubs': '‹ Todos los clubes',
   'market.atHome': 'Primera División',
   'country.EN': 'Inglaterra',
   'country.DE': 'Alemania',

@@ -1728,3 +1728,48 @@ At one the flow is genuinely two-way and the net is **under 4% of the league's m
 **Seen in a browser** over CDP. Sarrià: **286 listings** (254 at home, 32 abroad), a picker grouped `Primera División (19) · England (6) · Germany (6) · France (6) · Italy (6) · Portugal (2) · Netherlands (2) · Belgium (2) · Türkiye (2)`, and München browsable at 23 players from a €19.7M goalkeeper down to a €606k forward.
 
 **Still missing, and it is the honest gap:** the browser check covers the market and the browser, not a completed cross-border transfer in play — and the board ends a scripted career after two missed targets, which caps what a driven run can reach. The domain harness covers the transfer itself over twelve seasons.
+
+### 2026-08-18 (e) — real squads abroad, and ADR 0011 reverses itself
+
+**Prompted by "I want the players have the names like we did in the spanish league, real firstname and lastname slightly changed."** That is [ADR 0011](docs/adr/0011-a-market-abroad.md) decision 4, which I had written the other way round the same day. 1312 tests, `pnpm season` **byte-identical on seeds 1, 7 and 42**, `SCHEMA_VERSION` still 10.
+
+**The reasoning I gave was wrong, and the ADR says so rather than quietly flipping.** I refused on two grounds: that bulk extraction engages the source's anti-extraction terms and the EU database right, and that the source is unreachable. **Both were about Transfermarkt.** The source here is **Wikipedia's season articles** — CC BY-SA, squad tables of plain facts — so the database-right argument does not carry and "unreachable" is simply false: **31 of the 32 squads were read straight from it** through the API, two calls a club (sections index, then that section's wikitext). Anderlecht's article does not expose its squad section; that one is supplied and marked as such.
+
+**What I did _not_ soften, because it is still true:** ADR 0010's own line that an altered surname does not remove the identification. **Altering the names is not what makes this acceptable** — the change of source is what removed the argument actually made against it, and the residual exposure is the same kind at ~2.4× the rows.
+
+**773 players across 32 clubs**, `[name, position, age, value]` as at home. Ages come from the same tables where they carry a date of birth and are supplied otherwise; **`value` is approximated throughout** — no free source has market values, and it is a shape parameter rather than a price.
+
+**The interesting failure was the value norm, and it took three attempts.** `slotsFor` reads `ln(value ÷ the per-position median)` and measures every player against his squad's best signal. Computed over the foreign rosters alone that median is taken from **thirty-two of the richest clubs in Europe, which have no cheap tail** — so `ln(max/median)` came out 2.17 at goalkeeper against 2.20 at forward, where the domestic set reads 3.11 against 4.01. The two are effectively tied, so **the top-rated player was a keeper at 22 of 32 clubs abroad against 4 of 20 at home.**
+
+- **Scaling the keeper column did nothing**, and could not: `signal` is a ratio, so multiplying a position's values moves the median with them. Reverted.
+- **Pooling the domestic rosters into the norm is the fix**, and it is the truer frame anyway — the two leagues trade in the same currency, so a €120M forward should read as a superstar against the world rather than against the clubs that can afford one. Clear cases 13 → 7.
+- **It is applied one-sided on purpose.** `generateLeagueSquads` still computes its own from the domestic rosters, so the twenty Spanish squads are byte-identical and no calibrated band moved. A residual gap to the domestic 1-of-20 remains; **the lever is the `value` column, never the code.**
+
+**Round trip holds at ±1** across all 32, every formation is playable, and squad spreads run 8–16 rating points — which is the lumpiness the whole exercise is for.
+
+**Two ordering defects in the name pools, and only looking found either.** Built as `given.flatMap(surnames)`, the first twenty-three entries share a given name — and `generateSquad` indexes **sequentially** — so München fielded twenty-three men called Andreas. Fixed by walking a diagonal; then the diagonal marched alphabetically (Aumann, Bergmann, Brandt, Dietrich down the whole team sheet), fixed with strides coprime with 30. **The same latent trap is in `PLAYER_NAMES`**, invisible only because the domestic squads come from rosters and everyone generated afterwards is drawn at a random index.
+
+**A pre-existing defect the bigger market exposed: two shipped players shared a name.** `vitoria-p08` and `malaga-p12` were both "Moussa Diare" — ADR 0010's surnames were altered one at a time and nothing checked two had not landed on each other. Invisible until both were listed at once. Renamed, and the guard now checks **both roster sets together**.
+
+**Sweep note:** three of five mutations failed nothing at first. Two were my bands being too loose or self-satisfying, one was a bad mutation. Both real gaps were closed in the next session's work.
+
+### 2026-08-18 (f) — a wall of crests
+
+**Prompted by "in mercat de fitxatges, clubs tab, don't use a dropdown selector."** The Clubs tab picked from a `<select>` with 51 options in nine `<optgroup>`s, hiding the one thing that makes clubs recognisable at a glance. 1313 tests, `pnpm season` byte-identical, everything app-side.
+
+**No icon work was needed and that is worth stating**: all 57 crests have existed since the foreign layer landed — 25 domestic including the five second-tier, 32 abroad — with `badges.test.ts` asserting no two share a `(colours, pattern, shape)` triple. The dropdown simply never rendered one.
+
+**Master/detail, because the arithmetic ruled out the alternative.** Fifty-one badges grouped by country measure **1171px** and the panel has **663**. Stacking a capped, scrolling grid over a scrolling table is the problem `.results-grid__scroll` already exists to solve. So the grid is the tab's landing view and picking a club replaces it with that squad plus a `‹ All clubs` control.
+
+**`.club-grid__clubs` is the app's first `repeat(auto-fill, minmax(…))`.** Every other `display: grid` here is a fixed page skeleton with named tracks, because every other grid holds a known number of known things; this one holds however many clubs a country has at whatever width the panel is. 10–12 per row across the three viewports.
+
+**The back control has its own key rather than reusing `action.back`.** The market screen already has a Volver at the foot of its rail, and `testing.ts`'s `back()` resolves a button by exactly that name — a second one would make that query ambiguous and break tests with nothing to do with this screen.
+
+**Two things measuring caught that reasoning had not:**
+
+- **The grid scrolled the tabs away.** `.market-screen__main` is a flex column now and the grid scrolls inside it; the For-sale table is untouched, because it is not a flex item with a basis and `.screen`'s own overflow still carries it — verified at 286 rows.
+- **A tile's `textContent` includes the badge's three-letter code**, since the crest is an inline SVG with a `<text>` node. It reads `"MADMadrid"`, so my `not.toContain(name)` assertion was passing for the wrong reason. It reads the label element now. **The accessible name was never affected** — the badge is `aria-hidden`, which is also why the button is named by the club alone and the tile does not read its own club twice, the same fix the market's club column needed for "GRAGRA".
+
+**Folding in the previous sweep's two gaps turned up a live defect, not a hypothetical.** `refreshForeignLeague` drew recruits from the same name slice the squad was built from — `generateSquad` indexes from the start of whatever it is handed — so a club could end up with two players of the same name after a rollover. Names already on the books are removed from the pool before recruiting. The other gap needed **two** tests, not one: the band in `foreign-rosters.test.ts` builds its own pooled norm, so it says the _data_ works under one and cannot see whether the app passes one. Reverting `store.ts` to a foreign-only norm failed nothing until an app-level assertion was added.
+
+**Seen in a browser** over CDP at 1440×900, 1280×720 and 900×650 in all three languages: nine groups, 51 tiles, own club absent, no page scrolling sideways, no clipped names, tabs always visible. Clicking a crest opens `‹ ALL CLUBS · [MUN] MÜNCHEN · 22 PLAYERS`; a player's card and Back lands on that club's squad rather than the grid, which is the regression the old select-based test guarded.

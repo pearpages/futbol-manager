@@ -186,6 +186,21 @@ describe('a career with a market abroad', () => {
     expect(mean).toBeLessThan(3.5)
   })
 
+  it('never gives one foreign club two players with the same name', () => {
+    // **The hazard `refreshForeignLeague` is built around, and it was unguarded.**
+    // It generates a whole squad as a recruit pool and renames the ids; handed the
+    // roster it would re-issue names already on that club's books, and the
+    // duplicate-name guard in `@fm/data` only inspects the roster *files*, so
+    // nothing would fail. Feeding it the roster was mutated in and the suite
+    // stayed green.
+    for (const run of states) {
+      for (const club of run.foreign.clubs) {
+        const names = (run.foreign.squads[club.id] ?? []).map((p) => p.name)
+        expect(new Set(names).size, club.id).toBe(names.length)
+      }
+    }
+  })
+
   it('never loses or duplicates a player, at home or abroad', () => {
     for (const run of states) {
       const all = [

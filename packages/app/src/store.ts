@@ -174,7 +174,8 @@ interface Store {
   inspect(playerId: string | null): void
   /** Remembers which market view you were on across a trip to a player's card. */
   setMarketTab(tab: MarketTab): void
-  browseClub(clubId: string): void
+  /** `null` clears it, which is what puts the Clubs tab back on its grid. */
+  browseClub(clubId: string | null): void
   /** Lay one of your own players over the ficha's chart, or `null` to clear. */
   compare(playerId: string | null): void
   /** Quick save — writes back to whichever slot this career is in. */

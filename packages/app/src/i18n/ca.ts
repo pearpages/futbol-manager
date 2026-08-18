@@ -289,7 +289,7 @@ export const ca: Dictionary = {
   'market.heading': 'Mercat de fitxatges',
   'market.tab.forSale': 'En venda',
   'market.tab.clubs': 'Clubs',
-  'market.browseClub': 'Mirar',
+  'market.allClubs': '‹ Tots els clubs',
   'market.atHome': 'Primera División',
   'country.EN': 'Anglaterra',
   'country.DE': 'Alemanya',

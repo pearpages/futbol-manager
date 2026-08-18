@@ -323,7 +323,10 @@ export function MarketScreen() {
       country: c.country,
     })),
   ]
-  const browsed = rivals.find((c) => c.id === browsing) ?? rivals[0]
+  // **`null` means the grid, not the first club.** It used to fall back to
+  // `rivals[0]`, which was right for a dropdown that must always show something
+  // and wrong for a view whose landing state is every club at once.
+  const browsed = browsing === null ? undefined : rivals.find((c) => c.id === browsing)
   const browsedSquad =
     browsed === undefined ? [] : (game.squads[browsed.id] ?? game.foreign.squads[browsed.id] ?? [])
 
@@ -832,7 +835,7 @@ interface ClubBrowserProps {
   readonly date: DayNumber
   readonly sort: Sort<SquadSortKey> | null
   readonly onSort: (sort: Sort<SquadSortKey> | null) => void
-  readonly onPick: (id: ClubId) => void
+  readonly onPick: (id: ClubId | null) => void
   readonly translator: Translator
 }
 
@@ -870,43 +873,67 @@ function ClubBrowser({
     />
   )
 
+  // **No club chosen means the wall of crests, not the first club on the list.**
+  // Fifty-one clubs across nine countries is a thing to look at rather than a
+  // thing to pick from a control two lines tall, and every one of them has had a
+  // badge since the foreign layer landed — the dropdown simply never showed one.
+  if (club === undefined) {
+    const group = (label: string, inGroup: readonly Browsable[]) =>
+      inGroup.length === 0 ? null : (
+        <section key={label} className="club-grid__group">
+          <h3 className="club-grid__country">{label}</h3>
+          <div className="club-grid__clubs">
+            {inGroup.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className="club-grid__club"
+                onClick={() => onPick(c.id)}
+              >
+                {/* The badge stays `aria-hidden`, so the button is named by the
+                    club's name alone. It also keeps the tile from reading its own
+                    club twice — the badge carries the three-letter code and the
+                    label the full name, which is the same fix the market table's
+                    club column needed when it rendered "GRAGRA". */}
+                <ClubBadge club={c} size="lg" />
+                <span className="club-grid__name">{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )
+
+    return (
+      <div className="club-grid">
+        {/* Home first — it is the league you are in. Then the countries in the
+            order `COUNTRIES` declares, and within each the order the data ships,
+            which is descending by rating. */}
+        {group(
+          t('market.atHome'),
+          clubs.filter((c) => c.country === undefined),
+        )}
+        {COUNTRIES.map((country) =>
+          group(
+            t(`country.${country}`),
+            clubs.filter((c) => c.country === country),
+          ),
+        )}
+      </div>
+    )
+  }
+
   return (
     <>
       <div className="market-screen__filters">
-        <label className="field__label" htmlFor="browse-club">
-          {t('market.browseClub')}
-        </label>
-        {/* Grouped, because the list is fifty-one clubs across nine places and a
-            flat one is unreadable. Home first — it is the league you are in. */}
-        <select
-          id="browse-club"
-          className="select"
-          value={club?.id ?? ''}
-          onChange={(event) => onPick(event.target.value as ClubId)}
-        >
-          <optgroup label={t('market.atHome')}>
-            {clubs
-              .filter((c) => c.country === undefined)
-              .map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-          </optgroup>
-          {COUNTRIES.map((country) => {
-            const inCountry = clubs.filter((c) => c.country === country)
-            if (inCountry.length === 0) return null
-            return (
-              <optgroup key={country} label={t(`country.${country}`)}>
-                {inCountry.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </optgroup>
-            )
-          })}
-        </select>
+        {/* Its own label rather than `action.back`. The market screen already has
+            a Volver at the foot of its rail, and a second button with that name
+            makes `testing.ts`'s `back()` ambiguous — which would break tests that
+            have nothing to do with this screen. */}
+        <button type="button" className="button" onClick={() => onPick(null)}>
+          {t('market.allClubs')}
+        </button>
+        <ClubBadge club={club} size="sm" />
+        <span className="club-grid__heading">{club.name}</span>
         <span className="market-screen__count">
           {t('market.squadSize', { count: squad.length })}
         </span>

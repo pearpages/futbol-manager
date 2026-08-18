@@ -299,7 +299,7 @@ export const en: Dictionary = {
   'market.heading': 'Transfer market',
   'market.tab.forSale': 'For sale',
   'market.tab.clubs': 'Clubs',
-  'market.browseClub': 'Look at',
+  'market.allClubs': '‹ All clubs',
   'market.atHome': 'Primera División',
   'country.EN': 'England',
   'country.DE': 'Germany',

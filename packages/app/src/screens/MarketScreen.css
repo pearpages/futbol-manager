@@ -12,6 +12,13 @@
 }
 
 .market-screen__main {
+  /* A flex column so the crest grid can scroll **inside** the panel rather than
+     scrolling the whole `.screen` — which would take the heading and the tabs
+     with it, and is the exact problem `.results-grid__scroll` exists to solve.
+     The For-sale table is left alone: it is not a flex item with a basis, so it
+     still sizes to content and `.screen`'s own overflow carries it as before. */
+  display: flex;
+  flex-direction: column;
   min-height: 0;
 }
 
@@ -153,4 +160,94 @@
 .market-screen__tabs {
   display: flex;
   gap: var(--fm-space-1);
+}
+
+/*
+ * The wall of crests the Clubs tab opens on.
+ *
+ * **The app's first `repeat(auto-fill, minmax(…))`**, and it earns it: every
+ * other `display: grid` here is a fixed page skeleton with named tracks, because
+ * every other grid holds a known number of known things. This one holds however
+ * many clubs a country has, at whatever width the panel happens to be.
+ *
+ * It is the tab's landing view rather than a picker above the squad table.
+ * Fifty-one badges grouped by country want about 650px and the panel has ~570 at
+ * 1280×720, so the two cannot share the screen — and stacking a capped, scrolling
+ * grid over a scrolling table is the problem `.results-grid__scroll` already
+ * exists to solve, since `.screen` carries its own `overflow: auto` and would
+ * take the heading and the tabs with it.
+ */
+.club-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-4);
+  padding: var(--fm-space-3) var(--fm-space-4);
+  /* Fifty-one crests come to about 1170px and the panel has ~660, so this
+     scrolls — but on its own, keeping the heading and the tabs in place. */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.club-grid__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+}
+
+.club-grid__country {
+  margin: 0;
+  padding-bottom: var(--fm-space-1);
+  border-bottom: 1px solid var(--fm-screen-rule);
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+.club-grid__clubs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.75rem, 1fr));
+  gap: var(--fm-space-2);
+}
+
+/* A pressable tile: the crest, and the club's name under it. The name wraps
+   rather than truncating — "San Sebastián" is two words and clipping it would
+   make two clubs read alike. */
+.club-grid__club {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fm-space-1);
+  padding: var(--fm-space-2) var(--fm-space-1);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: none;
+  color: var(--fm-screen-ink);
+  font: inherit;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  text-align: center;
+  cursor: pointer;
+}
+
+.club-grid__club:hover,
+.club-grid__club:focus-visible {
+  border-color: var(--fm-accent);
+  background: var(--fm-screen-raised);
+}
+
+.club-grid__name {
+  line-height: 1.15;
+}
+
+/* The club you are reading, in the detail view's header strip. */
+.club-grid__heading {
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-md);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
 }

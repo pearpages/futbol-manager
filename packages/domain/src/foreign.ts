@@ -292,8 +292,17 @@ export function refreshForeignLeague(
     // unnoticed. It is also the right behaviour: `PLAYER_NAMES` still names youth
     // intake at home for the same reason, so a career drifts off the shipped
     // squads on its own — at home and now abroad.
+    // **Names already at the club are taken out of the pool first**, and this is
+    // not belt-and-braces: `generateSquad` indexes from the start of whatever it
+    // is handed, so handing it the club's own slice year after year re-issues the
+    // names of men who never left. A club ended up with two players of the same
+    // name, which is invisible until both are on one screen — exactly how the
+    // shipped domestic rosters' own collision went unnoticed.
+    const onTheBooks = new Set(kept.map((player) => player.name))
     const recruits = generateSquad(asClub(club), rng, {
-      names: namesFor(options, club.country, offsets.get(club.id) ?? 0),
+      names: namesFor(options, club.country, offsets.get(club.id) ?? 0).filter(
+        (name) => !onTheBooks.has(name),
+      ),
       seasonStart: options.seasonStart,
     }).map((player, index) => ({
       ...player,

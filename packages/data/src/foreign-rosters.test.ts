@@ -181,6 +181,26 @@ describe('value orders a position group and nothing else', () => {
     }
   })
 
+  it('lets the outfield stars outrank the goalkeepers', () => {
+    // **What the pooled value norm buys, and nothing else pinned it.** Measured
+    // against the foreign rosters alone, the norm is taken from thirty-two of the
+    // richest clubs in Europe — which have no cheap tail — so every position's
+    // spread comes out the same and a first-choice keeper reads as big a star as
+    // a €120M forward. The top-rated player was a keeper at **22 of 32** clubs.
+    //
+    // Pooling the domestic rosters in takes the clear cases from 13 to 7. A
+    // residual gap to the domestic set (1 of 20) remains and is a known cost of
+    // selecting only elite clubs; **the lever is the `value` column, never the
+    // code.** Reverting to a foreign-only norm fails this and nothing else.
+    const clear = FOREIGN_CLUBS.filter((club) => {
+      const squad = squadFor(club.id)
+      const keeper = Math.max(...squad.filter((p) => p.position === 'GK').map(overall))
+      const outfield = Math.max(...squad.filter((p) => p.position !== 'GK').map(overall))
+      return keeper - outfield >= 2
+    })
+    expect(clear.length).toBeLessThan(10)
+  })
+
   it('gives the stars a squad they stand out in', () => {
     // **What the value column is for.** Before it was populated properly, every
     // squad abroad was the same flat block and the whole point of shipping real

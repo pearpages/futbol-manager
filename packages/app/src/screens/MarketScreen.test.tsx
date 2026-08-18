@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   askingPrice,
+  COUNTRIES,
+  overall,
   bidIsLive,
   canAfford,
   FINANCE,
@@ -359,12 +361,31 @@ describe('the club browser', () => {
     fireEvent.click(screen.getByRole('button', { name: t('market.tab.clubs') }))
   }
 
+  /** The tab lands on the grid; every test below wants a club open. */
+  const browse = (clubId: string) => {
+    openClubs()
+    const club = [...game().clubs, ...game().foreign.clubs].find((c) => c.id === clubId)
+    if (club === undefined) throw new Error(`no club ${clubId}`)
+    fireEvent.click(screen.getByRole('button', { name: club.name }))
+  }
+
+  const aRival = () => game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+  const tiles = () => [...document.querySelectorAll('.club-grid__club')]
+  /**
+   * The tile's *label*, not its `textContent` — the badge is an inline SVG whose
+   * `<text>` carries the three-letter code, so `textContent` reads "MADMadrid"
+   * and a `not.toContain(name)` over it passes for the wrong reason. The
+   * accessible name is unaffected, because the badge is `aria-hidden`.
+   */
+  const tileNames = () =>
+    tiles().map((el) => el.querySelector('.club-grid__name')?.textContent ?? '')
+
   it('shows a rival’s whole squad, not only what he has given up on', () => {
     // The point of the tab. `listingsFor` is each club's `surplus`, so before
     // this the screen could only ever show you the players a club had already
     // decided to sell — and the reducer now takes a bid for anyone.
-    openClubs()
-    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const clubId = aRival()
+    browse(clubId)
     const squad = game().squads[clubId] ?? []
     const listed = surplus(squad)
 
@@ -374,19 +395,58 @@ describe('the club browser', () => {
 
   it('never shows your own club — you cannot bid for your own players', () => {
     openClubs()
-    const options = [...document.querySelectorAll('#browse-club option')].map((o) => o.textContent)
+    const names = tileNames()
     const mine = game().clubs.find((c) => c.id === RICH)?.name
-    expect(options).not.toContain(mine)
+    expect(names).not.toContain(mine)
     // Everyone but you, at home and abroad.
-    expect(options.length).toBe(game().clubs.length - 1 + game().foreign.clubs.length)
+    expect(names.length).toBe(game().clubs.length - 1 + game().foreign.clubs.length)
+  })
+
+  it('groups the crests by country, home first', () => {
+    openClubs()
+    const headings = [...document.querySelectorAll('.club-grid__country')].map(
+      (el) => el.textContent,
+    )
+    expect(headings[0]).toBe(t('market.atHome'))
+    for (const country of COUNTRIES) expect(headings).toContain(t(`country.${country}`))
+    // One per place, and no empty group rendered for a country with no clubs.
+    expect(headings).toHaveLength(1 + COUNTRIES.length)
+  })
+
+  it('measures the squads abroad against the whole game, not just against each other', () => {
+    // **A wiring claim, and it has to be asserted here.** The band in
+    // `foreign-rosters.test.ts` builds its own pooled norm, so it says the *data*
+    // works under one — it cannot see whether the app actually passes one.
+    // Reverting `store.ts` to a foreign-only norm failed nothing at all.
+    //
+    // Thirty-two of the richest clubs in Europe have no cheap tail, so a norm
+    // taken from them alone flattens every position's spread and a first-choice
+    // keeper reads as big a star as a €120M forward.
+    const clear = game().foreign.clubs.filter((club) => {
+      const squad = game().foreign.squads[club.id] ?? []
+      const keeper = Math.max(...squad.filter((p) => p.position === 'GK').map(overall))
+      const outfield = Math.max(...squad.filter((p) => p.position !== 'GK').map(overall))
+      return keeper - outfield >= 2
+    })
+    expect(clear.length).toBeLessThan(10)
+  })
+
+  it('goes back to the crests from a club', () => {
+    const clubId = aRival()
+    browse(clubId)
+    expect(tiles()).toHaveLength(0)
+
+    fireEvent.click(screen.getByRole('button', { name: t('market.allClubs') }))
+    expect(tiles().length).toBeGreaterThan(0)
+    expect(document.querySelector('.data-table__row')).toBeNull()
   })
 
   it('asks more for a man his club picked than his bare price', () => {
     // The column a manager is actually reading: not what the player is worth,
     // but what it would take. A starter's is a multiple of his asking price; a
     // spare player's is exactly it.
-    openClubs()
-    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const clubId = aRival()
+    browse(clubId)
     const squad = game().squads[clubId] ?? []
     const spare = new Set(surplus(squad).map((p) => p.id))
     const starter = squad.find((p) => !spare.has(p.id))
@@ -414,8 +474,8 @@ describe('the club browser', () => {
     // **The case that had no route at all before this tab.** A listing is by
     // definition a player his club will sell, so the market table could only
     // ever reach a premium of exactly 1.
-    openClubs()
-    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const clubId = aRival()
+    browse(clubId)
     const squad = game().squads[clubId] ?? []
     const spare = new Set(surplus(squad).map((p) => p.id))
     const starter = squad.find((p) => !spare.has(p.id))
@@ -438,9 +498,8 @@ describe('the club browser', () => {
     // scouting a club, clicking a name to see whether he was worth it and pressing
     // Volver landed you on a two-hundred-row For sale table with the club
     // forgotten. The browser was very nearly unusable and the suite was green.
-    openClubs()
     const clubId = game().clubs.at(-1)?.id ?? ''
-    fireEvent.change(screen.getByLabelText(/Look at/i), { target: { value: clubId } })
+    browse(clubId)
     const name = (game().squads[clubId] ?? [])[0]?.name ?? ''
 
     fireEvent.click(screen.getByRole('button', { name }))
@@ -450,12 +509,17 @@ describe('the club browser', () => {
     expect(
       screen.getByRole('button', { name: t('market.tab.clubs') }).getAttribute('aria-pressed'),
     ).toBe('true')
-    expect((screen.getByLabelText(/Look at/i) as HTMLSelectElement).value).toBe(clubId)
+    // Back on *that club's squad*, not on the grid and not on the For sale table.
+    // The assertion moved from a `<select>`'s value to what is actually rendered,
+    // which is the stronger claim anyway.
+    expect(tiles()).toHaveLength(0)
+    const club = game().clubs.find((c) => c.id === clubId)?.name ?? ''
+    expect(screen.getByText(club, { selector: '.club-grid__heading' })).toBeDefined()
   })
 
   it('completes a bid for a man who was never for sale', () => {
-    openClubs()
-    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const clubId = aRival()
+    browse(clubId)
     const squad = game().squads[clubId] ?? []
     const spare = new Set(surplus(squad).map((p) => p.id))
     // The cheapest starter, so the bid is inside even a rich club's overdraft.

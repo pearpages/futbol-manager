@@ -59,7 +59,7 @@ const ROSTERS: Readonly<Record<string, readonly (readonly [string, Position, num
   {
     // ── England ──────────────────────────────────────────────────────────────
     'en-islington': [
-      ['Thibaut Courtuis', 'GK', 30, 30000],
+      ['David Rayas', 'GK', 30, 30000],
       ['Kepa Arrizabalega', 'GK', 31, 8000],
       ['Tommy Sedford', 'GK', 20, 4000],
       ['William Salibá', 'DF', 25, 80000],
