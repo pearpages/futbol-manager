@@ -1,4 +1,5 @@
 import type { Club, ClubId } from './entities.ts'
+import { COUNTRIES, type Country, type ForeignClub } from './foreign.ts'
 import { EMPTY_LEDGER, FINANCE } from './finance.ts'
 
 /**
@@ -89,3 +90,43 @@ export const TEST_NAMES: readonly string[] = Array.from(
   { length: 600 },
   (_, i) => `Player ${i + 1}`,
 )
+
+/**
+ * A stand-in foreign league for the harness, mirroring the shape `@fm/data` ships.
+ *
+ * **`domain` cannot import `@fm/data`**, so this duplicates the shipped list's
+ * *shape* the way `TEST_CLUBS` duplicates `CLUBS` — eight countries, four clubs
+ * each, ratings spanning the domestic range from above it to the middle of it.
+ * **Change one and change the other**: this duplication has already cost this
+ * project a real finding once, when the harness measured generated squads while
+ * the game shipped real ones.
+ *
+ * It is used by `market.foreign.harness.test.ts` and by nothing else. Every other
+ * harness runs with no foreign clubs, which is what keeps the calibrated M2/M3/M5
+ * bands measuring the division they have always measured.
+ */
+export const TEST_FOREIGN_CLUBS: readonly ForeignClub[] = COUNTRIES.flatMap((country, c) =>
+  [88, 84, 80, 75].map((rating, i) => ({
+    id: `${country.toLowerCase()}-f${String(i + 1)}` as ClubId,
+    name: `${country} Club ${String(i + 1)}`,
+    shortName: `${country}${String(i + 1)}`,
+    country,
+    rating: rating - c,
+    budget: Math.round(2400 * Math.pow((rating - c - 45.08) / 24.96, 4)),
+  })),
+)
+
+/** Name pools per country for the harness, generic for the same reason as `TEST_NAMES`. */
+const poolFor = (country: Country): readonly string[] =>
+  Array.from({ length: 400 }, (_, i) => `${country} Player ${String(i + 1)}`)
+
+export const TEST_INTL_NAMES: Readonly<Record<Country, readonly string[]>> = {
+  EN: poolFor('EN'),
+  DE: poolFor('DE'),
+  FR: poolFor('FR'),
+  IT: poolFor('IT'),
+  PT: poolFor('PT'),
+  NL: poolFor('NL'),
+  BE: poolFor('BE'),
+  TR: poolFor('TR'),
+}

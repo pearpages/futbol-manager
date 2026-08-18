@@ -89,6 +89,30 @@ export function createRng(seed: number | RngState): Rng {
 }
 
 /**
+ * A 32-bit seed from arbitrary parts, for a generator that must not spend the
+ * main stream.
+ *
+ * **The technique this project reaches for whenever something needs randomness
+ * that is not allowed to move a calibrated band.** Everything shares one stream,
+ * so an extra `rng.next()` anywhere before a match shifts every draw after it; a
+ * generator seeded from state that already exists draws nothing and is just as
+ * reproducible. `marketSeed` in the market screen was the first of these — it
+ * hashes the window and your club so the listing order holds still across renders
+ * and a save — and the foreign league is the second.
+ *
+ * Ordinary `hash * 31 + c`, which is enough: this seeds `splitmix32`, whose whole
+ * job is to expand a low-entropy number into four well-distributed words.
+ */
+export function hashSeed(...parts: readonly (string | number)[]): number {
+  let hash = 0
+  for (const part of parts) {
+    const text = String(part)
+    for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) | 0
+  }
+  return hash
+}
+
+/**
  * Fisher–Yates over an injected generator. Returns a new array; the input is not
  * touched.
  *

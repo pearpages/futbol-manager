@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { ATTRIBUTE_KEYS, type Player } from '@fm/domain'
+import { askingPrice, ATTRIBUTE_KEYS, type Player, reluctancePremium } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
@@ -306,6 +306,87 @@ describe('renewing from the card', () => {
     expect(
       dialog.getByRole('heading', { name: t('renew.title', { player: player.name }) }),
     ).toBeDefined()
+  })
+})
+
+describe('bidding from the card', () => {
+  const { t } = translatorFor('en')
+
+  it('offers a bid for a rival — the card is the route to everyone else', () => {
+    // `MakeBid` used to be reachable only from a market listing, which is a
+    // club's `surplus`. So the only players you could bid for were the ones
+    // their club had already given up on.
+    openListedFicha()
+    expect(screen.getByRole('button', { name: t('player.bid') })).toBeDefined()
+  })
+
+  it('offers nothing for one of your own', () => {
+    // The pair is the constraint: hiding the button for everybody would satisfy
+    // the test above on its own.
+    openFicha(at('MF'))
+    expect(screen.queryByRole('button', { name: t('player.bid') })).toBeNull()
+  })
+
+  // **The premium half of this claim is asserted in `MarketScreen.test.tsx`, not
+  // here.** Every route onto a rival's card from *this* file goes through a market
+  // listing, and a listing is by definition a player his club will sell — so the
+  // premium is exactly 1 and the adjusted price is the bare price. Mutating the
+  // prefill to drop the premium failed the club-browser test and not this one.
+  it('opens on what his club would take, and names him in the heading', () => {
+    const listing = openListedFicha()
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+
+    const dialog = within(screen.getByRole('dialog'))
+    expect(
+      dialog.getByRole('heading', { name: t('bid.title', { player: listing.player.name }) }),
+    ).toBeDefined()
+
+    const game = useGame.getState().game
+    const squad = listing.from === null ? [] : (game.squads[listing.from] ?? [])
+    const wanted = Math.round(
+      askingPrice(listing.player, game.season.currentDate) *
+        reluctancePremium(squad, listing.player),
+    )
+    expect((dialog.getByLabelText(/Fee/i) as HTMLInputElement).value).toBe(String(wanted))
+  })
+
+  it('says a club would sell, or that it would rather not', () => {
+    // A listing is by definition somebody the club will sell, so this is the
+    // willing half; the reluctant half is the one that needs a starter, which
+    // no listing is.
+    const listing = openListedFicha()
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+
+    const club = DEFAULT_CLUBS.find((c) => c.id === listing.from)?.name ?? ''
+    expect(within(screen.getByRole('dialog')).getByText(t('bid.willing', { club }))).toBeDefined()
+  })
+
+  it('stays open when the bid is refused', () => {
+    // A dialog that always closes is indistinguishable from one that did
+    // nothing — the defect the renewal dialog shipped with. Ninety-nine
+    // million is past any club's overdraft.
+    openListedFicha()
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+
+    const dialog = within(screen.getByRole('dialog'))
+    fireEvent.change(dialog.getByLabelText(/Fee/i), { target: { value: '99999999' } })
+    fireEvent.click(dialog.getByRole('button', { name: t('market.makeBid') }))
+
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+    expect(screen.getByRole('alert').textContent).toMatch(/overdraft/i)
+  })
+
+  it('closes when the bid is actually made', () => {
+    const listing = openListedFicha()
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('market.makeBid') }),
+    )
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(useGame.getState().game.bids.some((bid) => bid.playerId === listing.player.id)).toBe(
+      true,
+    )
   })
 })
 

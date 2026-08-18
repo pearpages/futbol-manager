@@ -12,6 +12,7 @@ import {
   ROUNDS_PER_HALF,
   signingOutlay,
   suggestedTerms,
+  FOREIGN_LISTINGS,
   surplus,
 } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
@@ -19,7 +20,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { ADVANCE, advance, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
-import { listingsFor, listingValue, marketSeed } from './MarketScreen.tsx'
+import { listingsFor, listingValue, marketSeed, scoutedPrice } from './MarketScreen.tsx'
 
 /**
  * The market screen, driving the real store and the real reducer.
@@ -86,11 +87,17 @@ describe('the market screen', () => {
   it('lists only players another club has actually put up for sale', () => {
     openMarket()
     const state = game()
-    const listed = new Set(
-      state.competition.clubIds
+    // Abroad counts: a club there offers `FOREIGN_LISTINGS` of its fringe.
+    const listed = new Set([
+      ...state.competition.clubIds
         .filter((id) => id !== state.managedClubId)
         .flatMap((id) => surplus(state.squads[id] ?? []).map((p) => p.name)),
-    )
+      ...state.foreign.clubs.flatMap((club) =>
+        surplus(state.foreign.squads[club.id] ?? [])
+          .slice(0, FOREIGN_LISTINGS)
+          .map((p) => p.name),
+      ),
+    ])
 
     // Your own players are never on the market, and neither is anyone's starter.
     for (const own of state.squads[state.managedClubId] ?? []) {
@@ -344,10 +351,143 @@ describe('the market does not do your scouting', () => {
   })
 })
 
+describe('the club browser', () => {
+  const { t } = translatorFor('en')
+
+  const openClubs = () => {
+    openMarket()
+    fireEvent.click(screen.getByRole('button', { name: t('market.tab.clubs') }))
+  }
+
+  it('shows a rival’s whole squad, not only what he has given up on', () => {
+    // The point of the tab. `listingsFor` is each club's `surplus`, so before
+    // this the screen could only ever show you the players a club had already
+    // decided to sell — and the reducer now takes a bid for anyone.
+    openClubs()
+    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const squad = game().squads[clubId] ?? []
+    const listed = surplus(squad)
+
+    expect(bodyRows()).toHaveLength(squad.length)
+    expect(squad.length).toBeGreaterThan(listed.length)
+  })
+
+  it('never shows your own club — you cannot bid for your own players', () => {
+    openClubs()
+    const options = [...document.querySelectorAll('#browse-club option')].map((o) => o.textContent)
+    const mine = game().clubs.find((c) => c.id === RICH)?.name
+    expect(options).not.toContain(mine)
+    // Everyone but you, at home and abroad.
+    expect(options.length).toBe(game().clubs.length - 1 + game().foreign.clubs.length)
+  })
+
+  it('asks more for a man his club picked than his bare price', () => {
+    // The column a manager is actually reading: not what the player is worth,
+    // but what it would take. A starter's is a multiple of his asking price; a
+    // spare player's is exactly it.
+    openClubs()
+    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const squad = game().squads[clubId] ?? []
+    const spare = new Set(surplus(squad).map((p) => p.id))
+    const starter = squad.find((p) => !spare.has(p.id))
+    const sold = squad.find((p) => spare.has(p.id))
+    if (starter === undefined || sold === undefined) throw new Error('no contrast')
+
+    const date = game().season.currentDate
+    expect(scoutedPrice(squad, starter, date)).toBeGreaterThan(askingPrice(starter, date) * 1.5)
+    expect(scoutedPrice(squad, sold, date)).toBe(askingPrice(sold, date))
+  })
+
+  it('stays a five-column scan — the detail lives on the card', () => {
+    // Not a secrecy rule: the ficha shows wage and contract for anybody, and has
+    // to, since you cannot judge personal terms without knowing what he earns.
+    // This guards against columns creeping into a table that spans nineteen
+    // squads. `needFor` is the one thing that must never appear on either.
+    openClubs()
+    const headers = [...document.querySelectorAll('.data-table__head th')].map(
+      (th) => th.textContent ?? '',
+    )
+    expect(headers.join(' ')).not.toMatch(/wage|contract|salary/i)
+  })
+
+  it('opens a rival starter’s card, which is the route to bidding for him', () => {
+    // **The case that had no route at all before this tab.** A listing is by
+    // definition a player his club will sell, so the market table could only
+    // ever reach a premium of exactly 1.
+    openClubs()
+    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const squad = game().squads[clubId] ?? []
+    const spare = new Set(surplus(squad).map((p) => p.id))
+    const starter = squad.find((p) => !spare.has(p.id))
+    if (starter === undefined) throw new Error('no starter')
+
+    fireEvent.click(screen.getByRole('button', { name: starter.name }))
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+
+    const dialog = within(screen.getByRole('dialog'))
+    const club = game().clubs.find((c) => c.id === clubId)?.name ?? ''
+    expect(dialog.getByText(t('bid.reluctant', { club }))).toBeDefined()
+    expect((dialog.getByLabelText(/Fee/i) as HTMLInputElement).value).toBe(
+      String(scoutedPrice(squad, starter, game().season.currentDate)),
+    )
+  })
+
+  it('keeps the club you were reading when you look at a card and come back', () => {
+    // **Found by driving the built app, not by a test.** These were `useState` in
+    // the screen, which unmounts the moment a `PlayerLink` opens a ficha — so
+    // scouting a club, clicking a name to see whether he was worth it and pressing
+    // Volver landed you on a two-hundred-row For sale table with the club
+    // forgotten. The browser was very nearly unusable and the suite was green.
+    openClubs()
+    const clubId = game().clubs.at(-1)?.id ?? ''
+    fireEvent.change(screen.getByLabelText(/Look at/i), { target: { value: clubId } })
+    const name = (game().squads[clubId] ?? [])[0]?.name ?? ''
+
+    fireEvent.click(screen.getByRole('button', { name }))
+    expect(screen.getByRole('heading', { name })).toBeDefined()
+    back()
+
+    expect(
+      screen.getByRole('button', { name: t('market.tab.clubs') }).getAttribute('aria-pressed'),
+    ).toBe('true')
+    expect((screen.getByLabelText(/Look at/i) as HTMLSelectElement).value).toBe(clubId)
+  })
+
+  it('completes a bid for a man who was never for sale', () => {
+    openClubs()
+    const clubId = game().clubs.find((c) => c.id !== RICH)?.id ?? ''
+    const squad = game().squads[clubId] ?? []
+    const spare = new Set(surplus(squad).map((p) => p.id))
+    // The cheapest starter, so the bid is inside even a rich club's overdraft.
+    const date = game().season.currentDate
+    const starter = squad
+      .filter((p) => !spare.has(p.id))
+      .sort((a, b) => scoutedPrice(squad, a, date) - scoutedPrice(squad, b, date))[0]
+    if (starter === undefined) throw new Error('no starter')
+
+    fireEvent.click(screen.getByRole('button', { name: starter.name }))
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('market.makeBid') }),
+    )
+
+    expect(game().bids.some((bid) => bid.playerId === starter.id)).toBe(true)
+  })
+})
+
 describe('sorting the market', () => {
   const firstRowName = () => rowNames()[0] ?? ''
+  // Scoped to the table head. The screen gained a `Clubs` tab, whose label the
+  // `Club` column's regex also matches — a header query has to mean the header.
+  const head = () => {
+    const el = document.querySelector('.data-table__head')
+    if (el === null) throw new Error('no table head')
+    return within(el as HTMLElement)
+  }
   const header = (label: string) =>
-    screen.getByRole('button', { name: new RegExp(`^${label}`) }).closest('th')
+    head()
+      .getByRole('button', { name: new RegExp(`^${label}`) })
+      .closest('th')
 
   it('starts unsorted — market order is the shuffle', () => {
     openMarket()
@@ -440,8 +580,21 @@ describe('reopening a deal', () => {
   /** Two bids at the asking price, run on until both fees are agreed. */
   function twoAgreedBids() {
     openMarket()
-    const listings = listingsFor(game())
-    const [first, second] = listings
+    // **The two cheapest, not the first two on the list.** These tests are about
+    // the negotiation panel, and the market now carries fringe players from the
+    // richest clubs in Europe — the first two rows of the shuffle can cost more
+    // than a whole budget, and the bid is refused before the panel is involved.
+    const affordable = [...listingsFor(game())].sort((a, b) => a.fee - b.fee)
+    const first = affordable[0]
+    // **And they must want different wages.** `carries no numbers over` compares
+    // the two prefills, so two men on the `expectedWage` floor of 50 would satisfy
+    // it while proving nothing — its own comment says so, and the two cheapest
+    // listings are exactly the pair that lands there.
+    const date = game().season.currentDate
+    const wageOf = (listing: { player: Parameters<typeof suggestedTerms>[0] }) =>
+      suggestedTerms(listing.player, date).wage
+    const second =
+      first === undefined ? undefined : affordable.find((l) => wageOf(l) !== wageOf(first))
     if (first === undefined || second === undefined) throw new Error('not enough listings')
 
     bidAsking(first.player.name)

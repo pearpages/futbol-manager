@@ -49,7 +49,11 @@ Whatever formation you actually play. This is deliberate: comparing every candid
 
 Nudging one by a tenth is now a real change, which it was not before.
 
-**`VALUE_FOR_MONEY` moved by more than the rescale factor** — 0.0016 to 0.0003 — and the reason is worth knowing. It caps what the AI pays per point of improvement, and it only ever bought at the cheap end. Raising the rating floor from 27 to 60 removed the cheap end: there are no bad players any more, so there are no bargains, and the bottom of the market roughly doubled in price. Measured after the rescale, only 2 of 158 positive-need candidates still cleared the old figure.
+**`VALUE_FOR_MONEY` scales with the buyer's balance, and that is what makes money matter at all.** It is the cap on what a club pays per point of improvement, and while it was flat the AI league came out **identical to the decimal** across every TV pool, sponsorship level and ticket price ever tried — extra income simply never became a transfer, which M4b recorded as reassurance and which is the obstacle to a small club climbing. `valueFloorFor(budget)` divides the floor down above `WEALTH_PIVOT` (5,000): a rich club accepts worse value per point, as rich clubs do. A club above the pivot may also make **two** paid signings in a window rather than one.
+
+Together these took the division from **9.2 transfers a season to 18.0**, and sellers from 5.7 of twenty to 10.2. The pivot was swept at 3,000 / 5,000 / 8,000 / 12,000 for 18.0 / 18.0 / 17.1 / 14.2; three thousand ties on volume and was rejected because every club but the poorest clears it, which turns the split into "everybody signs twice". `market.volume.harness.test.ts` is the band, and it is the first thing in the project to assert deal volume at all.
+
+**`VALUE_FOR_MONEY` also moved by more than the rescale factor** — 0.0016 to 0.0003 — and the reason is worth knowing. It caps what the AI pays per point of improvement, and it only ever bought at the cheap end. Raising the rating floor from 27 to 60 removed the cheap end: there are no bad players any more, so there are no bargains, and the bottom of the market roughly doubled in price. Measured after the rescale, only 2 of 158 positive-need candidates still cleared the old figure.
 
 ### Three call sites, asked in both directions
 
@@ -67,9 +71,9 @@ The market screen carried an "Improves" column until M4c. It made squad-building
 
 ## What a club will sell
 
-**There are two rules, and which one applies depends on whether a person is watching.**
+**There are three rules now, and which applies depends on who is asking.**
 
-### An AI club — `surplus(squad)`
+### An AI club shopping — `surplus(squad)`
 
 Everyone who is not in the best XI **and** can be spared, meaning that removing him still leaves at least one cover at every position. A club at or below `MIN_SQUAD` (18) sells nobody.
 
@@ -92,7 +96,50 @@ Two clauses and no others:
 
 **Five places ask the manager's rule and must stay in step:** `SquadScreen`, `ListPlayer`, `RespondToOffer`, `bestOfferFor` and — the one that is easy to miss — the **seller-side re-check inside `runTransferWindow`'s buy loop**. That gate applies to the human for anything he listed; left on `canSpare`/`MIN_SQUAD` it silently vetoes deals the screen and the reducer have both already allowed, with no refusal and no event. The player simply never moves.
 
-Starters are never for sale, at any price, under either rule. That is the whole of it; there is no separate "not for sale" flag.
+### You, bidding for somebody else's player — `aiSaleRefusal(squad, player)`
+
+**Every player has a price.** Two refusals and no others, both about the seller's
+squad surviving rather than his wishes: he is already at `MIN_SQUAD`, or losing him
+would leave a bank `canSpare` says is too thin for some formation.
+
+This used to be `surplus` membership, which meant **anyone in a club's best XI was
+unbuyable at any figure** — while `bestOfferFor` was free to offer for anyone of
+yours who was merely out of your team sheet. That asymmetry was one gate in
+`makeBid`, and it is the thing this rule replaced.
+
+What a club would rather keep is **priced, not refused**:
+
+```
+reluctancePremium = 1 + RELUCTANCE_SLOPE × loseCost + (picked ? IN_XI_PREMIUM : 0)
+loseCost          = needFor(squad without him, him)      — clamped at zero
+```
+
+and `answerBid` compares your fee against `askingPrice × premium`.
+
+**It is exactly 1 for every member of `surplus`**, by construction rather than by
+tuning: a player outside the best XI cannot change it by leaving, so `loseCost` is
+zero and he was not picked. That is what makes the whole thing inert for every deal
+the AI can do, and why no calibrated band moved — the same property M3c's `tempo`
+has at balanced tactics.
+
+**Two terms, because `loseCost` alone gets a common case badly wrong.** Measured on
+the shipped league, Madrid's 90-rated forward scores **0.00**: there is another 90
+on the bench, so the XI genuinely does not get worse. On the marginal answer alone
+he would have gone for his bare €6.4M, to a club with €5.3M. A club does not sell
+the man it picked just because it owns his understudy. With both terms he prices at
+€16.1M, Málaga's best forward at €15.1M, and Barcelona's goalkeeper at €61.2M — the
+dearest player in the game, which is right for the position that carries 35% of a
+defence on its own.
+
+`RELUCTANCE_CAP` (6) never binds on the shipped league; the highest premium measured
+is ~5.0. It is there for M6, where an injury crisis can push `loseCost` far past
+anything seen today.
+
+**Measured over 60 seasons at a mid-table club**: standing still is 41.75 points and
+14.5th, shopping the listed market is +6.57 and 11.7th, and bidding for anyone is
+**+10.87 and 9.5th**. The third arm in `market.human.harness.test.ts` is what pins
+`RELUCTANCE_SLOPE`; the two older arms cannot see it at all, because both shop
+`surplus`, which is the one set the premium is defined to leave alone.
 
 **Your own club is invisible to the AI market**, in both directions, so nothing you own is ever in front of a buyer. `transferList` is how you opt one player back in — see below.
 
@@ -133,7 +180,21 @@ The season runs from 15 August to May, and `StartNewSeason` jumps straight to th
 
 **Listed by another club** — anyone in that club's `surplus`. Bid, wait, and if the fee is agreed, agree personal terms separately. A fee buys the right to talk to him; he still has to want to come.
 
-**Free agents** — released at rollover when their own club no longer needs them. No fee, only wages, which is the route into the market for a club that cannot pay one. The pool is persistent: unsigned players stay in it and leave only by retiring. Deleting them each summer drained it to nothing by season six and froze the market.
+**Anyone else, at a price.** The market table stays `surplus` — putting five hundred
+rival players into it would stop the list meaning "for sale" at all, which is the
+60-row-cap defect in reverse. The **Clubs** tab on the same screen browses any rival
+squad instead, with a `They want` column showing `askingPrice × reluctancePremium`,
+and every name is a link to his card, where the bid dialog lives. Deliberately no
+wage and no contract there: those are your own club's private facts, and showing
+them would hand over the seller's whole valuation.
+
+**Free agents** — released at rollover when their own club no longer needs them. No fee, only wages, which is the route into the market for a club that cannot pay one. Deleting the unsigned each summer drained the pool to nothing by season six and froze the market, so it is persistent — but no longer unbounded. `FREE_AGENT_PATIENCE_YEARS` (2) drops a player nobody has signed for several summers, derived from `contract.until`, which is already in the past and recedes a year each rollover. It holds at **20–31 and never empties**; without it the pool measured 50, 57, 76, 97 and was still climbing.
+
+**Youth, when a squad has been sold down** — `topUp` in `season.ts`. **The league used to leak players and nothing said so.** Retirement is replaced one-for-one and a transfer is neutral across the league, but a release is not: a player nobody re-signs ages in the pool and retires _out of the game_, with nothing generated in his place, while clubs sold down to `MIN_SQUAD` and could buy back one free agent a summer. Measured over twenty seasons, the league fell from **460 players to 380** and was still falling; squads settled at **18.9** against a release floor of 21; players available to buy anywhere fell **234 → 60** and the best of them **80 → 68**. That is what "there are always the same players" actually was.
+
+A club below `TOPUP_FLOOR` (20) now signs youth at its thinnest position, measured against `COVER_AT_POSITION` — **not `DEEPEST_BANK`, which is 1 at goalkeeper, so a squad down to its last keeper would read as fully stocked.** The population holds, the market holds at 131–163 with a best of 75–84, and every summer brings names from `PLAYER_NAMES` rather than the shipped rosters, which is the drift ADR 0010 says a long career should have.
+
+**The two defects were masking each other**, which is why neither had been found: the pool only grows once the leak is closed, and before that it drained because the whole league was shrinking.
 
 **Your transfer list** — `ListPlayer` puts one of your spare players in front of AI buyers. Spare only, re-checked at window time, so a player listed in August who has won his place back by January is not sold out from under you. **Listing is the consent**: a listed player who attracts a buyer is sold without a further prompt.
 
@@ -185,6 +246,7 @@ Never loosened without a very good reason, and each has a test:
 - **Money is accounted for.** Every movement writes a ledger line, and a club's balance changes by exactly what its ledger says — checked per club, on every tick. This **replaced "money is conserved"** at M5a, when revenue started creating money and wages started destroying it; it is the stricter of the two, because the old one could only say the league had inflated while this one says which club and on which line. See [ADR 0009](./adr/0009-the-ledger-identity.md).
 - **A club may go into debt, but not past its limit**, which is a fraction of its own annual income rather than a flat figure. The AI never borrows to buy, so debt is always something a club drifted into rather than chose.
 - **Nothing on the money path draws randomness.** Finance runs inside `AdvanceDay`, the path every calibrated band is measured through. `pnpm season` staying byte-identical is the check.
-- **Every AI squad stays between 18 and 30**, as a consequence of needs decaying rather than a cap. Releases stop at `RELEASE_FLOOR` (21) rather than `MIN_SQUAD` — draining to the legal minimum froze the market, because `surplus` returns nothing at 18. **The manager is not held to this** and may sell below 18; what holds for him is that he always keeps a fieldable XI and a cover keeper.
+- **The league does not leak players.** Asserted on **what is for sale**, not on the head count: unsigned players sit in the pool and are counted there while the clubs empty out, so at ten seasons the population reads 0.924 of its opening figure both with the fix and without it. What separates them is what a manager can actually buy — 150 at the worst with `topUp`, 97 without, on the way to 60 by season twenty.
+- **Every AI squad stays between 18 and 30**, as a consequence of needs decaying rather than a cap. Releases stop at `TARGET_SQUAD` (21) rather than `MIN_SQUAD` — draining to the legal minimum froze the market, because `surplus` returns nothing at 18. **The manager is not held to this** and may sell below 18; what holds for him is that he always keeps a fieldable XI and a cover keeper.
 - **Every AI squad can field a legal XI in every formation**, which is why sales are re-checked against the squad as it stands rather than as it stood when the window opened. The manager keeps a legal XI by construction — a starter cannot be sold — but may sell his way out of a _shape_, which the lineup screen then stops offering.
 - **A budget buys roughly two players of the club's own first-team standard.** Below that the market is decorative: at the old seeding, 48 of 228 listings were affordable to a mid-table club and every one scored zero on need.

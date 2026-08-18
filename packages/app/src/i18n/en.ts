@@ -205,6 +205,13 @@ export const en: Dictionary = {
     'A contract running out is worth nothing as a fee — he leaves for nothing instead. Renewing costs you no money today, but you are committed to the wage until it ends.',
   'renew.offer': 'Offer renewal',
 
+  // ── Bidding for somebody else's player ───────────────────────────────────
+  'player.bid': 'Make an offer',
+  'bid.title': 'Bid for {player}',
+  'bid.reluctant':
+    '{club} picked him. They will want far more for him than he is worth on paper, and a low offer is simply turned down.',
+  'bid.willing': '{club} would let him go. He is priced to sell.',
+
   'position.GK': 'GK',
   'position.DF': 'DF',
   'position.MF': 'MF',
@@ -290,6 +297,19 @@ export const en: Dictionary = {
 
   // ── Market ───────────────────────────────────────────────────────────────
   'market.heading': 'Transfer market',
+  'market.tab.forSale': 'For sale',
+  'market.tab.clubs': 'Clubs',
+  'market.browseClub': 'Look at',
+  'market.atHome': 'Primera División',
+  'country.EN': 'England',
+  'country.DE': 'Germany',
+  'country.FR': 'France',
+  'country.IT': 'Italy',
+  'country.PT': 'Portugal',
+  'country.NL': 'Netherlands',
+  'country.BE': 'Belgium',
+  'country.TR': 'Türkiye',
+  'market.squadSize': '{count} players',
   'market.windowShut': 'The window is shut. It opens in July and August, and again in January.',
   'market.withinBudget': 'Within budget',
   'market.freeAgents': 'Free agents',
@@ -302,6 +322,7 @@ export const en: Dictionary = {
   'market.column.age': 'Age',
   'market.column.overall': 'Ovr',
   'market.column.asking': 'Asking',
+  'market.column.wants': 'They want',
   'market.column.action': 'Act',
   'market.freeAgent': 'Free agent',
   'market.free': 'Free',
@@ -558,7 +579,8 @@ export const en: Dictionary = {
   'error.player.unknown': 'No such player',
   'error.player.freeAgent': 'A free agent costs no fee — offer him a contract instead',
   'error.player.yours': 'He is already yours',
-  'error.player.notForSale': '{player} is not for sale',
+  'error.player.squadFloor': "{player}'s club has too small a squad to sell anybody",
+  'error.player.lastAtPosition': "{player}'s club cannot spare another player in his position",
   'error.bid.positive': 'A bid must be a positive fee',
   'error.bid.overdraft': 'That would take you past your overdraft limit',
   'error.bid.live': 'There is already a live bid for {player}',

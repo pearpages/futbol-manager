@@ -195,6 +195,13 @@ export const ca: Dictionary = {
     'Un contracte que s’acaba no val res com a traspàs — se’n va lliure. Renovar-lo no costa diners avui, però et compromets amb el sou fins al final.',
   'renew.offer': 'Oferir renovació',
 
+  // ── Oferta per un jugador d'un altre club ────────────────────────────────
+  'player.bid': 'Fer una oferta',
+  'bid.title': 'Oferta per {player}',
+  'bid.reluctant':
+    'El {club} l’ha triat per a l’onze. En voldran molt més del que val sobre el paper, i una oferta baixa la rebutgen sense més.',
+  'bid.willing': 'El {club} el deixaria marxar. Té preu de venda.',
+
   'position.GK': 'POR',
   'position.DF': 'DEF',
   'position.MF': 'MIG',
@@ -280,6 +287,19 @@ export const ca: Dictionary = {
 
   // ── Mercat ───────────────────────────────────────────────────────────────
   'market.heading': 'Mercat de fitxatges',
+  'market.tab.forSale': 'En venda',
+  'market.tab.clubs': 'Clubs',
+  'market.browseClub': 'Mirar',
+  'market.atHome': 'Primera División',
+  'country.EN': 'Anglaterra',
+  'country.DE': 'Alemanya',
+  'country.FR': 'França',
+  'country.IT': 'Itàlia',
+  'country.PT': 'Portugal',
+  'country.NL': 'Països Baixos',
+  'country.BE': 'Bèlgica',
+  'country.TR': 'Türkiye',
+  'market.squadSize': '{count} jugadors',
   'market.windowShut': 'El mercat és tancat. Obre al juliol i a l’agost, i altre cop al gener.',
   'market.withinBudget': 'Dins del pressupost',
   'market.freeAgents': 'Agents lliures',
@@ -292,6 +312,7 @@ export const ca: Dictionary = {
   'market.column.age': 'Edat',
   'market.column.overall': 'Mitj',
   'market.column.asking': 'Demanen',
+  'market.column.wants': 'En volen',
   'market.column.action': 'Acció',
   'market.freeAgent': 'Agent lliure',
   'market.free': 'Lliure',
@@ -545,7 +566,9 @@ export const ca: Dictionary = {
   'error.player.unknown': 'Aquest jugador no existeix',
   'error.player.freeAgent': 'Un agent lliure no té traspàs — ofereix-li un contracte',
   'error.player.yours': 'Ja és teu',
-  'error.player.notForSale': '{player} no està en venda',
+  'error.player.squadFloor': 'El club de {player} té una plantilla massa curta per vendre ningú',
+  'error.player.lastAtPosition':
+    'El club de {player} no pot prescindir de ningú més en aquesta posició',
   'error.bid.positive': 'Una oferta ha de ser una quantitat positiva',
   'error.bid.overdraft': 'Això et passaria del límit de descobert',
   'error.bid.live': 'Ja tens una oferta en marxa per {player}',

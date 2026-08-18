@@ -505,7 +505,7 @@ export function generateLeagueSquads(
  * what a forward actually costs, and the point of this number is to say what *normal*
  * looks like for the position.
  */
-function referenceValues(
+export function referenceValues(
   rosters: readonly (readonly RosterEntry[])[],
 ): Readonly<Partial<Record<Position, number>>> {
   const out: Partial<Record<Position, number>> = {}

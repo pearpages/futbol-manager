@@ -1,7 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { ALL_CLUBS } from '@fm/data'
+import { ALL_CLUBS, FOREIGN_CLUBS } from '@fm/data'
+
+/**
+ * Every club that gets a badge — the twenty-five at home and the thirty-two
+ * abroad. The guards below were written against `ALL_CLUBS` alone and stopped
+ * covering the whole set the moment a foreign market existed; a badge with no
+ * palette renders unfilled, which looks unpolished rather than broken and is
+ * exactly the kind of thing a test has to catch instead of a person.
+ */
+const EVERY_CLUB = [...ALL_CLUBS, ...FOREIGN_CLUBS]
 import { BADGES, badgeFor, COLOUR_KEYS, needsNameplate } from './badges.ts'
 
 /**
@@ -19,15 +28,15 @@ import { BADGES, badgeFor, COLOUR_KEYS, needsNameplate } from './badges.ts'
 describe('every club has a badge', () => {
   it('covers every club, not only the league', () => {
     // Adding a twenty-sixth club should fail here rather than render blank.
-    for (const club of ALL_CLUBS) {
+    for (const club of EVERY_CLUB) {
       expect(BADGES[club.id], club.id).toBeDefined()
     }
   })
 
   it('has no entries for clubs that do not exist', () => {
-    const ids = new Set(ALL_CLUBS.map((c) => c.id))
+    const ids = new Set(EVERY_CLUB.map((c) => c.id))
     for (const id of Object.keys(BADGES)) {
-      expect(ids.has(id as (typeof ALL_CLUBS)[number]['id']), id).toBe(true)
+      expect(ids.has(id as (typeof EVERY_CLUB)[number]['id']), id).toBe(true)
     }
   })
 
@@ -43,7 +52,7 @@ describe('no two clubs look the same', () => {
     // table has five identical marks in it.
     const seen = new Map<string, string>()
 
-    for (const club of ALL_CLUBS) {
+    for (const club of EVERY_CLUB) {
       const badge = badgeFor(club.id)
       const key = `${badge.colours}/${badge.pattern}/${badge.shape}`
       const clash = seen.get(key)
@@ -61,7 +70,7 @@ describe('no two clubs look the same', () => {
 
   it('gives the clubs sharing a palette different shapes', () => {
     const byPalette = new Map<string, string[]>()
-    for (const club of ALL_CLUBS) {
+    for (const club of EVERY_CLUB) {
       const badge = badgeFor(club.id)
       const shapes = byPalette.get(badge.colours) ?? []
       shapes.push(`${badge.pattern}/${badge.shape}`)
@@ -79,13 +88,13 @@ describe('the palettes are declared', () => {
     // A typo'd key renders an unstyled badge — ugly rather than obviously broken,
     // which is exactly the kind of thing that ships.
     const declared = new Set<string>(COLOUR_KEYS)
-    for (const club of ALL_CLUBS) {
+    for (const club of EVERY_CLUB) {
       expect(declared.has(badgeFor(club.id).colours), club.id).toBe(true)
     }
   })
 
   it('declares none it does not use', () => {
-    const used = new Set(ALL_CLUBS.map((c) => badgeFor(c.id).colours))
+    const used = new Set(EVERY_CLUB.map((c) => badgeFor(c.id).colours))
     for (const key of COLOUR_KEYS) {
       expect(used.has(key), `${key} is declared but unused`).toBe(true)
     }

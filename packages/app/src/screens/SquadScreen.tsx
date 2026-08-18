@@ -18,7 +18,15 @@ import { RenewPanel } from './RenewPanel.tsx'
 import { SortHeader } from './SortHeader.tsx'
 import './SquadScreen.css'
 
-const POSITION_ORDER: Record<Position, number> = { GK: 0, DF: 1, MF: 2, FW: 3 }
+/**
+ * Squad order: keepers, defenders, midfielders, forwards.
+ *
+ * Exported because the market's club browser lays a rival squad out the same way,
+ * and because it is what a position column must sort on — the rendered chip is
+ * `POR/DEF/MIG/DAV` in Catalan and `GK/DF/MF/FW` in English, which order the same
+ * squad differently.
+ */
+export const POSITION_ORDER: Record<Position, number> = { GK: 0, DF: 1, MF: 2, FW: 3 }
 
 type SortKey = 'position' | 'name' | 'age' | 'overall' | 'worth' | 'wage' | 'contract' | 'selected'
 

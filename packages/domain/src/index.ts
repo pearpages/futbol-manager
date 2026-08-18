@@ -199,6 +199,7 @@ export {
 export {
   generateLeagueSquads,
   generateSquad,
+  referenceValues,
   generateYouthPlayer,
   type LeagueOptions,
   type RosterEntry,
@@ -209,16 +210,35 @@ export {
 export { askingPrice, expectedWage, formatMoney, valuePlayer } from './valuation.ts'
 
 export {
+  COUNTRIES,
+  type Country,
+  type ForeignClub,
+  type ForeignLeague,
+  foreignHolderOf,
+  foreignMeanAge,
+  foreignPlayers,
+  generateForeignLeague,
+  NO_FOREIGN,
+  refreshForeignLeague,
+} from './foreign.ts'
+
+export {
+  aiSaleRefusal,
   applyTransfers,
+  FOREIGN_LISTINGS,
+  COVER_AT_POSITION,
   COVER_KEEPERS,
   isTransferWindowOpen,
   listedForSale,
+  loseCost,
   MAX_SQUAD,
   MIN_SQUAD,
   needFor,
+  reluctancePremium,
   runTransferWindow,
   type SaleBlock,
   saleBlock,
+  type SaleRefusal,
   sellable,
   surplus,
   totalBudget,

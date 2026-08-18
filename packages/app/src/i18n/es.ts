@@ -194,6 +194,13 @@ export const es: Dictionary = {
     'Un contrato que se acaba no vale nada como traspaso — se va libre. Renovarlo no cuesta dinero hoy, pero te comprometes con el sueldo hasta el final.',
   'renew.offer': 'Ofrecer renovación',
 
+  // ── Oferta por un jugador de otro club ───────────────────────────────────
+  'player.bid': 'Hacer una oferta',
+  'bid.title': 'Oferta por {player}',
+  'bid.reluctant':
+    'El {club} lo ha elegido para el once. Querrán mucho más de lo que vale sobre el papel, y una oferta baja la rechazan sin más.',
+  'bid.willing': 'El {club} lo dejaría salir. Está a precio de venta.',
+
   'position.GK': 'POR',
   'position.DF': 'DEF',
   'position.MF': 'CEN',
@@ -279,6 +286,19 @@ export const es: Dictionary = {
 
   // ── Mercado ──────────────────────────────────────────────────────────────
   'market.heading': 'Mercado de fichajes',
+  'market.tab.forSale': 'En venta',
+  'market.tab.clubs': 'Clubes',
+  'market.browseClub': 'Ver',
+  'market.atHome': 'Primera División',
+  'country.EN': 'Inglaterra',
+  'country.DE': 'Alemania',
+  'country.FR': 'Francia',
+  'country.IT': 'Italia',
+  'country.PT': 'Portugal',
+  'country.NL': 'Países Bajos',
+  'country.BE': 'Bélgica',
+  'country.TR': 'Türkiye',
+  'market.squadSize': '{count} jugadores',
   'market.windowShut': 'El mercado está cerrado. Abre en julio y agosto, y otra vez en enero.',
   'market.withinBudget': 'Dentro del presupuesto',
   'market.freeAgents': 'Agentes libres',
@@ -291,6 +311,7 @@ export const es: Dictionary = {
   'market.column.age': 'Edad',
   'market.column.overall': 'Med',
   'market.column.asking': 'Piden',
+  'market.column.wants': 'Lo valoran en',
   'market.column.action': 'Acción',
   'market.freeAgent': 'Agente libre',
   'market.free': 'Libre',
@@ -543,7 +564,10 @@ export const es: Dictionary = {
   'error.player.unknown': 'Ese jugador no existe',
   'error.player.freeAgent': 'Un agente libre no tiene traspaso — ofrécele un contrato',
   'error.player.yours': 'Ya es tuyo',
-  'error.player.notForSale': '{player} no está en venta',
+  'error.player.squadFloor':
+    'El club de {player} tiene una plantilla demasiado corta para vender a nadie',
+  'error.player.lastAtPosition':
+    'El club de {player} no puede prescindir de nadie más en esa posición',
   'error.bid.positive': 'Una oferta tiene que ser una cantidad positiva',
   'error.bid.overdraft': 'Eso te pasaría del límite de descubierto',
   'error.bid.live': 'Ya tienes una oferta en marcha por {player}',

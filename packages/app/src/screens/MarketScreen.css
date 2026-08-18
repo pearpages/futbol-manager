@@ -147,3 +147,10 @@
     grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
+
+/* Two views of the same market: what a club will sell, and everyone else.
+   Matches the results screen's strip, which is the only other tabbed screen. */
+.market-screen__tabs {
+  display: flex;
+  gap: var(--fm-space-1);
+}

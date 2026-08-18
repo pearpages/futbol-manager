@@ -294,6 +294,33 @@ function daysFromCivil(y: number, m: number, d: number): number {
   return era * 146097 + doe - 719468
 }
 
+/**
+ * Clubs abroad, so the market has a source of players outside the twenty.
+ *
+ * **An empty league, and it must invent nothing.** Generating seven hundred
+ * players here would bake this build's generator into every future read of a v9
+ * save — the same mistake as a migration that tracks a live constant, which the
+ * note above `v3ToV4` is emphatic about. It is also unnecessary: an empty foreign
+ * layer is a fully legal, playable state, because every path that touches it
+ * iterates `clubs` and does nothing for an empty array.
+ *
+ * So an existing career keeps the market it started with and a new one gets the
+ * foreign clubs. That is the same answer `v8ToV9` gave when it handed old saves an
+ * empty palmarés rather than a fabricated one.
+ */
+const v9ToV10: Migration = {
+  from: 9,
+  to: 10,
+  describe: 'a market abroad, empty for a career that started without one',
+  migrate(payload) {
+    if (typeof payload !== 'object' || payload === null) {
+      throw new Error('v9 save payload is not an object')
+    }
+
+    return { ...payload, foreign: { clubs: [], squads: {} } }
+  },
+}
+
 /** Ordered, contiguous, forward-only. `migratePayload` walks this list. */
 export const MIGRATIONS: readonly Migration[] = [
   v1ToV2,
@@ -304,6 +331,7 @@ export const MIGRATIONS: readonly Migration[] = [
   v6ToV7,
   v7ToV8,
   v8ToV9,
+  v9ToV10,
 ]
 
 export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.to ?? 1)

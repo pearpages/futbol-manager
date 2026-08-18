@@ -7,6 +7,7 @@ import { reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
 import { generateLeagueSquads, type RosterEntry } from './squad.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
+import { type ForeignLeague, NO_FOREIGN } from './foreign.ts'
 import { defaultSeasonStart, rolloverSeason } from './season.ts'
 import { applyTransfers, runTransferWindow } from './market.ts'
 
@@ -35,6 +36,11 @@ export interface NewSeasonOptions {
    * anything without an entry falls back to a generated squad.
    */
   readonly rosters?: Readonly<Record<string, readonly RosterEntry[]>>
+  /**
+   * Clubs abroad. `@fm/data` supplies the list; absent, a career simply has no
+   * foreign market, which is exactly how every harness in this package runs.
+   */
+  readonly foreign?: ForeignLeague
 }
 
 export function newSeason(
@@ -95,6 +101,11 @@ export function newSeason(
     // A career starts with no past. The palmarés fills from this season forward,
     // one entry per rollover.
     history: [],
+    // **Empty here, and filled by the app.** `domain` may not import `@fm/data`,
+    // so the club list and the name pools have to arrive from outside — the same
+    // arrangement `rosters` already has. It is also what keeps every harness in
+    // this package measuring a league with no foreign market in it.
+    foreign: options.foreign ?? NO_FOREIGN,
   }
 }
 

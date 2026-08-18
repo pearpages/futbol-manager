@@ -470,3 +470,4 @@ Locked decisions live in [`docs/adr/`](./adr/). Read them before reopening a set
 | [0008](./adr/0008-target-pc-futbol-5.md)    | PC Fútbol 5.0 is the v1 target; 2001 is the direction         |
 | [0009](./adr/0009-the-ledger-identity.md)   | Money is accounted for, not conserved                         |
 | [0010](./adr/0010-real-squad-shapes.md)     | Real squad shapes, and altered surnames                       |
+| [0011](./adr/0011-a-market-abroad.md)       | A market abroad, with generated names                         |

@@ -7,6 +7,8 @@ import {
   FORMATIONS,
   generateSquad,
   ageOn,
+  loseCost,
+  needFor,
   MAX_SQUAD,
   MIN_SQUAD,
   overall,
@@ -14,6 +16,7 @@ import {
   teamRating,
 } from '@fm/domain'
 import { DEFAULT_CLUBS } from './clubs.ts'
+import { FOREIGN_ROSTERS } from './foreign-rosters.ts'
 import { DEFAULT_ROSTERS } from './rosters.ts'
 
 /**
@@ -36,6 +39,57 @@ const squadFor = (clubId: string, seed = 1) => {
   if (roster === undefined) throw new Error(`no roster ${clubId}`)
   return generateSquad(club, createRng(seed), { names: [], seasonStart: START, roster })
 }
+
+describe('the shipped rosters as a set', () => {
+  it('gives no two players the same name', () => {
+    // **Found by a market screen, not by review.** Two clubs both fielded a
+    // "Moussa Diare": the surnames were altered one at a time, and nothing checked
+    // that two altered names had not landed on each other. It went unnoticed
+    // because both men had to be on the market at once to collide visibly, and the
+    // market was small.
+    //
+    // It matters beyond tidiness — a duplicate name makes a player impossible to
+    // pick out of a list, and every test that resolves a man by his name matches
+    // two elements and fails somewhere unrelated.
+    // **Both sets together.** A collision across the border is exactly as bad as
+    // one at home — the market lists them side by side — and checking only this
+    // file is how the original pair went unnoticed.
+    const every = { ...DEFAULT_ROSTERS, ...FOREIGN_ROSTERS }
+    const seen = new Map<string, string[]>()
+    for (const clubId of Object.keys(every)) {
+      for (const { name } of every[clubId] ?? []) {
+        seen.set(name, [...(seen.get(name) ?? []), clubId])
+      }
+    }
+    const shared = [...seen].filter(([, clubs]) => clubs.length > 1)
+    expect(shared, `shared names: ${JSON.stringify(shared)}`).toHaveLength(0)
+  })
+})
+
+describe('what losing a player costs his club', () => {
+  it('is never negative, though the raw score is', () => {
+    // `loseCost` clamps at zero, and this is the only place the clamp can be
+    // shown to matter: `bestXI` picks by `overall` while `teamRatingRaw` weights
+    // attributes, so putting a player back can pick a different-but-equal side and
+    // come out a rounding below where it started. **It happens on the shipped
+    // rosters and never once on the generated league**, so the same test written
+    // in `domain` passed while proving nothing — found by deleting the clamp and
+    // watching nothing fail.
+    let sawNegative = false
+    for (const club of DEFAULT_CLUBS) {
+      const squad = squadFor(club.id)
+      for (const player of squad) {
+        const remaining = squad.filter((p) => p.id !== player.id)
+        if (needFor(remaining, player) < 0) sawNegative = true
+        expect(loseCost(squad, player), `${club.id} ${player.name}`).toBeGreaterThanOrEqual(0)
+      }
+    }
+    // Guard on the guard: without this the assertion above is satisfied by a
+    // league in which the case simply never arises, which is exactly how the
+    // `domain` version of this test came to be worthless.
+    expect(sawNegative).toBe(true)
+  })
+})
 
 describe('coverage', () => {
   it('gives every club in the league a roster, and none to the others', () => {

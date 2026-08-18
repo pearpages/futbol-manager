@@ -11,7 +11,15 @@ import {
   startersOf,
   teamRatingRaw,
 } from './lineup.ts'
-import { ageOn, contractExpiry, overall, type Player, type PlayerId, POSITIONS } from './player.ts'
+import {
+  ageOn,
+  contractExpiry,
+  overall,
+  type Player,
+  type PlayerId,
+  type Position,
+  POSITIONS,
+} from './player.ts'
 import { type Rng, shuffle } from './rng.ts'
 import type { GameState } from './state.ts'
 import { type DayNumber, daysBetween, fromCivil, toCivil } from './time.ts'
@@ -96,8 +104,102 @@ export const MAX_SQUAD = 30
  */
 const NEED_THRESHOLD = 0.5
 
-/** How much rating gain a club demands per unit of value spent. */
+/**
+ * How much rating gain a club demands per unit of value spent, **at the pivot**.
+ *
+ * The cap on what the AI will pay per point of improvement, and it is the single
+ * reason money has never mattered to how the league plays. Measured on 2026-08-17
+ * across TV pools of ×1.8 and ×2, equal shares of 0.3 and 0.5, sponsorship from
+ * ×1.5 to ×2.5 and both ticket prices: **the AI league came out identical to the
+ * decimal every time** — top five 3.74th, bottom five 16.20th, talent spread 34.5.
+ * M4b recorded that as reassurance ("a career at 4×, 6× or 10× produces an
+ * identical league"). Against the goal of a small club climbing, it is the
+ * obstacle: extra income simply never becomes a transfer.
+ */
 const VALUE_FOR_MONEY = 0.0003
+
+/**
+ * The balance at which a club demands exactly `VALUE_FOR_MONEY`.
+ *
+ * **A rich club accepts worse value per point, which is what rich clubs do**, and
+ * it is what finally turns income into transfers. Below the pivot the standard is
+ * unchanged, so a poor club is no more reckless than it was.
+ *
+ * Set from the measured distribution rather than by feel. Swept at 3,000, 5,000,
+ * 8,000 and 12,000 against transfers-per-season over a twelve-season career:
+ * 18.0, 18.0, 17.1 and 14.2. Three thousand ties on volume and is the wrong
+ * answer — every club in the division except the poorest clears it, so the split
+ * stops meaning anything and this becomes a flat "everybody signs twice". Five
+ * thousand puts about half the league on each side of it, which is the point.
+ */
+const WEALTH_PIVOT = 5_000
+
+/**
+ * Paid signings a club may make in one window, if it can afford the second.
+ *
+ * A cap rather than a rate: it stops one rich club taking the pick of the market
+ * in a single pass, which is the same thing the rotating serving order guards.
+ */
+const MAX_PAID_SIGNINGS = 2
+
+/** Free transfers a club may take in one window. Unchanged since M4c. */
+const MAX_FREE_SIGNINGS = 1
+
+/**
+ * Fringe players a club abroad will let go in one window. See `runTransferWindow`.
+ *
+ * **One, and it was swept rather than picked**, because this number decides
+ * whether money crosses the border in both directions or only one. Over twelve
+ * seasons, players out of the domestic league against players in, and the net fee:
+ *
+ * | cap | in | out | net     |
+ * | --- | -- | --- | ------- |
+ * | 1   | 22 |  37 |  −15k   |
+ * | 2   | 24 |  93 | −128k   |
+ * | 3   | 25 | 147 | −206k   |
+ * | 5   | 19 | 239 | −287k   |
+ *
+ * At one the flow is genuinely two-way and the net is under 4% of the league's
+ * money. Above it the domestic league becomes a net importer of players and a net
+ * exporter of cash, because these are the strongest clubs in Europe and their
+ * `needFor` on a mid-table Spanish player is zero — the asymmetry is structural
+ * and no amount of tuning elsewhere removes it.
+ *
+ * It also keeps abroad a slice of the market rather than the whole of it: 32
+ * listings a season against roughly 120 at home. **The manager is not held to
+ * this** — the club browser lets him bid for anyone abroad, at the premium.
+ */
+export const FOREIGN_LISTINGS = 1
+
+/** What this club demands per unit spent, given what it is sitting on. */
+function valueFloorFor(budget: number): number {
+  return VALUE_FOR_MONEY * Math.min(1, WEALTH_PIVOT / Math.max(budget, 1))
+}
+
+/**
+ * Premium per point of team rating the seller would lose. See `reluctancePremium`.
+ *
+ * Set from the measured spread rather than by feel: across the shipped twenty,
+ * `loseCost` runs to a median of 0.35–0.65 for outfielders and a maximum of 4.2,
+ * which is a goalkeeper — there is no depth at that position anywhere. At 0.6 an
+ * ordinary starter adds a fifth to his price and the league's best keeper roughly
+ * triples his, which is the right ordering: a keeper carries 35% of the defensive
+ * rating on his own.
+ */
+const RELUCTANCE_SLOPE = 0.6
+
+/** Flat premium for a player his club actually picked. See `reluctancePremium`. */
+const IN_XI_PREMIUM = 1.5
+
+/**
+ * A ceiling, so that every player has a price — absurd, but finite.
+ *
+ * It does not bind anywhere in the shipped league: the highest premium measured is
+ * ~5.0, on the best goalkeeper in the division. It is a backstop for M6, where an
+ * injury crisis can leave a squad with one fit man at a position and push
+ * `loseCost` far past anything seen today.
+ */
+const RELUCTANCE_CAP = 6
 
 export interface Transfer {
   readonly playerId: PlayerId
@@ -291,22 +393,104 @@ export function listedForSale(state: GameState): Player[] {
 }
 
 /**
- * True when removing this player still leaves a legal XI in every shape.
+ * The cover a club must hold at each position, derived rather than written down.
  *
- * Two floors, and the deeper one wins. `4-4-2 + 1` is the "one cover beyond the
- * XI" intent — a club does not sell down to exactly eleven. `DEEPEST_BANK` is the
- * deepest any formation asks for, so a club never sells its way out of a shape it
- * might want to play. This used to be `4-4-2 + 1` alone, on the claim that it
- * covered every other formation too; 4-2-4 wants a fourth forward and broke it.
+ * The deeper of two floors. `4-4-2 + 1` is the "one cover beyond the XI" intent —
+ * a club does not sell down to exactly eleven. `DEEPEST_BANK` is the most any
+ * formation asks for, so a club never sells its way out of a shape it might want
+ * to play; that half was added when 4-2-4 arrived wanting a fourth forward and
+ * broke the claim that `4-4-2 + 1` covered everything.
+ *
+ * Exported because the rollover's `topUp` needs the same answer, and reading it
+ * from here is what stops the two drifting. **`DEEPEST_BANK` alone is not that
+ * answer**: it is 1 at goalkeeper, so a squad down to its last keeper reads as
+ * fully stocked — which is exactly the squad most in need of one.
  */
+export const COVER_AT_POSITION: Readonly<Record<Position, number>> = Object.fromEntries(
+  POSITIONS.map((position) => [
+    position,
+    Math.max(DEEPEST_BANK[position], FORMATIONS['4-4-2'][position] + 1),
+  ]),
+) as Record<Position, number>
+
+/** True when removing this player still leaves a legal XI in every shape. */
 function canSpare(squad: readonly Player[], player: Player): boolean {
   const remaining = squad.filter((p) => p.id !== player.id)
-  const shape = FORMATIONS['4-4-2']
   return POSITIONS.every(
     (position) =>
-      remaining.filter((p) => p.position === position).length >=
-      Math.max(DEEPEST_BANK[position], shape[position] + 1),
+      remaining.filter((p) => p.position === position).length >= COVER_AT_POSITION[position],
   )
+}
+
+/** Why an AI club will not sell this player at any price, or `null` when it will. */
+export type SaleRefusal = 'squadFloor' | 'shape'
+
+/**
+ * The seller's veto — the only two reasons a bid is refused outright.
+ *
+ * Everything else has a price. This replaced the old rule, which was `surplus`
+ * membership: a player in his club's best XI was unbuyable **at any figure**,
+ * while the AI was free to offer for anyone of yours who was not in your team
+ * sheet. That asymmetry was the complaint, and it was one gate in `makeBid`.
+ *
+ * Both clauses are about the seller's squad surviving, never about his wishes:
+ *
+ * - `squadFloor` — he is already at `MIN_SQUAD`. The same floor `runTransferWindow`
+ *   holds AI sellers to.
+ * - `shape` — losing him would leave a bank too thin to field some formation.
+ *   **`canSpare`, deliberately, and not a bare "can still field eleven".** The
+ *   career harness asserts every squad can field a legal XI in *all eight* shapes,
+ *   and `canSpare` is the function that keeps that green; a 4-4-2-only test would
+ *   let a human buy a club's fourth forward and break the band with nothing else
+ *   to point at.
+ */
+export function aiSaleRefusal(squad: readonly Player[], player: Player): SaleRefusal | null {
+  if (squad.length <= MIN_SQUAD) return 'squadFloor'
+  if (!canSpare(squad, player)) return 'shape'
+  return null
+}
+
+/**
+ * What losing this player would cost the seller's best XI.
+ *
+ * `needFor` asked from the other side — literally the same scoring function, run
+ * against the squad that would remain. **Zero for every member of `surplus`**, by
+ * construction rather than by tuning: a player outside the best XI cannot change
+ * it by leaving. Clamped at zero because `bestXI` can pick a different but equal
+ * side, which shows up as a rounding-sized negative.
+ */
+export function loseCost(squad: readonly Player[], player: Player): number {
+  const remaining = squad.filter((p) => p.id !== player.id)
+  return Math.max(0, needFor(remaining, player))
+}
+
+/**
+ * How much over the asking price a club wants before it will hear you out.
+ *
+ * **Exactly 1 for anyone in `surplus`**, which is what makes this inert for every
+ * deal the game could already do — the same property M3c's `tempo` has at balanced
+ * tactics and M4b's bid subsystem has when nobody bids. Every calibrated band is
+ * untouched because no AI path can reach a premium above 1.
+ *
+ * **Two terms, because there are two different reasons a club says no**, and one
+ * of them alone gets a famous case badly wrong:
+ *
+ * - `loseCost` says **how much their team suffers**. It is the honest marginal
+ *   answer and it is what makes a small club's only good goalkeeper expensive.
+ * - `IN_XI_PREMIUM` says **they picked him**. This term exists because the first
+ *   one does not do the job on its own: measured on the shipped league, Madrid's
+ *   90-rated forward scores `loseCost` **0.00** — there is another 90 behind him,
+ *   so the XI genuinely does not get worse — which would have priced him at his
+ *   bare asking price of €6.4M and let a €5.3M mid-table club buy him. A club does
+ *   not sell the man it picked just because it owns his understudy.
+ *
+ * Both terms are zero outside the XI and off the depth floor, so the two do not
+ * need to agree about anything; they are added, not blended.
+ */
+export function reluctancePremium(squad: readonly Player[], player: Player): number {
+  const picked = bestXI(squad, '4-4-2').starters.includes(player.id)
+  const premium = 1 + RELUCTANCE_SLOPE * loseCost(squad, player) + (picked ? IN_XI_PREMIUM : 0)
+  return Math.min(RELUCTANCE_CAP, premium)
 }
 
 /**
@@ -341,10 +525,28 @@ export function runTransferWindow(
   const date = state.season.currentDate
   const transfers: Transfer[] = []
 
-  const squads = new Map<ClubId, Player[]>(
-    state.clubs.map((club) => [club.id, [...(state.squads[club.id] ?? [])]]),
-  )
-  const budgets = new Map<ClubId, number>(state.clubs.map((club) => [club.id, club.budget]))
+  // **Clubs abroad are treated as clubs, deliberately.** They buy on the same
+  // `needFor` score, sell on the same `surplus` rule and are held to the same
+  // squad floors, which is what keeps flows across the border two-way by
+  // construction rather than by a rule saying so. The one thing they do not share
+  // is the ledger: `record` in `applyTransfers` looks a club up and returns if it
+  // is absent, so a foreign counterparty simply does not appear in ADR 0009's
+  // identity — which is correct, because that identity is per domestic club and
+  // says nothing about who is on the other side of a deal.
+  //
+  // Empty in every harness but `market.foreign.harness.test.ts`, so this changes
+  // nothing that was already calibrated.
+  const abroad = state.foreign.clubs
+  const squads = new Map<ClubId, Player[]>()
+  const budgets = new Map<ClubId, number>()
+  for (const club of state.clubs) {
+    squads.set(club.id, [...(state.squads[club.id] ?? [])])
+    budgets.set(club.id, club.budget)
+  }
+  for (const club of abroad) {
+    squads.set(club.id, [...(state.foreign.squads[club.id] ?? [])])
+    budgets.set(club.id, club.budget)
+  }
   const pool = new Set<PlayerId>(state.freeAgents.map((player) => player.id))
 
   // Everything available this window, with the club that holds each player —
@@ -356,6 +558,23 @@ export function runTransferWindow(
       listed.push({ player, from: club.id })
     }
   }
+  // **A club abroad offers a few fringe players, not its whole reserve list.**
+  // `surplus` is the right rule for a domestic club, which is managing a squad
+  // against a wage bill and a board; a foreign club is doing neither, so its
+  // spares are not a "for sale" list in the same sense. Offering all of them
+  // made abroad the only market worth shopping in: measured over twelve seasons,
+  // the domestic league bought **347 players from abroad and sold 14**, which is
+  // more than one foreign signing per club per season and left the domestic
+  // market crowded out of its own game.
+  //
+  // `surplus` sorts ascending by `overall`, so the first few are the genuine
+  // fringe — which is exactly who a big club abroad would let go.
+  for (const club of abroad) {
+    if (club.id === options.exclude) continue
+    for (const player of surplus(squads.get(club.id) ?? []).slice(0, FOREIGN_LISTINGS)) {
+      listed.push({ player, from: club.id })
+    }
+  }
   // The manager's own contribution is exactly what he put up for sale. An AI club
   // offers a whole squad's worth of spares automatically; he offers a list.
   if (options.exclude !== undefined) {
@@ -363,7 +582,10 @@ export function runTransferWindow(
   }
   for (const player of state.freeAgents) listed.push({ player, from: null })
 
-  const order = shuffle(state.clubs, rng)
+  // Foreign clubs take their turn in the same rotation. The shuffle is longer than
+  // it was, which changes the draw count — expected, and inert wherever the layer
+  // is empty, which is everywhere the existing bands are measured.
+  const order = shuffle([...state.clubs, ...abroad], rng)
 
   for (const club of order) {
     if (club.id === options.exclude) continue
@@ -395,7 +617,7 @@ export function runTransferWindow(
         }
       })
       .filter((entry) => entry.need > NEED_THRESHOLD)
-      .filter((entry) => entry.need / entry.cost > VALUE_FOR_MONEY)
+      .filter((entry) => entry.need / entry.cost > valueFloorFor(budgets.get(club.id) ?? 0))
       .sort((a, b) => b.need / b.cost - a.need / a.cost)
 
     // One paid signing and one free transfer, tracked separately.
@@ -407,14 +629,19 @@ export function runTransferWindow(
     //
     // Two counters rather than a bigger cap, because they really are different
     // resources: a free transfer does not touch the transfer budget, so it is not
-    // competing with a fee for the same money. The paid rate is unchanged from
-    // M4a, which is what keeps the career harness comparable.
-    let paid = false
-    let free = false
+    // competing with a fee for the same money.
+    //
+    // **The paid rate is no longer a flat one.** It was, from M4a to here, and the
+    // whole league did about nine deals a season between twenty clubs — a club
+    // bought a player roughly every other year, which is why the shop window never
+    // looked any different. A club sitting on more than the pivot may do two.
+    let paid = 0
+    let free = 0
+    const paidAllowance = (budgets.get(club.id) ?? 0) > WEALTH_PIVOT ? MAX_PAID_SIGNINGS : 1
 
     for (const candidate of candidates) {
-      if (paid && free) break
-      if (candidate.from === null ? free : paid) continue
+      if (paid >= paidAllowance && free >= MAX_FREE_SIGNINGS) break
+      if (candidate.from === null ? free >= MAX_FREE_SIGNINGS : paid >= paidAllowance) continue
 
       // **The AI never borrows to buy.** Debt exists at M5a, but a club only
       // drifts into it through wages outrunning income — which is the failure the
@@ -473,10 +700,10 @@ export function runTransferWindow(
       const index = listed.findIndex((e) => e.player.id === candidate.player.id)
       if (index >= 0) listed.splice(index, 1)
 
-      // Capping each kind at one keeps a rich club from emptying the market in a
-      // single pass, and spreads business across the league.
-      if (candidate.from === null) free = true
-      else paid = true
+      // Capping each kind keeps a rich club from emptying the market in a single
+      // pass, and spreads business across the league.
+      if (candidate.from === null) free += 1
+      else paid += 1
 
       if (squad.length >= MAX_SQUAD) break
     }
@@ -497,9 +724,21 @@ export function runTransferWindow(
 export function applyTransfers(state: GameState, transfers: readonly Transfer[]): GameState {
   if (transfers.length === 0) return state
 
+  // Domestic and foreign squads are held in one map here so a deal reads the same
+  // whichever side of the border each club is on; they are split apart again at
+  // the end. **The ledgers map is domestic only, deliberately** — `record` looks a
+  // club up and returns when it is absent, so a foreign counterparty never
+  // appears in ADR 0009's identity. That is right rather than an omission: the
+  // identity is per domestic club and says nothing about who is opposite.
   const squads: Record<string, Player[]> = {}
   for (const club of state.clubs) squads[club.id] = [...(state.squads[club.id] ?? [])]
-  const budgets = new Map<ClubId, number>(state.clubs.map((c) => [c.id, c.budget]))
+  for (const club of state.foreign.clubs) {
+    squads[club.id] = [...(state.foreign.squads[club.id] ?? [])]
+  }
+  const budgets = new Map<ClubId, number>([
+    ...state.clubs.map((c) => [c.id, c.budget] as [ClubId, number]),
+    ...state.foreign.clubs.map((c) => [c.id, c.budget] as [ClubId, number]),
+  ])
   const ledgers = new Map<ClubId, Ledger>(state.clubs.map((c) => [c.id, c.ledger]))
 
   const record = (clubId: ClubId, key: keyof Ledger, amount: number) => {
@@ -565,7 +804,12 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   // him. The managed club is the exception: the manager picked that XI on purpose,
   // so it is only rebuilt when the transfer has actually made it illegal.
   const lineups = { ...state.lineups }
+  const foreignIds = new Set<ClubId>(state.foreign.clubs.map((club) => club.id))
   for (const clubId of touched) {
+    // A foreign club has no lineup and never needs one — nothing resolves a match
+    // for it. Giving it one here would be the first step toward the second
+    // competition ground rule 5 is still holding back.
+    if (foreignIds.has(clubId)) continue
     const squad = squads[clubId] ?? []
     if (squad.length < 11) continue
     // Selling can take a squad below the bank its shape needs — a club on 4-2-4
@@ -582,7 +826,29 @@ export function applyTransfers(state: GameState, transfers: readonly Transfer[])
   const own = new Set<PlayerId>((squads[state.managedClubId] ?? []).map((p) => p.id))
   const transferList = state.transferList.filter((id) => own.has(id))
 
-  return { ...state, clubs, squads, lineups, freeAgents, transferList }
+  // Split the one working map back into the two the state keeps.
+  const domestic: Record<string, Player[]> = {}
+  const abroad: Record<string, Player[]> = {}
+  for (const [clubId, squad] of Object.entries(squads)) {
+    if (foreignIds.has(clubId as ClubId)) abroad[clubId] = squad
+    else domestic[clubId] = squad
+  }
+
+  return {
+    ...state,
+    clubs,
+    squads: domestic,
+    foreign: {
+      clubs: state.foreign.clubs.map((club) => ({
+        ...club,
+        budget: budgets.get(club.id) ?? club.budget,
+      })),
+      squads: abroad,
+    },
+    lineups,
+    freeAgents,
+    transferList,
+  }
 }
 
 /**

@@ -4,7 +4,14 @@ import type { ClubId } from './entities.ts'
 import { debtLimit } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { bestXI } from './lineup.ts'
-import { MAX_SQUAD, MIN_SQUAD, needFor, surplus } from './market.ts'
+import {
+  aiSaleRefusal,
+  MAX_SQUAD,
+  MIN_SQUAD,
+  needFor,
+  reluctancePremium,
+  surplus,
+} from './market.ts'
 import { ageOn, type Player } from './player.ts'
 import { reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
@@ -68,8 +75,21 @@ interface Option {
   readonly need: number
 }
 
+/**
+ * How a manager shops.
+ *
+ * - `idle` — he does not. The control arm.
+ * - `listed` — the market as it was: whatever other clubs have given up on.
+ * - `anyone` — the market as it is: he may bid for a player his club picked, at
+ *   `askingPrice × reluctancePremium`. **This arm is the calibration instrument
+ *   for `RELUCTANCE_SLOPE`.** Without it nothing in the suite could see a human
+ *   running away with the league, because `bestSigning` only ever looked at
+ *   `surplus` — the very set the premium is defined to leave alone.
+ */
+type Shopping = 'idle' | 'listed' | 'anyone'
+
 /** The biggest improvement to the XI this club can currently pay for. */
-function bestSigning(state: GameState): Option | null {
+function bestSigning(state: GameState, mode: Shopping): Option | null {
   const me = state.managedClubId
   const squad = state.squads[me] ?? []
   if (squad.length >= MAX_SQUAD) return null
@@ -80,8 +100,13 @@ function bestSigning(state: GameState): Option | null {
 
   for (const club of state.clubs) {
     if (club.id === me) continue
-    for (const player of surplus(state.squads[club.id] ?? [])) {
-      const fee = askingPrice(player, date)
+    const theirs = state.squads[club.id] ?? []
+    const reachable =
+      mode === 'anyone' ? theirs.filter((p) => aiSaleRefusal(theirs, p) === null) : surplus(theirs)
+    for (const player of reachable) {
+      // What they would actually take, which for a `surplus` player is exactly
+      // his asking price — so the `listed` arm is unchanged by construction.
+      const fee = Math.round(askingPrice(player, date) * reluctancePremium(theirs, player))
       if (fee > budget) continue
       options.push({ player, from: club.id, fee, need: needFor(squad, player) })
     }
@@ -98,9 +123,9 @@ function bestSigning(state: GameState): Option | null {
  * A summer's work. `shop: false` does everything except the business, so both
  * arms consume identical rng.
  */
-function transferWindow(state: GameState, rng: Rng, shop: boolean): GameState {
+function transferWindow(state: GameState, rng: Rng, shop: Shopping): GameState {
   for (let round = 0; round < ROUNDS; round++) {
-    const target = shop ? bestSigning(state) : null
+    const target = shop === 'idle' ? null : bestSigning(state, shop)
 
     if (target !== null && target.from !== null) {
       state = reduce(
@@ -155,7 +180,7 @@ interface CareerResult {
   readonly states: GameState[]
 }
 
-function career(seed: number, shop: boolean): CareerResult {
+function career(seed: number, shop: Shopping): CareerResult {
   const rng = createRng(seed)
   let state = newSeason(TEST_CLUBS, 2026, {
     names: TEST_NAMES,
@@ -191,10 +216,12 @@ const mean = (values: readonly number[]) => values.reduce((a, b) => a + b, 0) / 
 
 const shopping: CareerResult[] = []
 const standingStill: CareerResult[] = []
+const shoppingAnyone: CareerResult[] = []
 for (let run = 0; run < RUNS; run++) {
   const seed = 1000 + run * 7919
-  shopping.push(career(seed, true))
-  standingStill.push(career(seed, false))
+  shopping.push(career(seed, 'listed'))
+  standingStill.push(career(seed, 'idle'))
+  shoppingAnyone.push(career(seed, 'anyone'))
 }
 
 const shopPoints = mean(shopping.flatMap((r) => r.points))
@@ -204,14 +231,64 @@ const idlePosition = mean(standingStill.flatMap((r) => r.positions))
 
 describe(`the exit criterion, over ${RUNS * SEASONS} seasons`, () => {
   it('pays off: a manager who buys finishes higher than one who does not', () => {
-    // Measured at roughly +3 points and half a place a season. The band is wide
-    // on purpose — this is the *claim*, not a calibration. If it collapses toward
-    // zero the market has stopped mattering, which is the regression worth
-    // catching; if it runs away past ten the human has found a free win.
+    // The band is wide on purpose — this is the *claim*, not a calibration. If it
+    // collapses toward zero the market has stopped mattering, which is the
+    // regression worth catching.
+    //
+    // **The ceiling moved from 10 to 15 when the league stopped leaking players,
+    // and the premise is what changed rather than the model.** Before `topUp`, the
+    // whole division decayed together: mean best-XI rating fell from 77.4 to 74.8
+    // over ten seasons, so a club that ignored the market was sinking in a league
+    // that was sinking with it. With the leak closed the league holds at 76.4 and
+    // abstaining costs a great deal more. Measured: **+8.5 before the goalkeeper
+    // fix in `topUp`, +11.6 after it.**
+    //
+    // **What this figure is NOT is a free win, and that was checked rather than
+    // assumed.** The control club decays by roughly four rating points and six
+    // places over ten seasons — and it does that on an *unmodified* build too, so
+    // it is a pre-existing property of the subject rather than something this
+    // change introduced. The number therefore includes that decay and overstates
+    // what shopping is worth in isolation. `staysOnItsFeet` below is the guard
+    // that keeps the trap visible: M4c once read +11.8 here purely because the
+    // control arm was quietly falling apart.
     const gained = shopPoints - idlePoints
     expect(gained).toBeGreaterThan(1.5)
-    expect(gained).toBeLessThan(10)
+    expect(gained).toBeLessThan(15)
     expect(shopPosition).toBeLessThan(idlePosition)
+  })
+
+  it('does not hand the league to a manager who can bid for anyone', () => {
+    // **The instrument for `RELUCTANCE_SLOPE`, and the reason it exists.** Until
+    // bidding became symmetric, nothing in the suite could see this: the shopping
+    // arm only ever looked at `surplus`, which is exactly the set the premium is
+    // defined to leave alone, so a premium of zero would have measured the same.
+    //
+    // Being able to buy anyone must be worth *something* over being able to buy
+    // only what is listed — otherwise the feature does nothing — and it must not
+    // be worth a title. If this runs past the ceiling the lever is the slope,
+    // never the band.
+    const anyone = mean(shoppingAnyone.flatMap((r) => r.points)) - idlePoints
+    const listed = shopPoints - idlePoints
+    // Measured over these 60 seasons: standing still is 41.75 points and 14.5th;
+    // the listed market is +8.48 and 11.3th; bidding for anyone is **+11.27 and
+    // 9.5th**. So the symmetry is worth about three points a season over what was
+    // there before, and it moves a mid-table club to the edge of Europe rather
+    // than to the title.
+    expect(anyone).toBeGreaterThan(listed)
+    expect(anyone).toBeLessThan(14)
+  })
+
+  it('is measured against a control that has not fallen over', () => {
+    // **The guard on the guard.** A gain is a difference, so it grows just as well
+    // by the control arm collapsing as by the shopping arm improving — and this
+    // project has already been caught by exactly that, at M4c, where the figure
+    // read +11.8 because squads were draining rather than because buying had got
+    // better. Nothing in the suite could see which of the two it was.
+    //
+    // A club that does nothing in the market is expected to drift down. Falling
+    // off a cliff is a different thing, and this is where it would show.
+    expect(idlePoints).toBeGreaterThan(30)
+    expect(idlePosition).toBeLessThan(18)
   })
 
   it('needed the budget rescale to be true at all', () => {
@@ -283,7 +360,7 @@ describe('a human career stays structurally sound', () => {
   })
 
   it('is deterministic — the same seed replays the same career', () => {
-    const repeat = career(1000, true)
+    const repeat = career(1000, 'listed')
     expect(repeat.points).toEqual(shopping[0]?.points)
   })
 })

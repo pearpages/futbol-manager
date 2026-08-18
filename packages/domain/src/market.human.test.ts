@@ -9,6 +9,7 @@ import {
   listedForSale,
   MAX_SQUAD,
   MIN_SQUAD,
+  reluctancePremium,
   runTransferWindow,
   saleBlock,
   surplus,
@@ -67,6 +68,46 @@ function aListedPlayer(): { player: Player; from: ClubId } {
   }
   /* c8 ignore next */
   throw new Error('nothing on the market')
+}
+
+/**
+ * Someone the club actually picked — the case that used to be unbuyable.
+ *
+ * The cheapest of them, so that a bid at the full premium is still inside the
+ * buyer's overdraft. The claim is about the rule, not about who can afford whom.
+ */
+function cheapestStarter(clubId: ClubId): Player {
+  const squad = state.squads[clubId] ?? []
+  const spare = new Set(surplus(squad).map((p) => p.id))
+  const date = state.season.currentDate
+  const starter = squad
+    .filter((p) => !spare.has(p.id))
+    .sort((a, b) => askingPrice(a, date) - askingPrice(b, date))[0]
+  /* c8 ignore next */
+  if (starter === undefined) throw new Error('every player is spare')
+  return starter
+}
+
+/**
+ * Cut a club down to exactly `MIN_SQUAD`, keeping its eleven.
+ *
+ * The lineup has to move with the squad: `advanceDay` runs `startersOf`, which
+ * throws on a team sheet naming somebody who has left, and that is a bug in the
+ * test rather than in the product.
+ */
+function shrinkToFloor(clubId: ClubId): void {
+  const squad = state.squads[clubId] ?? []
+  const picked = new Set(bestXI(squad, '4-4-2').starters)
+  const kept = [
+    ...squad.filter((p) => picked.has(p.id)),
+    ...squad.filter((p) => !picked.has(p.id)),
+  ].slice(0, MIN_SQUAD)
+
+  state = {
+    ...state,
+    squads: { ...state.squads, [clubId]: kept },
+    lineups: { ...state.lineups, [clubId]: bestXI(kept, '4-4-2') },
+  }
 }
 
 /**
@@ -204,16 +245,98 @@ describe('bidding', () => {
 })
 
 describe('what the reducer refuses — a screen can forget, this cannot', () => {
-  it('rejects a bid for a player nobody listed', () => {
-    const squad = state.squads[SELLER] ?? []
-    const listed = new Set(surplus(squad).map((p) => p.id))
-    const starter = squad.find((p) => !listed.has(p.id))
-    /* c8 ignore next */
-    if (starter === undefined) throw new Error('every player is listed')
+  it('takes a bid for a player nobody listed — every player has a price', () => {
+    // This used to throw `not for sale`. A club's best XI was unbuyable at any
+    // figure, while the AI stayed free to offer for anyone of yours who was
+    // merely out of your team sheet; that asymmetry was the whole complaint.
+    const starter = cheapestStarter(SELLER)
+    const fee = askingPrice(starter, state.season.currentDate)
 
-    expect(() => dispatch({ type: 'MakeBid', playerId: starter.id, fee: 999_999 })).toThrow(
-      /not for sale/,
+    expect(() => dispatch({ type: 'MakeBid', playerId: starter.id, fee })).not.toThrow()
+    expect(state.bids.some((bid) => bid.playerId === starter.id)).toBe(true)
+  })
+
+  it('refuses when the seller is already at the squad floor', () => {
+    // Built rather than hunted for: no club in the opening league sits on
+    // `MIN_SQUAD`, and a test that waits for one to appear proves nothing.
+    shrinkToFloor(SELLER)
+    const target = state.squads[SELLER]?.[0]
+    /* c8 ignore next */
+    if (target === undefined) throw new Error('no squad')
+
+    expect(() => dispatch({ type: 'MakeBid', playerId: target.id, fee: 999 })).toThrow(
+      /too small a squad/,
     )
+  })
+
+  it('refuses the last man his club can spare at a position', () => {
+    // Deliberately constructed: a squad above `MIN_SQUAD` but down to the depth
+    // floor at one position, so only the `canSpare` clause can be doing the work.
+    const squad = state.squads[SELLER] ?? []
+    const keepers = squad.filter((p) => p.position === 'GK')
+    const rest = squad.filter((p) => p.position !== 'GK')
+    const lone = keepers[0]
+    /* c8 ignore next */
+    if (lone === undefined) throw new Error('no keeper')
+    state = { ...state, squads: { ...state.squads, [SELLER]: [lone, ...rest] } }
+
+    expect(() => dispatch({ type: 'MakeBid', playerId: lone.id, fee: 999_999 })).toThrow(/last GK/)
+  })
+
+  it('turns down his plain asking price when the club picked him', () => {
+    // The same fee that buys a spare player outright. A starter's club wants a
+    // multiple of it, so this is a lowball rather than a near miss — `answerBid`
+    // counters only down to `COUNTER_FLOOR`.
+    const starter = cheapestStarter(SELLER)
+    const answer = bidAndWait(starter, askingPrice(starter, state.season.currentDate))
+
+    expect(answer.status).toBe('rejected')
+  })
+
+  it('sells him at the premium, and the premium is a large multiple', () => {
+    const starter = cheapestStarter(SELLER)
+    const asking = askingPrice(starter, state.season.currentDate)
+    const premium = reluctancePremium(state.squads[SELLER] ?? [], starter)
+    expect(premium).toBeGreaterThan(1.5)
+
+    const answer = bidAndWait(starter, Math.round(asking * premium))
+
+    expect(answer.status).toBe('accepted')
+  })
+
+  it('rejects a bid the seller can no longer honour by the time it is answered', () => {
+    // The squad changes between the bid and the answer, which `makeBid`'s own
+    // check cannot see — an answer lands two days later.
+    //
+    // **Getting this test to mean anything took two attempts, and both failures
+    // were the same shape: the bid was refused for a reason other than the guard.**
+    // Bidding a token fee is a lowball and is rejected either way. Bidding the full
+    // premium and then cutting the squad to `MIN_SQUAD` also fails, because a
+    // smaller squad has more to lose by selling and the price goes *up* past the
+    // fee. So the change has to be one that leaves the price alone: strip the
+    // seller's reserve goalkeepers. `canSpare` checks every position, so one keeper
+    // refuses the sale of anybody — while the best XI, and therefore the premium,
+    // is exactly what it was.
+    const starter = cheapestStarter(SELLER)
+    const squad = state.squads[SELLER] ?? []
+    const fee = Math.round(
+      askingPrice(starter, state.season.currentDate) * reluctancePremium(squad, starter),
+    )
+    dispatch({ type: 'MakeBid', playerId: starter.id, fee })
+
+    const picked = new Set(bestXI(squad, '4-4-2').starters)
+    const thin = squad.filter((p) => p.position !== 'GK' || picked.has(p.id))
+    expect(thin.length).toBeGreaterThan(MIN_SQUAD)
+    state = { ...state, squads: { ...state.squads, [SELLER]: thin } }
+
+    let answered: Extract<Event, { type: 'BidAnswered' }> | undefined
+    for (let day = 0; day < 10 && answered === undefined; day++) {
+      for (const event of dispatch({ type: 'AdvanceDay' })) {
+        if (event.type === 'BidAnswered' && event.playerId === starter.id) answered = event
+      }
+    }
+
+    expect(answered?.status).toBe('rejected')
   })
 
   it('rejects a bid you cannot afford', () => {

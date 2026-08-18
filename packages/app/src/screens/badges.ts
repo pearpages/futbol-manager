@@ -43,6 +43,11 @@ export const COLOUR_KEYS = [
   'red-black',
   'blue',
   'white-blue',
+  // Four the Spanish set has no use for and the clubs abroad do.
+  'black-white',
+  'claret-blue',
+  'purple',
+  'gold-black',
 ] as const
 
 export type BadgeColours = (typeof COLOUR_KEYS)[number]
@@ -89,6 +94,50 @@ export const BADGES: Readonly<Record<string, Badge>> = {
   malaga: { colours: 'blue-white', pattern: 'stripes', shape: 'square' },
   cadiz: { colours: 'yellow', pattern: 'solid', shape: 'pennant' },
   granada: { colours: 'red-white', pattern: 'hoops', shape: 'shield' },
+
+  // ── Abroad ────────────────────────────────────────────────────────────────
+  // Kit colours again, and the same rule: a palette is shared, and what makes a
+  // club distinguishable is the (colours, pattern, shape) triple. The test that
+  // matters asserts no two of the fifty-seven repeat one.
+  'en-islington': { colours: 'red-white', pattern: 'solid', shape: 'shield' },
+  'en-manchester': { colours: 'sky', pattern: 'solid', shape: 'shield' },
+  'en-fulham': { colours: 'blue', pattern: 'solid', shape: 'circle' },
+  'en-trafford': { colours: 'red', pattern: 'solid', shape: 'shield' },
+  'en-tottenham': { colours: 'white', pattern: 'solid', shape: 'square' },
+  'en-newcastle': { colours: 'black-white', pattern: 'stripes', shape: 'shield' },
+
+  'de-munchen': { colours: 'red', pattern: 'solid', shape: 'square' },
+  'de-dortmund': { colours: 'yellow', pattern: 'solid', shape: 'circle' },
+  'de-leipzig': { colours: 'red-white', pattern: 'solid', shape: 'circle' },
+  'de-leverkusen': { colours: 'red-black', pattern: 'solid', shape: 'shield' },
+  'de-frankfurt': { colours: 'black-white', pattern: 'solid', shape: 'square' },
+  'de-stuttgart': { colours: 'white-red', pattern: 'stripes', shape: 'circle' },
+
+  'fr-paris': { colours: 'blue', pattern: 'sash', shape: 'shield' },
+  'fr-monaco': { colours: 'red-white', pattern: 'halves', shape: 'lozenge' },
+  'fr-marseille': { colours: 'sky', pattern: 'solid', shape: 'square' },
+  'fr-lyon': { colours: 'white-red', pattern: 'solid', shape: 'pennant' },
+  'fr-lille': { colours: 'red-white', pattern: 'halves', shape: 'circle' },
+  'fr-nice': { colours: 'red-black', pattern: 'stripes', shape: 'pennant' },
+
+  'it-milano': { colours: 'blue', pattern: 'stripes', shape: 'pennant' },
+  'it-torino': { colours: 'black-white', pattern: 'stripes', shape: 'lozenge' },
+  'it-napoli': { colours: 'sky', pattern: 'solid', shape: 'pennant' },
+  'it-navigli': { colours: 'red-black', pattern: 'stripes', shape: 'shield' },
+  'it-roma': { colours: 'claret-blue', pattern: 'solid', shape: 'shield' },
+  'it-bergamo': { colours: 'blue', pattern: 'stripes', shape: 'square' },
+
+  'pt-lisboa': { colours: 'red', pattern: 'solid', shape: 'circle' },
+  'pt-porto': { colours: 'blue-white', pattern: 'stripes', shape: 'pennant' },
+
+  'nl-amsterdam': { colours: 'white-red', pattern: 'sash', shape: 'square' },
+  'nl-eindhoven': { colours: 'red-white', pattern: 'sash', shape: 'circle' },
+
+  'be-brugge': { colours: 'blue', pattern: 'hoops', shape: 'shield' },
+  'be-anderlecht': { colours: 'purple', pattern: 'solid', shape: 'shield' },
+
+  'tr-istanbul': { colours: 'gold-black', pattern: 'stripes', shape: 'circle' },
+  'tr-kadikoy': { colours: 'yellow', pattern: 'halves', shape: 'shield' },
 }
 
 /** Falls back rather than throwing: a missing badge should not blank a screen. */

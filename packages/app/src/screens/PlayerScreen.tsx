@@ -6,6 +6,7 @@ import {
   DEFENCE_WEIGHTS,
   expectedGoals,
   type Formation,
+  isTransferWindowOpen,
   overall,
   type Player,
   playerAttack,
@@ -19,6 +20,7 @@ import { useState } from 'react'
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
 import { AttributeRadar } from './AttributeRadar.tsx'
+import { BidPanel } from './BidPanel.tsx'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { RenewPanel } from './RenewPanel.tsx'
@@ -156,6 +158,7 @@ export function PlayerScreen() {
   const compare = useGame((s) => s.compare)
   const { t, percent, money } = useT()
   const [renewing, setRenewing] = useState(false)
+  const [bidding, setBidding] = useState(false)
 
   const squad = game.squads[game.managedClubId] ?? []
   // The ficha reads anyone in the game, not only your own players — the market
@@ -166,10 +169,28 @@ export function PlayerScreen() {
   // this card, so it is reached far more often for somebody else's player than it
   // used to be, and a card that will not say who he plays for is a card you have
   // to leave to find out.
-  const owner = game.clubs.find((c) => (game.squads[c.id] ?? []).some((p) => p.id === playerId))
+  // Abroad counts as an owner. Without this a foreign player's card claims he is
+  // a free agent and shows no badge — and the bid action, which is gated on there
+  // being an owner, never appears for the players the abroad layer exists for.
+  const domesticOwner = game.clubs.find((c) =>
+    (game.squads[c.id] ?? []).some((p) => p.id === playerId),
+  )
+  const foreignOwner =
+    domesticOwner !== undefined
+      ? undefined
+      : game.foreign.clubs.find((c) =>
+          (game.foreign.squads[c.id] ?? []).some((p) => p.id === playerId),
+        )
+  const owner = domesticOwner ?? foreignOwner
+  const ownerSquad =
+    domesticOwner !== undefined
+      ? (game.squads[domesticOwner.id] ?? [])
+      : foreignOwner !== undefined
+        ? (game.foreign.squads[foreignOwner.id] ?? [])
+        : []
   const player =
     squad.find((p) => p.id === playerId) ??
-    (owner === undefined ? undefined : game.squads[owner.id]?.find((p) => p.id === playerId)) ??
+    ownerSquad.find((p) => p.id === playerId) ??
     game.freeAgents.find((p) => p.id === playerId)
 
   if (player === undefined) {
@@ -373,9 +394,11 @@ export function PlayerScreen() {
         <p className="ficha__status">{t(isStarting ? 'player.inXI' : 'player.onBench')}</p>
       )}
 
-      {/* The card's first action, and gated on his being yours for the same reason
-          the status line is: renewing somebody else's player is not a thing you
-          can do, and the reducer would refuse it anyway. */}
+      {/* Two actions, and each is gated on the half of the world it belongs to.
+          Renewing somebody else's player is not a thing you can do; bidding for
+          your own is the reducer's `error.player.yours`. A free agent has no
+          owner and costs no fee — he goes through `OfferContract` on the market
+          screen instead, which is why the bid button needs `owner`. */}
       {isYours && (
         <div className="screen-actions">
           <button type="button" className="button" onClick={() => setRenewing(true)}>
@@ -384,8 +407,28 @@ export function PlayerScreen() {
         </div>
       )}
 
+      {!isYours && owner !== undefined && (
+        <div className="screen-actions">
+          {/* Disabled rather than hidden while the window is shut: the button
+              disappearing would read as "you cannot buy this man" rather than
+              "not today". */}
+          <button
+            type="button"
+            className="button"
+            disabled={!isTransferWindowOpen(game.season.currentDate)}
+            onClick={() => setBidding(true)}
+          >
+            {t('player.bid')}
+          </button>
+        </div>
+      )}
+
       {isYours && renewing && (
         <RenewPanel key={player.id} player={player} onClose={() => setRenewing(false)} />
+      )}
+
+      {!isYours && owner !== undefined && bidding && (
+        <BidPanel key={player.id} player={player} owner={owner} onClose={() => setBidding(false)} />
       )}
     </section>
   )

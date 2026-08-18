@@ -1503,3 +1503,228 @@ Both directions reverse, with margins of 14 and 8 points rather than a 1.5-point
 **The `ShellFoot.test.tsx` quick-save race reproduced twice, and now has a recipe.** It needs _two full suites running at once_ — under that load it failed both times and passed on every isolated run. Recorded at 2026-08-17 as "it will return"; it does, and the condition is CPU contention rather than anything in the product. The final isolated run is 56 files, 1135 tests, 82s.
 
 **Known and left:** the tempo ±1 invariant means formation alone will never reverse the answer for a weak club, and `docs/attribute-model.md` now says so rather than implying otherwise. If that is ever wanted, the lever is `MODEL.TEMPO` or the bank-concentration cost in the shares — both of which move M2's calibration, and neither of which is a formation problem.
+
+### 2026-08-18 — every player has a price
+
+**Prompted by four complaints in one line: "there are always the same players · the market is getting saturated with free agents · put international teams in so there is a bigger pool · other teams offer me money for players I am not selling, but I can't do the same."** Four different causes, so four phases. **This entry is phase A**, the fourth complaint. 1163 tests, `pnpm season` **byte-identical to `6e50eca` on seeds 1, 7 and 42**, `SCHEMA_VERSION` still 9, no migration.
+
+**The gate was one `if`.** `makeBid` restricted a human bid to `surplus(sellerSquad)` — the set of players a club has already given up on — so **anyone in a club's best XI was unbuyable at any figure**, while `bestOfferFor` was free to offer for anyone of yours who was merely out of your team sheet. `surplus` is gone from `reduce.ts` entirely; `aiSaleRefusal` replaces it with the only two refusals that protect the seller's squad — he is at `MIN_SQUAD`, or losing him leaves a bank too thin for some formation. **`canSpare` and not a bare "can still field eleven"**, because the career harness asserts every squad can field a legal XI in _all eight_ shapes and that is the function keeping it green.
+
+**The premium needed two terms, and finding out why is the part worth keeping.** The obvious model is `loseCost` — `needFor` asked from the seller's side, which is literally the same scoring function run against the squad that would remain. It is **exactly zero for every member of `surplus`** by construction, which is the whole safety property. But measured across the shipped league it also says **Madrid would not miss its 90-rated forward: `loseCost` 0.00**, because there is another 90 on the bench and the XI genuinely does not get worse. On that model alone he priced at his bare **€6.4M** and a club with **€5.3M** could buy him. A club does not sell the man it picked just because it owns his understudy. So the second term is simply _they picked him_.
+
+```
+premium = 1 + RELUCTANCE_SLOPE × loseCost + (picked ? IN_XI_PREMIUM : 0)
+```
+
+`0.6` and `1.5`, set from the measured spread (`loseCost` medians 0.35–0.65 for outfielders, max 4.2 — a goalkeeper, because no club carries depth there). Result: Vinícius €16.1M, Mbappé €43.3M, Málaga's best forward €15.1M, **Barcelona's keeper €61.2M** — the dearest man in the game, which is right for the position carrying 35% of a defence alone. `RELUCTANCE_CAP = 6` never binds; the highest measured is ~5.0. It exists for M6, where an injury crisis can push `loseCost` far past anything seen today.
+
+**Inert by construction, which is why nothing recalibrated.** `0 of 272` surplus players across the twenty clubs have a premium other than exactly 1, so no AI path can reach one — the same property M3c's `tempo` has at balanced tactics and M4b's bid subsystem has when nobody bids. `answerBid` gained `premium = 1` as a **defaulted fourth parameter**, so every existing call site and every existing assertion passed unchanged; it is a parameter rather than a squad because `market.ts` imports `bids.ts` and taking a squad would close the cycle.
+
+**The premium is computed at answer time, never at bid time.** An answer lands `ANSWER_DAYS` later and a squad moves in between — the same re-check discipline `respondToOffer` and `runTransferWindow`'s buy loop already use.
+
+**The Clubs tab was not optional, and that is the design finding.** A market listing _is_ a club's `surplus`, so every player the screen could show had a premium of exactly 1 — the new rule had nobody to point it at. `MarketScreen` now has a tab strip (`ResultsScreen`'s pattern): **En venda** is what a club will sell, **Clubs** browses any rival squad with a `Demanen` column showing `askingPrice × reluctancePremium`. Listings stay `surplus`: putting ~500 rival players into `listingsFor` would stop the list meaning "for sale" at all, which is the 60-row-cap defect in reverse. The name in each row is a `PlayerLink`, and the card carries the bid dialog — `BidPanel`, `RenewPanel`'s twin, on `Modal` for the reason that file records.
+
+**Two defects only the browser found, and 1162 green tests could not.**
+
+- **Opening a player's card lost which club you were reading.** `tab` and `browsing` were `useState` in a screen that unmounts the moment a `PlayerLink` fires — so scouting Málaga, clicking a name to see whether he was worth it and pressing Volver landed you on a 254-row For sale table with the club forgotten. The browser was very nearly unusable. Both moved to the store as session state, beside `screen`; **`inspect()` must not reset them**, which a blanket edit got wrong first time and a test now pins.
+- **A claim in my own comment was false.** The `ClubBrowser` docstring said wage and contract are withheld as private facts — while the ficha one click away shows both. It is a _scanning_ view against a detail view, which is how every other table in the app is split, and you cannot judge personal terms without knowing what a man already earns. The comment and the test name now say that instead.
+
+**A fifteen-mutation sweep, one at a time so each failure was attributable — and it found three tests that proved nothing.** All three are the same shape: the assertion was satisfied for a reason other than the guard.
+
+- **"Rejects a bid the seller can no longer honour" bid a token fee**, which is a lowball and rejected either way. Bidding the full premium and cutting the squad to `MIN_SQUAD` _also_ failed, because a smaller squad has more to lose and the price goes **up** past the fee. The version that bites strips the seller's reserve goalkeepers: `canSpare` checks every position, so one keeper refuses the sale of anybody, while the best XI — and therefore the premium — is exactly what it was.
+- **The `loseCost` clamp had no live guard.** The negative it exists for (−0.01, from `bestXI` picking a different-but-equal side) happens on the **shipped rosters and never once on the generated test league**, so the domain-side test passed while testing nothing. It moved to `packages/data/src/rosters.test.ts` with a guard-on-the-guard asserting the raw score really does go negative there. Same gap the roadmap already records under "the harness measures generated squads".
+- **The ficha's prefill test was vacuous.** Every route onto a rival's card from that file goes through a listing, and a listing has premium 1 — so "adjusted price" and "bare price" were the same number.
+
+One mutation was itself malformed: patching `reduce.ts` threw a `ReferenceError` because this change removes its `surplus` import, so it failed everything for the wrong reason. Redone inside `market.ts`. **A mutation that fails too much is as uninformative as one that fails nothing.**
+
+**The harness gained a third arm, and it is the only thing that can see this feature at all.** `market.human.harness.test.ts` measured a manager who shops `surplus` — precisely the set the premium leaves alone — so it would have read the same with the premium set to zero. The new arm bids for anyone at `askingPrice × reluctancePremium`. Measured over 60 seasons at a mid-table club: **standing still 41.75 points and 14.5th · the listed market +6.57 and 11.7th · bidding for anyone +10.87 and 9.5th.** So symmetry is worth about four points a season on top of what was there, and moves you to the edge of Europe rather than to the title. Band set at `< 14` from that figure. **It is the tuning instrument for `RELUCTANCE_SLOPE`** — dropping either premium term pushes it past the ceiling, which two mutations confirmed.
+
+**Seen in a browser, over CDP** — `pnpm build && vite preview` plus headless Chrome and a throwaway driver on Node's native `WebSocket`; the extension was not attempted. Drove the whole loop at A Coruña: browse Málaga → open a man they picked → the dialog says _"Málaga picked him. They will want far more for him than he is worth on paper"_ → bid €4.9M against a bare price of ~€1.7M → two days later the rail reads **"Fee agreed — settle terms"** → agree terms → **he is in the squad**. Clean at 1440×900, 1280×720 and 900×650 in all three languages: the table fits, no page scrolls sideways, and the 544px dialog sits wholly inside the viewport.
+
+**Driving notes worth keeping.** The hub's day control is a **four-state machine** and only one state is `.hub__play`; a loop pressing a fixed label silently advances nothing. Chrome **reuses `--user-data-dir`**, so a `--window-size` flag on a second launch is ignored — use a per-run profile. And `about:blank` has no origin, so `localStorage` throws with a `SecurityError` that reads like a permissions bug and is really a navigation that has not landed — wait for the app root before scripting.
+
+**Dictionaries:** `error.player.notForSale` deleted in all three (**grepped by hand** — parity is not coverage, and five orphans have shipped this way), replaced by `error.player.squadFloor` and `error.player.lastAtPosition`. The position is in the English sentence but deliberately **not a parameter**: it would reach a Catalan dictionary as the bare code `GK`. New: `player.bid`, `bid.title`, `bid.reluctant`, `bid.willing`, `market.tab.forSale`, `market.tab.clubs`, `market.browseClub`, `market.squadSize`, `market.column.wants`.
+
+**`docs/market-model.md` said "Starters are never for sale, at any price, under either rule"**, which this makes false. Rewritten in the same commit with the two-term model, the measured prices and the harness figures.
+
+**Pending: phase B** (the free-agent pool stops saturating — it has no exit but retirement, which is 0% below 33, and the only band on it is a _lower_ one), **phase C** (summer deal volume; `VALUE_FOR_MONEY` is why extra money never becomes transfers), **phase D** (32 foreign clubs as a market source — schema v10, and `pnpm fixture` must capture **v9 first**, which does not exist on disk).
+
+### 2026-08-18 (b) — the Chrome extension was never broken
+
+**Prompted by "you've complained many times that you couldn't connect to the browser, but we
+installed a plugin previously — can you check what's going on?"** The log records **~21 failed
+connections** across three weeks, always as `list_connected_browsers` → `[]`, and a dozen entries
+end "the appearance is unverified". Every one of them treated that as a broken install. It was not.
+No app code changed here; the only source edit is this entry.
+
+**The install is and was complete.** Extension `Claude` v1.0.85 (`fcoeoabgfenejglbffodgkkbkcdhcgfn`),
+`disable_reasons: []`, `<all_urls>` granted explicit _and_ scriptable, `debugger` /
+`nativeMessaging` / `scripting` / `sidePanel` all held, and **both** native messaging hosts
+registered — Claude Desktop's and Claude Code's.
+
+**What `[]` actually means: the extension's MV3 service worker is asleep.** `connectedAt` read
+**11:02 today** while the GUI Chrome process had been alive since **Fri Aug 14** — so the link is
+re-established on interaction rather than held for the browser's lifetime. That is exactly the two
+entries which recorded a browser appearing and then `[]` **one call later** (hub-figures, and the
+radar-clipping session). Those were not flakes.
+
+**So the precondition, which no session knew: Chrome frontmost with the Claude side panel open at
+the moment the tool is called.** Firing `list_connected_browsers` cold — which is what every failed
+session did — will often find nothing. `[]` is "wake it up", not "it is broken".
+
+**`localhost` had never been granted, and that is the half specific to this project.** Searching
+~8 MB of the extension's persisted storage for `localhost`, `127.0.0.1`, `:5173` and `:4173`
+returned **zero hits**. The app only ever runs on those ports, so even the two sessions where the
+connection _was_ live would have been refused at the site gate. Granted now; the extension drove
+`http://localhost:5173` on the first attempt.
+
+**A stale pin that had not bitten yet.** `~/.claude/chrome/chrome-native-host` execed
+`versions/2.1.233` while the CLI had moved to 2.1.234; 2.1.233 was still on disk, so it worked and
+would have broken silently once old versions are pruned. Repointed at **`~/.local/bin/claude`**,
+the symlink the updater re-points on every upgrade, so it cannot go stale again. Smoke-tested: the
+host initialises and opens its socket bridge under
+`/tmp/claude-mcp-browser-bridge-pearpages/<pid>.sock`.
+
+**Cleared at the same time:** 5 orphaned `--remote-debugging-port` Chromes and 3 stray vite servers
+(5173, 5174, and a 4173 preview — one two days old). The 2026-08-16 (b) entry records seven strays
+costing a session; the trap was armed again.
+
+---
+
+**Then the app was driven for real, and the target was the oldest unverified claim in the log —
+the rescaled attribute bars and the ficha radar (2026-08-15 (e), "the thing this change most needs
+eyes on").** Málaga, then two fichas.
+
+- **The radar clipping fix holds.** All eight labels — VEL DEF PAS REG ENT AER POR RES — render
+  whole on every ficha looked at. The 2026-08-15 (i) widened viewBox works in a real browser.
+- **`is-weak` fires.** Chopa's Porteria **51** renders red and unmistakable.
+- **`is-strong` was never observed.** The best keeper in the league tops out at 80 and Málaga's
+  best outfielder at 82, both under the 85 cut. It presumably fires on a Madrid star; not confirmed.
+- **The bars barely discriminate within a player, which is the real finding.** Áron Yaakobishvile,
+  the league's best keeper at 78, has eight attributes spanning **71–80** — the bars read as nearly
+  identical lengths and the radar is close to a regular octagon. Chopa's shape was legible _only_
+  because his off-position Porteria of 51 dragged one axis down. **The rebasing did what it could;
+  what limits the chart now is that generation gives a player very little internal spread.** That is
+  a generation question, not a presentation one, and it is the thing to look at before touching
+  `BAR_FLOOR` again.
+
+**A contradiction inside `PlayerScreen.tsx`, five lines apart.** The comment says in bold _"Bars are
+plotted from 40, not from zero"_ and _"Forty is under the lowest real attribute with room to
+spare, so nothing clips"_ — and the constant is **`BAR_FLOOR = 45`**. By the comment's own numbers
+("attributes in roughly 45–99") the constant clips exactly at the floor: an attribute of 45 draws an
+empty bar. **The comment is the intent and the constant is the outlier**; fixing it means either
+`BAR_FLOOR = 40` or a corrected comment, and it wants the league's true minimum attribute measured
+first. The band cuts are **`>= 85` / `<= 64`** in code — the 2026-08-15 (e) entry's "88 / 62" is
+wrong, and so is the "floor of 40" the radar-clipping entry attributes to the code.
+
+**Extension limits worth knowing before the next session leans on it.**
+
+- **A native `<select>` cannot be driven.** Click-then-arrow-keys does not change the value; the
+  macOS popup does not receive synthesised keys. This app has three — the ficha's compare picker,
+  the lineup bench, the language cog — so **the gold-vs-blue comparison overlay is still
+  unverified**. Use CDP for anything behind a select.
+- **`javascript_tool` reloads the page.** With no router that returns the app to the hub, or to the
+  club picker if the career was never saved. Drive by clicking and screenshotting instead.
+- **Batched clicks race the re-render.** Two clicks in one `browser_batch` landed on the wrong
+  screen; put a `wait` between a navigation click and the next one.
+- Vite re-optimising deps triggers a full reload mid-session, which loses an unsaved career.
+
+**The standing guidance, replacing three weeks of it:** reach for the extension first — it is the
+only thing that shows the real fonts, colours and layout — and keep headless Chrome over CDP as the
+fallback for scripted measurement and for anything behind a `<select>`. Stop recording `[]` as a
+failed install.
+
+### 2026-08-18 (b) — the league was leaking players
+
+**Phase B of the market work, and the complaint it started from turned out to be the smaller half.** "The market is getting saturated with free agents" is real and measurable — the pool peaks at **51 in season four, 27% of everything on the market**, which is exactly where a new career is looking. But measuring it turned up something worse underneath. 1172 tests, `pnpm season` unaffected (it never rolls a season over), `SCHEMA_VERSION` still 9.
+
+**The league loses players and nothing in the suite could see it.** Measured over twenty seasons: **460 players at kickoff, 380 by season twenty, still falling.** Retirement is replaced one-for-one at the same club and a transfer is neutral across the league — but **a release is not**. A player nobody re-signs ages in the pool and retires _out of the game_, with nothing generated in his place; clubs also sell down to `MIN_SQUAD` in the window and could buy back only one free agent a summer, so once the pool thinned there was no route up at all.
+
+What that does to the thing the manager actually looks at: squads settle at **18.9** against a release floor of 21, players available to buy anywhere in the league fall **234 → 60**, and the best of them **80 → 68**. **That is what "there are always the same players" actually was** — not a churn problem, a supply problem.
+
+**`topUp` closes it exactly where it opens.** A club below `TOPUP_FLOOR` (20) signs youth at its thinnest position at the rollover. It is also the direct answer to the complaint: every summer now brings names from `PLAYER_NAMES` rather than the shipped rosters, which is the drift [ADR 0010](docs/adr/0010-real-squad-shapes.md) says a long career is supposed to have. With it: population steady at ~430, spares **131–163** with a best of **75–84**, squads at 20.6 with the shipped 19-to-29 spread intact.
+
+**The floor was swept, not picked.** At 21 — the release target — the leak closes and every squad in the division ends up the same size, throwing away the lumpiness ADR 0010 went to trouble to import, and mean overall drifts up. At 19 the market is thinner (98–142, best 72–81). Twenty is the one where clubs that start large stay large and only the ones that have sold down are refilled.
+
+**The two defects were masking each other, which is why neither had been found.** The pool only grows once the leak is closed — measured at 50, 57, 76, 97 and still climbing with `topUp` and no patience rule — and before `topUp` it drained because the whole league was shrinking. So `FREE_AGENT_PATIENCE_YEARS = 2` is a companion to `topUp`, not an alternative to it. **It is not the deletion that failed at M4b**, which cleared every unsigned agent each summer and put inflow and outflow in the same step; a grace period holds several whole cohorts and `topUp` guarantees the inflow it needs. Pool holds at **20–31, never empty**. Derived from `contract.until`, which is already in the past and recedes a year each rollover — so no new state and no schema change.
+
+**Ordering inside the rollover is load-bearing and invisible.** The retirement roll draws one `rng.next()` per pooled player, so filtering _first_ changes how many draws that very rollover makes and shifts the stream for a reason unrelated to the feature. The patience filter runs after. The test says so as a claim about **consumption** rather than about who survives: adding players the rule is about to discard must still cost draws.
+
+**My first thinness heuristic never signed a goalkeeper.** It measured against `DEEPEST_BANK`, which is **1** at GK — so a squad down to its last keeper read as fully stocked, which is precisely the squad most in need of one. The right floor is the one `canSpare` already used; it is now derived once as **`COVER_AT_POSITION`** in `market.ts` and read by both, which removed a duplicated expression as well. Caught by a mutation, not by review.
+
+**A five-mutation sweep, and the first pass found that all three of my new bands were too loose to bite.** The 460→380 figure is a _twenty_-season measurement and `market.harness` runs ten; at ten seasons the population reads **0.924 of its opening figure with the fix and without it**, because unsigned players sit in the pool and are counted there while the clubs empty out. So the band is on **what is for sale** instead — 150 at the worst with `topUp`, 97 without. Same for the pool: the peaks are indistinguishable at ten seasons (51 against 54) and **the last three seasons are what separate them**, 13–15 against 50–52. Bands set from the A/B rather than from intuition; all five mutations now fail their own test and nothing else.
+
+**Two existing bands moved, and they were handled differently on purpose.**
+
+- **"Ages the league as the years pass" asserted the club's _mean_ age rising, and that proxy has stopped being valid.** It held while the league was quietly shrinking: releases outnumbered arrivals, so the survivors got older together. With the leak closed the mean is flat — 26.6 in season one, 26.1 in season ten — which is what a real division does, and **a mean that climbs every year is the failure M4a's retirement rule was written against.** It now states the claim the proxy stood for: a man still in the league is exactly as many years older as seasons have passed. The range is asserted separately at 20–33.
+- **The M4b exit ceiling went 10 → 15, and the M4c trap was checked rather than assumed.** The control arm does decay — four rating points and six places over ten seasons — but **it decays on an unmodified build too**, so it is a pre-existing property of the subject club rather than something this introduced. What changed is that the league no longer decays alongside it: mean best-XI holds at **76.4** where it used to fall to **74.8**, so abstaining from a market that now works costs a great deal more. Measured +8.5 before the goalkeeper fix, **+11.6** after.
+
+**The suite gained the guard it lacked when M4c read +11.8 for the wrong reason:** a band on the _control_ arm itself. A gain is a difference and grows just as well by the control collapsing as by the treatment improving, and nothing could tell the two apart.
+
+**Seen in a browser, and the check is honestly thin** — this phase has no UI. Two seasons at Manzanares and at Málaga read 260 → 226 listings and a best of 90 → 87. **Both careers then ended: the board sacked the manager after two consecutive missed targets**, which is M5b working rather than a defect, and it caps what a scripted run can show. The ten- and twenty-season evidence is headless and is the real net.
+
+**Driving note:** a loop that presses the hub's day control walks whole seasons, but when the career ends the control is gone and the app is on the club picker — a driver that does not check for that reports every later measurement as `undefined` and looks exactly like a crash. It was not one; the console was clean throughout.
+
+**Pending: phase C** (summer deal volume — nothing in the suite asserts it, and `VALUE_FOR_MONEY` is why extra money never becomes transfers), **phase D** (32 foreign clubs; schema v10, and `pnpm fixture` must capture **v9 first** — it does not exist on disk and becomes unobtainable the moment the migration lands).
+
+### 2026-08-18 (c) — the league starts doing business
+
+**Phase C: how much the market actually trades, which nothing has ever asserted.** 1177 tests, `pnpm season` unaffected — `runTransferWindow` is not on its path.
+
+**The instrument came first, and it is most of the value here.** This project has been counting "clubs selling in a window" **by hand** at every change that could move it — 6, then 8, then 9, then 7 — and `market.human.test.ts` has re-picked its subject club four times as a consequence. Every other property of the market has a band; this one had none, which is how the division came to do **9.2 transfers a season between twenty clubs** without anybody noticing. A club bought somebody roughly every other year, so a manager who looked at the market twice saw the same names. `market.volume.harness.test.ts` is new, at module scope in its own worker.
+
+**`VALUE_FOR_MONEY` is why money has never mattered, and it is now the lever.** It caps what a club pays per point of improvement. The 2026-08-17 session measured the AI league across TV pools of ×1.8 and ×2, equal shares of 0.3 and 0.5, sponsorship ×1.5 to ×2.5 and both ticket prices, and got **the same league to the decimal every time** — top five 3.74th, bottom five 16.20th, spread 34.5. M4b recorded that as reassurance. Against "a small club should be able to climb" it is the obstacle: income never becomes a transfer. `valueFloorFor(budget)` divides the floor down above `WEALTH_PIVOT`, so a rich club accepts worse value per point — which is what rich clubs do. Second lever: a club above the pivot may make **two** paid signings rather than one.
+
+**Result: 9.2 → 18.0 transfers a season.** Sellers 5.7 → 10.2 of twenty, and a season-one squad is down to 21% survival after twelve years.
+
+**The pivot was swept rather than chosen.** 3,000 / 5,000 / 8,000 / 12,000 gave 18.0 / 18.0 / 17.1 / 14.2. **Three thousand ties on volume and is the wrong answer** — every club in the division except the poorest clears it, so the split stops meaning anything and the whole thing degenerates into "everybody signs twice". Five thousand puts about half the league on each side, which is the property being bought.
+
+**The sweep caught the thing that mattered: both new levers passed their own mutations.** The band read `mean(deals) > 10` and each lever _alone_ still clears it — 11.2 with a flat value floor, 12.7 with one signing apiece — so only removing both would have failed. Fixed by measuring each variant and putting the floors where they separate: **15 deals and 9 sellers**, each of which fails all three degraded variants. Recorded in the file as a table.
+
+**And a note about band width that is a real departure.** Elsewhere in this project a band is a deliberately wide net around a statistical claim. This file's are tight, because it is the _calibration instrument_ for volume rather than a claim about it, and a net loose enough to feel comfortable is a net that cannot see either lever being removed. The run is a single fixed seed, so there is no run-to-run noise to leave room for; anything that moves these is a change to the model.
+
+**One band from phase B had to be restated, not widened.** The pool ceiling of 30 failed at 35 — but the pool is **flat at 24–38, not climbing**. The ceiling was measuring trade volume as much as the patience rule: raising the signing rate moved the observed maximum from 15 to 38 with the rule untouched. Growth is a trend, so it is stated as one now — the pool peaks early as the first cohorts of releases arrive and then settles **below** that peak; without the rule it climbs past it and keeps going.
+
+**Pending: phase D** — 32 foreign clubs as a market source. Schema v10, and **`pnpm fixture` must capture v9 first**: it does not exist on disk and becomes unobtainable the moment the migration lands. Worth restating before starting it: phases B and C have already answered most of "there are always the same players" — spares available to buy went from collapsing to 60 to holding around 120–160, the best of them from 68 back to ~80, and the league now does twice the business. **Phase D is enrichment rather than the fix**, and it is the only phase that costs a schema bump, ~700 roster rows and a new ADR.
+
+### 2026-08-18 (d) — a market abroad
+
+**Phase D, the last of the four.** Thirty-two clubs outside the division — the six biggest of England, Germany, France and Italy, the two biggest of Portugal, the Netherlands, Belgium and Türkiye — as **a source of players and nothing else**. 1202 tests, `pnpm season` **byte-identical to `6e50eca` on seeds 1, 7 and 42**, `SCHEMA_VERSION` **9 → 10**. [ADR 0011](docs/adr/0011-a-market-abroad.md).
+
+**`pnpm fixture` captured v9 first.** It did not exist on disk, and the script stamps the version from the live chain, so it becomes unobtainable the moment `v9ToV10` exists. **Fifth time this trap has been survived.**
+
+**They are not in `state.clubs`, and the case is four loops.** `advanceDay` builds a `TeamRating` for every entry and **throws** for a club with no lineup — and there is no `ErrorBoundary` anywhere in the app, so that is a blank screen. `settleFinances` would pay TV money and sponsorship to a club that plays no fixtures. `settleSeason` awards prize money keyed on a league position. `newSeason` derives the fixture list from the array it is handed. A separate `GameState.foreign` means **none of those four changes at all**, and an empty layer is exactly the behaviour that shipped before — which is what makes the migration one line and lets every existing harness go on measuring a division with no foreign market in it.
+
+**Nothing in the module takes an `Rng`, and that is the point.** Every squad comes off `createRng(hashSeed(club.id, year))`. Seven hundred players are built without spending a single draw from the main stream, so no calibrated band moved and `pnpm season` never budged. `hashSeed` is new in `rng.ts`, generalising what `marketSeed` has done on the market screen since M4c.
+
+**The sharp risk was money crossing the border, and the fix was one number.** A foreign club offers only **`FOREIGN_LISTINGS` (1)** fringe player per window rather than its whole `surplus`. Swept over twelve seasons — players out of the domestic league against players in, and the net fee:
+
+| cap | in  | out | net   |
+| --- | --- | --- | ----- |
+| 1   | 22  | 37  | −15k  |
+| 2   | 24  | 93  | −128k |
+| 3   | 25  | 147 | −206k |
+| 5   | 19  | 239 | −287k |
+
+At one the flow is genuinely two-way and the net is **under 4% of the league's money**. Above it Spain becomes a net importer of players and a net exporter of cash, because these are the strongest clubs in Europe and their `needFor` on a mid-table Spanish player is zero — **the asymmetry is structural and no tuning elsewhere removes it.** The manager is not held to the cap: the club browser reaches anyone abroad.
+
+**Four defects found by measuring, and every one of them was mine.**
+
+- **The churn sorted the wrong way.** A `DayNumber` counts up, so the oldest player has the _smallest_ `birthDate`; written descending it released the youngest. The foreign league aged **26.6 → 35.0** over twelve seasons while the same veterans sat there and 71% of the opening squads were still in place.
+- **Replacements were teenagers, and abroad paid for every player Spain bought.** With youth intake the mean age fell to **20.5 and kept going at every churn rate tried** — the domestic league took the established players and left the kids. Foreign clubs recruit from a world this game does not model, so `refreshForeignLeague` now draws replacements from a generated squad _at the club's own standard_. Age holds at 26.6 → 27.2.
+- **`thinnest` repeated the `DEEPEST_BANK` mistake** the rollover's `topUp` had made hours earlier: it is 1 at goalkeeper, so a squad down to its last keeper reads as fully stocked. Foreign squads could not field 3-5-2. Both now read `COVER_AT_POSITION`.
+- **A comment promised a budget reset that did not exist.** Foreign balances compounded. The seeded figures come from `@fm/data` through the command, like the name pools.
+
+**And a fifth that was not mine: two players in the shipped rosters share a name.** `vitoria-p08` and `malaga-p12` were both "Moussa Diare" — ADR 0010's surnames were altered one at a time and nothing checked that two had not landed on each other. Invisible until both were on the market at once, which took a market this big. Renamed, and `rosters.test.ts` now asserts no two shipped players share a name.
+
+**The name pools had two ordering defects, and only looking found either.** Built as `given.flatMap(surnames)`, the first twenty-three entries share a given name — and `generateSquad` indexes **sequentially**, so München fielded twenty-three men called Andreas. Fixed by walking a diagonal; then the diagonal marched alphabetically (Aumann, Bergmann, Brandt, Dietrich down the whole team sheet), fixed with strides coprime with 30. **The same latent trap is in `PLAYER_NAMES`** and is invisible only because the domestic squads come from real rosters and everyone generated afterwards is drawn at a random index. Reordering it would rename every player in every save, so it is left alone — with a note pointing anything new at `names-intl.ts`.
+
+**One band was wrong rather than the code.** The foreign harness's league-total band failed at 3.1×, and the identical career **with no foreign clubs at all** read 3.04× — I had anchored it before season one, where the ordinary harness anchors after it. Season one alone takes the league to 1.8× as seeded budgets meet a first year of revenue. Measured both ways: **3.04× without a foreign market and 2.85× with one** — the layer takes money _out_ on balance, which is the opposite of the risk the band exists for.
+
+**A structural-typing trap worth remembering.** `foreignPlayers(state)` type-checked and silently returned the **domestic** squads, because `GameState` has `clubs` and `squads` too. It showed up as "expected 460 to be 920" in a duplicate-player test and looked for a while like a state-splitting bug in `applyTransfers`.
+
+**On the IP decision, which went against what was asked.** The owner asked for real squad shapes with altered surnames abroad, as ADR 0010 did at home. ADR 0011 declines and says why: ADR 0010 accepts a _bounded_ exposure — ~509 rows, one source, one file, cheap to reverse — and its own text names bulk extraction as a right separate from the naming question. Thirty-two more clubs is ~1,200 rows against eight more sources, which is a materially larger exposure rather than the same one repeated. Independently, **the source is not reachable**: Transfermarkt cannot be fetched by this tooling and its terms prohibit extraction anyway. **The cost is stated rather than glossed** — foreign squads are flat where the domestic twenty are lumpy, and that lumpiness is exactly what ADR 0010 called the point. Reversing it is a data file and nothing else.
+
+**Seen in a browser** over CDP. Sarrià: **286 listings** (254 at home, 32 abroad), a picker grouped `Primera División (19) · England (6) · Germany (6) · France (6) · Italy (6) · Portugal (2) · Netherlands (2) · Belgium (2) · Türkiye (2)`, and München browsable at 23 players from a €19.7M goalkeeper down to a €606k forward.
+
+**Still missing, and it is the honest gap:** the browser check covers the market and the browser, not a completed cross-border transfer in play — and the board ends a scripted career after two missed targets, which caps what a driven run can reach. The domain harness covers the transfer itself over twelve seasons.

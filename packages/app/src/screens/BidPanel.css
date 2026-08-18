@@ -1,0 +1,13 @@
+/* The renewal dialog's twin — same column, same action row, same reason for the
+   padding reset: `.screen__note` and `.screen-actions` are inset for sitting
+   inside a `.screen`, and a dialog box already is the frame. */
+.bid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-3);
+}
+
+.bid > .screen__note,
+.bid__actions {
+  padding-inline: 0;
+}

@@ -1,4 +1,3 @@
-import type { Club } from '@fm/domain'
 import { type BadgePattern, type BadgeShape, badgeFor, needsNameplate } from './badges.ts'
 import '../styles/club-badges.css'
 
@@ -84,7 +83,12 @@ export function BadgeDefs() {
 }
 
 export interface ClubBadgeProps {
-  readonly club: Club
+  /**
+   * Widened from `Club` to the three fields this actually reads, so a
+   * `ForeignClub` — which has no rating split, capacity or ledger — fits without
+   * a cast. One line, and it is what unblocks every badge site abroad.
+   */
+  readonly club: { readonly id: string; readonly name: string; readonly shortName: string }
   /** `sm` for table rows and lists, `lg` for the hub's identity panel. */
   readonly size?: 'sm' | 'lg'
   /**

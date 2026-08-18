@@ -584,7 +584,7 @@ const ROSTERS: Readonly<Record<string, readonly (readonly [string, Position, num
       ['Einar Galilaa', 'DF', 32, 350],
       ['Álex Pastur', 'DF', 26, 300],
       ['Ángel Reciu', 'DF', 23, 300],
-      ['Moussa Diare', 'DF', 24, 25],
+      ['Moussa Diarré', 'DF', 24, 25],
       ['Izan Mereno', 'MF', 20, 2000],
       ['Dani Lorrenzu', 'MF', 23, 1500],
       ['Carlos Dutol', 'MF', 25, 1200],

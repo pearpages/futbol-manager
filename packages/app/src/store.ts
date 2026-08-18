@@ -6,12 +6,22 @@ import {
   nextFixtureFor,
   type Event,
   type GameState,
+  defaultSeasonStart,
+  generateForeignLeague,
   newSeason,
+  referenceValues,
   reduce,
   type Rng,
   type RngState,
 } from '@fm/domain'
-import { DEFAULT_CLUBS, DEFAULT_ROSTERS, PLAYER_NAMES } from '@fm/data'
+import {
+  DEFAULT_CLUBS,
+  DEFAULT_ROSTERS,
+  FOREIGN_CLUBS,
+  FOREIGN_ROSTERS,
+  INTL_NAMES,
+  PLAYER_NAMES,
+} from '@fm/data'
 import {
   AUTOSAVE_SLOT,
   deleteGame,
@@ -52,6 +62,8 @@ export type Screen =
   | 'decisiones'
   | 'estadio'
 
+export type MarketTab = 'forSale' | 'clubs'
+
 interface Store {
   readonly game: GameState
   readonly screen: Screen
@@ -67,6 +79,18 @@ interface Store {
    * and no longer belongs — it travels with the save now.)
    */
   readonly comparedPlayerId: string | null
+  /**
+   * Which half of the market screen you were on, and whose squad you were reading.
+   *
+   * **Store-only, like `screen`, and here rather than in the component because
+   * `MarketScreen` unmounts the moment you open a player's card.** As local state
+   * this was lost on every trip to a ficha: you would scout a club, click a name to
+   * see whether he was worth it, press Volver — and land on a two-hundred-row For
+   * sale table with the club forgotten. That is the same shape as M4b's dead
+   * negotiation button, where the flow looked finished and could not be completed.
+   */
+  readonly marketTab: MarketTab
+  readonly browsingClubId: string | null
   /**
    * Most recent events, newest first — what the news panel reads.
    *
@@ -148,6 +172,9 @@ interface Store {
    */
   advanceToMatchday(): void
   inspect(playerId: string | null): void
+  /** Remembers which market view you were on across a trip to a player's card. */
+  setMarketTab(tab: MarketTab): void
+  browseClub(clubId: string): void
   /** Lay one of your own players over the ficha's chart, or `null` to clear. */
   compare(playerId: string | null): void
   /** Quick save — writes back to whichever slot this career is in. */
@@ -246,6 +273,11 @@ function summaryFor(game: GameState, name: string): SaveDetails {
   }
 }
 
+/** What each club abroad is seeded to hold, so its balance does not compound. */
+const FOREIGN_BUDGETS: Readonly<Record<string, number>> = Object.fromEntries(
+  FOREIGN_CLUBS.map((club) => [club.id, club.budget]),
+)
+
 const START_SEED = 20260813
 
 /** Live generator. Rebuilt from saved state on load, never persisted directly. */
@@ -259,6 +291,24 @@ function freshGame(managedClubId?: string): GameState {
     // Real squad shapes for the opening league. `PLAYER_NAMES` stays: it still
     // names youth intake and free agents at every rollover.
     rosters: DEFAULT_ROSTERS,
+    // **Built here rather than in `domain`, which may not import `@fm/data`.** It
+    // draws nothing from `rng` — every foreign squad comes off a generator derived
+    // from the club id and the year — so seeding it cannot move a match result.
+    foreign: generateForeignLeague(FOREIGN_CLUBS, 2026, {
+      names: INTL_NAMES,
+      seasonStart: defaultSeasonStart(2026),
+      // Real squad shapes abroad, as at home. A club without a roster is
+      // generated exactly as before, which is what lets these arrive a country
+      // at a time. `INTL_NAMES` still names everyone who arrives afterwards.
+      rosters: FOREIGN_ROSTERS,
+      // The norm both halves of the game are measured against — see
+      // `ForeignOptions.reference`. Domestic generation keeps computing its own,
+      // so the twenty Spanish squads are untouched.
+      reference: referenceValues([
+        ...Object.values(DEFAULT_ROSTERS),
+        ...Object.values(FOREIGN_ROSTERS),
+      ]),
+    }),
     ...(managedClubId === undefined
       ? {}
       : { managedClubId: managedClubId as GameState['managedClubId'] }),
@@ -271,6 +321,8 @@ export const useGame = create<Store>((set, get) => ({
   inspectedPlayerId: null,
   inspectedFrom: 'squad',
   comparedPlayerId: null,
+  marketTab: 'forSale',
+  browsingClubId: null,
   feed: [],
   unread: 0,
   language: storedLanguage(),
@@ -326,6 +378,14 @@ export const useGame = create<Store>((set, get) => ({
 
   compare(playerId) {
     set({ comparedPlayerId: playerId })
+  },
+
+  setMarketTab(tab) {
+    set({ marketTab: tab })
+  },
+
+  browseClub(clubId) {
+    set({ browsingClubId: clubId, marketTab: 'clubs' })
   },
 
   inspect(playerId) {
@@ -487,6 +547,8 @@ export const useGame = create<Store>((set, get) => ({
       screen: 'hub',
       inspectedPlayerId: null,
       comparedPlayerId: null,
+      marketTab: 'forSale',
+      browsingClubId: null,
       needsSetup: false,
       currentSlot: slot,
     })
@@ -519,6 +581,8 @@ export const useGame = create<Store>((set, get) => ({
       screen: 'hub',
       inspectedPlayerId: null,
       comparedPlayerId: null,
+      marketTab: 'forSale',
+      browsingClubId: null,
       needsSetup: false,
       // A new career has not been saved anywhere yet. Leaving the pointer would
       // make the first Grabar silently overwrite the career you just left.
@@ -533,12 +597,19 @@ export const useGame = create<Store>((set, get) => ({
       screen: 'hub',
       inspectedPlayerId: null,
       comparedPlayerId: null,
+      marketTab: 'forSale',
+      browsingClubId: null,
       feed: [],
       unread: 0,
     })
   },
 
   startNewSeason() {
-    get().dispatch({ type: 'StartNewSeason', names: PLAYER_NAMES })
+    get().dispatch({
+      type: 'StartNewSeason',
+      names: PLAYER_NAMES,
+      foreignNames: INTL_NAMES,
+      foreignBudgets: FOREIGN_BUDGETS,
+    })
   },
 }))

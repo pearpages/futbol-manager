@@ -3,7 +3,7 @@ import { ageOn, overall, type Player } from './player.ts'
 import { debtLimit, ledgerNet } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { bestXI, FORMATION_NAMES, startersOf } from './lineup.ts'
-import { MAX_SQUAD, totalBudget } from './market.ts'
+import { MAX_SQUAD, surplus, totalBudget } from './market.ts'
 import { simulateCareer } from './simulate.ts'
 import { computeTable } from './table.ts'
 import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
@@ -56,16 +56,39 @@ describe(`a ${SEASONS}-season career`, () => {
     expect(survivors.length).toBeGreaterThan(5)
   })
 
-  it('ages the league as the years pass', () => {
-    // Free, because age derives from birthDate against the current date.
-    const ageIn = (index: number) => {
-      const run = career[index]
-      /* c8 ignore next */
-      if (run === undefined) throw new Error('missing season')
-      const squad = run.state.squads[TEST_CLUBS[0]?.id ?? ''] ?? []
-      return mean(squad.map((p) => ageOn(p, run.state.season.currentDate)))
+  it('ages the players as the years pass', () => {
+    // Free, because age derives from `birthDate` against the current date.
+    //
+    // **This asserted the club's *mean* age rising, and that was a proxy that has
+    // stopped being valid.** It held while the league was quietly shrinking:
+    // releases outnumbered arrivals, so the survivors got older together. With
+    // `topUp` replacing what leaks away the mean is flat — 26.6 in season one and
+    // 26.1 in season ten — which is what a real division does, and a mean that
+    // climbs every year is the failure M4a's retirement rule was written against.
+    // The range is asserted separately, at 20 to 33 per club.
+    //
+    // So this is the claim the proxy stood for, stated directly: a man still in
+    // the league is exactly as many years older as seasons have passed.
+    const first = career[0]
+    const last = career.at(-1)
+    /* c8 ignore next */
+    if (first === undefined || last === undefined) throw new Error('missing season')
+
+    const before = new Map(
+      first.state.clubs
+        .flatMap((club) => first.state.squads[club.id] ?? [])
+        .map((p) => [p.id, ageOn(p, first.state.season.currentDate)]),
+    )
+    const survivors = last.state.clubs
+      .flatMap((club) => last.state.squads[club.id] ?? [])
+      .filter((p) => before.has(p.id))
+
+    expect(survivors.length).toBeGreaterThan(5)
+    for (const player of survivors) {
+      const then = before.get(player.id) ?? 0
+      const now = ageOn(player, last.state.season.currentDate)
+      expect(now - then, player.name).toBe(SEASONS - 1)
     }
-    expect(ageIn(SEASONS - 1)).toBeGreaterThan(ageIn(0))
   })
 })
 
@@ -164,6 +187,53 @@ describe('structural invariants — never loosen these', () => {
         }
       }
     }
+  })
+})
+
+describe('the league does not leak players', () => {
+  const pool = career.map((run) => run.state.freeAgents.length)
+  const listed = career.map((run) =>
+    run.state.clubs.reduce((n, club) => n + surplus(run.state.squads[club.id] ?? []).length, 0),
+  )
+
+  it('keeps a market worth reading, rather than one that thins every year', () => {
+    // **The defect this was written for, and nothing could see it.** Retirement is
+    // replaced one-for-one and a transfer is neutral across the league, but a
+    // release is not: a player nobody re-signs ages in the pool and retires *out of
+    // the game*, with nothing generated in his place. Squads settled at 18.9
+    // against a release floor of 21, and over twenty seasons the league fell from
+    // 460 players to 380 and was still falling. That is what "there are always the
+    // same players" actually was.
+    //
+    // **The band is on what is for sale, not on the head count**, and that is not a
+    // stylistic choice: measured over these ten seasons the population reads 0.924
+    // of its opening figure both with the fix and without it, because unsigned
+    // players sit in the pool and are counted while the clubs empty out. What
+    // separates the two is what a manager can actually buy — **150 at the worst
+    // with `topUp`, 97 without it**, on the way to 60 by season twenty.
+    expect(Math.min(...listed.slice(2))).toBeGreaterThan(130)
+  })
+
+  it('bounds the free-agent pool at both ends', () => {
+    // There has always been a band on this being too *small* — deleting the
+    // unsigned each summer drained it to nothing by season six — and none at all on
+    // it being too large, which is how a pool that only grew came to ship.
+    //
+    // The two ends need different windows. Emptying shows up immediately, so the
+    // floor is asserted every season. Growth is a **trend**, and it has to be
+    // stated as one: at ten seasons the peaks are indistinguishable (51 against
+    // 54), and a fixed ceiling would be measuring trade volume as much as the
+    // patience rule — raising the AI's signing rate moved the observed maximum
+    // from 15 to 38 without the rule changing at all. What does separate them is
+    // the shape: the pool peaks early, as the first cohorts of released players
+    // arrive, and then settles **below** that peak. Without the rule it climbs
+    // past it and keeps going — measured at 50, 57, 76, 97 and still rising.
+    for (const [season, size] of pool.entries()) {
+      if (season < 2) continue
+      expect(size, `season ${String(season + 1)}`).toBeGreaterThan(0)
+    }
+    const peak = Math.max(...pool.slice(0, 5))
+    expect(mean(pool.slice(-3))).toBeLessThan(peak)
   })
 })
 

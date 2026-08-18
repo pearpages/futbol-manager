@@ -1,6 +1,7 @@
 import type { Bid } from './bids.ts'
 import type { Board } from './board.ts'
 import type { Club, ClubId, Competition, Fixture, Season } from './entities.ts'
+import type { ForeignLeague } from './foreign.ts'
 import type { ArchivedSeason } from './history.ts'
 import type { Lineup, Tactics } from './lineup.ts'
 import type { Player, PlayerId } from './player.ts'
@@ -78,6 +79,17 @@ export interface GameState {
    * career.
    */
   readonly history: readonly ArchivedSeason[]
+  /**
+   * Clubs abroad, added at schema v10 — a source of players and nothing else.
+   *
+   * Deliberately **not** in `clubs`: four loops in the reducer iterate that array
+   * and one of them throws for a club with no lineup. See `foreign.ts` for the
+   * full argument and for why nothing in there takes an `Rng`.
+   *
+   * Empty is a legal, playable state and is what every harness runs with, which is
+   * what keeps the calibrated bands measuring the division they always measured.
+   */
+  readonly foreign: ForeignLeague
 }
 
 export function clubIds(state: GameState): readonly ClubId[] {

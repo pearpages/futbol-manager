@@ -33,16 +33,18 @@ import {
   signingOutlay,
 } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
+import type { Country } from './foreign.ts'
 import { BALANCED, type Lineup, startersOf, type Tactics, teamRating } from './lineup.ts'
 import {
+  aiSaleRefusal,
   applyTransfers,
   isTransferWindowOpen,
   MAX_SQUAD,
   needFor,
+  reluctancePremium,
   runTransferWindow,
   saleBlock,
   sellable,
-  surplus,
   transferWindowChange,
   transferWindowDaysLeft,
   WINDOW_WARNING_DAYS,
@@ -105,6 +107,14 @@ export interface StartNewSeason {
    * takes one.
    */
   readonly names: readonly string[]
+  /**
+   * Name pools per country, for the youngsters who replace departures abroad.
+   * Same reasoning as `names`: `domain` owns no word lists. Optional, because a
+   * career with no foreign clubs has nobody to name.
+   */
+  readonly foreignNames?: Readonly<Record<Country, readonly string[]>>
+  /** What each foreign club is seeded to hold, so balances abroad do not compound. */
+  readonly foreignBudgets?: Readonly<Record<string, number>>
 }
 
 /** An offer for a player another club has listed. Rejected if he is not for sale. */
@@ -483,7 +493,11 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
     throw new GameError('error.season.notOver', 'The season is not over yet')
   }
 
-  const rolled = rolloverSeason(state, rng, { names: command.names })
+  const rolled = rolloverSeason(state, rng, {
+    names: command.names,
+    ...(command.foreignNames === undefined ? {} : { foreignNames: command.foreignNames }),
+    ...(command.foreignBudgets === undefined ? {} : { foreignBudgets: command.foreignBudgets }),
+  })
   const transfers = runTransferWindow(rolled, rng, { exclude: rolled.managedClubId })
   const next = applyTransfers(rolled, transfers)
 
@@ -573,7 +587,7 @@ function departures(before: GameState, after: GameState): readonly Event[] {
   return events
 }
 
-/** Locates a player anywhere in the league, and who holds him. */
+/** Locates a player anywhere in the game, and who holds him. */
 function findPlayer(
   state: GameState,
   playerId: PlayerId,
@@ -582,8 +596,20 @@ function findPlayer(
     const player = (state.squads[club.id] ?? []).find((p) => p.id === playerId)
     if (player !== undefined) return { player, club: club.id }
   }
+  // Abroad counts as "somebody holds him", so a bid for a foreign player goes
+  // through every gate a domestic one does — `aiSaleRefusal` and
+  // `reluctancePremium` take a squad rather than a club, so neither needed a line.
+  for (const club of state.foreign.clubs) {
+    const player = (state.foreign.squads[club.id] ?? []).find((p) => p.id === playerId)
+    if (player !== undefined) return { player, club: club.id }
+  }
   const free = state.freeAgents.find((p) => p.id === playerId)
   return free === undefined ? null : { player: free, club: null }
+}
+
+/** The squad holding this club's players, wherever the club is. */
+function squadOfAnyClub(state: GameState, clubId: ClubId): readonly Player[] {
+  return state.squads[clubId] ?? state.foreign.squads[clubId] ?? []
 }
 
 function liveBidFor(state: GameState, playerId: PlayerId): Bid | undefined {
@@ -616,13 +642,28 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
   if (found.club === state.managedClubId)
     throw new GameError('error.player.yours', 'He is already yours')
 
-  // Only what the selling club has actually listed. `surplus` is the whole rule:
-  // a club will not sell a player its XI depends on, at any price.
-  const forSale = surplus(state.squads[found.club] ?? [])
-  if (!forSale.some((p) => p.id === command.playerId)) {
-    throw new GameError('error.player.notForSale', `${found.player.name} is not for sale`, {
-      player: found.player.name,
-    })
+  // Every player has a price. What used to sit here was `surplus` membership,
+  // which made anyone in a club's best XI unbuyable **at any figure** while the AI
+  // stayed free to offer for anyone of yours who was merely out of your team
+  // sheet. The only refusals left are the two that protect the seller's squad;
+  // what he would rather keep is priced instead, by `reluctancePremium`.
+  const sellerSquad = squadOfAnyClub(state, found.club)
+  const refusal = aiSaleRefusal(sellerSquad, found.player)
+  if (refusal === 'squadFloor') {
+    throw new GameError(
+      'error.player.squadFloor',
+      `${found.player.name}'s club has too small a squad to sell anybody`,
+      { player: found.player.name },
+    )
+  }
+  if (refusal === 'shape') {
+    throw new GameError(
+      'error.player.lastAtPosition',
+      `${found.player.name} is the last ${found.player.position} his club can spare`,
+      // The position is in the English sentence but deliberately not a parameter:
+      // it would arrive at a Catalan dictionary as the bare code `GK`.
+      { player: found.player.name },
+    )
   }
 
   if (!Number.isFinite(command.fee) || command.fee <= 0) {
@@ -1019,9 +1060,14 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
       if (bid.status !== 'pending' || bid.from !== state.managedClubId) return bid
       if (bid.answerOn > today) return bid
 
-      const player = (state.squads[bid.to] ?? []).find((p) => p.id === bid.playerId)
-      // Sold to someone else while we waited.
-      if (player === undefined) {
+      const sellerSquad = squadOfAnyClub(state, bid.to)
+      const player = sellerSquad.find((p) => p.id === bid.playerId)
+      // Sold to someone else while we waited, or his club can no longer let him
+      // go — a squad that has shrunk since the bid was made refuses whatever the
+      // fee. **Re-checked here rather than trusted from `makeBid`**, which is the
+      // same discipline `respondToOffer` and `runTransferWindow`'s buy loop use:
+      // an answer lands two days later and a squad moves in between.
+      if (player === undefined || aiSaleRefusal(sellerSquad, player) !== null) {
         events.push({
           type: 'BidAnswered',
           bidId: bid.id,
@@ -1032,7 +1078,11 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
         return { ...bid, status: 'rejected' as const }
       }
 
-      const answer = answerBid(bid, player, today)
+      // The premium is computed now, not when the bid was made, for the same
+      // reason. Two `bestXI` passes for the handful of bids answered on a given
+      // day — negligible beside the nineteen-club `bestOfferFor` sweep already
+      // running every Monday, and it draws nothing.
+      const answer = answerBid(bid, player, today, reluctancePremium(sellerSquad, player))
       events.push({
         type: 'BidAnswered',
         bidId: bid.id,
@@ -1131,10 +1181,13 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
 
   let best: { playerId: PlayerId; from: ClubId; fee: number; need: number } | null = null
 
-  for (const club of state.clubs) {
+  // Clubs abroad make offers too, and it is much of what makes the layer felt: a
+  // foreign club coming in for one of yours is the first thing a manager notices
+  // about it. Same score, same threshold, same fee.
+  for (const club of [...state.clubs, ...state.foreign.clubs]) {
     if (club.id === state.managedClubId) continue
     if (club.budget < floor) continue
-    const squad = state.squads[club.id] ?? []
+    const squad = squadOfAnyClub(state, club.id)
     if (squad.length >= MAX_SQUAD) continue
 
     for (const player of spare) {

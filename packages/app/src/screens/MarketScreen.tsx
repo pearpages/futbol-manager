@@ -20,7 +20,10 @@ import {
   type Player,
   type PlayerId,
   type Position,
+  COUNTRIES,
+  FOREIGN_LISTINGS,
   POSITIONS,
+  reluctancePremium,
   ROUNDS_PER_HALF,
   shuffle,
   signingOutlay,
@@ -35,7 +38,7 @@ import { useAttempt } from '../attempt.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
 import { SortHeader } from './SortHeader.tsx'
-import { positionChip } from './SquadScreen.tsx'
+import { POSITION_ORDER, positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
 
 /**
@@ -109,6 +112,16 @@ export function listingsFor(game: GameState): Listing[] {
       listings.push({ player, from: clubId, fee: askingPrice(player, date) })
     }
   }
+  // Abroad offers the same few fringe players the AI window sees, and for the same
+  // reason — see `FOREIGN_LISTINGS`. A club abroad is not running a clearance sale
+  // for a foreign league, and showing its whole reserve list here would drown the
+  // domestic market in players nobody is really selling. **Everyone else abroad is
+  // still reachable**, through the Clubs tab and the bid dialog on his card.
+  for (const club of game.foreign.clubs) {
+    for (const player of surplus(game.foreign.squads[club.id] ?? []).slice(0, FOREIGN_LISTINGS)) {
+      listings.push({ player, from: club.id, fee: askingPrice(player, date) })
+    }
+  }
   for (const player of game.freeAgents) {
     listings.push({ player, from: null, fee: 0 })
   }
@@ -166,6 +179,52 @@ export function listingValue(
   }
 }
 
+/**
+ * What the club browser sorts on.
+ *
+ * `wants` is the figure that matters and the only one here that is not a plain
+ * property of the player: what his club would actually take, which is his asking
+ * price times how badly they would rather keep him. A spare player's is exactly
+ * his asking price, so the two columns agree wherever they can be compared.
+ *
+ * **Position sorts on `POSITION_ORDER`, never the chip** — `POR/DEF/MIG/DAV` and
+ * `GK/DF/MF/FW` order the same squad differently.
+ */
+export type SquadSortKey = 'position' | 'name' | 'age' | 'overall' | 'wants'
+
+const SQUAD_SORT_ALIGN: Readonly<Record<SquadSortKey, string>> = {
+  position: 'is-text',
+  name: 'is-text',
+  age: '',
+  overall: '',
+  wants: '',
+}
+
+/** What a rival club would take for him: his price, times its reluctance. */
+export function scoutedPrice(squad: readonly Player[], player: Player, date: DayNumber): number {
+  return Math.round(askingPrice(player, date) * reluctancePremium(squad, player))
+}
+
+export function squadValue(
+  player: Player,
+  key: SquadSortKey,
+  squad: readonly Player[],
+  date: DayNumber,
+): number | string {
+  switch (key) {
+    case 'position':
+      return POSITION_ORDER[player.position]
+    case 'name':
+      return player.name
+    case 'age':
+      return ageOn(player, date)
+    case 'overall':
+      return overall(player)
+    case 'wants':
+      return scoutedPrice(squad, player, date)
+  }
+}
+
 export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
@@ -181,6 +240,23 @@ export function MarketScreen() {
   const [positions, setPositions] = useState<readonly Position[]>([])
   /** `null` is market order — the shuffle. A column cycles back to it. */
   const [sort, setSort] = useState<Sort<SortKey> | null>(null)
+
+  /**
+   * Which half of the screen you are on.
+   *
+   * **En venda is what a club will sell; Clubs is everyone else.** The two are
+   * genuinely different questions and folding them into one table was never an
+   * option: `listingsFor` is each club's `surplus`, and putting ~500 rival players
+   * into it would stop the list meaning "for sale" at all — the 60-row-cap defect
+   * in reverse. The browser exists because the reducer now takes a bid for anyone,
+   * and a rule you cannot reach anybody through is not a feature.
+   */
+  const tab = useGame((s) => s.marketTab)
+  const setTab = useGame((s) => s.setMarketTab)
+  const browsing = useGame((s) => s.browsingClubId)
+  const setBrowsing = useGame((s) => s.browseClub)
+  /** `null` is squad order — position, then quality, as Plantilla lays it out. */
+  const [squadSort, setSquadSort] = useState<Sort<SquadSortKey> | null>(null)
 
   const dealRef = useRef<HTMLElement>(null)
 
@@ -207,7 +283,13 @@ export function MarketScreen() {
   const club = game.clubs.find((c) => c.id === managed)
   const date = game.season.currentDate
   const open = isTransferWindowOpen(date)
-  const names = new Map(game.clubs.map((c) => [c.id, c]))
+  // Foreign sellers too, or their listings show a blank club column.
+  const names = new Map<ClubId, { name: string; shortName: string; id: ClubId }>(
+    [...game.clubs, ...game.foreign.clubs].map((c) => [
+      c.id,
+      { id: c.id, name: c.name, shortName: c.shortName },
+    ]),
+  )
   const shortlisted = new Set(game.shortlist)
   const clubCount = game.competition.clubIds.length
   const spendable =
@@ -225,6 +307,25 @@ export function MarketScreen() {
   // — and that half depended on squads while the prices depended on the date.
   // Taking the "Improves" column off the screen took the scoring with it.
   const all = useMemo(() => listingsFor(game), [game])
+
+  // Clubs you can scout — everyone but yours. A club with no squad cannot be
+  // browsed, which is what makes the fallback `?? []` below the whole guard.
+  // Everyone you can scout: the division, then abroad. Foreign clubs are narrowed
+  // to what the picker and the badge read, so one list serves both kinds.
+  const rivals: readonly Browsable[] = [
+    ...game.clubs
+      .filter((c) => c.id !== managed)
+      .map((c) => ({ id: c.id, name: c.name, shortName: c.shortName })),
+    ...game.foreign.clubs.map((c) => ({
+      id: c.id,
+      name: c.name,
+      shortName: c.shortName,
+      country: c.country,
+    })),
+  ]
+  const browsed = rivals.find((c) => c.id === browsing) ?? rivals[0]
+  const browsedSquad =
+    browsed === undefined ? [] : (game.squads[browsed.id] ?? game.foreign.squads[browsed.id] ?? [])
 
   // Filtering and sorting stay outside the memo: they are cheap, and they change
   // with the controls rather than with the game.
@@ -297,134 +398,172 @@ export function MarketScreen() {
       <section className="screen market-screen__main">
         <h2 className="screen__heading">{t('market.heading')}</h2>
 
+        {/* Two buttons with `aria-pressed`, not a `role="tablist"` — the same call
+            `ResultsScreen` records, and for the same reason: a tablist owes
+            arrow-key navigation to be honest about the role. */}
+        <div className="market-screen__tabs">
+          {(['forSale', 'clubs'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={`button${tab === key ? ' is-primary' : ''}`}
+              aria-pressed={tab === key}
+              onClick={() => {
+                setTab(key)
+              }}
+            >
+              {t(`market.tab.${key}`)}
+            </button>
+          ))}
+        </div>
+
         {!open && <p className="screen__note">{t('market.windowShut')}</p>}
 
-        {/* Every control is a toggle labelled with the mode it turns on, with
+        {tab === 'clubs' ? (
+          <ClubBrowser
+            clubs={rivals}
+            club={browsed}
+            squad={browsedSquad}
+            date={date}
+            sort={squadSort}
+            onSort={setSquadSort}
+            onPick={setBrowsing}
+            translator={translator}
+          />
+        ) : (
+          <>
+            {/* Every control is a toggle labelled with the mode it turns on, with
             `aria-pressed` carrying whether it is active. Labelling one with its
             *current* state instead made the button you press to filter read
             "Whole market", which is backwards. */}
-        <div className="market-screen__filters">
-          <span className="market-screen__positions">
-            {POSITIONS.map((position) => (
-              <button
-                key={position}
-                type="button"
-                className={`button market-screen__mini${positions.includes(position) ? ' is-primary' : ''}`}
-                aria-pressed={positions.includes(position)}
-                onClick={() => setPositions(toggle(positions, position))}
-              >
-                {position}
-              </button>
-            ))}
-          </span>
-          <button
-            type="button"
-            className={`button market-screen__mini${onlyAffordable ? ' is-primary' : ''}`}
-            aria-pressed={onlyAffordable}
-            onClick={() => setOnlyAffordable(!onlyAffordable)}
-          >
-            {t('market.withinBudget')}
-          </button>
-          <button
-            type="button"
-            className={`button market-screen__mini${onlyFree ? ' is-primary' : ''}`}
-            aria-pressed={onlyFree}
-            onClick={() => setOnlyFree(!onlyFree)}
-          >
-            {t('market.freeAgents')}
-          </button>
-          <button
-            type="button"
-            className={`button market-screen__mini${onlyShortlist ? ' is-primary' : ''}`}
-            aria-pressed={onlyShortlist}
-            onClick={() => setOnlyShortlist(!onlyShortlist)}
-          >
-            {t('market.shortlistOnly')}
-          </button>
-          <span className="market-screen__count">
-            {t('market.showing', { shown: listings.length, total: all.length })}
-          </span>
-        </div>
-
-        {listings.length === 0 ? (
-          <p className="screen__note">{t('market.noMatches')}</p>
-        ) : (
-          <table className="data-table">
-            <thead className="data-table__head">
-              <tr>
-                <th className="is-text">{t('market.column.position')}</th>
-                {column('name', t('market.column.player'))}
-                {column('club', t('market.column.club'))}
-                {column('age', t('market.column.age'))}
-                {column('overall', t('market.column.overall'))}
-                {column('fee', t('market.column.asking'))}
-                <th className="is-text">{t('market.column.action')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {listings.map((listing) => {
-                const { player } = listing
-                const isTarget = player.id === target
-                return (
-                  <tr
-                    key={player.id}
-                    className={`data-table__row is-clickable${isTarget ? ' is-you' : ''}`}
+            <div className="market-screen__filters">
+              <span className="market-screen__positions">
+                {POSITIONS.map((position) => (
+                  <button
+                    key={position}
+                    type="button"
+                    className={`button market-screen__mini${positions.includes(position) ? ' is-primary' : ''}`}
+                    aria-pressed={positions.includes(position)}
+                    onClick={() => setPositions(toggle(positions, position))}
                   >
-                    <td className="is-text">
-                      {positionChip(player.position, t(`position.${player.position}`))}
-                    </td>
-                    <td className="is-text">
-                      <PlayerLink player={player} />
-                    </td>
-                    <td className="is-text">
-                      {listing.from === null ? (
-                        <span className="market-screen__free">{t('market.freeAgent')}</span>
-                      ) : (
-                        (() => {
-                          // The badge carries the three-letter code already —
-                          // repeating it beside itself just read as "GRAGRA".
-                          const seller = names.get(listing.from)
-                          return seller === undefined ? '???' : <ClubBadge club={seller} labelled />
-                        })()
-                      )}
-                    </td>
-                    <td>{ageOn(player, date)}</td>
-                    <td>
-                      <strong>{overall(player)}</strong>
-                    </td>
-                    <td>{listing.fee === 0 ? t('market.free') : money(listing.fee)}</td>
-                    <td className="is-text market-screen__actions">
-                      <button
-                        type="button"
-                        className="button market-screen__mini"
-                        aria-pressed={shortlisted.has(player.id)}
-                        onClick={() =>
-                          dispatch({
-                            type: 'Shortlist',
-                            playerId: player.id,
-                            on: !shortlisted.has(player.id),
-                          })
-                        }
-                      >
-                        {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
-                      </button>
-                      <button
-                        type="button"
-                        className="button is-primary market-screen__mini"
-                        disabled={!open}
-                        onClick={() => {
-                          setTarget(player.id)
-                          clearError()
-                        }}
-                      >
-                        {listing.from === null ? t('market.sign') : t('market.bid')}
-                      </button>
-                    </td>
+                    {position}
+                  </button>
+                ))}
+              </span>
+              <button
+                type="button"
+                className={`button market-screen__mini${onlyAffordable ? ' is-primary' : ''}`}
+                aria-pressed={onlyAffordable}
+                onClick={() => setOnlyAffordable(!onlyAffordable)}
+              >
+                {t('market.withinBudget')}
+              </button>
+              <button
+                type="button"
+                className={`button market-screen__mini${onlyFree ? ' is-primary' : ''}`}
+                aria-pressed={onlyFree}
+                onClick={() => setOnlyFree(!onlyFree)}
+              >
+                {t('market.freeAgents')}
+              </button>
+              <button
+                type="button"
+                className={`button market-screen__mini${onlyShortlist ? ' is-primary' : ''}`}
+                aria-pressed={onlyShortlist}
+                onClick={() => setOnlyShortlist(!onlyShortlist)}
+              >
+                {t('market.shortlistOnly')}
+              </button>
+              <span className="market-screen__count">
+                {t('market.showing', { shown: listings.length, total: all.length })}
+              </span>
+            </div>
+
+            {listings.length === 0 ? (
+              <p className="screen__note">{t('market.noMatches')}</p>
+            ) : (
+              <table className="data-table">
+                <thead className="data-table__head">
+                  <tr>
+                    <th className="is-text">{t('market.column.position')}</th>
+                    {column('name', t('market.column.player'))}
+                    {column('club', t('market.column.club'))}
+                    {column('age', t('market.column.age'))}
+                    {column('overall', t('market.column.overall'))}
+                    {column('fee', t('market.column.asking'))}
+                    <th className="is-text">{t('market.column.action')}</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {listings.map((listing) => {
+                    const { player } = listing
+                    const isTarget = player.id === target
+                    return (
+                      <tr
+                        key={player.id}
+                        className={`data-table__row is-clickable${isTarget ? ' is-you' : ''}`}
+                      >
+                        <td className="is-text">
+                          {positionChip(player.position, t(`position.${player.position}`))}
+                        </td>
+                        <td className="is-text">
+                          <PlayerLink player={player} />
+                        </td>
+                        <td className="is-text">
+                          {listing.from === null ? (
+                            <span className="market-screen__free">{t('market.freeAgent')}</span>
+                          ) : (
+                            (() => {
+                              // The badge carries the three-letter code already —
+                              // repeating it beside itself just read as "GRAGRA".
+                              const seller = names.get(listing.from)
+                              return seller === undefined ? (
+                                '???'
+                              ) : (
+                                <ClubBadge club={seller} labelled />
+                              )
+                            })()
+                          )}
+                        </td>
+                        <td>{ageOn(player, date)}</td>
+                        <td>
+                          <strong>{overall(player)}</strong>
+                        </td>
+                        <td>{listing.fee === 0 ? t('market.free') : money(listing.fee)}</td>
+                        <td className="is-text market-screen__actions">
+                          <button
+                            type="button"
+                            className="button market-screen__mini"
+                            aria-pressed={shortlisted.has(player.id)}
+                            onClick={() =>
+                              dispatch({
+                                type: 'Shortlist',
+                                playerId: player.id,
+                                on: !shortlisted.has(player.id),
+                              })
+                            }
+                          >
+                            {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
+                          </button>
+                          <button
+                            type="button"
+                            className="button is-primary market-screen__mini"
+                            disabled={!open}
+                            onClick={() => {
+                              setTarget(player.id)
+                              clearError()
+                            }}
+                          >
+                            {listing.from === null ? t('market.sign') : t('market.bid')}
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </>
         )}
       </section>
 
@@ -654,6 +793,155 @@ interface NegotiationProps {
  * it with. Everyone else needs a fee agreed first, which is why the two steps are
  * visibly separate rather than one "buy" button.
  */
+/**
+ * A rival club's whole squad, read-only.
+ *
+ * **What makes symmetric bidding usable.** The reducer takes a bid for anyone now,
+ * but the only players the screen could show were each club's `surplus` — the ones
+ * it had already given up on — so the rule had nobody to point it at. Here you can
+ * go looking.
+ *
+ * `Demanen` is the figure a manager actually needs: not what the player is worth
+ * but what his club would take, which is his asking price times how reluctant they
+ * are to lose him. For a spare player the two are the same number.
+ *
+ * **Five columns, and wage and contract are not among them.** Not secrecy — the
+ * ficha shows both for anybody, and it should, because you cannot judge personal
+ * terms without knowing what a man already earns. This is a *scanning* view over
+ * nineteen squads and the card is the detail view, which is how every other table
+ * in the app is split. What does stay off both is `needFor`: it came off the market
+ * at M4c because it turns scouting into a lookup, and nothing here puts it back.
+ *
+ * The name is a `PlayerLink`, which is the route to a bid — his card carries the
+ * button. One click rather than a second bid control here, and it keeps the ficha
+ * as the single door for anyone who is not already for sale.
+ */
+/** Only what the browser reads, so a club abroad fits beside a domestic one. */
+interface Browsable {
+  readonly id: ClubId
+  readonly name: string
+  readonly shortName: string
+  /** Absent for a club at home — which is how the picker groups them. */
+  readonly country?: string
+}
+
+interface ClubBrowserProps {
+  readonly clubs: readonly Browsable[]
+  readonly club: Browsable | undefined
+  readonly squad: readonly Player[]
+  readonly date: DayNumber
+  readonly sort: Sort<SquadSortKey> | null
+  readonly onSort: (sort: Sort<SquadSortKey> | null) => void
+  readonly onPick: (id: ClubId) => void
+  readonly translator: Translator
+}
+
+function ClubBrowser({
+  clubs,
+  club,
+  squad,
+  date,
+  sort,
+  onSort,
+  onPick,
+  translator,
+}: ClubBrowserProps) {
+  const { t, money, locale } = translator
+
+  // Position, then quality — the order Plantilla uses, so a rival squad reads the
+  // way your own does.
+  const ordered = [...squad].sort(
+    (a, b) => POSITION_ORDER[a.position] - POSITION_ORDER[b.position] || overall(b) - overall(a),
+  )
+  const rows = sortedBy(
+    ordered,
+    sort,
+    (player, key) => squadValue(player, key, squad, date),
+    locale,
+  )
+
+  const column = (key: SquadSortKey, label: string) => (
+    <SortHeader
+      column={key}
+      label={label}
+      sort={sort}
+      onSort={onSort}
+      align={SQUAD_SORT_ALIGN[key]}
+    />
+  )
+
+  return (
+    <>
+      <div className="market-screen__filters">
+        <label className="field__label" htmlFor="browse-club">
+          {t('market.browseClub')}
+        </label>
+        {/* Grouped, because the list is fifty-one clubs across nine places and a
+            flat one is unreadable. Home first — it is the league you are in. */}
+        <select
+          id="browse-club"
+          className="select"
+          value={club?.id ?? ''}
+          onChange={(event) => onPick(event.target.value as ClubId)}
+        >
+          <optgroup label={t('market.atHome')}>
+            {clubs
+              .filter((c) => c.country === undefined)
+              .map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+          </optgroup>
+          {COUNTRIES.map((country) => {
+            const inCountry = clubs.filter((c) => c.country === country)
+            if (inCountry.length === 0) return null
+            return (
+              <optgroup key={country} label={t(`country.${country}`)}>
+                {inCountry.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </optgroup>
+            )
+          })}
+        </select>
+        <span className="market-screen__count">
+          {t('market.squadSize', { count: squad.length })}
+        </span>
+      </div>
+
+      <table className="data-table">
+        <thead className="data-table__head">
+          <tr>
+            {column('position', t('market.column.position'))}
+            {column('name', t('market.column.player'))}
+            {column('age', t('market.column.age'))}
+            {column('overall', t('market.column.overall'))}
+            {column('wants', t('market.column.wants'))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((player) => (
+            <tr key={player.id} className="data-table__row">
+              <td className="is-text">
+                {positionChip(player.position, t(`position.${player.position}`))}
+              </td>
+              <td className="is-text">
+                <PlayerLink player={player} />
+              </td>
+              <td>{ageOn(player, date)}</td>
+              <td>{overall(player)}</td>
+              <td>{money(scoutedPrice(squad, player, date))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  )
+}
+
 function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }: NegotiationProps) {
   const dispatch = useGame((s) => s.dispatch)
   const { t, money, percent } = useT()

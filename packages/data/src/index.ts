@@ -1,3 +1,6 @@
 export { ALL_CLUBS, DEFAULT_CLUBS } from './clubs.ts'
+export { FOREIGN_CLUBS } from './foreign-clubs.ts'
+export { FOREIGN_ROSTERS } from './foreign-rosters.ts'
 export { PLAYER_NAMES } from './names.ts'
+export { INTL_NAMES } from './names-intl.ts'
 export { DEFAULT_ROSTERS } from './rosters.ts'

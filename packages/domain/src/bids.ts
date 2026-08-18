@@ -76,15 +76,25 @@ export interface BidAnswer {
 
 /**
  * What the selling club says. A comparison against `askingPrice`, which already
- * carries the seller's premium over `valuePlayer`.
+ * carries the seller's standing premium over `valuePlayer`.
  *
- * Deliberately not a haggling model: the player being bid for is on the seller's
- * surplus list, so they *want* him gone and the only question is the number.
- * Whether a club will part with a starter at all is decided upstream, by
- * `surplus` — which is the same reason there is no rule about goalkeepers.
+ * Deliberately not a haggling model — there is one number and you either meet it
+ * or you do not. What decides that number for a player his club would rather keep
+ * is `premium`, computed by `reluctancePremium` in `market.ts` from the seller's
+ * own squad. **The default of 1 is load-bearing**: it is what every existing call
+ * site and every existing test still gets, so this parameter was additive rather
+ * than a rewrite — the same move `GameError` made when it kept its English
+ * `message` alongside a new `code`.
+ *
+ * The premium is a parameter rather than a squad because `market.ts` imports this
+ * module; taking a squad here and computing inside would close the cycle.
+ *
+ * Whether a club will part with a player *at all* is still decided upstream, but
+ * by `aiSaleRefusal` rather than `surplus`: only a sale that would leave the
+ * seller unable to field a shape is refused outright.
  */
-export function answerBid(bid: Bid, player: Player, date: DayNumber): BidAnswer {
-  const asking = askingPrice(player, date)
+export function answerBid(bid: Bid, player: Player, date: DayNumber, premium = 1): BidAnswer {
+  const asking = Math.round(askingPrice(player, date) * premium)
 
   if (bid.fee >= asking) return { status: 'accepted', counterFee: null }
   if (bid.fee >= asking * COUNTER_FLOOR) return { status: 'countered', counterFee: asking }

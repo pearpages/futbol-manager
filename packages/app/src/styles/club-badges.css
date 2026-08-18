@@ -120,6 +120,34 @@
   --badge-ink: #14213a;
 }
 
+.club-badge[data-colours='black-white'],
+.stadium[data-colours='black-white'] {
+  --badge-a: #22242a;
+  --badge-b: #f4f4f2;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='claret-blue'],
+.stadium[data-colours='claret-blue'] {
+  --badge-a: #8b1d33;
+  --badge-b: #e2a63b;
+  --badge-ink: #f6e2b4;
+}
+
+.club-badge[data-colours='purple'],
+.stadium[data-colours='purple'] {
+  --badge-a: #56247e;
+  --badge-b: #f4f4f2;
+  --badge-ink: #f4f4f2;
+}
+
+.club-badge[data-colours='gold-black'],
+.stadium[data-colours='gold-black'] {
+  --badge-a: #c8901f;
+  --badge-b: #a3232c;
+  --badge-ink: #2a1c0c;
+}
+
 /* ── The badge itself ────────────────────────────────────────────────────── */
 
 .club-badge {

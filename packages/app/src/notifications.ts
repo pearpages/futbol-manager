@@ -35,9 +35,14 @@ export function lookupFor(game: GameState, { t }: Translator): NameLookup {
   for (const club of game.clubs) {
     for (const player of game.squads[club.id] ?? []) players.set(player.id, player)
   }
+  // Abroad too, or a sale across the border reads "unknown player moves to
+  // unknown club" — in the one sentence that exists to say what happened.
+  for (const club of game.foreign.clubs) {
+    for (const player of game.foreign.squads[club.id] ?? []) players.set(player.id, player)
+  }
   for (const player of game.freeAgents) players.set(player.id, player)
 
-  const clubs = new Map(game.clubs.map((club) => [club.id, club]))
+  const clubs = new Map([...game.clubs, ...game.foreign.clubs].map((club) => [club.id, club]))
 
   return {
     player: (id) => players.get(id)?.name ?? t('news.unknownPlayer'),

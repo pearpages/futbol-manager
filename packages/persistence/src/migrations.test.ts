@@ -9,6 +9,7 @@ import v5Fixture from './fixtures/v5.json' with { type: 'json' }
 import v6Fixture from './fixtures/v6.json' with { type: 'json' }
 import v7Fixture from './fixtures/v7.json' with { type: 'json' }
 import v8Fixture from './fixtures/v8.json' with { type: 'json' }
+import v9Fixture from './fixtures/v9.json' with { type: 'json' }
 
 describe('the migration chain', () => {
   it('is contiguous and forward-only', () => {
@@ -487,5 +488,47 @@ describe('needsSquads', () => {
 describe('wrapSave', () => {
   it('stamps the current schema version', () => {
     expect(wrapSave({}, createRng(1).state()).schemaVersion).toBe(SCHEMA_VERSION)
+  })
+})
+
+describe('the v9 fixture save', () => {
+  // v9 is the last version with no market outside the twenty clubs. Captured by
+  // `pnpm fixture` against that build, **before `v9ToV10` existed** — the script
+  // stamps the version from the live chain, so that was the only moment it could
+  // have been taken. The trap has now been survived five times.
+  const envelope = v9Fixture as unknown as SaveEnvelope<unknown>
+
+  it('is genuinely a v9 save — a palmarés, but nowhere abroad', () => {
+    expect(envelope.schemaVersion).toBe(9)
+    const payload = envelope.payload as { history?: unknown; foreign?: unknown }
+    // M-phase-D's predecessor is there…
+    expect(payload).toHaveProperty('history')
+    // …and v10's is not.
+    expect(payload).not.toHaveProperty('foreign')
+  })
+
+  it('opens abroad empty rather than inventing a world', () => {
+    // Generating squads inside a migration would bake this build's generator into
+    // every future read of a v9 save. An empty foreign layer is a fully legal
+    // state — every path that touches it iterates `clubs` and does nothing — so
+    // the career simply carries on with the market it started with.
+    const after = readSave(envelope).payload as { foreign: { clubs: unknown[]; squads: object } }
+    expect(after.foreign).toEqual({ clubs: [], squads: {} })
+  })
+
+  it('preserves the career it was saved in', () => {
+    const before = envelope.payload as {
+      season: { startYear: number; currentDate: number }
+      managedClubId: string
+      history: unknown[]
+      squads: Record<string, unknown[]>
+    }
+    const after = readSave(envelope).payload as typeof before
+
+    expect(after.season.startYear).toBe(before.season.startYear)
+    expect(after.season.currentDate).toBe(before.season.currentDate)
+    expect(after.managedClubId).toBe(before.managedClubId)
+    expect(after.history).toEqual(before.history)
+    expect(Object.keys(after.squads)).toEqual(Object.keys(before.squads))
   })
 })
