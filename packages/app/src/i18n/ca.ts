@@ -23,21 +23,21 @@ export const ca: Dictionary = {
   'quadrant.mercado': 'Mercat',
   'quadrant.finanzas': 'Finances',
 
-  'action.back': 'Tornar',
-  'action.save': 'Desar ràpid',
+  'action.back': 'Torna',
+  'action.save': 'Desada ràpida',
   'action.saving': 'Desant…',
   'action.saved': 'Desat · {date}',
   'action.saves': 'Partides',
   'action.unread.one': '{count} sense llegir',
   'action.unread.other': '{count} sense llegir',
   'action.newCareer': 'Nova carrera',
-  'action.cancel': 'Cancel·lar',
-  'action.close': 'Tancar',
+  'action.cancel': 'Cancel·la',
+  'action.close': 'Tanca',
   'action.settings': 'Configuració',
   'action.language': 'Idioma',
 
   // ── El marc ──────────────────────────────────────────────────────────────
-  'shell.wordmark': 'Fútbol Manager',
+  'shell.wordmark': 'Futbol Manager',
   'shell.matchday': 'Jornada {round}',
   'shell.windowOpen.one': 'Mercat obert · {count} dia',
   'shell.windowOpen.other': 'Mercat obert · {count} dies',
@@ -62,12 +62,12 @@ export const ca: Dictionary = {
     'La junta t’ha destituït. Volien la posició {target} i no ho van aconseguir dues temporades seguides.',
   'hub.weakLineup':
     'El teu onze no és el més fort — {current} contra {best}. Fitxar algú no el fa titular.',
-  'hub.startSeason': 'Començar {season}',
-  'hub.playMatch': 'Jugar partit {opponent}',
-  'hub.toMatchday': 'Fins la jornada',
-  'hub.advanceDay': 'Avançar un dia',
+  'hub.startSeason': 'Comença {season}',
+  'hub.playMatch': 'Juga el partit {opponent}',
+  'hub.toMatchday': 'Fins a la jornada',
+  'hub.advanceDay': 'Avança un dia',
   'hub.news': 'Notícies',
-  'hub.readNews': 'Veure-ho tot',
+  'hub.readNews': 'Mostra-ho tot',
   'hub.noNews': 'Encara no ha passat res.',
 
   // ── Partides desades ─────────────────────────────────────────────────────
@@ -76,7 +76,7 @@ export const ca: Dictionary = {
   'saves.adoptedName': 'La meva carrera',
   // The dialog's own button. Plain `Desar`, not `action.save` — that one is the
   // footer's quick save, and "Quick save" reads wrong on a form that names a file.
-  'saves.write': 'Desar',
+  'saves.write': 'Desa',
   'saves.nameLabel': 'Posa un nom a la partida',
   'saves.empty': 'Encara no has desat res.',
   'saves.column.name': 'Partida',
@@ -85,9 +85,9 @@ export const ca: Dictionary = {
   'saves.summary': '{date} · {club} · jornada {round}',
   'saves.summaryOver': '{date} · {club} · temporada acabada',
   'saves.current': 'En joc',
-  'saves.load': 'Carregar',
-  'saves.delete': 'Esborrar',
-  'saves.confirmOverwrite': 'Vols escriure sobre «{name}»? El que hi ha ara es perdrà.',
+  'saves.load': 'Carrega',
+  'saves.delete': 'Esborra',
+  'saves.confirmOverwrite': 'Vols sobreescriure «{name}»? El que hi ha ara es perdrà.',
   'saves.confirmLoad':
     'Vols carregar «{name}»? Tot el que no hagis desat d’aquesta carrera es perdrà.',
   'saves.confirmDelete': 'Vols esborrar «{name}»? No hi ha manera de recuperar-la.',
@@ -98,7 +98,7 @@ export const ca: Dictionary = {
   'table.band.uel': 'Lliga Europa',
   'table.band.uecl': 'Lliga Conferència',
   'table.band.relegation': 'Descens',
-  'table.qualification': 'Classificació europea',
+  'table.qualification': 'Places europees',
   'table.column.position': '#',
   'table.column.club': 'Club',
   'table.column.played': 'J',
@@ -114,13 +114,13 @@ export const ca: Dictionary = {
   'table.latestResults': 'Últims resultats',
   'table.noResults': 'Avança el dia per jugar la propera jornada.',
 
-  // ── Resultats i palmarés ─────────────────────────────────────────────────
+  // ── Resultats i palmarès ─────────────────────────────────────────────────
   'results.tab.round': 'Jornada',
   'results.roundLabel': 'Jornada {round}',
   'results.prevRound': 'Jornada anterior',
   'results.nextRound': 'Jornada següent',
   'results.tab.grid': 'Resultats',
-  'results.tab.palmares': 'Palmarés',
+  'results.tab.palmares': 'Palmarès',
   'results.season': 'Temporada',
   'results.gridHeading': 'Tots els resultats · {season}',
   'results.gridNote':
@@ -131,8 +131,8 @@ export const ca: Dictionary = {
   'results.noSeason': 'No tenim aquesta temporada desada.',
   'results.archived.one': '{count} temporada a l’arxiu.',
   'results.archived.other': '{count} temporades a l’arxiu.',
-  'palmares.yours': 'El teu palmarés',
-  'palmares.league': 'Palmarés de la lliga',
+  'palmares.yours': 'El teu palmarès',
+  'palmares.league': 'Palmarès de la lliga',
   'palmares.history': 'Historial de la lliga',
   'palmares.empty': 'Encara no s’ha tancat cap temporada. L’historial comença amb aquesta.',
   'palmares.noChampions': 'Cap campió encara.',
@@ -172,18 +172,18 @@ export const ca: Dictionary = {
   'squad.column.age': 'Edat',
   'squad.column.overall': 'Mitj',
   'squad.column.wage': 'Sou',
-  'squad.column.contract': 'Fins a',
+  'squad.column.contract': 'Fins',
   'squad.column.worth': 'Valor',
   'squad.column.selected': 'Convocat',
   'squad.column.sale': 'Venda',
   'squad.starting': 'Onze titular',
   'squad.notSelected': '—',
-  'squad.list': 'Vendre',
+  'squad.list': 'Ven',
   'squad.listed': 'En venda',
-  'squad.cannotList.lineup': "És a l'onze titular — treu-lo de l'equip primer",
+  'squad.cannotList.lineup': 'És a l’onze titular — treu-lo de l’equip primer',
   'squad.cannotList.coverKeeper': 'Et quedaries amb un sol porter',
   'squad.column.contractAction': 'Contracte',
-  'squad.renew': 'Renovar',
+  'squad.renew': 'Renova',
   'squad.expiring': 'El contracte s’acaba aquesta temporada',
 
   // ── Renovació ────────────────────────────────────────────────────────────
@@ -191,14 +191,14 @@ export const ca: Dictionary = {
   'renew.current': 'Ara cobra {wage} i té contracte fins al {year}',
   'renew.hint':
     'Un contracte que s’acaba no val res com a traspàs — se’n va lliure. Renovar-lo no costa diners avui, però et compromets amb el sou fins al final.',
-  'renew.offer': 'Oferir renovació',
+  'renew.offer': 'Ofereix la renovació',
 
   // ── Oferta per un jugador d'un altre club ────────────────────────────────
-  'player.bid': 'Fer una oferta',
+  'player.bid': 'Fes una oferta',
   'bid.title': 'Oferta per {player}',
   'bid.reluctant':
-    'El {club} l’ha triat per a l’onze. En voldran molt més del que val sobre el paper, i una oferta baixa la rebutgen sense més.',
-  'bid.willing': 'El {club} el deixaria marxar. Té preu de venda.',
+    '{club} l’ha triat per a l’onze. En voldran molt més del que val sobre el paper, i una oferta baixa la rebutgen sense més.',
+  'bid.willing': '{club} el deixaria marxar. Té preu de venda.',
 
   'position.GK': 'POR',
   'position.DF': 'DEF',
@@ -208,7 +208,7 @@ export const ca: Dictionary = {
   // ── Alineació ────────────────────────────────────────────────────────────
   'lineup.startingXI': 'Onze titular',
   'lineup.needed': 'en calen {count}',
-  'lineup.pick': 'Canviar',
+  'lineup.pick': 'Canvia',
   'lineup.pitch': 'El camp',
   'lineup.bench': 'Suplents',
   'lineup.available.one': '{count} disponible',
@@ -218,11 +218,11 @@ export const ca: Dictionary = {
   'lineup.slotLabel': '{position} · {name} · {overall}',
   'lineup.shape': 'Sistema',
   'lineup.formation': 'Formació',
-  'lineup.formationHint': 'Canviar de sistema tria el millor onze possible.',
-  'lineup.cannotField': 'La teva plantilla no pot cobrir aquest sistema',
+  'lineup.formationHint': 'En canviar de sistema es tria el millor onze possible.',
+  'lineup.cannotField': 'No tens jugadors per a aquest sistema',
   'lineup.approach': 'Plantejament · {approach}',
   'lineup.approachHint':
-    'Forçar cap als extrems costa més del que dóna. Atacar li va bé a un equip fort; un de fluix ho paga.',
+    'Forçar cap als extrems costa més del que dona. Atacar li va bé a un equip fort; un de fluix ho paga.',
   'lineup.thisXI': 'Aquest onze',
   'lineup.attack': 'Atac',
   'lineup.tempo': 'Ritme',
@@ -288,7 +288,7 @@ export const ca: Dictionary = {
   'market.tab.forSale': 'En venda',
   'market.tab.clubs': 'Clubs',
   'market.allClubs': '‹ Tots els clubs',
-  'market.atHome': 'Primera División',
+  'market.atHome': 'La teva lliga',
   'country.EN': 'Anglaterra',
   'country.DE': 'Alemanya',
   'country.FR': 'França',
@@ -296,13 +296,13 @@ export const ca: Dictionary = {
   'country.PT': 'Portugal',
   'country.NL': 'Països Baixos',
   'country.BE': 'Bèlgica',
-  'country.TR': 'Türkiye',
+  'country.TR': 'Turquia',
   'market.squadSize': '{count} jugadors',
   'market.windowShut': 'El mercat és tancat. Obre al juliol i a l’agost, i altre cop al gener.',
   'market.withinBudget': 'Dins del pressupost',
   'market.freeAgents': 'Agents lliures',
   'market.shortlistOnly': 'Només seguits',
-  'market.showing': 'Mostrant {shown} de {total}',
+  'market.showing': 'Se’n mostren {shown} de {total}',
   'market.noMatches': 'Ningú no compleix aquests filtres.',
   'market.column.position': 'Pos',
   'market.column.player': 'Jugador',
@@ -314,61 +314,61 @@ export const ca: Dictionary = {
   'market.column.action': 'Acció',
   'market.freeAgent': 'Agent lliure',
   'market.free': 'Lliure',
-  'market.watch': 'Seguir',
+  'market.watch': 'Segueix',
   'market.watching': 'Seguit',
-  'market.sign': 'Signar',
-  'market.bid': 'Oferir',
+  'market.sign': 'Fitxa',
+  'market.bid': 'Ofereix',
   'market.budget': 'Pressupost',
   'market.window': 'Mercat',
   'market.windowOpen': 'Obert',
   'market.windowClosed': 'Tancat',
   'market.upForSale': 'En venda',
   'market.nobodyListed':
-    'Ningú en venda. La teva plantilla és invisible per als altres clubs fins que hi posis algú — fes-ho des de la plantilla.',
+    'No tens ningú en venda. Els altres clubs gairebé no et veuen la plantilla fins que hi posis algú a la venda, i això es fa des de Plantilla.',
   'market.askingLine': '{position} · demanen {fee}',
-  'market.takeOff': 'Retirar',
+  'market.takeOff': 'Retira de la venda',
   'market.offersForYours': 'Ofertes pels teus jugadors',
   'market.noOffers': 'Res sobre la taula.',
   'market.unknownPlayer': 'Desconegut',
-  'market.accept': 'Acceptar',
-  'market.reject': 'Rebutjar',
+  'market.accept': 'Accepta',
+  'market.reject': 'Rebutja',
   'market.yourBids': 'Les teves ofertes',
   'market.noBids': 'Cap oferta pendent.',
-  'market.openNegotiation': 'Obrir',
-  'market.withdraw': 'Retirar',
+  'market.openNegotiation': 'Obre',
+  'market.withdraw': 'Retira l’oferta',
   'market.feeAgreed': 'Traspàs acordat — ara les condicions',
   'market.theyWant': 'En volen {fee}',
   'market.awaiting': 'Esperant resposta',
   'market.feeField': 'Traspàs (milers) · en demanen {fee}',
-  'market.makeBid': 'Fer oferta',
-  'market.bidAgain': 'Tornar a oferir',
+  'market.makeBid': 'Fes l’oferta',
+  'market.bidAgain': 'Torna a oferir',
   'market.outlay':
-    'Més una prima de fitxatge del {percent} de {bonus} per al jugador — {total} en total.',
+    'A més, una prima de fitxatge del {percent} — {bonus} per al jugador. En total, {total}.',
   'market.bidHint':
     'Una oferta igual o superior al que demanen s’accepta. Per sota, poden posar preu. La resposta triga un parell de dies.',
   'market.wageField': 'Sou per temporada (milers) · en vol {wage}',
   'market.yearsField': 'Durada del contracte en anys',
-  'market.signHim': 'Signar-lo',
-  'market.offerTerms': 'Oferir condicions',
-  'market.termsHint': 'El traspàs et dóna dret a parlar-hi. Encara ha de voler venir.',
+  'market.signHim': 'Fitxa’l',
+  'market.offerTerms': 'Ofereix condicions',
+  'market.termsHint': 'El traspàs et dona dret a parlar-hi. Encara ha de voler venir.',
 
   // ── Tria de club ─────────────────────────────────────────────────────────
   'setup.heading': 'Tria un club',
-  // Un altre pestanya té la base de dades oberta amb una versió anterior.
+  // Una altra pestanya té la base de dades oberta amb una versió anterior.
   'setup.storageBlocked':
     'No s’ha pogut llegir la teva carrera: el joc està obert en una altra pestanya. Tanca-la i torna a carregar aquesta pàgina.',
-  'setup.note': 'Dirigeixes un club durant la temporada. La resta els porta el joc.',
+  'setup.note': 'Dirigeixes un club durant la temporada. De la resta se n’ocupa el joc.',
   'setup.column.club': 'Club',
   'setup.column.attack': 'Atac',
   'setup.column.defence': 'Def',
   'setup.column.prospects': 'Expectatives',
-  'setup.takeCharge': 'Agafar el càrrec',
+  'setup.takeCharge': 'Fes-te’n càrrec',
   'tier.contender': 'Candidat',
-  'tier.contender.note': 'S’espera que la guanyi. Qualsevol altra cosa és un fracàs.',
+  'tier.contender.note': 'S’espera que guanyi la lliga. Qualsevol altra cosa és un fracàs.',
   'tier.european': 'Europeu',
   'tier.european.note': 'Hauria de quedar entre els sis primers. El títol necessita sort.',
   'tier.midTable': 'Mitja taula',
-  'tier.midTable.note': 'Salvat gairebé sempre. Europa seria una bona temporada.',
+  'tier.midTable.note': 'Se salva gairebé sempre. Europa seria una bona temporada.',
   'tier.struggler': 'En dificultats',
   'tier.struggler.note': 'La feina és sobreviure.',
   'tier.relegation': 'Favorit al descens',
@@ -405,17 +405,17 @@ export const ca: Dictionary = {
   'caja.annual': 'Anual',
   'caja.squad': 'Plantilla',
   'caja.wagesNote':
-    'Es paguen cada mes. Un club amb diners aturats paga per sobre del que toca, així que un saldo gran et costa més del que et dóna.',
+    'Es paguen cada mes. Un club amb diners parats paga per sobre del que toca, així que un saldo gran et costa més del que et dona.',
 
   // ── La junta ─────────────────────────────────────────────────────────────
   'board.heading': 'L’objectiu',
   'board.fallbackName': 'La junta',
-  'board.demand': 'El {club} espera acabar en la posició {target} o millor.',
+  'board.demand': '{club} espera acabar en la posició {target} o millor.',
   'board.target': 'Objectiu',
   'board.now': 'Ara',
   'board.played': 'Jugades',
   'board.nothingPlayed': 'Encara no s’ha jugat res.',
-  'board.onCourse': 'En camí. Mantingues-ho.',
+  'board.onCourse': 'Vas pel bon camí. Mantén-ho així.',
   'board.below': 'Per sota del que et van demanar.',
   'board.patience': 'Paciència',
   'board.clean':
@@ -437,7 +437,7 @@ export const ca: Dictionary = {
   'estadio.full': 'Ple',
   'estadio.price': 'Preu · {price} per seient',
   'estadio.priceHint':
-    'Cobrar més et dóna més per cap i et deixa seients buits. Hi ha un preu òptim, i es mou amb com de bo ets i on ets a la taula.',
+    'Cobrar més et dona més per entrada i et deixa seients buits. Hi ha un preu òptim, i es mou amb com de bo ets i on ets a la taula.',
   'estadio.works': 'Obres',
   'estadio.underWay.one':
     'S’està construint {seats} seient nou, a punt per a la {season}. Una obra alhora.',
@@ -446,25 +446,25 @@ export const ca: Dictionary = {
   'estadio.seats': 'Seients · {cost}',
   'estadio.seatsHint':
     'Es paga ara i és a punt la temporada vinent. Els seients només valen la pena si omples els que ja tens.',
-  'estadio.begin': 'Començar obres',
+  'estadio.begin': 'Comença les obres',
 
   // ── Notícies ─────────────────────────────────────────────────────────────
-  'news.won': 'Victòria contra el {opponent} {ours}–{theirs}',
-  'news.lost': 'Derrota contra el {opponent} {ours}–{theirs}',
-  'news.drew': 'Empat contra el {opponent} {ours}–{theirs}',
+  'news.won': 'Victòria contra {opponent} {ours}–{theirs}',
+  'news.lost': 'Derrota contra {opponent} {ours}–{theirs}',
+  'news.drew': 'Empat contra {opponent} {ours}–{theirs}',
   'news.bidMade': 'Oferta de {fee} per {player}',
   'news.bidAccepted': 'Traspàs acordat per {player} — ara les condicions',
   'news.bidCountered': 'Contraoferta per {player}: en volen {fee}',
   'news.bidRejected': 'La teva oferta per {player} ha estat rebutjada',
-  'news.offerReceived': 'El {club} ofereix {fee} per {player}',
+  'news.offerReceived': '{club} ofereix {fee} per {player}',
   'news.termsRejectedWage': '{player} ha rebutjat les teves condicions — vol {wage} per temporada',
   'news.termsRejectedLength':
     '{player} ha rebutjat les teves condicions — no signarà per tant temps',
   'news.signed': '{player} fitxat per {fee}',
-  'news.signedFree': '{player} fitxat lliure',
-  'news.sold': '{player} venut al {club} per {fee}',
-  'news.soldFree': '{player} traspassat al {club} lliure',
-  'news.contractRenewed': '{player} ha renovat {years} anys més, per {wage} per temporada',
+  'news.signedFree': '{player} fitxat sense cost',
+  'news.sold': '{player} venut {club} per {fee}',
+  'news.soldFree': '{player} traspassat {club} sense cost',
+  'news.contractRenewed': '{player} ha renovat {years} anys més, a {wage} per temporada',
   'news.contractExpiring': 'El contracte de {player} s’acaba al final de la temporada',
   'news.playerReleased': '{player} se’n va lliure — no li han renovat el contracte',
   'news.playerRetired': '{player} es retira als {age} anys',
@@ -500,9 +500,9 @@ export const ca: Dictionary = {
     'La qualitat hi fa la major part i la classificació la resta: pujar omple seients. Un bon club amb el camp mig buit normalment cobra massa.',
   'explain.ticket.title': 'Què cobrar',
   'explain.ticket.p1':
-    'Cada seient venut paga el mateix, així que una entrada més cara recapta més per cap i deixa més seients buits. Les dues coses estiren en direccions contràries i la taquilla és el que en queda.',
+    'Cada seient venut paga el mateix, així que una entrada més cara recapta més per espectador i deixa més seients buits. Les dues coses estiren en direccions contràries i la taquilla és el que en queda.',
   'explain.ticket.p2':
-    'Entremig hi ha un preu millor per al teu club, i és més car que el de la lliga, no pas més barat. Però no és el màxim de la barra: si hi arribes, perds més en seients buits del que guanyes per cap.',
+    'Entremig hi ha un preu millor per al teu club, i és més car que el de la lliga, no pas més barat. Però no és el màxim de la barra: si hi arribes, perds més en seients buits del que guanyes per entrada.',
   'explain.expansion.title': 'Les obres',
   'explain.expansion.p1':
     'Els seients es paguen en el moment que els encarregues i arriben a temps per a la temporada vinent. Només una obra alhora.',
@@ -522,11 +522,11 @@ export const ca: Dictionary = {
   'explain.squadTable.p6':
     'Fins és la temporada en què s’acaba el contracte, i es marca en vermell quan és aquesta. Si arribes a l’estiu sense fer res, el club renova qui encara li fa falta i la resta marxa lliure — però pots renovar-lo tu abans, quan vulguis.',
   'explain.squadTable.p7':
-    'Posar-lo a la llista diu als altres dinou clubs que està disponible. Sense això la teva plantilla és gairebé invisible: encara poden venir a buscar algú de qui clarament puguis prescindir, però un jugador llistat els costa molt menys de decidir.',
+    'Posar-lo a la venda diu als altres clubs que està disponible. Sense això la teva plantilla és gairebé invisible: encara poden venir a buscar algú de qui clarament puguis prescindir, però amb un jugador ja posat a la venda els costa molt menys de decidir-se.',
   'explain.squadTable.p8':
-    'La llista és el consentiment. Un jugador llistat que trobi comprador es ven, i no se’t torna a preguntar.',
+    'Posar-lo a la venda és el consentiment. Un jugador en venda que trobi comprador es ven, i no se’t torna a preguntar.',
   'explain.squadTable.p9':
-    'No pots llistar ningú del teu onze titular —treu-lo primer— ni quedar-te amb un sol porter. Les plantilles van de {min} a {max}: ningú no compra si ja és al sostre, i els clubs deixen de vendre a prop del terra.',
+    'No pots posar a la venda ningú del teu onze titular —treu-lo primer— ni quedar-te amb un sol porter. Les plantilles van de {min} a {max}: ningú no compra si ja és al sostre, i els clubs deixen de vendre a prop del terra.',
   'explain.squadTable.p10':
     'Renovar és una negociació, no un botó: has de posar-hi un sou i uns anys que ell accepti, i pot dir que no. No et costa res avui i no cal cap mercat obert. El que compres és temps —i que torni a valer alguna cosa si el vols vendre.',
   'explain.teamRating.title': 'Atac, defensa i ritme',
@@ -536,7 +536,7 @@ export const ca: Dictionary = {
     'El teu atac es mesura contra la seva defensa, i el seu contra la teva. Uns quants punts d’avantatge valen més del que sembla, perquè l’efecte es multiplica en comptes de sumar-se.',
   'explain.teamRating.p3':
     'No totes les samarretes pesen igual. Un davanter té molta més part de l’atac que un defensa, i el porter és més part de la defensa que cap jugador de camp, cosa que el converteix en el fitxatge que més ho canvia.',
-  'explain.tempo.title': 'El ritme, i per què no en tens barra',
+  'explain.tempo.title': 'El ritme, i per què no hi ha cap barra per regular-lo',
   'explain.tempo.p1':
     'El ritme és com d’obert és el partit. No afavoreix ningú: puja o baixa els gols que esperen totes dues bandes alhora.',
   'explain.tempo.p2':
@@ -547,7 +547,7 @@ export const ca: Dictionary = {
   'explain.approach.p1':
     'Desplaçar-la cap a l’atac treu força de la defensa i la posa a l’atac; cap a l’altra banda, al revés. No fa millor l’equip.',
   'explain.approach.p2':
-    'I no és un intercanvi just en cap direcció: sempre cedeixes més del que guanyes, i com més forces pitjor és el canvi. Apostar per l’atac va bé a un equip prou bo per guanyar el partit; un de més feble en treu més tancant-lo. Un equip mitjà normalment surt castigat fent qualsevol de les dues coses.',
+    'I no és un intercanvi just en cap direcció: sempre cedeixes més del que guanyes, i com més forces pitjor és el canvi. Apostar per l’atac va bé a un equip prou bo per guanyar el partit; un de més feble en treu més tancant el partit. Un equip mitjà normalment surt castigat fent qualsevol de les dues coses.',
   'explain.calendar.title': 'Les dates que compten',
   'explain.calendar.p1':
     'Els teus trenta-vuit partits en ordre, amb les dates que la lliga i la junta t’imposen intercalades allà on cauen. Les jornades van d’una en una cada setmana; la resta, no.',
@@ -583,7 +583,7 @@ export const ca: Dictionary = {
   'error.offer.settled': 'Aquesta oferta ja està resolta',
   'error.offer.cannotSpare': 'Ja no te’n pots desprendre',
   'error.list.notYours': 'Només pots posar en venda els teus jugadors',
-  'error.list.firstTeam': "{player} és a l'onze titular — treu-lo de l'equip primer",
+  'error.list.firstTeam': '{player} és a l’onze titular — treu-lo de l’equip primer',
   'error.list.coverKeeper': 'Vendre {player} et deixaria amb un sol porter',
   'error.tactics.range': 'Les tàctiques han d’estar entre 0 i 100',
   'error.season.notOver': 'La temporada encara no s’ha acabat',
@@ -592,18 +592,18 @@ export const ca: Dictionary = {
   'error.expansion.range': 'Una ampliació va de {min} a {max} seients',
 
   // ── La portada ──────────────────────────────────────────────────────────────
-  'action.quit': 'Sortir de la carrera',
+  'action.quit': 'Surt de la carrera',
   'hub.confirmQuit':
-    'Vols sortir d’aquesta carrera? Es queda on és i Continua t’hi tornarà a portar, però desa-la si la vols un cop n’hagis començat una altra.',
-  'landing.tagline': 'Dirigeix un club espanyol. Una temporada cada cop.',
+    'Vols sortir d’aquesta carrera? Es queda on és i Continua t’hi tornarà a portar, però desa-la abans si penses començar-ne una altra.',
+  'landing.tagline': 'Dirigeix un club de primera divisió. Una temporada cada cop.',
   'landing.about.heading': 'Què és això',
   'landing.about.p1':
-    'Un joc de gestió futbolística en l’idioma dels CD-ROM espanyols dels noranta. No hi ha cap partit per mirar: tu tries l’onze, marques el plantejament i el resultat es resol amb els números.',
+    'Un joc de gestió futbolística a l’estil dels CD-ROM dels anys noranta. No hi ha cap partit per mirar: tu tries l’onze, marques el plantejament i el resultat es resol amb els números.',
   'landing.about.p2':
-    'Portes un sol club durant una temporada — la plantilla, les tàctiques, el mercat de fitxatges, la massa salarial, el camp i una junta que espera una posició a la lliga. La resta de la divisió la porta el joc.',
+    'Portes un sol club durant tota una temporada — la plantilla, les tàctiques, el mercat de fitxatges, la massa salarial, el camp i una junta que espera una posició concreta a la taula. De la resta de la divisió se n’ocupa el joc.',
   'landing.about.p3':
-    'Una carrera és determinista: les mateixes decisions donen sempre la mateixa temporada. Desa quan vulguis: el calendari, el mercat i el sorteig viatgen amb el fitxer.',
+    'Una carrera és determinista: les mateixes decisions donen sempre la mateixa temporada. Desa quan vulguis — el rellotge, el mercat i l’atzar viatgen amb el fitxer.',
   'landing.continue': 'Continua',
-  'landing.load': 'Carregar partida',
+  'landing.load': 'Carrega una partida',
   'shell.build': 'Compilació',
 }

@@ -7,7 +7,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { advance, advanceUntil, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
-import { FORM_MATCHES } from './FormStrip.tsx'
+import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import { QUADRANTS } from './HubScreen.tsx'
 
 /**
@@ -234,6 +234,35 @@ describe('the news feed', () => {
       }),
     )
     expect(screen.getAllByText(/(Beat|Lost to|Drew with)/).length).toBeGreaterThan(0)
+  })
+
+  it('gives the form strip a club name with its article', () => {
+    // Driven at the component rather than through a career, because it needs a
+    // club that starts with a vowel and which of those you play is the
+    // fixture list's business. Catalan elides — `contra el Elche` is what this
+    // read while the strip was handed a bare name.
+    const catalan = translatorFor('ca')
+    const elche = DEFAULT_CLUBS.find((c) => c.name === 'Elche')
+    if (elche === undefined) throw new Error('no such club')
+
+    render(
+      <FormStrip
+        results={[
+          {
+            fixtureId: 'f1' as never,
+            opponentId: elche.id,
+            home: true,
+            ours: 2,
+            theirs: 0,
+            outcome: 'win',
+          },
+        ]}
+        names={() => elche.name}
+        translator={catalan}
+      />,
+    )
+
+    expect(screen.getByText('Victòria contra l’Elche 2–0')).toBeDefined()
   })
 
   it('reports a transfer you would otherwise have missed', () => {

@@ -119,3 +119,60 @@ export const LOCALE_TAGS: Readonly<Record<Language, string>> = {
   es: 'es-ES',
   en: 'en-GB',
 }
+
+/**
+ * A club's name the way running prose refers to it.
+ *
+ * `el Madrid` · `l’Elche` · `al Madrid` · `a l’Elche` · `del Madrid` · `de l’Elche`
+ *
+ * The article is here rather than inside the sentence because eight of the clubs
+ * begin with a vowel — Elche, Almería, A Coruña, Islington, Amsterdam, Eindhoven,
+ * Anderlecht, İstanbul — and Catalan elides in front of them. A fixed `El {club}`
+ * in the dictionary can only ever be right for the other forty-nine.
+ *
+ * Dropping the article instead would have been cheaper and is wrong here: every
+ * club in this game *is* a city, so `contra Madrid` reads as the place and
+ * `contra el Madrid` as the team. The article is carrying meaning.
+ *
+ * Never hand this a fallback phrase — `un altre club`, `els agents lliures`,
+ * `La junta` all bring their own determiner and would come out doubled. It takes
+ * a real club's name and nothing else.
+ */
+export function clubPhrase(
+  language: Language,
+  name: string,
+  options: ClubPhraseOptions = {},
+): string {
+  // English names a club bare and keeps its preposition in the sentence, so
+  // there is nothing to build. Passing `prep` here is not an error — it is what
+  // lets one call site serve all three languages.
+  if (language === 'en') return name
+
+  const { prep, caps } = options
+  const phrase =
+    ELIDES.test(name) && language === 'ca'
+      ? `${prep === undefined ? '' : `${prep} `}l’${name}`
+      : `${CONTRACTED[prep ?? 'none']} ${name}`
+
+  return caps === true ? phrase.charAt(0).toUpperCase() + phrase.slice(1) : phrase
+}
+
+export interface ClubPhraseOptions {
+  /** Contracts with the article: `al Madrid`, `a l’Elche`, `del Madrid`. */
+  readonly prep?: 'a' | 'de'
+  /** Raises the first letter, for the sentences a club opens. */
+  readonly caps?: boolean
+}
+
+/**
+ * Catalan writes `l’` before a vowel or an `h`, diacritics included. `İ` is
+ * spelled out because JS case-insensitive matching does not fold U+0130 onto
+ * `i`, and İstanbul is one of the clubs.
+ */
+const ELIDES = /^[aeiouàèéíïòóúüh]|^İ/i
+
+const CONTRACTED: Readonly<Record<'a' | 'de' | 'none', string>> = {
+  a: 'al',
+  de: 'del',
+  none: 'el',
+}

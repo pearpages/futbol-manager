@@ -40,7 +40,7 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
   const translator = useT()
-  const { t, money, percent } = translator
+  const { t, money, percent, club } = translator
 
   const date = game.season.currentDate
   const sellerSquad = game.squads[owner.id] ?? game.foreign.squads[owner.id] ?? []
@@ -62,7 +62,9 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
             squad screen into a lookup, which is exactly why the "Improves" column
             came off the market at M4c. */}
         <p className="screen__note">
-          {t(premium > 1 ? 'bid.reluctant' : 'bid.willing', { club: owner.name })}
+          {t(premium > 1 ? 'bid.reluctant' : 'bid.willing', {
+            club: club(owner.name, { caps: true }),
+          })}
         </p>
 
         <div className="field">

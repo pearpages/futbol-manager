@@ -46,7 +46,7 @@ export const en: Dictionary = {
   'action.language': 'Language',
 
   // ── The shell ────────────────────────────────────────────────────────────
-  'shell.wordmark': 'Fútbol Manager',
+  'shell.wordmark': 'Futbol Manager',
   'shell.matchday': 'Matchday {round}',
   'shell.windowOpen.one': 'Transfer window open · {count} day',
   'shell.windowOpen.other': 'Transfer window open · {count} days',
@@ -298,7 +298,7 @@ export const en: Dictionary = {
   'market.tab.forSale': 'For sale',
   'market.tab.clubs': 'Clubs',
   'market.allClubs': '‹ All clubs',
-  'market.atHome': 'Primera División',
+  'market.atHome': 'Your league',
   'country.EN': 'England',
   'country.DE': 'Germany',
   'country.FR': 'France',

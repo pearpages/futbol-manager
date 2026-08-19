@@ -2,9 +2,10 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from './App.tsx'
-import { formatMoney, formatTicket, formatCount, formatDate } from './i18n/format.ts'
+import { clubPhrase, formatMoney, formatTicket, formatCount, formatDate } from './i18n/format.ts'
 import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, translate } from './i18n/index.ts'
 import { translatorFor } from './i18n/useT.ts'
+import { describeOpponent } from './matchday.ts'
 import { useGame } from './store.ts'
 import { labelStem } from './testing.ts'
 import type { DayNumber } from '@fm/domain'
@@ -189,5 +190,89 @@ describe('the news drawer', () => {
     const panel = screen.getByRole('heading', { name: t('hub.news') }).closest('section')
     expect(panel).not.toBeNull()
     expect(within(panel as HTMLElement).getByText(t('hub.noNews'))).toBeDefined()
+  })
+})
+
+describe('a club’s name carries its article', () => {
+  /**
+   * Eight of the fifty-seven clubs begin with a vowel — Elche, Almería, A Coruña,
+   * Islington, Amsterdam, Eindhoven, Anderlecht, İstanbul — so a fixed `El {club}`
+   * in the dictionary was wrong for every one of them.
+   */
+  it('elides in Catalan and does not in Spanish', () => {
+    expect(clubPhrase('ca', 'Madrid')).toBe('el Madrid')
+    expect(clubPhrase('ca', 'Elche')).toBe('l’Elche')
+    expect(clubPhrase('es', 'Madrid')).toBe('el Madrid')
+    expect(clubPhrase('es', 'Elche')).toBe('el Elche')
+  })
+
+  it('contracts the preposition only where there is an article to contract', () => {
+    expect(clubPhrase('ca', 'Madrid', { prep: 'a' })).toBe('al Madrid')
+    expect(clubPhrase('ca', 'Elche', { prep: 'a' })).toBe('a l’Elche')
+    expect(clubPhrase('ca', 'Madrid', { prep: 'de' })).toBe('del Madrid')
+    expect(clubPhrase('ca', 'Elche', { prep: 'de' })).toBe('de l’Elche')
+  })
+
+  it('knows a vowel under a diacritic, and İstanbul', () => {
+    // `İ` is U+0130 and JS case-insensitive matching does not fold it onto `i`,
+    // so it needs naming. Almería and A Coruña are the accented pair at home.
+    expect(clubPhrase('ca', 'İstanbul')).toBe('l’İstanbul')
+    expect(clubPhrase('ca', 'Almería')).toBe('l’Almería')
+    expect(clubPhrase('ca', 'A Coruña')).toBe('l’A Coruña')
+  })
+
+  it('raises the first letter where the club opens the sentence', () => {
+    expect(clubPhrase('ca', 'Madrid', { caps: true })).toBe('El Madrid')
+    expect(clubPhrase('ca', 'Elche', { caps: true })).toBe('L’Elche')
+  })
+
+  it('leaves English alone, preposition and all', () => {
+    // English names a club bare and keeps `to` inside the sentence, so one call
+    // site can serve all three languages without branching.
+    expect(clubPhrase('en', 'Elche')).toBe('Elche')
+    expect(clubPhrase('en', 'Elche', { prep: 'a', caps: true })).toBe('Elche')
+  })
+})
+
+describe('the next fixture reads like the news does', () => {
+  it('gives the opponent the same article the feed gives him', () => {
+    // These sit a few centimetres apart on the hub — the feed saying `contra el
+    // Bilbao` while the panel above it said `contra A Coruña` read as two
+    // different games.
+    const catalan = translatorFor('ca')
+    const elche = DEFAULT_CLUBS.find((c) => c.name === 'Elche')
+    if (elche === undefined) throw new Error('no such club')
+
+    expect(
+      describeOpponent(catalan, {
+        home: true,
+        opponent: elche,
+      } as never),
+    ).toBe('contra l’Elche (L)')
+  })
+
+  it('leaves the unknown-club placeholder its own wording', () => {
+    // `???` is not a club and must not be given an article.
+    const catalan = translatorFor('ca')
+    expect(describeOpponent(catalan, { home: true, opponent: undefined } as never)).toContain(
+      catalan.t('fixture.unknownClub'),
+    )
+  })
+})
+
+describe('the front page', () => {
+  it('does not call the clubs Spanish in Catalan', () => {
+    // The clubs are invented cities, so saying so was both untrue and needless —
+    // and the competition is not ours to name either.
+    const catalan = [
+      translate('ca', 'landing.tagline'),
+      translate('ca', 'landing.about.p1'),
+      translate('ca', 'landing.about.p2'),
+      translate('ca', 'landing.about.p3'),
+      translate('ca', 'market.atHome'),
+    ].join(' ')
+
+    expect(catalan).not.toMatch(/espanyol|Espanya/i)
+    expect(catalan).not.toMatch(/Primera División/)
   })
 })

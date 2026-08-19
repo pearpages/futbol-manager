@@ -31,6 +31,7 @@ import {
   surplus,
   toCivil,
 } from '@fm/domain'
+import { playersById } from '../players.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
@@ -366,12 +367,11 @@ export function MarketScreen() {
   const onSale = listedForSale(game)
   const outgoing = game.bids.filter((b) => b.from === managed && bidIsLive(b))
   const incoming = game.bids.filter((b) => b.to === managed && b.status === 'pending')
-  const byId = new Map<PlayerId, Player>(
-    [...game.clubs.flatMap((c) => game.squads[c.id] ?? []), ...game.freeAgents].map((p) => [
-      p.id,
-      p,
-    ]),
-  )
+  // **Abroad counts.** This map is what names a bid row and what the deal panel
+  // falls back to, so leaving the foreign squads out of it made a cross-border
+  // signing impossible to finish: the row read "unknown" and *Open* did nothing.
+  // Shared rather than built here, so the next lookup cannot miss a squad again.
+  const byId = playersById(game)
 
   /**
    * The deal on the table, if any.
@@ -449,7 +449,10 @@ export function MarketScreen() {
                     aria-pressed={positions.includes(position)}
                     onClick={() => setPositions(toggle(positions, position))}
                   >
-                    {position}
+                    {/* The translated code, not the raw enum. These sit directly
+                        above a Pos column that has always been translated, so in
+                        Catalan the filters read GK/DF/MF/FW over POR/DEF/MIG/DAV. */}
+                    {t(`position.${position}`)}
                   </button>
                 ))}
               </span>

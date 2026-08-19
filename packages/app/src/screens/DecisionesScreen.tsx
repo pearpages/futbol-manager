@@ -14,7 +14,7 @@ import './DecisionesScreen.css'
 
 export function DecisionesScreen() {
   const game = useGame((s) => s.game)
-  const { t } = useT()
+  const { t, club: clubPhrase } = useT()
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const table = computeTable(game.competition.clubIds, game.season.fixtures)
@@ -33,7 +33,13 @@ export function DecisionesScreen() {
         <div className="decisiones-screen__body">
           <p className="decisiones-screen__demand">
             {t('board.demand', {
-              club: club?.name ?? t('board.fallbackName'),
+              // The fallback brings its own article, so it must not go through
+              // `clubPhrase` — `El {club}` in the sentence used to make this
+              // read "El La junta espera".
+              club:
+                club === undefined
+                  ? t('board.fallbackName')
+                  : clubPhrase(club.name, { caps: true }),
               target,
             })}
           </p>

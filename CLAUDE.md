@@ -1828,3 +1828,250 @@ Four layout defects, none of which 1,342 green tests could see, because the app 
 Measured clean afterwards at 1920×1080, 1440×900, 1280×720, 900×650 and 820×600, in all three languages: nothing outside its box, no page scrolling sideways, both doors above the fold at every size, and the credit reading `Fet per pearpages · 7f1e3eb` / `Hecho por` / `Made by`. The hash is a literal in the bundle and `VITE_COMMIT` appears nowhere in it.
 
 **Note for the git history: another session committed twice into this tree while this was running** (`9b8ed0f`, `7f1e3eb`), and it had staged my work, so `git diff` showed almost nothing — **use `git diff --cached`**. Every file here is under `packages/app` bar the three docs, so determinism holds by construction rather than by diff.
+
+### 2026-08-19 — the signing from abroad you could not finish
+
+**Reported by playing: "when trying to buy an international player, the deal is accepted and when
+trying to negotiate the salary the name of the player says _Desconegut_ and I cannot bid."** Both
+halves were one defect, and it made **a cross-border transfer impossible for the human to
+complete**. 1347 tests, `pnpm season` **byte-identical to `4cd52f2` on seeds 1, 7 and 42**,
+`SCHEMA_VERSION` still 9, every changed file under `packages/app`.
+
+**One omission, two symptoms.** `MarketScreen.tsx` built its player lookup from
+`game.clubs.flatMap(squads)` plus `freeAgents` and left out `game.foreign.squads`. From that:
+
+- `BidName` fell back to `t('market.unknownPlayer')` — the reported "Desconegut".
+- `selected` synthesises a `Listing` from the live bid when the player has left `listingsFor`, and
+  that fallback needs `byId.get(target)`. It came back `undefined`, so `selected` was `null`, the
+  `selected !== null` guard never mounted `NegotiationPanel`, and **Obrir was a silent no-op.**
+
+**Why it bites abroad and only abroad.** `listingsFor` publishes just `FOREIGN_LISTINGS` (1) fringe
+player per foreign club — its own comment says everyone else is reachable "through the Clubs tab and
+the bid dialog on his card" — so a browser-sourced foreign signing is **never** in `all` and depends
+entirely on the bid fallback. And `BidPanel` deliberately declines to carry the terms stage
+("the deal is finished on the market screen"), so the outbox was the only route and it was the broken
+one. **This is the M4b unreachable-panel defect again**: that fallback exists precisely so Obrir is
+never a dead press, and it was defeated by a lookup that could not see the player.
+
+**The domain was already correct, which is why the fee agreed and nothing else worked.**
+`findPlayer` searches foreign squads, `squadOfAnyClub` resolves either side, and `applyTransfers`
+merges foreign squads and budgets into one map. No domain change, no migration.
+
+**Every other app-side lookup had already got the foreign line** — `notifications.ts`'s `lookupFor`,
+`PlayerScreen`, `BidPanel`, and three other spots in `MarketScreen` itself. Grepping every
+squad-flattening lookup in `packages/app/src` returned **exactly one hit**. So the fix is
+`packages/app/src/players.ts` — one `playersById(game)` used by both the market screen and
+`lookupFor`, a graduation on a genuine second use, the same move `bands.ts` and `sorting.ts` made.
+**The point is not tidiness: two call sites had to remember the foreign layer and one did not.**
+
+**The test-design finding, and it is the transferable part.** The subject has to be a foreign player
+who is **not** in `listingsFor`. Measured, not assumed: with the defect reinstated _and_ a listed
+foreign subject, the completion test **passes** and only the naming test fails — so a listed subject
+would have shipped a test that never saw the half making deals impossible. Asserted in the helper
+so it cannot drift.
+
+**Mutation sweep, one at a time so each failure was attributable.** Dropping the foreign line from
+`playersById` fails exactly 4 tests; re-inlining the domestic-only `byId` fails exactly 2, which is
+what proves the screen actually reads the shared helper rather than keeping a private copy. Nothing
+else moved in either case.
+
+**A new environment trap, and it cost the first two browser attempts: a service worker from another
+project was registered on `localhost:4173` and served _its_ app.** `curl` saw Fútbol Manager and
+Chrome saw a fitness PWA, cache-buster and all — so the usual "is the build stale" check says
+nothing here. **A shared localhost port is a shared origin, and a PWA on it wins.** Preview on a
+port no other project has claimed (4321, `--strictPort`); the tell is a correct `<title>` from curl
+against a completely different page in the browser. Two stray vite servers were also alive from
+17 and 18 Aug.
+
+**Driven in the real browser — and the extension connected, confirming the precondition the previous
+entry worked out.** Madrid, then München: bid €1.21M for Raphaël Guerreirú (a browser-only man, not
+the club's one listing), fee agreed two days later, **the outbox names him**, Obrir **opens the
+panel**, terms at 255 k€ over three years — and he is in Plantilla at row 11 with München down from
+22 players to 21 and the budget €22M → €20.7M, fee plus the 10% bonus. The feed named him correctly
+throughout, which is the check that `lookupFor` survived being refactored onto the shared helper.
+
+**Noticed, pre-existing, not touched:** in the market rail `Pressupost 20,7 M€` wraps the figure onto
+a second line once it reaches four characters — the "wrap the row, never the value" rule
+`.caja-screen__stats` already records, unapplied here.
+
+### 2026-08-19 (b) — the cover, redone as painted box art
+
+**Rejected on sight — "it sucks" — with a direct question: was Gemini used?** No. It was a
+hand-authored 161x91 character grid, and the failure was mine. What made it useful was that the
+diagnosis is measurable rather than a matter of taste:
+
+- **I capped the detail myself.** `cover.test.ts` asserted under 1,800 rects; it shipped 1,401 for
+  14,651 pixels — an average run of **10.5 px**, i.e. long flat bands by construction. The stadium
+  art runs **1.9-3.7**. The cover was the least detailed art in the project because of a budget I
+  wrote, justified by a bad comparison to the stadium.
+- **The figure was literally a rectangle** — constant-width flat `#070b18` from row 58 to the
+  bottom edge, no taper, no arms, no value steps. That is why it read as a monolith.
+- **A fifth of the canvas was dead** flat fill under the wordmark; the crowd was uniform speckle;
+  the floodlights lit nothing.
+
+**Now a generated raster — [ADR 0012](docs/adr/0012-generated-cover-art.md).** The owner chose
+Gemini, painted 90s box art, the manager-on-the-touchline subject kept, no lettering in the image,
+and the accent dropped **everywhere**: `Futbol Manager`. 1346 tests, `pnpm season` untouched
+(nothing outside `packages/app` bar `index.html` and docs), `SCHEMA_VERSION` still 10.
+
+**The line ADR 0012 draws is medium, not quality, and it matters for the next session: everything
+in-app stays hand-drawn.** Box art was never the same medium as the UI it fronts — PC Futbol's own
+covers were painted while its screens were pixels. And every in-app drawing is _parameterised_ (a
+badge takes club colours, a stadium a tier, a figure a hover state) so it needs geometry a program
+can address. A cover is drawn once and never is.
+
+**Eight candidates, judged by looking, not one prompt.** Five compositions, then a refinement pass
+on the two finalists. The winner has the best-rendered figure — real coat form and rim light on the
+hair and shoulder, which is precisely what the pixel version lacked — plus canvas grain, rain in
+the beams, and deliberate open space in the top-right for the wordmark. Ship: `cwebp -q 86`,
+**197 KB**, no project dependency added. The bundle also lost ~15 KB with the grid gone.
+
+**The wordmark is real text, and that is what guarantees the string.** Image models spell badly and
+the exact spelling was the instruction. The existing `<h1>` was `visually-hidden` because the art
+carried the name; it is now the visible wordmark, so the name is said once by the element that both
+shows it and announces it, and the picture is decoration with an empty `alt`. **The app's first
+container query** goes with it: the lettering has to be a constant fraction of the _picture_, not
+the viewport, or it drifts off the corner it was placed in. `container-type: inline-size` needs
+`width: 100%` beside it — a flex item left at `auto` contributes nothing intrinsic and collapses.
+
+**A layout defect inherited from the pixel cover, found only by measuring in a browser.** The two
+carried-over `@media (height < ...)` steps fired at **1440x723 — any window that is not maximised**
+— shrinking the cover to 48rem inside a 1016px column with 112px of vertical room going spare. Both
+are replaced by `max-width: min(64rem, calc((100dvh - 5rem) * 1.75))`: as large as fits in both
+directions, continuously, no jump. **A cap derived from the space available cannot be wrong at a
+size nobody measured**, which two measured breakpoints demonstrably were.
+
+**Five mutations, one at a time, each failing exactly its own test** — heading back to
+`visually-hidden`, `alt` removed, the accent restored in one dictionary, a height step altered, and
+`text-transform` dropped. The sizing test **strips comments before asserting no `@media (height`
+survives**, because the comment explaining the removal names the thing it removed — the third time
+this project has hit that exact trap.
+
+**Verified in a real browser** (the extension connected again) at 1920x1080, 1440x900, 1280x720,
+1100x800, 900x650 and 820x600: no horizontal scroll anywhere, the wordmark inside the art at every
+size, both doors above the fold, and the lettering scaling 29-45px with the picture. All three
+languages read `Futbol Manager`, and the club picker's bar now does too.
+
+**Serving trap worth keeping: another project has a service worker registered on
+`localhost:4173`.** It intercepts the origin and serves _its_ app — `curl` sees Futbol Manager and
+Chrome sees a fitness PWA, cache-buster and all. A shared localhost port is a shared origin. Use a
+port no other project has claimed; 4321 here.
+
+### 2026-08-19 — el català, revisat contra la norma
+
+**Prompted by "revisa els textos en català, alguns sonen altament antinaturals". The deciding instruction for everything
+below was three words — **"el que sigui normatiu"**. 1,349 tests, `SCHEMA_VERSION` still 9, and
+every file touched is under `packages/app`, so `pnpm season` reads none of it.
+
+**The diagnosis, and it explains the whole shape of the fix: `ca.ts` was translated from `es.ts`,
+not from `en.ts`.** Comparing the three side by side, every awkward sentence in Catalan has a
+Spanish twin one file over — `en el idioma de los CD-ROM` → `en l'idioma dels CD-ROM`, `En camino`
+→ `En camí`, `Mostrando` → `Mostrant`, `no puede cubrir este sistema` → `no pot cobrir aquest
+sistema`. The unnaturalness was not carelessness; it was a second-hand translation.
+
+**Buttons went infinitive → imperative, per the Softcatalà style guide**, which is the de-facto
+standard for Catalan localisation and says an order the user gives the program takes the
+imperative. 33 labels: `Tornar`→`Torna`, `Esborrar`→`Esborra`, `Acceptar`→`Accepta`. **`nav.*` was
+deliberately left alone** — those name destinations, not commands, and the neighbouring entries are
+nouns. The file was already half-imperative in its prose (`Avança el dia…`, `Tria algú…`, `Ven
+aviat o renova aviat`), so this closed a split that had been there since the i18n pass.
+
+**Orthography that was simply wrong:** `Palmarés` → **`palmarès`** (the accent is Spanish, ×3),
+`dóna` → **`dona`** ×4 (the IEC dropped that diacritic in 2016), `Fins la jornada` → `Fins a la
+jornada`, `Türkiye` → `Turquia` (every other country in that list is already in Catalan), plus a
+number disagreement in `setup.note` and a gender one in a comment. And the two values that were the
+only ones in the file with a **straight** apostrophe — which is why they were the only two in double
+quotes.
+
+**A lexical fix worth keeping: `llistar` is an anglicism and did not match its own button.** Three
+explainer paragraphs said _posar-lo a la llista_ / _un jugador llistat_ while the control beside
+them says **Ven** and the state says **En venda**. All three now use _posar a la venda_.
+
+---
+
+**The article in front of a club name was the one thing that needed code, and it is now
+`clubPhrase` in `i18n/format.ts`.** Eight of the fifty-seven clubs begin with a vowel — Elche,
+Almería, A Coruña, Islington, Amsterdam, Eindhoven, Anderlecht, İstanbul — and Catalan elides in
+front of them, so a fixed `El {club}` in the dictionary was wrong for every one. `l'Elche`,
+`el Madrid`; `a l'Elche`, `al Madrid`; `de l'Elche`, `del Madrid`.
+
+**Dropping the article instead would have been free and is wrong here, and that is the
+justification the file carries:** every club in this game _is_ a city, so `contra Madrid` reads as
+the place and `contra el Madrid` as the team. The article carries meaning.
+
+- **`İ` is spelled out in the elision regex.** JS case-insensitive matching does not fold U+0130
+  onto `i`, so `/[aeiou]/i.test('İstanbul')` is **false** and İstanbul would have taken `el`.
+- **It is exposed as `club` on the `Translator`**, beside `money`, `ticket`, `date` and `season` —
+  which is what that interface exists for, and all six call sites already had one to hand.
+- **`NameLookup` gained `clubPhrase` rather than the call sites branching**, because
+  `names.club(id)` can answer with a _fallback phrase_ — `un altre club`, `els agents lliures` —
+  and those bring their own determiner. Resolving the club is what decides whether an article
+  applies, so the decision belongs at the lookup. **Never hand `clubPhrase` a fallback string.**
+- **It fixed a live defect on the way.** `board.demand` was `El {club} espera…` with
+  `t('board.fallbackName')` = `La junta` as its fallback, so an unresolved club rendered **"El La
+  junta espera…"**.
+
+The article moved out of seven sentences **in `ca.ts` and `es.ts`**; `en.ts` did not change shape,
+because English names a club bare and keeps its preposition in the sentence, and `clubPhrase` is
+the identity there. That is what lets one call site serve all three.
+
+---
+
+**The front page: no Spain, no competition named — in Catalan only, which was the explicit call.**
+The clubs are invented cities, so `un club espanyol` was both untrue and needless; `en l'idioma
+dels CD-ROM espanyols` was a false friend twice over, since English _idiom_ is **estil**. It reads
+`Dirigeix un club de primera divisió` and `a l'estil dels CD-ROM dels anys noranta` now.
+`landing.about.p3` also said **`el calendari`** where the English says _the day clock_ — a different
+thing, and the name of another screen.
+
+**`market.atHome` went generic in all three** — `La teva lliga` / `Tu liga` / `Your league` — because
+the reason there is rights rather than language. **Known and accepted: `competition.name` is still
+`'Primera División'` inside `GameState`, so the title bar still says it** while the club browser no
+longer does. Removing that is a v9→v10 migration plus three asserts in `App.test.tsx` and one in
+`ResultsScreen.test.tsx`, and was deliberately left as its own job.
+
+---
+
+**Twelve mutations, one at a time so each failure was attributable, and two gaps were real.** Ten
+bit their own test straight away. The **form strip** had none — `HubScreen.test.tsx` matched
+`/(Beat|Lost to|Drew with)/` in English, where `clubPhrase` is the identity, so unwiring
+`FormStrip` failed nothing. It is now driven at the component with a Catalan translator and a
+vowel-initial club, which is the only shape that can see it. **A test that runs pinned to English
+cannot see a Catalan-only fix.**
+
+**A process note, and it is the second time this project has recorded it: the harness timed out and
+skipped its own restore**, leaving `DecisionesScreen.tsx` mutated in the tree. The `finally` is not
+enough when the _runner_ is killed. Check `git status` after any interrupted sweep.
+
+---
+
+**Two defects that only the browser found, and 1,347 green tests could not.**
+
+- **The next-match panel disagreed with the news feed a few centimetres below it** — `contra el
+Bilbao` in the feed, `contra A Coruña` in the panel, because `fixture.home`/`away` did not go
+  through `clubPhrase`. Both `matchday.ts` and `CalendarScreen.tsx` do now, and the hub reads
+  `CONTRA L'A CORUÑA (L)` with the play button agreeing.
+- **The market's four position filters rendered the raw domain enum.** `{position}` rather than
+  ``t(`position.${position}`)`` — so in Catalan the chips read **GK/DF/MF/FW** directly above a Pos
+  column reading **POR/DEF/MIG/DAV**. The only place in the app where a domain code reached the
+  screen untranslated, and the English-pinned suite could never have seen it.
+
+**Seen in a real browser, through the extension** — which connected on the first try, following the
+2026-08-18 (b) finding. Drove a full career at Sarrià: the landing in Catalan, the club picker
+(`FES-TE'N CÀRREC`), the hub, three matchdays, Plantilla (`FINS` / `VEN` / `RENOVA`), the renewal
+dialog (`OFEREIX LA RENOVACIÓ`), the market (`SE'N MOSTREN 291 DE 291`), the club grid (`LA TEVA
+LLIGA` · `TURQUIA`), a bid on an İstanbul player — **"L'İstanbul l'ha triat per a l'onze."** — and
+Decisions (`El Sarrià espera acabar en la posició 9 o millor.`). The feed read **"Victòria contra
+l'A Coruña 2–1"**, which is the sentence this whole piece of code exists for. Every long imperative
+label fits its button.
+
+**Left alone deliberately, and noted rather than done:** `attribute.short.finishing` is `DEF` and
+collides with `position.DF` on the same ficha (same in Spanish — candidate `DFN`); `nav.caja` is
+`Caixa` while `caja.heading` is `Comptes`, two words for one screen; and the same calques still
+stand in `es.ts` (`en el idioma de`, `el calendario`, `Mostrando`, `cubrir este sistema`), because
+the brief was Catalan.
+
+**Note for the git history: another session was rebuilding the landing page's artwork throughout
+this one** — it deleted `CoverArt.tsx`, `cover.ts` and `cover.test.ts` and replaced the pixel cover
+with a photograph. It kept every `landing.*` key, so the two changes compose; the suite is 64 files
+here where it was 65, and that is theirs, not a regression.

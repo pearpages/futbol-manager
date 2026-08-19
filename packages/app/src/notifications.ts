@@ -1,5 +1,7 @@
-import type { ClubId, Event, GameState, Player, PlayerId } from '@fm/domain'
+import type { ClubId, Event, GameState, PlayerId } from '@fm/domain'
+import type { ClubPhraseOptions } from './i18n/format.ts'
 import type { Translator } from './i18n/useT.ts'
+import { playersById } from './players.ts'
 
 /**
  * Turning events into something a manager can read.
@@ -28,19 +30,23 @@ export interface Notice {
 export interface NameLookup {
   player(id: PlayerId): string
   club(id: ClubId | null): string
+  /**
+   * The same club with its article — `el Madrid`, `a l’Elche`.
+   *
+   * Separate from `club` because the two fallbacks (`un altre club`, `els
+   * agents lliures`) already carry a determiner of their own, and putting one
+   * of those through `clubPhrase` would double it. Resolving the club is what
+   * decides whether the article applies, so the decision belongs here rather
+   * than at each of the four sentences that needs it.
+   */
+  clubPhrase(id: ClubId | null, options?: ClubPhraseOptions): string
 }
 
-export function lookupFor(game: GameState, { t }: Translator): NameLookup {
-  const players = new Map<PlayerId, Player>()
-  for (const club of game.clubs) {
-    for (const player of game.squads[club.id] ?? []) players.set(player.id, player)
-  }
-  // Abroad too, or a sale across the border reads "unknown player moves to
-  // unknown club" — in the one sentence that exists to say what happened.
-  for (const club of game.foreign.clubs) {
-    for (const player of game.foreign.squads[club.id] ?? []) players.set(player.id, player)
-  }
-  for (const player of game.freeAgents) players.set(player.id, player)
+export function lookupFor(game: GameState, { t, club: withArticle }: Translator): NameLookup {
+  // Abroad included, or a sale across the border reads "unknown player moves to
+  // unknown club" — in the one sentence that exists to say what happened. Shared
+  // with the market screen, which had the same map inline and had forgotten it.
+  const players = playersById(game)
 
   const clubs = new Map([...game.clubs, ...game.foreign.clubs].map((club) => [club.id, club]))
 
@@ -49,6 +55,14 @@ export function lookupFor(game: GameState, { t }: Translator): NameLookup {
     // `null` is the free-agent pool, which belongs to nobody.
     club: (id) =>
       id === null ? t('news.freeAgents') : (clubs.get(id)?.name ?? t('news.unknownClub')),
+    clubPhrase: (id, options) => {
+      const name = id === null ? undefined : clubs.get(id)?.name
+      return name === undefined
+        ? id === null
+          ? t('news.freeAgents')
+          : t('news.unknownClub')
+        : withArticle(name, options)
+    },
   }
 }
 
@@ -82,7 +96,7 @@ export function describe(
       // and the table screen already lists them all.
       if (event.homeId !== you && event.awayId !== you) return null
       const home = event.homeId === you
-      const opponent = names.club(home ? event.awayId : event.homeId)
+      const opponent = names.clubPhrase(home ? event.awayId : event.homeId)
       const [ours, theirs] = home
         ? [event.score.home, event.score.away]
         : [event.score.away, event.score.home]
@@ -122,7 +136,7 @@ export function describe(
       return {
         key: `offer-${event.bidId}-${day}`,
         text: t('news.offerReceived', {
-          club: names.club(event.from),
+          club: names.clubPhrase(event.from, { caps: true }),
           fee: money(event.fee),
           player: names.player(event.playerId),
         }),
@@ -154,7 +168,7 @@ export function describe(
           key: `out-${event.playerId}-${day}`,
           text: t(free ? 'news.soldFree' : 'news.sold', {
             player,
-            club: names.club(event.to),
+            club: names.clubPhrase(event.to, { prep: 'a' }),
             fee: money(event.fee),
           }),
           tone: 'plain',

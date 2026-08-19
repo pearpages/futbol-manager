@@ -24,7 +24,7 @@ export function FormStrip({
   names: (id: ClubResult['opponentId']) => string
   translator: Translator
 }) {
-  const { t } = translator
+  const { t, club } = translator
   const blanks = Math.max(0, FORM_MATCHES - results.length)
 
   return (
@@ -44,7 +44,7 @@ export function FormStrip({
               ? 'news.lost'
               : 'news.drew',
           {
-            opponent: names(result.opponentId),
+            opponent: club(names(result.opponentId)),
             ours: result.ours,
             theirs: result.theirs,
           },

@@ -10,6 +10,7 @@ import {
   fromCivil,
   isTransferWindowOpen,
   MIN_SQUAD,
+  aiSaleRefusal,
   needFor,
   ROUNDS_PER_HALF,
   signingOutlay,
@@ -20,7 +21,7 @@ import {
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
-import { ADVANCE, advance, back, openScreen } from '../testing.ts'
+import { ADVANCE, advance, advanceUntil, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { listingsFor, listingValue, marketSeed, scoutedPrice } from './MarketScreen.tsx'
 
@@ -241,6 +242,23 @@ describe('reaching the whole market', () => {
     expect(total).toBeGreaterThan(60)
     expect(bodyRows()).toHaveLength(total)
     expect(screen.getByText(`Showing ${total} of ${total}`)).toBeDefined()
+  })
+
+  it('names the position filters in the language you are in', () => {
+    // These were the raw domain enum, so in Catalan the four filter buttons read
+    // GK/DF/MF/FW directly above a Pos column reading POR/DEF/MIG/DAV.
+    const catalan = translatorFor('ca')
+    useGame.setState({ language: 'ca' })
+    openMarket()
+
+    for (const position of ['GK', 'DF', 'MF', 'FW']) {
+      expect(
+        screen.getAllByRole('button', { name: catalan.t(`position.${position}`) }).length,
+      ).toBeGreaterThan(0)
+    }
+    expect(screen.queryByRole('button', { name: 'MF' })).toBeNull()
+
+    useGame.setState({ language: 'en' })
   })
 
   it('filters to a position', () => {
@@ -536,6 +554,95 @@ describe('the club browser', () => {
     )
 
     expect(game().bids.some((bid) => bid.playerId === starter.id)).toBe(true)
+  })
+
+  /**
+   * A player abroad who is **not** in `listingsFor`.
+   *
+   * **The precondition is the whole test design.** `selected` finds a listed
+   * player through `all` and never reaches the bid fallback, so a listed subject
+   * would exercise the naming half and silently skip the half that made the deal
+   * impossible to finish. Abroad, `listingsFor` publishes only `FOREIGN_LISTINGS`
+   * of a club's fringe, so everyone else is reachable through the Clubs tab and
+   * nowhere else — which is exactly the state the reported defect lived in.
+   *
+   * Cheapest first so the fee is inside even Madrid's overdraft, and skipping
+   * anyone his club would refuse on squad grounds so the only answer under test
+   * is the one about the fee.
+   */
+  const someoneAbroad = () => {
+    const state = game()
+    const date = state.season.currentDate
+    const listed = new Set(listingsFor(state).map((l) => l.player.id))
+
+    const options = state.foreign.clubs.flatMap((club) => {
+      const squad = state.foreign.squads[club.id] ?? []
+      return squad
+        .filter((player) => !listed.has(player.id) && aiSaleRefusal(squad, player) === null)
+        .map((player) => ({ club, player, price: scoutedPrice(squad, player, date) }))
+    })
+    const pick = [...options].sort((a, b) => a.price - b.price)[0]
+    if (pick === undefined) throw new Error('nobody reachable abroad')
+    // Stated rather than left to the filter: if this ever became false the tests
+    // below would pass while proving nothing.
+    expect(listed.has(pick.player.id)).toBe(false)
+    return pick
+  }
+
+  /** Bids what his club will take, then waits for the answer off the market. */
+  const agreeAFeeAbroad = () => {
+    const { club, player } = someoneAbroad()
+    browse(club.id)
+
+    fireEvent.click(screen.getByRole('button', { name: player.name }))
+    fireEvent.click(screen.getByRole('button', { name: t('player.bid') }))
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: t('market.makeBid') }),
+    )
+
+    // Waiting somewhere other than the market, for the reason the domestic
+    // version of this test records: the answer arrives with the clock, and
+    // ticking on a two-hundred-row table measures the table.
+    back()
+    back()
+    advanceUntil(() => game().bids.find((bid) => bid.playerId === player.id)?.status !== 'pending')
+    expect(game().bids.find((bid) => bid.playerId === player.id)?.status).toBe('accepted')
+
+    openScreen('nav.market')
+    const outbox = document.querySelector('.market-screen__outbox')
+    if (outbox === null) throw new Error('no outbox')
+    return {
+      club,
+      player,
+      outbox: within(outbox as HTMLElement),
+      outboxText: () => outbox.textContent ?? '',
+    }
+  }
+
+  it('names a man you have bid for abroad instead of calling him unknown', () => {
+    // The visible half of the defect: the lookup behind this row was built from
+    // the division alone, so every player abroad read as `market.unknownPlayer`.
+    const { player, outbox, outboxText } = agreeAFeeAbroad()
+
+    expect(outbox.getByText(player.name)).toBeDefined()
+    expect(outboxText()).not.toContain(t('market.unknownPlayer'))
+  })
+
+  it('finishes a signing from abroad — Open reaches personal terms', () => {
+    // **The half that made a cross-border transfer impossible.** With the player
+    // unresolvable, `selected` came out `null` and the negotiation panel never
+    // mounted, so Open was a silent no-op and there was no route to terms at all:
+    // `BidPanel` deliberately does not carry that stage.
+    const { club, player, outbox } = agreeAFeeAbroad()
+
+    fireEvent.click(outbox.getByRole('button', { name: t('market.openNegotiation') }))
+    expect(screen.getByRole('heading', { name: player.name })).toBeDefined()
+
+    fireEvent.click(screen.getByRole('button', { name: t('market.offerTerms') }))
+
+    expect((game().squads[RICH] ?? []).some((p) => p.id === player.id)).toBe(true)
+    // And he has actually left, rather than turning up in two squads at once.
+    expect((game().foreign.squads[club.id] ?? []).some((p) => p.id === player.id)).toBe(false)
   })
 })
 

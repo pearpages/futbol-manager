@@ -50,9 +50,13 @@ export function matchdayFor(game: GameState): Matchday | null {
  * and dropped into brackets: `(H)`/`(A)` abbreviate English words, and the words
  * differ — Catalan local/visitant, Spanish casa/fuera.
  */
-export function describeOpponent({ t }: Translator, matchday: Matchday): string {
+export function describeOpponent({ t, club }: Translator, matchday: Matchday): string {
+  const opponent = matchday.opponent
   return t(matchday.home ? 'fixture.home' : 'fixture.away', {
-    club: matchday.opponent?.name ?? t('fixture.unknownClub'),
+    // With its article, so this agrees with the news feed a few centimetres
+    // away — `contra el Bilbao` there and `contra A Coruña` here read as two
+    // different games. `???` keeps its own wording; it is not a club.
+    club: opponent === undefined ? t('fixture.unknownClub') : club(opponent.name),
   })
 }
 

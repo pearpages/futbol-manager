@@ -485,3 +485,4 @@ Locked decisions live in [`docs/adr/`](./adr/). Read them before reopening a set
 | [0009](./adr/0009-the-ledger-identity.md)   | Money is accounted for, not conserved                         |
 | [0010](./adr/0010-real-squad-shapes.md)     | Real squad shapes, and altered surnames                       |
 | [0011](./adr/0011-a-market-abroad.md)       | A market abroad, with generated names                         |
+| [0012](./adr/0012-generated-cover-art.md)   | The cover is generated box art                                |

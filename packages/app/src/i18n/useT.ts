@@ -1,5 +1,7 @@
 import { useGame } from '../store.ts'
 import {
+  type ClubPhraseOptions,
+  clubPhrase,
   formatCount,
   formatDate,
   formatMoney,
@@ -35,6 +37,14 @@ export interface Translator {
   date(day: number): string
   /** `2026` → `2026/27`. */
   season(startYear: number): string
+  /**
+   * A club's name with its article — `el Madrid`, `l’Elche`, `al Madrid`.
+   *
+   * Only ever a real club's name. The fallbacks the callers hold for a club
+   * they cannot resolve (`un altre club`, `La junta`) carry their own
+   * determiner and must go into the sentence untouched.
+   */
+  club(name: string, options?: ClubPhraseOptions): string
   /** For `localeCompare` — Catalan collation is genuinely its own. */
   readonly locale: string
 }
@@ -50,6 +60,7 @@ export function translatorFor(language: Language): Translator {
     percent: (fraction, decimals) => formatPercent(language, fraction, decimals),
     date: (day) => formatDate(language, day as never),
     season: formatSeason,
+    club: (name, options) => clubPhrase(language, name, options),
     locale: LOCALE_TAGS[language],
   }
 }

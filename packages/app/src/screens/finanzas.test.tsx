@@ -185,6 +185,32 @@ describe('Decisiones', () => {
     expect(screen.getByText(t('board.warned'))).toBeDefined()
   })
 
+  it('names the club without doubling its article', () => {
+    // `board.demand` used to be `El {club} espera…`, and the fallback for a club
+    // it cannot resolve is `The board` — so the sentence read "El La junta
+    // espera" in Catalan the moment the lookup missed. The article lives at the
+    // call site now, which is the only place that knows whether there is a club.
+    const catalan = translatorFor('ca')
+    useGame.setState({ language: 'ca' })
+    render(<App />)
+    openScreen('nav.decisiones')
+
+    const demand = document.querySelector('.decisiones-screen__demand')?.textContent ?? ''
+    expect(demand).toContain(catalan.club(club()?.name ?? '', { caps: true }))
+    expect(demand.startsWith('El El')).toBe(false)
+
+    useGame.setState({ language: 'en' })
+  })
+
+  it('falls back to the board’s own name with no article in front of it', () => {
+    const catalan = translatorFor('ca')
+    // A career whose managed club is not in the list — the only way the fallback
+    // is reachable, and the state the doubled article used to render from.
+    expect(
+      catalan.t('board.demand', { club: catalan.t('board.fallbackName'), target: 5 }),
+    ).toContain('La junta espera')
+  })
+
   it('is explicit that only the table is judged', () => {
     // The natural assumption is that the money counts too, and it does not.
     render(<App />)

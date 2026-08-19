@@ -35,6 +35,84 @@
   padding: var(--fm-space-2);
 }
 
+/*
+ * The box art, with the name set over it.
+ *
+ * `position: relative` so the wordmark can sit in the picture's own top-right,
+ * which the illustration deliberately leaves open — see ADR 0012.
+ *
+ * **The app's first container.** The wordmark has to be a constant fraction of
+ * the *picture*, not of the viewport, or it drifts off the open corner it was
+ * placed in as soon as the cover hits one of its three width caps. `cqw` is the
+ * only unit that says that. `width: 100%` goes with it and is not optional:
+ * `container-type` applies inline-size containment, so a flex item left at
+ * `width: auto` contributes nothing intrinsic and collapses.
+ */
+.landing__cover {
+  position: relative;
+  container-type: inline-size;
+  margin: 0;
+  width: 100%;
+  /*
+   * As large as fits in **both** directions, continuously.
+   *
+   * 64rem is the width cap — deliberately larger than the four-device-pixels-per-
+   * art-pixel the hand-drawn modules hold, because those are ornaments inside a
+   * screen and this is the screen. The second term is the height cap: the picture
+   * is 1.75:1, so a column `h` tall can only show `h x 1.75` of it, and 5rem is
+   * the hero's padding plus the credit strip under it.
+   *
+   * This replaces two measured `@media (height < ...)` steps carried over from the
+   * pixel cover, which were wrong here: at 1440x723 — any browser window that is
+   * not maximised — the 50rem step fired and shrank the picture to 48rem inside a
+   * 1016px column, with 112px of vertical room going spare. A cap derived from the
+   * space actually available cannot be wrong at a size nobody measured, and it has
+   * no jump in it.
+   */
+  max-width: min(64rem, calc((100dvh - 5rem) * 1.75));
+  min-width: 0;
+}
+
+/*
+ * Width only. The image supplies its own ratio, so it can never letterbox.
+ *
+ * Deliberately larger than the four-device-pixels-per-art-pixel the hand-drawn
+ * modules hold: those are ornaments inside a screen and this is the screen. At
+ * the house figure it sat in the middle of a 1440-wide page with a third of its
+ * column empty and read as an afterthought.
+ */
+.cover {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/*
+ * The game's name, as real text rather than painted into the picture.
+ *
+ * Condensed, heavy and widely tracked — display lettering, in the idiom of the
+ * box art under it. The shadow is not decoration: this sits on a painting whose
+ * local value is not ours to control, and a hairline of near-black under every
+ * letter is what keeps it legible if the art is ever re-cut.
+ */
+.landing__wordmark {
+  position: absolute;
+  top: var(--fm-space-4);
+  right: var(--fm-space-4);
+  margin: 0;
+  font-family: var(--fm-font-condensed);
+  font-size: clamp(1.5rem, 4.4cqw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-align: right;
+  text-transform: uppercase;
+  color: var(--fm-screen-ink);
+  text-shadow:
+    0 1px 0 rgb(0 0 0 / 85%),
+    0 0 12px rgb(0 0 0 / 70%);
+}
+
 .landing__aside {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { CoverArt } from './CoverArt.tsx'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { SettingsMenu } from './SettingsMenu.tsx'
 import './LandingScreen.css'
@@ -15,8 +14,8 @@ import './LandingScreen.css'
  *
  * Its own branch of the shell rather than a `Screen`, like the club picker: there
  * is no title bar, no `ShellFoot` and no career, so none of the career chrome
- * means anything here. The cover carries the game's name, which is why this
- * branch has no wordmark in a bar — two copies of one name is the mistake this
+ * means anything here. The wordmark over the cover is the game's name, which is
+ * why this branch has none in a bar — two copies of one name is the mistake this
  * codebase has removed twice already.
  */
 export function LandingScreen(): React.JSX.Element {
@@ -53,11 +52,16 @@ export function LandingScreen(): React.JSX.Element {
       </div>
 
       <div className="landing__hero">
-        {/* The name is drawn into the cover, and the cover is `aria-hidden` like
-            every other picture here — so this is where the name is actually
-            announced, once, as the heading of the page. */}
-        <h1 className="visually-hidden">{t('shell.wordmark')}</h1>
-        <CoverArt />
+        {/* Box art, and the only generated raster in the app — see ADR 0012. The
+            lettering is deliberately *not* painted into it: an image model spells
+            badly, and a real heading is crisper, translatable and announced. So
+            the name is said exactly once, by the element that both shows it and
+            carries it to assistive technology, and the picture stays decoration
+            with an empty `alt` like every other drawing here. */}
+        <figure className="landing__cover">
+          <img className="cover" src="/cover.webp" alt="" aria-hidden="true" />
+          <h1 className="landing__wordmark">{t('shell.wordmark')}</h1>
+        </figure>
       </div>
 
       <section className="screen landing__aside">

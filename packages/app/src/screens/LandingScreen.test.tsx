@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
@@ -60,6 +60,59 @@ describe('the front door', () => {
     expect(cover()?.getAttribute('aria-hidden')).toBe('true')
     expect(screen.getByRole('heading', { level: 1, name: t('shell.wordmark') })).toBeDefined()
     expect(screen.getByText(t('landing.about.p1'))).toBeDefined()
+  })
+
+  it('sets the name as real text over the picture, not painted into it', () => {
+    render(<App />)
+    // **The half a screenshot cannot check and a test can.** The old cover drew
+    // the lettering into the art and the heading was `visually-hidden` to avoid
+    // saying the name twice. Now the heading *is* the wordmark, so it has to be
+    // the visible one — leave the old class on it and the front door renders a
+    // painting with no title at all, while every assertion above still passes.
+    const heading = screen.getByRole('heading', { level: 1, name: t('shell.wordmark') })
+    expect(heading.className).toContain('landing__wordmark')
+    expect(heading.className).not.toContain('visually-hidden')
+
+    // Decorative, so it carries an empty `alt` as well as `aria-hidden` — a
+    // missing `alt` makes a screen reader read the file name instead.
+    expect(cover()?.getAttribute('alt')).toBe('')
+    expect(cover()?.getAttribute('src')).toBe('/cover.webp')
+  })
+
+  it('spells the name without the accent, in every language', () => {
+    // Asked for explicitly. The bar, the browser tab and the cover all render
+    // from this one key, so one spelling reaches all three.
+    for (const language of ['ca', 'es', 'en'] as const) {
+      expect(translatorFor(language).t('shell.wordmark')).toBe('Futbol Manager')
+    }
+  })
+
+  it('ships the cover as one asset inside a first-paint budget', () => {
+    // The replacement for the deleted rect budget. This lands on first paint with
+    // nothing else on the screen, so it is the one asset whose weight is felt.
+    // Measured 197 KB at q86 — the quality is deliberately high because the art is
+    // painted grain, which is exactly what WebP smears first.
+    const bytes = statSync(resolve(process.cwd(), 'packages/app/public/cover.webp')).size
+    expect(bytes).toBeLessThan(300 * 1024)
+  })
+
+  it('is capped by the space available in both directions, with no jump', () => {
+    // The pixel cover stepped its width at two measured viewport heights, and
+    // those steps were wrong for a picture: at 1440x723 — any window that is not
+    // maximised — the first one fired and shrank the cover to 48rem inside a
+    // 1016px column with 112px of vertical room going spare. Measured in a real
+    // browser, which is the only place it was ever visible.
+    //
+    // A single cap derived from the height available subsumes both and cannot be
+    // wrong at a size nobody measured, so the height queries must not come back.
+    const css = readFileSync(
+      resolve(process.cwd(), 'packages/app/src/screens/LandingScreen.css'),
+      'utf8',
+    )
+    expect(css).toContain('max-width: min(64rem, calc((100dvh - 5rem) * 1.75))')
+    expect(css.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(/@media \(height/)
+    // Display lettering, and the reason the dictionary can stay title case.
+    expect(css).toContain('text-transform: uppercase')
   })
 
   it('carries the credit and the language cog, which are the two things it shares', () => {

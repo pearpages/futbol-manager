@@ -192,7 +192,7 @@ interface FixtureRowProps {
 }
 
 function FixtureRow({ fixture, clubs, managedClubId, isNext, ref }: FixtureRowProps) {
-  const { t, date } = useT()
+  const { t, date, club } = useT()
 
   const home = fixture.homeId === managedClubId
   const opponent = clubs.get(home ? fixture.awayId : fixture.homeId)
@@ -237,7 +237,7 @@ function FixtureRow({ fixture, clubs, managedClubId, isNext, ref }: FixtureRowPr
               Spanish casa/fuera — so it is a whole phrase per language rather than
               an "(H)"/"(A)" assembled here. */}
           {t(home ? 'fixture.home' : 'fixture.away', {
-            club: opponent?.name ?? t('fixture.unknownClub'),
+            club: opponent === undefined ? t('fixture.unknownClub') : club(opponent.name),
           })}
         </span>
       </td>

@@ -375,3 +375,66 @@ describe('a feed from another build', () => {
     expect(notices[0]?.text).toContain(somebody.name)
   })
 })
+
+describe('the article in front of a club, in Catalan', () => {
+  /**
+   * The one thing a unit test of `clubPhrase` cannot show: that the call sites
+   * actually reach it. Catalan elides in front of a vowel, so Elche is the club
+   * that tells a working sentence from a broken one — `contra el Elche` was what
+   * every one of these read before.
+   */
+  const ca = translatorFor('ca')
+  const caNames = lookupFor(game, ca)
+  const vowel = DEFAULT_CLUBS.find((c) => c.name === 'Elche')
+  const consonant = DEFAULT_CLUBS.find((c) => c.name === 'Madrid')
+  if (vowel === undefined || consonant === undefined) throw new Error('no such club')
+
+  const played = (awayId: string) =>
+    describeEvent(
+      {
+        type: 'MatchPlayed',
+        fixtureId: 'f1',
+        homeId: MID,
+        awayId,
+        score: { home: 2, away: 0 },
+      } as unknown as Event,
+      game,
+      caNames,
+      ca,
+    )
+
+  it('elides for a club that starts with a vowel', () => {
+    expect(played(vowel.id)?.text).toBe('Victòria contra l’Elche 2–0')
+  })
+
+  it('and still writes the plain article for one that does not', () => {
+    // Guard on the guard: eliding everything would satisfy the case above.
+    expect(played(consonant.id)?.text).toBe('Victòria contra el Madrid 2–0')
+  })
+
+  it('contracts the preposition on a sale', () => {
+    const sale = (to: string) =>
+      describeEvent(
+        {
+          type: 'TransferCompleted',
+          playerId: somebody.id,
+          from: MID,
+          to,
+          fee: 900,
+        } as unknown as Event,
+        game,
+        caNames,
+        ca,
+      )
+
+    expect(sale(vowel.id)?.text).toContain('venut a l’Elche')
+    expect(sale(consonant.id)?.text).toContain('venut al Madrid')
+  })
+
+  it('leaves a club it cannot resolve to its own wording', () => {
+    // `un altre club` brings its own determiner, so it must never go through
+    // `clubPhrase` — `el un altre club` is what that would read.
+    expect(caNames.clubPhrase('nobody' as never)).toBe(ca.t('news.unknownClub'))
+    expect(caNames.clubPhrase(null)).toBe(ca.t('news.freeAgents'))
+  })
+})
