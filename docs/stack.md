@@ -129,7 +129,30 @@ pnpm typecheck
 pnpm lint
 pnpm format
 pnpm dev                 # app only
+pnpm build               # app only; also runs in CI, and is what gets deployed
 ```
+
+## Deployment
+
+The app is published to **GitHub Pages** at **<https://futbol.pearpages.com>** — a custom domain, HTTPS enforced, on the `pearpages/futbol-manager` repository.
+
+**The custom domain is the reason `packages/app/vite.config.ts` sets no `base`.** The site serves from a domain _root_, so Vite's default `/` is correct and the app's five root-absolute asset paths — the cover, the credit mark, the hub figures, the trophy and the stadium — resolve as written. Under a project page at `/futbol-manager/` every one of them would break, and three are template literals, so a `base` change is not mechanical. If the domain ever goes, that is the work.
+
+There is no `404.html` and none is needed: the app has **no router**, so `/` is the only URL the site ever serves.
+
+|             |                                                                                                                        |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Source      | GitHub Actions (`build_type: workflow`) — no `gh-pages` branch, nothing published by commit                            |
+| Trigger     | push to `main`, or `workflow_dispatch` for a redeploy with no commit                                                   |
+| Gate        | the `deploy` job `needs: check`, so nothing that fails lint, typecheck, the suite or format can reach a public address |
+| Artifact    | `packages/app/dist`, about 6 MB, most of it the stadium ladder                                                         |
+| Environment | `github-pages`, restricted to the `main` branch                                                                        |
+
+**`packages/app/public/CNAME` is deliberate belt-and-braces.** GitHub applies the custom domain from repository settings, so the site works without it — but that setting was the only copy of the domain, and a file in the artifact means it survives a settings reset.
+
+`.github/workflows/ci.yml` uses `jdx/mise-action@v2` in **both** jobs rather than `actions/setup-node`, so `mise.toml` stays the single source for Node and pnpm and this file never becomes a second one. `actions/configure-pages` is deliberately absent — it writes to the Pages API, and the domain and certificate are already configured; add it only if a run reports Pages is not enabled.
+
+`pnpm build` runs in `check` as well as in `deploy`. CI never built the app until deployment existed, so a change that broke `vite build` passed every check and would only have surfaced after merge; bundling takes about a tenth of a second against an install that is already paid for.
 
 ## Upgrade policy
 

@@ -2565,3 +2565,33 @@ Measured on the real screen: Barcelona rim `rgb(23,55,107)` with `rgb(246,214,10
 **Known and left:** at 900×650 the panel is squeezed hard enough that the two names and the countdown scroll out of view, leaving the crests and the pinned button. That squeeze is pre-existing — HEAD showed the name and hid the button — and it degrades rather than breaks. 650px of height is well below what every breakpoint in this project targets.
 
 **Note for the git history:** another session was editing `ClubBadge.tsx`, `badges.ts`, `club-badges.css`, `testing.ts`, `TableScreen.*`, `SetupScreen.test.tsx` and `CLAUDE.md` throughout this one, and had added a `<title>` to the badge (which is why a badge's `textContent` now carries the club name). The four files here are `HubScreen.tsx`, `HubScreen.css`, `HubScreen.test.tsx` and `hub-sections.test.tsx`.
+
+### 2026-08-21 (e) — the pipeline learns to deploy
+
+**Prompted by "fix the pipeline so it can deploy to github pages".** The framing turned out to be almost right and the diagnosis surprising: **everything on GitHub's side was already in place and had never once been used.** No code under `packages/app/src` changed; the work is one workflow, one one-line file and a docs section.
+
+**What was already true, and what the first ten minutes were spent establishing.** Pages is enabled on `pearpages/futbol-manager` with `build_type: "workflow"` — the Actions source, so there is no `gh-pages` branch and nothing is published by commit. A custom domain **`futbol.pearpages.com`** is set with an **approved** certificate and `https_enforced: true`; DNS resolves correctly (CNAME to `pearpages.github.io` plus the four Pages A records); the `github-pages` environment exists and restricts deployments to `main`. And `"status": null` — **nothing has ever been published.** The gap was `.github/workflows/ci.yml`, which ran lint, typecheck, the suite and format, **never ran `pnpm build` at all**, uploaded no artifact and had no deploy job.
+
+**The decisive fact, and the one worth writing down because it is invisible from the code: the custom domain is why `vite.config.ts` needs no `base`.** The site serves from a domain _root_, so Vite's default `/` is correct and the app's five root-absolute asset literals — `ShellCredit.tsx:40`, `LandingScreen.tsx:62`, `TrophyIcon.tsx:43`, `HubFigure.tsx:38`, `StadiumView.tsx:46` — resolve as written. Under a project page at `/futbol-manager/` every one would break, and **three of the five are template literals**, so a `base` change is not a mechanical prefix. That reasoning now lives in `docs/stack.md`, which documented no hosting at all before today. No `404.html` either: the app has no router, so `/` is the only URL the site ever serves.
+
+**The deploy is a second job in `ci.yml` gated on `check`**, chosen over a standalone workflow: the whole point of a gate is that nothing failing the 1214 tests can reach a public address. The trade is that the site updates about five minutes after a push. `workflow_dispatch` was added alongside, so a redeploy does not need an invented commit.
+
+**Three details in that job that are each a way to get it wrong:**
+
+- **Job-level `permissions` _replace_ the workflow default rather than adding to it**, and this repository's default token is read-only (`default_workflow_permissions: "read"`). So `contents: read` has to be named beside `pages: write` and `id-token: write`, or the checkout itself fails.
+- **`if: github.ref == 'refs/heads/main'` is not belt-and-braces.** `check` also runs on pull requests, where the ref is `refs/pull/N/merge`, so `needs: check` alone would try to deploy every PR.
+- **`concurrency: {group: pages, cancel-in-progress: false}`** sits on the job, not the workflow — at workflow level it would serialise every PR's checks too. Never cancelling is deliberate: a half-published site is worse than a slightly stale one.
+
+**`actions/configure-pages` is deliberately absent, and that is a risk judgement rather than minimalism.** It writes to the Pages API, and the thing it would write to — a custom domain with an approved certificate — is already exactly right and fragile to re-create. `deploy-pages` does not need it once `build_type` is `workflow`. The comment in the file names the single symptom that would justify adding it.
+
+**`jdx/mise-action@v2` in both jobs, never `actions/setup-node`.** `docs/stack.md` is emphatic that it is the only place a version is decided and `mise.toml` is the single runtime source; reaching for `setup-node` in the new job would quietly make the workflow a second one.
+
+**`pnpm build` was added to `check` as well, and it closes a real gap rather than tidying.** CI had never built the app, so a change breaking `vite build` passed every check and would only have surfaced at deploy time, after merge. Bundling measures **92ms** against an install that is already paid for — free, on every pull request. It is now listed in `stack.md`'s commands block, where it had never appeared.
+
+**`packages/app/public/CNAME` is hardening, not a blocker.** GitHub applies the domain from repository settings, so the site works without it — but that setting was the only copy of the domain in existence, and a file in the artifact means it survives a settings reset. It agrees with what is configured, so it cannot fight it.
+
+**Verified against the real build before touching anything remote.** `pnpm build` → `dist/index.html` still references `/assets/…` (root-absolute, which is the proof `base` is right), `dist/CNAME` present, all 57 stadium images copied, 6.0 MB total. Then served on **port 4321 — never 4173, where another project's service worker owns the origin** — and driven in headless Chrome: the cover, four hub figures and a stadium image all load from their root-absolute paths, no console errors, and **the footer reads the real `git rev-parse --short HEAD`**, which is `commit.ts` working exactly as `stack.md` says it should. The only network failure in the whole run is `/favicon.ico` 404 — pre-existing, cosmetic, and untouched.
+
+**The workflow YAML was parsed and inspected rather than eyeballed**, since a syntax slip costs a whole run to discover: triggers, both jobs' step lists, `needs`, `if`, the three permissions, the concurrency group, the environment and the artifact path all read back as intended. There is no `actionlint` or `pyyaml` on this machine; `pnpm dlx yaml@2 --json` works and wraps documents in an array, which is why a naive `d.jobs` is `undefined`.
+
+**Note for the git history:** another session committed `12eb866 refactor: badges` mid-session, which swept up the hub fixture work from the previous entry. The three files here are `.github/workflows/ci.yml`, `packages/app/public/CNAME` and `docs/stack.md`.

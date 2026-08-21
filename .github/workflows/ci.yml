@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # A redeploy without a commit — the site is a build of `main`, and sometimes you
+  # want that build again without inventing a change to make it happen.
+  workflow_dispatch:
 
 jobs:
   check:
@@ -23,3 +26,70 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test -- --run
       - run: pnpm format:check
+
+      # CI had never built the app, so a change that broke `vite build` passed
+      # every check and would have surfaced at deploy time, after merge. Bundling
+      # takes about a tenth of a second — the install above is the expensive part
+      # and is already paid for — so this is effectively free on every PR.
+      - run: pnpm build
+
+  # ── The live site ───────────────────────────────────────────────────────────
+  #
+  # https://futbol.pearpages.com, deployed from `main` only, and only once `check`
+  # is green: the whole point of gating is that nothing which fails the suite can
+  # reach a public address.
+  #
+  # Pages is configured with `build_type: workflow`, so this job *is* the
+  # publication — there is no gh-pages branch and nothing is committed. The custom
+  # domain means the site serves from a root, which is why `vite.config.ts` needs
+  # no `base` and the app's root-absolute asset paths are correct as they stand.
+  deploy:
+    needs: check
+    # `check` also runs on pull requests, where the ref is `refs/pull/N/merge`.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    # Job-level permissions *replace* the workflow default rather than adding to
+    # it, and this repository's default token is read-only — so all three have to
+    # be named here, `contents: read` included, or the checkout fails.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    # One deploy at a time, and never cancel one in flight: a half-published site
+    # is worse than a slightly stale one.
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The same action `check` uses. `docs/stack.md` is the only place a version
+      # is decided and `mise.toml` is the single runtime source; reaching for
+      # `setup-node` here would quietly make this file a second one.
+      - uses: jdx/mise-action@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      # The default depth-1 checkout still answers `git rev-parse --short HEAD`,
+      # so `commit.ts` stamps the real commit and the live footer says which build
+      # you are looking at.
+      - run: pnpm build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/app/dist
+
+      # Deliberately no `actions/configure-pages`: it writes to the Pages API, and
+      # this repository's settings — custom domain, approved certificate — are
+      # already right and not worth poking. `deploy-pages` needs it only when
+      # Pages is not yet on the workflow build type. If a run ever fails saying
+      # Pages is not enabled, that is the one reason to add it.
+      - id: deploy
+        uses: actions/deploy-pages@v4
