@@ -2416,3 +2416,74 @@ browser Madrid tier 24, Barcelona 25, Heliópolis 22, a 30k club 12 — all insi
 **Verified in a real browser** over CDP against `vite preview` on **port 4321** — never 4173. Five clubs at 1440x900 and 1280x720, every image loaded, inside its panel, no panel scroll, no page scrolling sideways: 22,514 → `23k`, 30,778 → `31k`, 60,270 → `62k`, 83,186 → `85k`, 105,000 → `100k`, heights climbing 228 → 242 → 277 → 293 → 301px. Then the whole point of the feature, driven end to end: commission 4,000 seats at the smallest club, play out the season, roll over — **30,778 `31k.webp` → 34,778 `35k.webp`**, and the render grows 242px → 248px.
 
 **Known and left:** `packages/app/public/art/stadium/small/` holds four village grounds (bare pitch, grass banks, no real stands) that were parked rather than declared. They would sit below `6k`. Undeclared files in that directory are invisible to the guard by design — see the non-recursive note above.
+
+### 2026-08-21 (b) — the market table pages, and the suite stops timing out
+
+**Prompted by "run all the tests and then discuss how to fix all the ones that are failing" — and on a quiet machine none were.** 1197 green, 61 files, 105s. The failure only appears under load: with **two full suites running at once, both runs failed the same test**, `MarketScreen.test.tsx > completes a signing once the fee and the terms are both agreed`, at 23.3s and 23.7s against the app project's 15s. Reproducible, not the flake the log has been predicting. 1204 tests, `SCHEMA_VERSION` still 10, **every changed file under `packages/app` bar `vitest.config.ts`**, so `pnpm season` reads none of it.
+
+**The first plan was wrong and the owner said so: "how can improve the code? this amount of time is a smell."** I had proposed scoping the test queries — teaching the tests to look away from the cost rather than removing it. The right diagnosis is that **`MarketScreen` rendered every listing in full**: ~290 rows carrying a `PlayerLink`, a Watch and a Bid each, so **~900 controls and ~290 inline SVG badges on one screen.** Measured in the browser before and after: **889 buttons → 141.**
+
+**The evidence was already in the file, as a natural experiment.** The Clubs tab swaps the same table for a ~22-row rival squad — same screen, same helpers, same clicks:
+
+| view      | rows | controls | tests      |
+| --------- | ---- | -------- | ---------- |
+| Clubs tab | ~22  | ~50      | 0.77–1.16s |
+| En venda  | ~290 | ~900     | 5.5–8.4s   |
+
+Cost tracks control count and nothing else, because `getByRole('button', { name })` computes an accessible name for every button in the document — ~1s a call here, and the failing test made five. **The eight slowest tests in the whole 61-file repo were all in that one file.**
+
+**The per-render allocations were not the fix, and saying so cost nothing.** `playersById(game)` walked ~1,250 players and rebuilt a Map on _every_ render; `names`, `rivals`, `shortlisted` and `listedForSale(game)` likewise. All are `useMemo`d now — but `renders every listing`, a full mount including all of them plus the filter, the sort and 290 rows, measures **132ms**. Hoisting the lot is worth ≤130ms a render against an 8.4s test. **It is in because it is right, not because it is the lever**, and the comment says so.
+
+**`PAGE_SIZE = 40`, which is the lever three separate comments in this repo had already named** — `vitest.config.ts` and the session log twice: _"If this screen has to get cheaper the lever is pagination, never a silent row cap."_
+
+**Bounded, never capped, and the distinction is the whole design.** M4b's bare `.slice(0, 60)` hid ~90 affordable signings from a weak club while showing it sixty it could not buy. Here the filters and sorts act on the whole set _before_ it is sliced, `Showing {shown} of {total}` still names the true totals (its existing assertion passed untouched), and the guard is a new **`allRowNames()`** helper that pages to the end and unions the names. **That is a stronger claim than the count of `<tr>` it replaced** — `can reach the signings it can actually afford` and `deals a different market for the January window` now assert reachability rather than DOM population.
+
+**Two guards on the page index, and only one of them is reachable.** Every control that changes what the table holds calls `setPage(0)` — sorting included, since a column that reordered the market while leaving you on page four shows a slice of a list you never saw the top of. The clamp on render is defence in depth and **the test says so**: measured, the listings hold at 290 across a month of ticks and no control can strand you, so its test stages the short state directly rather than trying to click into it. Same shape as the rollover's `canField` guard.
+
+**`.pager` graduated to `chrome.css` on its second use.** `ResultsScreen`'s matchday navigator was the first, and it adopted the primitive with **no test change** — the accessible names are `aria-label`s passed as props, and its tests resolve by them.
+
+**A mutation sweep of eight, one at a time — and it found two defects in my own work.**
+
+- **The paging helpers hung instead of failing.** With `atEnd` unbounded, `while (nextPage())` never terminates: two arms sat there until the runner was killed, which reads as a hung machine rather than a broken bound. They are bounded now and throw, the same guard and the same reasoning as `advanceUntil`. **And bounding the helpers was not enough** — a raw `while (nextPage());` left in one test body kept hanging until it was replaced too, which the re-run is what caught.
+- **The `Pager` comment gave a reason the sweep disproved.** I had written that the label sits outside the buttons to avoid the run-together accessible name (`CanteraM7`, `20Relegated`, …). Folding it in failed **nothing** — `aria-label` overrides an element's contents outright, so that defect cannot occur here. The true reasons are plainer: content inside a button is part of the button, so reading the page number would page you, and `ResultsScreen`'s label is an `<h2>` with no business inside a control. Comment corrected and a structural test added that does bite.
+
+**Two defects only the browser found, and 1201 green tests could not.**
+
+- **The pager sat ~570px below the fold.** `.market-screen__main` is its own scroll container and forty rows are taller than it, so the one control proving the rest of the market is reachable was itself unreachable without scrolling to the bottom first. `position: sticky; bottom: 0` with an opaque `--fm-screen` background — **`.explain__actions` is stuck to a panel foot for exactly this reason**, and its own note says an affordance you have to go looking for is not one. At 900×523 the panel is 241px tall and the pager is the only reason the screen still works.
+- **The two arrows were different sizes**, 49×38 against 47×34. Same padding, same font-size: `◀` and `▶` do not share metrics in the fallback face. Sizing the glyph box fixes it — both are 47×36 now — and this was **pre-existing on the matchday navigator**, so the primitive fixed both at once.
+
+Both are CSS-only, which jsdom cannot see (`css: false`, no layout), so both are guarded by reading the stylesheet as text — the `chrome.test.ts` idiom — and both guards were mutation-checked.
+
+**Numbers.** `MarketScreen.test.tsx` **87.6s → ~14s**; the suite **105s → 88s** quiet; and the reproduction that started it, two concurrent suites, **both failed at 136–138s and both now pass at 79s**. The worst app test is 4.5s and it is season simulation rather than rendering.
+
+**Process traps, two of them already in this file and hit anyway.**
+
+- **An interrupted mutation sweep leaves the tree mutated.** The `finally` does not run when the _runner_ is killed, and a foreground tool call with a ten-minute ceiling killed two sweeps. `git status` after every one; run them in the background.
+- **Do not `vite build` while a sweep is running.** I did, and served a bundle with `PAGE_SIZE = Infinity` baked in — 290 rows, no pager, and it reads exactly like the feature not working. The code was fine; the artefact was not.
+- Another session was editing this tree throughout (`LandingScreen.tsx` is theirs), and **three other Claude sessions were running**, which is why one concurrent run measured 129s where mine alone measured 79s.
+
+**Known and deliberately not done:** at 3–4× contention from other sessions, the _next_ tier trips — `finanzas > spends a mark when a season is missed` (4.5s alone) and `ResultsScreen > records the champion…` (3.9s). Those are slow for a different reason: `advanceUntil` presses ~260 times through the reducer from the hub, which is genuine simulation, not query overhead. Making them cheaper means driving the season through `domain` and asserting the screen afterwards — which is a weaker test, since what they currently prove is that the whole loop is reachable by pressing. Left alone deliberately.
+
+**`ShellFoot.test.tsx`'s quick-save race reproduced once more** under a loaded full run and passed alone in 2.07s and on rerun — the same one this log has twice predicted would return.
+
+### 2026-08-21 (c) — two lines off the cover
+
+**"De la cover elimina «Què és això» i «Una temporada cada cop»."** The landing aside opened with an `<h2>` labelling the panel and a gold tagline whose second sentence said the same thing the first paragraph does. Both gone. 1204 tests, `pnpm season` untouched — every changed file is under `packages/app` — `SCHEMA_VERSION` still 10.
+
+**They are two different kinds of thing, which is the only subtlety.** `landing.about.heading` is a whole key; "Una temporada cada cop" is the _tail_ of `landing.tagline`, not a key of its own. So the heading's key is **deleted from all three dictionaries with its render**, per the rule this project has broken five times — `dictionaries.test.ts` enforces parity and cannot see a key with no call site, so the grep is by hand, and it comes back empty. The tagline keeps its key and loses its second sentence **in all three languages**, so the dictionaries go on saying the same thing.
+
+**The panel does not lose its top line.** `.landing__tagline` is already condensed, bold, `--fm-text-lg` and `--fm-champion` gold, so it reads as the heading it now is; what went was a smaller uppercase label above it saying "what this is" over a paragraph that says what this is.
+
+**No CSS change, and that was checked rather than hoped.** `.screen__heading` is a standalone rule in `chrome.css` — nothing in `LandingScreen.css` targets it and no adjacency or sibling selector anywhere depends on it being in that aside. `.landing__aside` brings its own `padding` and `gap`, and in the stacked `@media (width < 60rem)` branch the heading held the implicit `order: 0` against the tagline's `order: 1`, so removing it just closes up. Measured after: the tagline is the aside's first child at every size, 17px below the panel edge stacked.
+
+**`language.test.tsx`'s front-page guard still bites and was re-read rather than assumed.** It joins the Catalan tagline with the three paragraphs and refuses `espanyol|Espanya` and a literal `Primera División`; the surviving sentence is `Dirigeix un club de primera divisió.`, lowercase and unaccented on the D, so it passes for the right reason.
+
+**A pre-existing layout bug found while verifying, measured, and left alone.** At **900×650 the cover overflows its grid row and paints over the top third of the aside** — the tagline and both buttons are behind the picture. `.landing`'s base `height: 100%` is not overridden in the `width < 60rem` branch, so the two `auto` rows are over-constrained: the hero compresses to **292px** while the image is intrinsically **496px**, and `align-items: center` spills it 94px off _both_ ends. **Identical at HEAD to the pixel** — hero 292, image 496, overlap 94 — so it is not this change and not the 60rem reorder, which the 2026-08-15 comment says was measured at exactly this size. It wants its own job; the fix is almost certainly `height: auto` on `.landing` in that branch, and it needs re-measuring at 820×600 too.
+
+**Browser notes.** The extension connected on the first call, following the 2026-08-18 (b) precondition — but **`resize_window` fired a click into the page** (the landing became the club picker) and every screenshot after it came back stale and identically wrong, showing a 1512×795 frame for a 900px window. Headless Chrome over CDP was the fallback and did the whole job: five runs across ca/es/en at 1440×900 and 900×650, asserting no heading in the aside, the tagline first, the right sentence per language, no sideways scroll and both doors above the fold. **Reach for CDP for anything responsive** — the extension is for looking, not for measuring.
+
+**The full suite failed four tests once and passed 1204 the next run.** All four were `Test timed out in 15000ms` on a run that took **138s against 71s clean**, in `finanzas.test.tsx`'s sacking block — the contention flake the entry above this one has just finished tuning for, arriving while `pnpm lint` and a build were competing for the same cores. Not a regression, and worth knowing that the newly-tightened tier trips under a _self-inflicted_ load as readily as another session's.
+
+**Baseline comparison was `git worktree add --detach`, never `git stash`** — and the worktree was warmed with an install before measuring, because its first command prints pnpm's preamble.
+
+**Note for the git history:** another session was editing all three dictionaries, `MarketScreen._`, `ResultsScreen._` and `chrome.css` throughout this one, and had staged its work. The four edits here are line-scoped `sed` substitutions; the `market.page`/`prevPage`/`nextPage` keys that appear alongside them in `git diff` are theirs.

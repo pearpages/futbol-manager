@@ -214,3 +214,35 @@ describe("a player's name as a control", () => {
     }
   })
 })
+
+describe('the pager', () => {
+  const market = readFileSync(
+    resolve(process.cwd(), 'packages/app/src/screens/MarketScreen.css'),
+    'utf8',
+  )
+
+  it('sizes the glyph box, because the two arrows do not have matching metrics', () => {
+    // Measured in a browser at 49x38 against 47x34 — `◀` and `▶` are not the same
+    // size in the fallback face, and two arrows of different sizes either side of a
+    // label is plainly wrong. Both are 47x36 now. Pre-existing on the matchday
+    // navigator; the primitive inherited it and fixes both.
+    const glyph = ruleFor('.pager .button > span')
+    expect(glyph, '.pager .button > span has no rule').not.toBeNull()
+    expect(glyph).toMatch(/width:\s*1em/)
+    expect(glyph).toMatch(/line-height:/)
+  })
+
+  it('sticks the market pager to the foot of its panel', () => {
+    // `.market-screen__main` is its own scroll container and a page of rows is
+    // taller than it, so in the ordinary flow the pager sat ~570px below the fold —
+    // the one control proving the rest of the market is reachable was itself out of
+    // reach. Measured, not reasoned about.
+    const pager = market.slice(market.indexOf('.market-screen__pager {'))
+    const rule = pager.slice(0, pager.indexOf('}'))
+    expect(rule).toMatch(/position:\s*sticky/)
+    expect(rule).toMatch(/bottom:\s*0/)
+    // And opaque, or the rows scroll straight through it. `--fm-screen`, not
+    // `--fm-panel`: this sits on the dark screen material.
+    expect(rule).toMatch(/background:\s*var\(--fm-screen\)/)
+  })
+})

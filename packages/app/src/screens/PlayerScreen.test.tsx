@@ -259,6 +259,10 @@ describe('whose player this is', () => {
 
     render(<App />)
     openScreen('nav.market')
+    // The listings page now, and the shuffle can put him anywhere. Narrowing to
+    // free agents is both what reaches him in one press and what a manager looking
+    // for one would actually do.
+    fireEvent.click(screen.getByRole('button', { name: 'Free agents' }))
     fireEvent.click(screen.getByRole('button', { name: released.name }))
 
     expect(within(identity()).getByText('Free agent')).toBeDefined()

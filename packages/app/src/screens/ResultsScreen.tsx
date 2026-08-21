@@ -13,6 +13,7 @@ import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { Pager } from './Pager.tsx'
 import { TROPHY_KEYS, TrophyIcon } from './TrophyIcon.tsx'
 import './ResultsScreen.css'
 
@@ -291,18 +292,19 @@ function RoundResults({
 
   return (
     <>
-      <div className="results-screen__rounds">
-        <button
-          type="button"
-          className="button"
-          disabled={showing <= rounds.first}
-          aria-label={t('results.prevRound')}
-          onClick={() => {
-            onRound(showing - 1)
-          }}
-        >
-          <span aria-hidden="true">◀</span>
-        </button>
+      <Pager
+        className="results-screen__rounds"
+        prevLabel={t('results.prevRound')}
+        nextLabel={t('results.nextRound')}
+        atStart={showing <= rounds.first}
+        atEnd={showing >= rounds.last}
+        onPrev={() => {
+          onRound(showing - 1)
+        }}
+        onNext={() => {
+          onRound(showing + 1)
+        }}
+      >
         {/* The date is a *sibling* of the heading, not inside it. Nothing in the DOM
             separates two spans, so a date within the `<h2>` makes its accessible
             name `Matchday 12026-08-15` — the fifth instance of a defect this
@@ -315,18 +317,7 @@ function RoundResults({
           </h2>
           {when !== null && <span className="results-screen__round-date">{date(when)}</span>}
         </div>
-        <button
-          type="button"
-          className="button"
-          disabled={showing >= rounds.last}
-          aria-label={t('results.nextRound')}
-          onClick={() => {
-            onRound(showing + 1)
-          }}
-        >
-          <span aria-hidden="true">▶</span>
-        </button>
-      </div>
+      </Pager>
 
       <ul className="round-list">
         {fixtures.map((fixture) => {

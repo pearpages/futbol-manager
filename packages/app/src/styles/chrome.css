@@ -276,6 +276,48 @@
   background: var(--fm-relegation);
 }
 
+/*
+ * Pager — back, where you are, forward.
+ *
+ * Shared by the matchday navigator and the market's page control. Only the
+ * arrangement lives here: where a pager sits relative to what it steps through is
+ * the screen's business, so `ResultsScreen` keeps its own rule for the rule beneath
+ * it and the market keeps the one above it.
+ */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-2) 0;
+}
+
+/*
+ * The two arrows are a pair, so they have to be the same size — and left to
+ * themselves they are not. `◀` and `▶` do not share metrics in the fallback face:
+ * measured at 49x38 against 47x34, which is plainly visible side by side. Sizing
+ * the glyph box rather than letting the glyph size it makes the buttons agree.
+ * Pre-existing on the matchday navigator; fixed here for both at once.
+ */
+.pager .button > span {
+  display: block;
+  width: 1em;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* The label between the two controls. A `min-width` so the arrows do not shuffle
+   sideways as the number inside grows a digit. */
+.pager__label {
+  min-width: 9rem;
+  text-align: center;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fm-screen-ink-soft);
+}
+
 /* ── Utilities ───────────────────────────────────────────────────────────── */
 
 /* Text for assistive tech only. The qualification bands are colour; this is how

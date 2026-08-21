@@ -313,6 +313,9 @@ export const en: Dictionary = {
   'market.freeAgents': 'Free agents',
   'market.shortlistOnly': 'Shortlist only',
   'market.showing': 'Showing {shown} of {total}',
+  'market.page': 'Page {page} of {pages}',
+  'market.prevPage': 'Previous page',
+  'market.nextPage': 'Next page',
   'market.noMatches': 'Nobody matches those filters.',
   'market.column.position': 'Pos',
   'market.column.player': 'Player',
@@ -607,8 +610,7 @@ export const en: Dictionary = {
   'action.quit': 'Leave career',
   'hub.confirmQuit':
     'Leave this career? It stays where it is and Continue will bring you back — but save it if you want it once you have started another.',
-  'landing.tagline': 'Take charge of a Spanish club. One season at a time.',
-  'landing.about.heading': 'What this is',
+  'landing.tagline': 'Take charge of a Spanish club.',
   'landing.about.p1':
     'A football management game in the idiom of the Spanish CD-ROMs of the nineties. There is no match to watch: you pick the eleven, set the approach, and the result is resolved on the numbers.',
   'landing.about.p2':

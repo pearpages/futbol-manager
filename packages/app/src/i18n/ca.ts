@@ -303,6 +303,9 @@ export const ca: Dictionary = {
   'market.freeAgents': 'Agents lliures',
   'market.shortlistOnly': 'Només seguits',
   'market.showing': 'Se’n mostren {shown} de {total}',
+  'market.page': 'Pàgina {page} de {pages}',
+  'market.prevPage': 'Pàgina anterior',
+  'market.nextPage': 'Pàgina següent',
   'market.noMatches': 'Ningú no compleix aquests filtres.',
   'market.column.position': 'Pos',
   'market.column.player': 'Jugador',
@@ -595,8 +598,7 @@ export const ca: Dictionary = {
   'action.quit': 'Surt de la carrera',
   'hub.confirmQuit':
     'Vols sortir d’aquesta carrera? Es queda on és i Continua t’hi tornarà a portar, però desa-la abans si penses començar-ne una altra.',
-  'landing.tagline': 'Dirigeix un club de primera divisió. Una temporada cada cop.',
-  'landing.about.heading': 'Què és això',
+  'landing.tagline': 'Dirigeix un club de primera divisió.',
   'landing.about.p1':
     'Un joc de gestió futbolística a l’estil dels CD-ROM dels anys noranta. No hi ha cap partit per mirar: tu tries l’onze, marques el plantejament i el resultat es resol amb els números.',
   'landing.about.p2':

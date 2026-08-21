@@ -71,16 +71,16 @@
 /*
  * The matchday navigator: back, which round, forward.
  *
+ * The arrangement is `.pager` in `chrome.css`; all that is left here is the rule
+ * separating it from the fixture list beneath — which is this screen's layout
+ * rather than the control's own appearance, the same split `.lineup-row__select`
+ * kept when `.select` graduated.
+ *
  * The label is the `<h2>` for this tab, so it sits between the two controls rather
  * than above them — a heading and a pager saying the same number twice is the sort
  * of duplicate this project keeps having to remove.
  */
 .results-screen__rounds {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--fm-space-3);
-  padding: var(--fm-space-2) 0;
   border-bottom: 1px solid var(--fm-screen-rule);
 }
 

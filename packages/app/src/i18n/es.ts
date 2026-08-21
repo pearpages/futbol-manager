@@ -302,6 +302,9 @@ export const es: Dictionary = {
   'market.freeAgents': 'Agentes libres',
   'market.shortlistOnly': 'Solo seguidos',
   'market.showing': 'Mostrando {shown} de {total}',
+  'market.page': 'Página {page} de {pages}',
+  'market.prevPage': 'Página anterior',
+  'market.nextPage': 'Página siguiente',
   'market.noMatches': 'Nadie cumple esos filtros.',
   'market.column.position': 'Pos',
   'market.column.player': 'Jugador',
@@ -594,8 +597,7 @@ export const es: Dictionary = {
   'action.quit': 'Salir de la carrera',
   'hub.confirmQuit':
     '¿Quieres salir de esta carrera? Se queda donde está y Continuar te traerá de vuelta, pero grábala si la quieres una vez hayas empezado otra.',
-  'landing.tagline': 'Dirige un club español. Una temporada cada vez.',
-  'landing.about.heading': 'Qué es esto',
+  'landing.tagline': 'Dirige un club español.',
   'landing.about.p1':
     'Un juego de gestión futbolística en el idioma de los CD-ROM españoles de los noventa. No hay partido que mirar: tú eliges el once, marcas el planteamiento y el resultado se resuelve con los números.',
   'landing.about.p2':

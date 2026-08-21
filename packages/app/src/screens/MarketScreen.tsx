@@ -38,6 +38,7 @@ import { PlayerLink } from './PlayerLink.tsx'
 import { useAttempt } from '../attempt.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import { type Sort, sortedBy } from '../sorting.ts'
+import { Pager } from './Pager.tsx'
 import { SortHeader } from './SortHeader.tsx'
 import { POSITION_ORDER, positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
@@ -226,6 +227,22 @@ export function squadValue(
   }
 }
 
+/**
+ * How many listings a page shows.
+ *
+ * **The list is bounded, never capped.** M4b shipped a bare `.slice(0, 60)` with no
+ * filter, no sort and no pager, and it hid ~90 affordable signings from a weak club
+ * while showing it sixty players it could not buy. The difference is reachability:
+ * every listing is still on some page, `Showing {shown} of {total}` still names the
+ * true totals, and the filters and sorts act on the whole set before it is sliced.
+ *
+ * Bounding it is not only a rendering nicety. Unpaged, this screen put ~290 rows on
+ * the page carrying ~900 controls — ~3,000 nodes repainted on every click and 900
+ * tab stops for a keyboard user. `vitest.config.ts` had already named pagination as
+ * the lever if the screen ever had to get cheaper.
+ */
+const PAGE_SIZE = 40
+
 export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
@@ -241,6 +258,16 @@ export function MarketScreen() {
   const [positions, setPositions] = useState<readonly Position[]>([])
   /** `null` is market order — the shuffle. A column cycles back to it. */
   const [sort, setSort] = useState<Sort<SortKey> | null>(null)
+  /**
+   * Which page of the listings.
+   *
+   * Guarded twice, because the two failures are different. Every control that
+   * changes *what the table contains* resets it to zero, so filtering does not
+   * strand you on a page your new filter has emptied. And it is clamped on render
+   * for the case no handler can see: the clock ticks, a club sells, and the list
+   * shrinks underneath a reader who is not touching anything.
+   */
+  const [page, setPage] = useState(0)
 
   /**
    * Which half of the screen you are on.
@@ -284,14 +311,28 @@ export function MarketScreen() {
   const club = game.clubs.find((c) => c.id === managed)
   const date = game.season.currentDate
   const open = isTransferWindowOpen(date)
+  /*
+   * The lookups below are memoised on `game` because they walk the whole world and
+   * nothing about them changes when a filter is toggled — `playersById` alone is a
+   * Map of ~1,250 players, and it was being rebuilt on every keystroke.
+   *
+   * **Worth ≤130ms a render, which is not why this screen was slow.** A full mount
+   * including all of these, the filter, the sort and every row measures 132ms; the
+   * cost was the row count, and pagination is what addresses it. Kept because it is
+   * right, not because it is the lever.
+   */
   // Foreign sellers too, or their listings show a blank club column.
-  const names = new Map<ClubId, { name: string; shortName: string; id: ClubId }>(
-    [...game.clubs, ...game.foreign.clubs].map((c) => [
-      c.id,
-      { id: c.id, name: c.name, shortName: c.shortName },
-    ]),
+  const names = useMemo(
+    () =>
+      new Map<ClubId, { name: string; shortName: string; id: ClubId }>(
+        [...game.clubs, ...game.foreign.clubs].map((c) => [
+          c.id,
+          { id: c.id, name: c.name, shortName: c.shortName },
+        ]),
+      ),
+    [game],
   )
-  const shortlisted = new Set(game.shortlist)
+  const shortlisted = useMemo(() => new Set(game.shortlist), [game])
   const clubCount = game.competition.clubIds.length
   const spendable =
     club === undefined ? 0 : club.budget + debtLimit(club, clubCount, ROUNDS_PER_HALF)
@@ -313,17 +354,20 @@ export function MarketScreen() {
   // browsed, which is what makes the fallback `?? []` below the whole guard.
   // Everyone you can scout: the division, then abroad. Foreign clubs are narrowed
   // to what the picker and the badge read, so one list serves both kinds.
-  const rivals: readonly Browsable[] = [
-    ...game.clubs
-      .filter((c) => c.id !== managed)
-      .map((c) => ({ id: c.id, name: c.name, shortName: c.shortName })),
-    ...game.foreign.clubs.map((c) => ({
-      id: c.id,
-      name: c.name,
-      shortName: c.shortName,
-      country: c.country,
-    })),
-  ]
+  const rivals: readonly Browsable[] = useMemo(
+    () => [
+      ...game.clubs
+        .filter((c) => c.id !== managed)
+        .map((c) => ({ id: c.id, name: c.name, shortName: c.shortName })),
+      ...game.foreign.clubs.map((c) => ({
+        id: c.id,
+        name: c.name,
+        shortName: c.shortName,
+        country: c.country,
+      })),
+    ],
+    [game, managed],
+  )
   // **`null` means the grid, not the first club.** It used to fall back to
   // `rivals[0]`, which was right for a dropdown that must always show something
   // and wrong for a view whose landing state is every club at once.
@@ -350,28 +394,58 @@ export function MarketScreen() {
     locale,
   )
 
+  // Clamped rather than corrected in an effect: derived state belongs in the render
+  // that derives it, which is the lesson `NegotiationPanel`'s remount-by-key paid
+  // for. `current` is what the pager reads and writes — using `page` anywhere below
+  // would let a stale index leak back the moment the list grew again.
+  const pageCount = Math.max(1, Math.ceil(listings.length / PAGE_SIZE))
+  const current = Math.min(page, pageCount - 1)
+  const shownListings = listings.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE)
+
   function toggle<T>(list: readonly T[], value: T): T[] {
     return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
+  }
+
+  /**
+   * Every control that changes what the table holds goes through here.
+   *
+   * Sorting counts: a column that reordered the whole market while leaving you on
+   * page four would show you a slice of a list you had never seen the top of.
+   */
+  function changing(apply: () => void) {
+    return () => {
+      setPage(0)
+      apply()
+    }
   }
 
   /** The shared header, bound to this screen's sort state. */
   function column(key: SortKey, label: string) {
     return (
-      <SortHeader column={key} label={label} sort={sort} onSort={setSort} align={SORT_ALIGN[key]} />
+      <SortHeader
+        column={key}
+        label={label}
+        sort={sort}
+        onSort={(next) => {
+          setPage(0)
+          setSort(next)
+        }}
+        align={SORT_ALIGN[key]}
+      />
     )
   }
 
   // What is actually on the market, not merely what you clicked: a player listed
   // in August may have won his place back by January, and `listedForSale` is what
   // the transfer window will really act on.
-  const onSale = listedForSale(game)
+  const onSale = useMemo(() => listedForSale(game), [game])
   const outgoing = game.bids.filter((b) => b.from === managed && bidIsLive(b))
   const incoming = game.bids.filter((b) => b.to === managed && b.status === 'pending')
   // **Abroad counts.** This map is what names a bid row and what the deal panel
   // falls back to, so leaving the foreign squads out of it made a cross-border
   // signing impossible to finish: the row read "unknown" and *Open* did nothing.
   // Shared rather than built here, so the next lookup cannot miss a squad again.
-  const byId = playersById(game)
+  const byId = useMemo(() => playersById(game), [game])
 
   /**
    * The deal on the table, if any.
@@ -411,9 +485,9 @@ export function MarketScreen() {
               type="button"
               className={`button${tab === key ? ' is-primary' : ''}`}
               aria-pressed={tab === key}
-              onClick={() => {
+              onClick={changing(() => {
                 setTab(key)
-              }}
+              })}
             >
               {t(`market.tab.${key}`)}
             </button>
@@ -447,7 +521,7 @@ export function MarketScreen() {
                     type="button"
                     className={`button market-screen__mini${positions.includes(position) ? ' is-primary' : ''}`}
                     aria-pressed={positions.includes(position)}
-                    onClick={() => setPositions(toggle(positions, position))}
+                    onClick={changing(() => setPositions(toggle(positions, position)))}
                   >
                     {/* The translated code, not the raw enum. These sit directly
                         above a Pos column that has always been translated, so in
@@ -460,7 +534,7 @@ export function MarketScreen() {
                 type="button"
                 className={`button market-screen__mini${onlyAffordable ? ' is-primary' : ''}`}
                 aria-pressed={onlyAffordable}
-                onClick={() => setOnlyAffordable(!onlyAffordable)}
+                onClick={changing(() => setOnlyAffordable(!onlyAffordable))}
               >
                 {t('market.withinBudget')}
               </button>
@@ -468,7 +542,7 @@ export function MarketScreen() {
                 type="button"
                 className={`button market-screen__mini${onlyFree ? ' is-primary' : ''}`}
                 aria-pressed={onlyFree}
-                onClick={() => setOnlyFree(!onlyFree)}
+                onClick={changing(() => setOnlyFree(!onlyFree))}
               >
                 {t('market.freeAgents')}
               </button>
@@ -476,7 +550,7 @@ export function MarketScreen() {
                 type="button"
                 className={`button market-screen__mini${onlyShortlist ? ' is-primary' : ''}`}
                 aria-pressed={onlyShortlist}
-                onClick={() => setOnlyShortlist(!onlyShortlist)}
+                onClick={changing(() => setOnlyShortlist(!onlyShortlist))}
               >
                 {t('market.shortlistOnly')}
               </button>
@@ -501,7 +575,7 @@ export function MarketScreen() {
                   </tr>
                 </thead>
                 <tbody>
-                  {listings.map((listing) => {
+                  {shownListings.map((listing) => {
                     const { player } = listing
                     const isTarget = player.id === target
                     return (
@@ -568,6 +642,26 @@ export function MarketScreen() {
                   })}
                 </tbody>
               </table>
+            )}
+
+            {pageCount > 1 && (
+              <Pager
+                className="market-screen__pager"
+                prevLabel={t('market.prevPage')}
+                nextLabel={t('market.nextPage')}
+                atStart={current === 0}
+                atEnd={current >= pageCount - 1}
+                onPrev={() => {
+                  setPage(current - 1)
+                }}
+                onNext={() => {
+                  setPage(current + 1)
+                }}
+              >
+                <span className="pager__label">
+                  {t('market.page', { page: current + 1, pages: pageCount })}
+                </span>
+              </Pager>
             )}
           </>
         )}

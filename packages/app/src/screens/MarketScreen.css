@@ -251,3 +251,27 @@
   letter-spacing: var(--fm-track-wide);
   text-transform: uppercase;
 }
+
+/*
+ * The page control, under the table it steps through — and stuck to the foot of
+ * the panel, which is not decoration.
+ *
+ * `.market-screen__main` is its own scroll container and forty rows are taller
+ * than it, so a pager in the ordinary flow sat ~570px below the fold: the one
+ * control that proves the rest of the market is reachable was itself unreachable
+ * without scrolling to the bottom first. That is the market screen's own recurring
+ * defect — an affordance you have to go looking for is not one — and `.explain__actions`
+ * is stuck to a panel foot for exactly the same reason.
+ *
+ * The background is `--fm-screen` rather than `--fm-panel`: this sits on the dark
+ * screen material, and rows would otherwise scroll through it.
+ *
+ * The arrangement itself is `.pager` in `chrome.css`; everything here is where the
+ * pager sits on *this* screen rather than how a pager looks.
+ */
+.market-screen__pager {
+  position: sticky;
+  bottom: 0;
+  border-top: 1px solid var(--fm-screen-rule);
+  background: var(--fm-screen);
+}

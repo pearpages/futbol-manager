@@ -65,7 +65,6 @@ export function LandingScreen(): React.JSX.Element {
       </div>
 
       <section className="screen landing__aside">
-        <h2 className="screen__heading">{t('landing.about.heading')}</h2>
         <p className="landing__tagline">{t('landing.tagline')}</p>
 
         {/* Storage being unreadable used to surface only on the club picker, which

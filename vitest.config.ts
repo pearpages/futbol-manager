@@ -62,16 +62,22 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: ['./src/test-setup.ts'],
           /*
-           * The default 5s is not a meaningful budget here. The market screen
-           * renders every listing — a couple of hundred rows, each carrying a
-           * club badge — and jsdom is orders of magnitude slower at that than a
-           * browser. The slowest test is ~3s on its own and only tips over 5s
-           * when all five projects compete for CPU, which is a scheduling fact
-           * rather than a defect.
+           * The default 5s is not a meaningful budget here: jsdom is orders of
+           * magnitude slower than a browser at a screenful of rows, and every
+           * `getByRole('button', { name })` computes an accessible name for every
+           * button in the document.
            *
-           * Not cover for a slow test creeping in: anything approaching 15s here
-           * is genuinely wrong. If this screen has to get cheaper the lever is
-           * pagination, never a silent row cap.
+           * **That last clause is what this budget once failed to catch.** The
+           * market screen rendered every listing — ~290 rows carrying ~900
+           * controls — so a single query cost ~1s and the eight slowest tests in
+           * the whole repo lived in that one file at 5.5–8.4s. Under two
+           * concurrent suites they crossed 15s and the budget did its job. The
+           * fix was the lever this comment already named: `MarketScreen` pages at
+           * `PAGE_SIZE`, never a silent row cap. The file went 88s to ~14s.
+           *
+           * The slowest app test is ~4.5s now, and that one is season simulation
+           * rather than rendering. Not cover for a slow test creeping in:
+           * anything approaching 15s here is still genuinely wrong.
            */
           testTimeout: 15_000,
         },

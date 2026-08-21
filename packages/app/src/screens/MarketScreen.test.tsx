@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import type { ClubId } from '@fm/domain'
 import {
   askingPrice,
   COUNTRIES,
@@ -62,6 +63,80 @@ const rowFees = () =>
     const value = Number(text.replace(/[€kM]/g, ''))
     return text.endsWith('M') ? value * 1000 : value
   })
+
+/**
+ * The pager, once the listings run past a page. Absent when they do not, which is
+ * what `step` returning false on a missing control means.
+ */
+const step = (label: string) => {
+  const pager = document.querySelector('.market-screen__pager')
+  if (pager === null) return false
+  const button = within(pager as HTMLElement).getByRole('button', {
+    name: label,
+  }) as HTMLButtonElement
+  if (button.disabled) return false
+  fireEvent.click(button)
+  return true
+}
+const nextPage = () => step('Next page')
+const prevPage = () => step('Previous page')
+
+/**
+ * A bound on every paging loop, and it is not belt-and-braces.
+ *
+ * A pager whose `atStart`/`atEnd` is wrong never disables its buttons, so a
+ * `while (nextPage())` runs forever — a mutation sweep found exactly that and both
+ * arms sat there until the runner was killed, which reads as a hung machine rather
+ * than as a broken bound. Same guard, and the same reasoning, as `advanceUntil`.
+ */
+const PAGE_LIMIT = 40
+
+function pageThrough(go: () => boolean, each: () => void) {
+  for (let i = 0; i < PAGE_LIMIT; i++) {
+    if (!go()) return
+    each()
+  }
+  throw new Error(`the pager stepped ${PAGE_LIMIT} times without reaching an end`)
+}
+
+const toFirstPage = () => {
+  pageThrough(prevPage, () => {})
+}
+
+const toLastPage = () => {
+  pageThrough(nextPage, () => {})
+}
+
+/**
+ * Every name on every page.
+ *
+ * **This is what "reachable" means now, and it is a stronger claim than counting
+ * `<tr>` elements.** The M4b defect was a bare `.slice(0, 60)` that hid ~90
+ * affordable signings from a weak club; the guard against it returning is that
+ * paging to the end finds everybody, not that everybody is in the DOM at once.
+ *
+ * Leaves the table on the first page, so it is safe to call mid-test.
+ */
+const allRowNames = () => {
+  toFirstPage()
+  const names = new Set(rowNames())
+  pageThrough(nextPage, () => {
+    for (const name of rowNames()) names.add(name)
+  })
+  toFirstPage()
+  return names
+}
+
+/** Pages from the top until the row shows up, and stops there. */
+function goToRow(name: string): HTMLElement {
+  toFirstPage()
+  for (let i = 0; i <= PAGE_LIMIT; i++) {
+    const found = bodyRows().find((r) => r.querySelector('.player-link')?.textContent === name)
+    if (found !== undefined) return found as HTMLElement
+    if (!nextPage()) break
+  }
+  throw new Error(`${name} is on no page`)
+}
 
 /** The row for the first player in market order. */
 function firstListingRow() {
@@ -236,12 +311,100 @@ describe('reaching the whole market', () => {
    */
   const allListings = () => listingsFor(game())
 
-  it('renders every listing, not the first sixty', () => {
+  it('reaches every listing by paging, and never hides the total', () => {
     openMarket()
     const total = allListings().length
     expect(total).toBeGreaterThan(60)
-    expect(bodyRows()).toHaveLength(total)
+
+    // Bounded, not capped. The page is a slice; the count line names the whole
+    // market either way, which is the affordance the sixty-row cap lacked.
+    expect(bodyRows().length).toBeLessThan(total)
     expect(screen.getByText(`Showing ${total} of ${total}`)).toBeDefined()
+
+    expect(allRowNames().size).toBe(total)
+  })
+
+  it('comes back to the first page, so paging is not a one-way door', () => {
+    openMarket()
+    const firstPage = rowNames()
+
+    expect(nextPage()).toBe(true)
+    expect(rowNames()).not.toEqual(firstPage)
+
+    expect(prevPage()).toBe(true)
+    expect(rowNames()).toEqual(firstPage)
+    // And the near end really is an end.
+    expect(prevPage()).toBe(false)
+  })
+
+  it('drops you back to the first page when a filter changes what is in the list', () => {
+    openMarket()
+    expect(nextPage()).toBe(true)
+    expect(nextPage()).toBe(true)
+    expect(screen.getByText('Page 3 of 8')).toBeDefined()
+
+    // **Madrid can afford the whole league**, so this filter removes nobody and the
+    // page count does not move — which is what makes it a test of the reset rather
+    // than of the clamp. A filter that shortened the list would be satisfied by
+    // either.
+    fireEvent.click(screen.getByRole('button', { name: 'Within budget' }))
+    expect(screen.getByText('Page 1 of 8')).toBeDefined()
+  })
+
+  it('keeps the page label out of the buttons, so reading it cannot page you', () => {
+    // A structural assertion because the consequence is invisible here: jsdom does
+    // no layout, and the buttons carry an `aria-label`, which overrides their
+    // contents — so folding the label inside one changes neither the accessible
+    // name nor anything a query can see. What it *does* change is the click target.
+    openMarket()
+    expect(screen.getByText(/^Page 1 of/).closest('button')).toBeNull()
+  })
+
+  it('sorting drops you back too, since it reorders the whole market', () => {
+    // Page four of a list you have never seen the top of is not a useful place to
+    // land after asking for the dearest players.
+    openMarket()
+    expect(nextPage()).toBe(true)
+
+    fireEvent.click(screen.getByRole('button', { name: /^Asking/ }))
+    expect(screen.getByText('Page 1 of 8')).toBeDefined()
+  })
+
+  /**
+   * Defence in depth, and the test says so.
+   *
+   * No control can reach this today — every one of them resets the page — and the
+   * listings hold steady at 290 across a month of ticks, so the list does not shrink
+   * underneath a reader either. The clamp is here for the state *arriving* short,
+   * which is why this stages it directly rather than trying to click into it. Same
+   * shape as the rollover's `canField` guard.
+   */
+  it('never shows a page that has stopped existing', () => {
+    openMarket()
+    toLastPage()
+    expect(screen.getByText('Page 8 of 8')).toBeDefined()
+
+    const state = game()
+    const keep = new Set([state.managedClubId, state.competition.clubIds[1]])
+    act(() => {
+      useGame.setState({
+        game: {
+          ...state,
+          squads: Object.fromEntries(
+            Object.entries(state.squads).filter(([id]) => keep.has(id as ClubId)),
+          ),
+          foreign: { ...state.foreign, squads: {} },
+        },
+      })
+    })
+
+    // Back to the only page there is — and with one page the control disappears
+    // rather than sitting there with both arrows dead. Without the clamp this is
+    // `slice(280, 320)` of a much shorter list, which renders nothing at all.
+    const left = listingsFor(game()).length
+    expect(left).toBeGreaterThan(0)
+    expect(bodyRows()).toHaveLength(left)
+    expect(document.querySelector('.market-screen__pager')).toBeNull()
   })
 
   it('names the position filters in the language you are in', () => {
@@ -267,7 +430,7 @@ describe('reaching the whole market', () => {
 
     const keepers = allListings().filter((l) => l.player.position === 'GK')
     expect(keepers.length).toBeGreaterThan(0)
-    expect(bodyRows()).toHaveLength(keepers.length)
+    expect(allRowNames().size).toBe(keepers.length)
     for (const row of bodyRows()) {
       expect(within(row as HTMLElement).getByText('GK')).toBeDefined()
     }
@@ -281,7 +444,7 @@ describe('reaching the whole market', () => {
     const both = allListings().filter(
       (l) => l.player.position === 'GK' || l.player.position === 'FW',
     )
-    expect(bodyRows()).toHaveLength(both.length)
+    expect(allRowNames().size).toBe(both.length)
   })
 
   it('filters to what you can pay for', () => {
@@ -290,7 +453,7 @@ describe('reaching the whole market', () => {
 
     const budget = game().clubs.find((c) => c.id === game().managedClubId)?.budget ?? 0
     const affordable = allListings().filter((l) => l.fee <= budget)
-    expect(bodyRows()).toHaveLength(affordable.length)
+    expect(allRowNames().size).toBe(affordable.length)
   })
 
   it('filters to free agents', () => {
@@ -298,7 +461,7 @@ describe('reaching the whole market', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Free agents' }))
     // A fresh league has an empty pool — nobody is out of contract until the first
     // rollover — so this correctly shows nothing rather than everything.
-    expect(bodyRows()).toHaveLength(allListings().filter((l) => l.from === null).length)
+    expect(allRowNames().size).toBe(allListings().filter((l) => l.from === null).length)
   })
 
   it('says so when the filters exclude everybody', () => {
@@ -725,7 +888,7 @@ describe('a club with no money', () => {
     )
 
     expect(useful.length).toBeGreaterThan(20)
-    const shown = new Set(rowNames())
+    const shown = allRowNames()
     for (const listing of useful) expect(shown.has(listing.player.name)).toBe(true)
   })
 })
@@ -741,8 +904,9 @@ describe('a club with no money', () => {
 describe('reopening a deal', () => {
   /** Bid the asking price for one listing, which is always accepted. */
   function bidAsking(name: string) {
-    const row = screen.getByText(name).closest('tr')
-    if (row === null) throw new Error(`no row for ${name}`)
+    // These are the two *cheapest* listings, which in market order sit wherever the
+    // shuffle put them — page one is not a safe assumption once the table pages.
+    const row = goToRow(name)
     fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
     fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
@@ -997,7 +1161,7 @@ describe('what a bid really costs', () => {
     const club = game().clubs.find((c) => c.id === game().managedClubId)
     if (club === undefined) throw new Error('no club')
     const clubCount = game().competition.clubIds.length
-    const shown = new Set(rowNames())
+    const shown = allRowNames()
 
     const all = listingsFor(game())
     for (const listing of all) {
