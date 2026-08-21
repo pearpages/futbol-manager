@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { fireEvent, render, within } from '@testing-library/react'
 import { computeTable } from '@fm/domain'
@@ -196,5 +198,37 @@ describe('sorting the classification', () => {
       useGame.getState().game.season.fixtures,
     )
     expect(rows().map((r) => r.position)).toEqual(table.map((_, i) => i + 1))
+  })
+})
+
+describe('the crests', () => {
+  /*
+   * Read as text, because the app project runs with `css: false` and jsdom does
+   * no layout — a rendered badge has no measurable size here at all.
+   */
+  const css = readFileSync(
+    resolve(process.cwd(), 'packages/app/src/screens/TableScreen.css'),
+    'utf8',
+    // Comments stripped first: the note explaining the scoped rule naturally
+    // names the token it exists *not* to touch, and a bare `toContain` reads
+    // that sentence as a declaration. Third time this repo has been caught by
+    // a comment scanned as the rule it describes.
+  ).replace(/\/\*[\s\S]*?\*\//g, '')
+
+  it('draws them larger here without touching the shared size', () => {
+    // Scoped to this screen on purpose: `.club-badge.is-sm` serves eleven call
+    // sites, the market's couple of hundred rows among them. Retuning the token
+    // to enlarge the classification would enlarge all of them.
+    expect(css).toMatch(/\.table-screen \.club-cell \.club-badge \{[^}]*width: 1\.75rem/)
+    expect(css).not.toContain('.club-badge.is-sm')
+  })
+
+  it('pays for them out of the row padding, not the table height', () => {
+    // The two halves only cancel together. The badge is taller than the text, so
+    // it sets the row height; measured, enlarging it alone cost 165px of table at
+    // 1440x900 and zeroing `padding-block` gives exactly that back. Shipping the
+    // size without the padding is the regression this catches, and jsdom does no
+    // layout, so reading the rule is the only guard available.
+    expect(css).toMatch(/\.table-screen \.data-table__row td \{[^}]*padding-block: 0/)
   })
 })

@@ -155,6 +155,31 @@ describe('every palette is fully declared in CSS', () => {
       expect(rim, `${key} hard-codes a rim colour`).toMatch(/^var\(--badge-(b|ink)\)$/)
     }
   })
+
+  /**
+   * The two clubs wearing garnet and navy, which share their kit colours and
+   * differ only in the colour of the code and the rim. They were one palette
+   * until the split, so these pin the halves apart: the pair is the only place
+   * in the file where reading the wrong rule still produces a plausible badge.
+   */
+  it('gives Barcelona a navy rim and a gold code', () => {
+    const rule = ruleFor('garnet-blue') ?? ''
+
+    // No override at all — the rim falls through to `var(--badge-b)`, the navy.
+    // Restoring the gold override is the regression this exists to catch.
+    expect(rule).not.toContain('--badge-rim')
+    expect(rule).toContain('--badge-b: #17376b')
+    expect(rule).toContain('--badge-ink: #f6d66b')
+  })
+
+  it('gives Benicalap a white rim and a white code, over the same kit', () => {
+    const rule = ruleFor('garnet-blue-white') ?? ''
+
+    expect(rule).toContain('--badge-ink: #f4f4f2')
+    expect(rule).toContain('--badge-rim: var(--badge-ink)')
+    // The stripes stay navy: only the lettering and the edge went white.
+    expect(rule).toContain('--badge-b: #17376b')
+  })
 })
 
 describe('legibility', () => {

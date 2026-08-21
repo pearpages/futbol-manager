@@ -34,12 +34,32 @@
   --badge-ink: #1d2330;
 }
 
+/*
+ * Barcelona. The rim is the default — the club's own navy — and deliberately so:
+ * it used to override to the gold, on the argument that both kit colours are dark
+ * and navy on garnet is mud at 1.25rem. The classification now draws this badge
+ * half again as large, which is where a crest is actually doing identification
+ * work, and a rim in a colour the club owns beats one picked for contrast. Do not
+ * restore the override; if it stops reading somewhere, the answer is that screen's
+ * badge size.
+ */
 .club-badge[data-colours='garnet-blue'] {
   --badge-a: #7b1330;
   --badge-b: #17376b;
   --badge-ink: #f6d66b;
-  /* Both kit colours are dark, so navy on garnet is mud at this size. The gold
-     is a genuine accent of the same kit and actually reads. */
+}
+
+/*
+ * Benicalap. The same two kit colours as Barcelona above — garnet field, navy
+ * stripes — which is why this is the file's first three-token key: the third
+ * names the *code* colour, and it is the only thing separating the two palettes.
+ * Splitting them is what lets one club take a gold code and the other a white one
+ * while both keep the striped garnet-and-navy kit they actually wear.
+ */
+.club-badge[data-colours='garnet-blue-white'] {
+  --badge-a: #7b1330;
+  --badge-b: #17376b;
+  --badge-ink: #f4f4f2;
   --badge-rim: var(--badge-ink);
 }
 

@@ -228,3 +228,29 @@ describe('every section declares its colour', () => {
     }
   })
 })
+
+describe('the next-match panel in a short window', () => {
+  const css = readFileSync(resolve(process.cwd(), 'packages/app/src/screens/HubScreen.css'), 'utf8')
+
+  /** The first declaration block for a selector, or `null` if there is none. */
+  function ruleFor(selector: string): string | null {
+    const start = css.indexOf(`\n${selector} {`)
+    if (start < 0) return null
+    return css.slice(start, css.indexOf('}', start))
+  }
+
+  it('pins the day controls to the foot of the panel', () => {
+    // `.hub__next` is its own scroll container — `.screen` carries `overflow:
+    // auto` — and the panel does not fit a short window: at 900x720 the press
+    // that starts a match sat below the fold, and two crests stacked over their
+    // names pushed it 28px further. Measured in a real browser; jsdom does no
+    // layout and the app project runs with `css: false`, so nothing rendered can
+    // see this. The opaque background is half the fix: without it the crests
+    // scroll straight through the button.
+    const rule = ruleFor('.hub__controls')
+    expect(rule).not.toBeNull()
+    expect(rule).toContain('position: sticky')
+    expect(rule).toContain('bottom: 0')
+    expect(rule).toMatch(/background:\s*var\(--fm-screen\)/)
+  })
+})

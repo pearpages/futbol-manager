@@ -2487,3 +2487,81 @@ Both are CSS-only, which jsdom cannot see (`css: false`, no layout), so both are
 **Baseline comparison was `git worktree add --detach`, never `git stash`** — and the worktree was warmed with an install before measuring, because its first command prints pnpm's preamble.
 
 **Note for the git history:** another session was editing all three dictionaries, `MarketScreen._`, `ResultsScreen._` and `chrome.css` throughout this one, and had staged its work. The four edits here are line-scoped `sed` substitutions; the `market.page`/`prevPage`/`nextPage` keys that appear alongside them in `git diff` are theirs.
+
+### 2026-08-21 (c) — two crests recoloured, and the row padding pays for the size
+
+**Four asks off one look at the classification:** Barcelona's border blue rather than yellow with the letters still yellow, Benicalap's letters and border white, bigger crests in the classification, and a hover tooltip carrying the full club name. 1213 tests, `SCHEMA_VERSION` still 10, **every changed file under `packages/app`**, so `pnpm season` reads none of it and determinism holds by construction.
+
+**The two colour asks collided, because Barcelona and Benicalap were the only two clubs on `garnet-blue`** and `club-badges.css` is keyed on the palette, never on the club. So one of them had to move: Barcelona keeps the name it is canonical for, and Benicalap takes **`garnet-blue-white`**, the file's first three-token key — the third token is the _code_ colour, and it is the only thing separating the two rules. Same garnet field, same navy stripes, because only the lettering and the edge were asked about; Levante wear the stripes and there was no reason to repaint them.
+
+**Barcelona's blue rim is a deleted override, not a new value.** It had carried `--badge-rim: var(--badge-ink)` with a comment arguing that both kit colours are dark and navy on garnet is mud at 1.25rem. Deleting it falls through to the base `var(--badge-b)` — the club's own navy. **The comment was not wrong and the entry below says where it still bites.**
+
+---
+
+**The size ask turned into the interesting one, and my plan's premise was false.** I had written a decision rule of "step the badge down until twenty rows fit without scrolling". Measured at HEAD before touching anything: **the classification already scrolls — 5px at 1440x900 and 185px at 1280x720.** Twenty rows have not fitted at the tighter viewport for some time. A rule resting on that would have thrown away most of the size increase for a property the screen never had.
+
+**What the measurement did give is the mechanism: the badge _is_ the row height.** It is taller than the text beside it, so every 0.1rem added to it adds ~1.6px to all twenty rows — enlarging it alone to 1.75rem cost **165px of table at 1440x900, about four rows pushed under the fold** on a screen you read whole.
+
+**But `.data-table__row td`'s `padding-block` was only ever doing work while the badge was small.** Handing the rhythm to the badge instead:
+
+| badge            | padding-block | row      | overflow @1440x900 | @1280x720 |
+| ---------------- | ------------- | -------- | ------------------ | --------- |
+| 1.25rem (before) | 0.25rem       | 32px     | 5                  | 185       |
+| 1.75rem          | 0.25rem       | 40px     | 165                | 345       |
+| **1.75rem**      | **0**         | **32px** | **5**              | **185**   |
+
+**The crest goes 20px to 28px, +40%, and the table's height does not move at all** — overflow identical to before the rule existed at both viewports. The pair is the point and they only cancel at this pairing, which is why both halves are scoped to `.table-screen`, both are commented as one decision, and each has its own guard. Move either and re-measure both.
+
+**Scoped, never retuned on the token:** `.club-badge.is-sm` serves eleven call sites, the market's couple of hundred rows among them.
+
+---
+
+**The tooltip is a `<title>` first child, and the mechanism is not interchangeable.** A `title=` attribute is an HTML global and does nothing on an element in the SVG namespace; first child is what makes a browser treat it as the tooltip for the whole badge.
+
+**It changes no accessible name in either direction**, which is the claim that mattered given how many assertions in this repo resolve a control by exact name — an unlabelled badge is `aria-hidden` so the title never reaches the accessibility tree, and a labelled one carries `aria-label`, which outranks `<title>`. Not assumed: a mutation dropping the `aria-label` and letting the title name the badge fails its test.
+
+**The cost is that `<title>` joins the SVG's `textContent`, and `getByText` matches an element's direct child text nodes — so a club name now matches twice.** Six tests in `SetupScreen.test.tsx` broke on exactly that. **`IGNORE_TOOLTIP` in `testing.ts`** (`{ ignore: 'script, style, title' }`, extending Testing Library's default rather than replacing it) is the one fix, the same move `ADVANCE` and `openScreen` made for their own recurring queries. **Reach for it whenever a test resolves a _club_ by its rendered name** — not needed for player names, for `getAllByText`, or for a query already scoped by `selector` or `within`.
+
+**One prediction in the plan was wrong and running it is what showed that.** I had expected `App.test.tsx`'s "leaves the date and the next fixture to the hub" to break, on the strength of a 2026-08-14 entry saying the bar carries the opponent's badge. It does not any more — 2026-08-15 deleted the next fixture from the bar. **The session log is history, not current state; grep before trusting it.**
+
+**Nine mutations, one at a time so each failure was attributable, and one was malformed.** "Title moved off first child" was written as a deletion, so it failed three tests and duplicated the "no title at all" mutation — proving nothing about position. Rewritten to genuinely _move_ the title after the outline path, it fails exactly one test, which is what makes the position test about position. **A mutation that fails the wrong test is as uninformative as one that fails nothing.**
+
+**And the comment-scanned-as-the-rule trap caught me for the fourth time in this repo.** The new CSS guard asserts `not.toContain('.club-badge.is-sm')` — and my own comment above the rule names that token while explaining why it is _not_ touched. Comments are stripped before the assertion now.
+
+---
+
+**Seen in a real browser**, headless Chrome over CDP against `vite preview` on **4321** — never 4173. **A new CDP trap worth keeping: `/json/list`'s first target is not reliably the tab.** It came back as a Chrome extension's `_generated_background_page.html`, so every probe reported an empty document and read exactly like the app failing to boot. Filter for `type === 'page'` with a non-`chrome-extension://` URL, and pass `--disable-extensions`.
+
+Measured on the real screen: Barcelona rim `rgb(23,55,107)` with `rgb(246,214,107)` letters, Benicalap both `rgb(244,244,242)`, twenty badges at 28px each carrying its `<title>`, rows at 32px, no page scrolling sideways. Tooltips confirmed off the classification too — the hub's identity crest reads `Madrid` and its opponent crest `Sevilla`.
+
+**The honest limit, and it is the thing to look at first if this ever grates.** Rendered side by side at both sizes, **Barcelona's navy rim is the weakest edge of the four clubs checked**. At the classification's 28px it reads. At the untouched **20px** of the market and the results grid it is dark-on-dark against `--fm-screen` and the shield's silhouette nearly disappears — where Benicalap's new white rim and Madrid's navy-on-white both pop. The old comment's worry was navy-against-garnet; what actually shows is navy-against-the-near-black-screen, which is a second thing and is worse. This was chosen deliberately with the trade stated, and the lever if it is ever revisited is **that screen's badge size, not the palette** — the rim is a colour the club owns and the test forbids inventing a lighter one.
+
+### 2026-08-21 (d) — the fixture, written as a fixture
+
+**Prompted by "in proper partit, put the icons of both teams and in the standard order of home and away, the one that plays home, always goes first".** The panel showed **one** crest — the opponent's — beside `contra el Bilbao (L)`, so it named who you play and drew half the match. 1214 tests, `SCHEMA_VERSION` still 10, and **every changed file is under `packages/app`**, so `pnpm season` reads none of them and determinism holds by construction rather than by diff.
+
+**Two crests either side of a dash, home on the left, names beneath.** Chosen over a stacked pair: left-to-right is how a fixture is written, and the 18rem centre column is 254px of usable width, which is 114px a side — enough for `SAN SEBASTIÁN` at `--fm-text-md` without wrapping (measured; every side renders 65px tall whatever the names).
+
+**The venue letter is gone, and that is the substance of the change rather than tidying.** Order now says where the match is played, so `(L)`/`(V)` was a second copy of the same fact. What order cannot say is which side is _yours_ — that takes `is-you`, the gold five other screens already use for the managed club, so it needed no new device and **no new dictionary key in any of the three languages**.
+
+**No domain change, and none was needed.** `matchdayFor` already answers _your_ side of the fixture (`opponent` plus a `home` boolean) and `HubScreen` already binds the managed club. Two lines turn "am I at home" back into "who is the home club"; `Matchday` and `describeOpponent` are untouched, which is what keeps `CalendarScreen` — which shares `fixture.home`/`fixture.away` — and `language.test.tsx`'s exact-string assertion out of it entirely.
+
+**The visual half is `aria-hidden` and the line carries `describeOpponent` as a `visually-hidden` sentence.** That is deliberate rather than incidental: the letter leaving the _screen_ must not take the venue off the _page_, and announcing crests, names and the sentence would say one thing three times. A screen reader hears exactly what it heard before this change, venue letter and all — so the gold being the only _visual_ signal for your side is affordable.
+
+**The play button is unchanged and still reads `(V)`.** It is a different sentence doing a different job — naming the opponent for the one irreversible press — and four tests resolve it by the prefix of `hub.playMatch` before `{opponent}`. Flagged rather than done.
+
+**One test replaced the old badge assertion and it drives the same fixture from both dressing rooms.** A single career cannot see this feature at all: whichever side happened to come first would look right. Driving one fixture from both clubs is what constrains it — the same shape the results grid's axes needed. Four mutations (swap home/away, `is-you` on the wrong side, drop the second crest, drop the hidden sentence) each fail it and nothing else.
+
+**Then measuring in a browser found a regression I had introduced on top of a pre-existing one.** `.hub__next` is its own scroll container, and stacking a crest over a name costs 21px a side. Measured against a HEAD worktree (`git worktree add --detach`, never `git stash`): at **900×720 the play button sat 3px below the panel fold at HEAD and 28px below with this change**; at 900×650, 26px became 51px. Free at 800px of height and above.
+
+**Fixed rather than inherited: `.hub__controls` is now `position: sticky; bottom: 0`** with an opaque `--fm-screen` background — the device `.explain__actions` and `.pager` already use, and for the reason `.explain__actions` records: an affordance you have to go looking for is not one. The button is now fully visible at 650px, 720px, 900×900, 1280×720 and 1440×900, which is better than HEAD managed. **The background is half the fix** — without it the crests scroll straight through the button — and both halves have a mutation that bites. jsdom does no layout and the app project runs `css: false`, so the guard reads the stylesheet as text, the `hub-sections.test.tsx` idiom.
+
+**`.hub__when` is centred with the fixture it captions.** It sat left when the panel held one left-aligned line and read as a stray against two centred columns. `.hub__warning` deliberately stays left — that one is a sentence, not a caption. Unguarded, and the sweep says so: uncentring it fails nothing, and asserting every `text-align` in CSS-as-text would be noise.
+
+**Verified in a real browser** over CDP against `vite preview` on **port 4321** — never 4173, where another project's service worker owns the origin. Both ends of a real fixture at San Sebastián (`SSB · VIT` at home, `BAR · SSB` away — home crest left in both, gold on your side in both), Manzanares in Spanish at 1280×720 both venues, `HELIÓPOLIS – MANZANARES` in Catalan, and English at 900×650. No page scrolls sideways at any of them and the line fits the panel at all three widths.
+
+**Two driving traps, both already in this file and hit anyway.** zsh does **not** word-split an unquoted variable, so a `for` loop over `"1440 900 ca San Sebastián"` ran all three configurations with the same mangled arguments and produced three identical, meaningless reports. And the club picker takes charge on the **row click alone** — a follow-up press on the primary button lands on the hub instead and silently leaves you managing the default club, which is how the first two runs reported Madrid.
+
+**Known and left:** at 900×650 the panel is squeezed hard enough that the two names and the countdown scroll out of view, leaving the crests and the pinned button. That squeeze is pre-existing — HEAD showed the name and hid the button — and it degrades rather than breaks. 650px of height is well below what every breakpoint in this project targets.
+
+**Note for the git history:** another session was editing `ClubBadge.tsx`, `badges.ts`, `club-badges.css`, `testing.ts`, `TableScreen.*`, `SetupScreen.test.tsx` and `CLAUDE.md` throughout this one, and had added a `<title>` to the badge (which is why a badge's `textContent` now carries the club name). The four files here are `HubScreen.tsx`, `HubScreen.css`, `HubScreen.test.tsx` and `hub-sections.test.tsx`.

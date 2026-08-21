@@ -86,6 +86,42 @@
   color: var(--fm-champion);
 }
 
+/*
+ * The classification's crests, larger than the shared `is-sm`, and paid for out
+ * of the row's own vertical padding rather than out of the table's height.
+ *
+ * Scoped rather than retuned on the token: `.club-badge.is-sm` serves eleven call
+ * sites, the market's couple of hundred rows among them, and this is the one
+ * screen where the crest is doing identification work at a glance rather than
+ * decorating a name. (0,3,0) beats `.club-badge.is-sm`'s (0,2,0), so import order
+ * is not load-bearing here.
+ *
+ * The pair is the point, and the second half is not a tidy-up. The badge is
+ * taller than the text beside it, so **the badge is the row height** — every
+ * 0.1rem added to it adds 1.6px to all twenty rows. Enlarging it alone cost 165px
+ * of table at 1440x900, about four rows pushed under the fold on a screen you
+ * read whole. But the padding was only ever doing work while the badge was small:
+ * dropping `padding-block` to zero hands the rhythm to the badge, which already
+ * has more of it than the text needs.
+ *
+ * Measured at 1440x900 and 1280x720, against the same career: the crest goes 20px
+ * to 28px, +40%, and the row stays at exactly 32px — table overflow 5px and 185px
+ * respectively, both unchanged from before this rule existed. (The classification
+ * already scrolled at 1280x720; that is pre-existing and this neither fixes nor
+ * worsens it.) Move either value and re-measure both, because they only cancel at
+ * this pairing.
+ *
+ * The code text is 30px in a 100x100 viewBox, so it scales with the box for free.
+ */
+.table-screen .club-cell .club-badge {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.table-screen .data-table__row td {
+  padding-block: 0;
+}
+
 @media (width < 60rem) {
   .table-screen {
     grid-template-columns: minmax(0, 1fr);

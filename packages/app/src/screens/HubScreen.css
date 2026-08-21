@@ -282,21 +282,74 @@
   padding: var(--fm-space-3) var(--fm-space-4);
 }
 
-.hub__opponent {
-  display: flex;
-  align-items: center;
+/* Two crests, home on the left, because that is the order a fixture is written
+   in everywhere — and here it is load-bearing rather than conventional: it is
+   the only thing on screen that says where the match is played, now the venue
+   letter has gone.
+
+   Three columns rather than a flex row so the two sides are exactly equal
+   whatever the names are, and the dash stays on the centre line. `start`
+   because the crests must align with each other even when one name wraps to a
+   second line and the other does not. */
+.hub__fixture {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
   gap: var(--fm-space-2);
   margin: 0;
+}
+
+.hub__side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fm-space-1);
+  min-width: 0;
+}
+
+/* `--fm-text-md`, not the `--fm-text-lg` the single opponent had: two names now
+   share the 18rem centre column, which leaves roughly 110px each, and the
+   longest in the division does not fit at the larger size. Centred and wrapping
+   rather than truncated — a club name cut in half is worse than one on two
+   lines. */
+.hub__side-name {
   font-family: var(--fm-font-condensed);
-  font-size: var(--fm-text-lg);
+  font-size: var(--fm-text-md);
   font-weight: 700;
   letter-spacing: 0.02em;
+  text-align: center;
   text-transform: uppercase;
 }
 
-.hub__when {
-  margin: var(--fm-space-1) 0 0;
+/* Which one is you. The same gold the classification, the results grid, the
+   calendar and the market all use for the managed club, so it needs no
+   explaining anywhere it appears. Colour is the only *visual* signal here, and
+   that is affordable because the venue and the opponent are both carried in
+   words by the `visually-hidden` sentence above. */
+.hub__side.is-you .hub__side-name {
+  color: var(--fm-champion);
+}
+
+/* Pinned to the crests' own line rather than the column's centre, so it does not
+   drift downward when one name wraps. The height mirrors `.club-badge.is-lg`;
+   there is no token for a badge size, and matching it is the whole point. */
+.hub__versus {
+  display: flex;
+  align-items: center;
+  height: 2.75rem;
   color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+}
+
+/* Centred with the fixture above it, which it is a caption for. It sat left when
+   the panel held a single left-aligned line; against two centred columns it read
+   as a stray. `.hub__warning` below is deliberately not centred — that one is a
+   sentence, not a caption. */
+.hub__when {
+  margin: var(--fm-space-2) 0 0;
+  color: var(--fm-screen-ink-soft);
+  text-align: center;
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-sm);
   letter-spacing: var(--fm-track-wide);
@@ -368,10 +421,21 @@
 }
 
 /* The day controls stack rather than sit in a row: the primary action wants the
-   full width, and "To matchday" is a smaller decision beneath it. */
+   full width, and "To matchday" is a smaller decision beneath it.
+ *
+ * Pinned to the foot of the panel, which is its own scroll container — `.screen`
+ * carries `overflow: auto`. In a short window the panel does not fit and the one
+ * press that starts a match went below the fold; two crests stacked over their
+ * names made that worse, so it is fixed rather than inherited. The same device
+ * `.explain__actions` and `.pager` use, for the same reason: an affordance you
+ * have to go looking for is not one. The background must be opaque, or the
+ * fixture scrolls through it. */
 .hub__controls {
+  position: sticky;
+  bottom: 0;
   flex-direction: column-reverse;
   align-items: stretch;
+  background: var(--fm-screen);
 }
 
 /* Distinct from Advance day, because this one is not reversible. */

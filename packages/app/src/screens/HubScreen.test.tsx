@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { computeTable, nextFixtureFor, overall, recentResultsFor, type Player } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { bandFor } from '../bands.ts'
@@ -119,18 +119,43 @@ describe('knowing when you play', () => {
     expect(screen.getAllByText(new RegExp(opponent)).length).toBeGreaterThan(0)
   })
 
-  it('shows the opponent’s badge beside his name', () => {
-    // A crest identifies a club faster than a name in a list does, and the two
-    // clubs in the centre column — you and whoever is next — now read at the
-    // same size.
-    render(<App />)
+  it('draws both crests with the home club first, from either end of the fixture', () => {
+    // One fixture, read from both dressing rooms.
+    //
+    // Order is now the only thing on screen saying where the match is played, so
+    // it must describe the *fixture* rather than follow *you* — which is exactly
+    // what building the row out of `matchday.opponent` alone would do. A single
+    // career cannot see that: whichever side happened to come first would look
+    // right. Driving the same fixture from both clubs is what makes it visible,
+    // the same shape the results grid's axes needed.
     const fixture = nextFixtureFor(game().season.fixtures, MID)
     if (fixture === null) throw new Error('no fixture')
-    const opponentId = fixture.homeId === MID ? fixture.awayId : fixture.homeId
-    const opponent = game().clubs.find((c) => c.id === opponentId)
+    const home = game().clubs.find((c) => c.id === fixture.homeId)
+    const away = game().clubs.find((c) => c.id === fixture.awayId)
+    expect(home?.shortName).not.toBe(away?.shortName)
 
-    const code = document.querySelector('.hub__opponent .club-badge__code')
-    expect(code?.textContent).toBe(opponent?.shortName)
+    for (const managed of [fixture.homeId, fixture.awayId]) {
+      cleanup()
+      useGame.getState().newGame(managed)
+      render(<App />)
+
+      const codes = [...document.querySelectorAll('.hub__fixture .club-badge__code')]
+      expect(codes.map((c) => c.textContent)).toEqual([home?.shortName, away?.shortName])
+
+      // Which side is yours, since the order alone cannot say it.
+      const yours = document.querySelectorAll('.hub__side.is-you')
+      expect(yours).toHaveLength(1)
+      expect(yours[0]?.querySelector('.hub__side-name')?.textContent).toBe(
+        managed === fixture.homeId ? home?.name : away?.name,
+      )
+
+      // The venue letter left the screen with the crests taking over. It must not
+      // have left the page: order carries it for the eye, this sentence for
+      // anyone who cannot see the order.
+      const spoken = document.querySelector('.hub__fixture .visually-hidden')?.textContent ?? ''
+      expect(spoken).toContain(managed === fixture.homeId ? away?.name : home?.name)
+      expect(spoken).toContain(managed === fixture.homeId ? '(H)' : '(A)')
+    }
   })
 
   it('opens a new career with the first fixture already due', () => {

@@ -32,6 +32,10 @@ export type BadgeShape = 'shield' | 'circle' | 'square' | 'lozenge' | 'pennant'
 export const COLOUR_KEYS = [
   'white',
   'garnet-blue',
+  // Barcelona's kit colours again, with a white code rather than a gold one —
+  // the third token is the code colour, and it is the only thing separating this
+  // from the palette above. See the block comment in `club-badges.css`.
+  'garnet-blue-white',
   'red-white',
   'white-red',
   'blue-white',
@@ -82,7 +86,7 @@ export const BADGES: Readonly<Record<string, Badge>> = {
   sarria: { colours: 'blue-white', pattern: 'hoops', shape: 'circle' },
   girona: { colours: 'red-white', pattern: 'stripes', shape: 'square' },
   getafe: { colours: 'blue', pattern: 'solid', shape: 'square' },
-  benicalap: { colours: 'garnet-blue', pattern: 'stripes', shape: 'pennant' },
+  benicalap: { colours: 'garnet-blue-white', pattern: 'stripes', shape: 'pennant' },
   'a-coruna': { colours: 'blue-white', pattern: 'stripes', shape: 'lozenge' },
   santander: { colours: 'green-white', pattern: 'stripes', shape: 'circle' },
   elche: { colours: 'white', pattern: 'solid', shape: 'lozenge' },

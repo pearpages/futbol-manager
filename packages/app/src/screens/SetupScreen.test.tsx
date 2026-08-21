@@ -6,7 +6,7 @@ import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 
 const { t } = translatorFor('en')
-import { ADVANCE } from '../testing.ts'
+import { ADVANCE, IGNORE_TOOLTIP } from '../testing.ts'
 
 /**
  * Until M3c every career started at Almería, because `newSeason` defaulted to the
@@ -29,15 +29,15 @@ describe('choosing a club', () => {
   it('offers every club in the division', () => {
     render(<App />)
     for (const club of DEFAULT_CLUBS) {
-      expect(screen.getByText(club.name)).toBeDefined()
+      expect(screen.getByText(club.name, IGNORE_TOOLTIP)).toBeDefined()
     }
     expect(screen.getAllByRole('button', { name: t('setup.takeCharge') })).toHaveLength(20)
   })
 
   it('says what you are taking on, so the choice is informed', () => {
     render(<App />)
-    const strongest = screen.getByText(DEFAULT_CLUBS[0]?.name ?? '').closest('tr')
-    const weakest = screen.getByText(DEFAULT_CLUBS.at(-1)?.name ?? '').closest('tr')
+    const strongest = screen.getByText(DEFAULT_CLUBS[0]?.name ?? '', IGNORE_TOOLTIP).closest('tr')
+    const weakest = screen.getByText(DEFAULT_CLUBS.at(-1)?.name ?? '', IGNORE_TOOLTIP).closest('tr')
     if (strongest === null || weakest === null) throw new Error('no rows')
 
     expect(within(strongest).getByText('Contender')).toBeDefined()
@@ -49,7 +49,7 @@ describe('choosing a club', () => {
     const madrid = DEFAULT_CLUBS[0]
     if (madrid === undefined) throw new Error('no clubs')
 
-    const row = screen.getByText(madrid.name).closest('tr')
+    const row = screen.getByText(madrid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
@@ -63,7 +63,7 @@ describe('choosing a club', () => {
     const mid = DEFAULT_CLUBS[9]
     if (mid === undefined) throw new Error('no clubs')
 
-    const row = screen.getByText(mid.name).closest('tr')
+    const row = screen.getByText(mid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
@@ -75,7 +75,7 @@ describe('choosing a club', () => {
     const club = DEFAULT_CLUBS[3]
     if (club === undefined) throw new Error('no clubs')
 
-    const row = screen.getByText(club.name).closest('tr')
+    const row = screen.getByText(club.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 
@@ -152,7 +152,7 @@ describe('sorting the club picker', () => {
     fireEvent.click(header(t('setup.column.club')))
 
     const first = rendered()[0] ?? ''
-    const row = screen.getByText(first).closest('tr')
+    const row = screen.getByText(first, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
 

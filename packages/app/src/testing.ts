@@ -96,3 +96,18 @@ export function advanceUntil(done: () => boolean, limit = 400): number {
 export function labelStem(text: string): RegExp {
   return new RegExp((text.split('·')[0] ?? text).trim())
 }
+
+/**
+ * Text queries that must not match a club badge's tooltip.
+ *
+ * Every badge carries `<title>{club.name}</title>` for the hover tooltip, and a
+ * `<title>` joins the SVG's `textContent` — so a bare `getByText(club.name)`
+ * finds both the visible name beside the badge *and* the tooltip inside it, and
+ * throws on the duplicate. Testing Library's `ignore` defaults to
+ * `'script, style'`; this extends it rather than replacing it.
+ *
+ * Reach for this whenever a test resolves a **club** by its rendered name. It is
+ * not needed for player names, for `getAllByText`, or for a query already scoped
+ * by `selector` or `within`.
+ */
+export const IGNORE_TOOLTIP = { ignore: 'script, style, title' } as const

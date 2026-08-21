@@ -113,6 +113,20 @@ export function ClubBadge({ club, size = 'sm', labelled = false }: ClubBadgeProp
       aria-label={labelled ? club.name : undefined}
       aria-hidden={labelled ? undefined : true}
     >
+      {/*
+        The hover tooltip, and the reason it is a `<title>` child rather than a
+        `title` attribute: the attribute is an HTML global and does nothing on an
+        element in the SVG namespace. First child, which is what makes a browser
+        treat it as the tooltip for the whole badge.
+
+        It changes no accessible name in either direction. An unlabelled badge is
+        `aria-hidden`, so the title never reaches the accessibility tree at all;
+        a labelled one carries `aria-label`, which outranks `<title>`. It *does*
+        join the SVG's `textContent`, which is why the text queries that resolve a
+        club by name pass `IGNORE_TOOLTIP` (`testing.ts`).
+      */}
+      <title>{club.name}</title>
+
       <g clipPath={clip}>
         <rect className="club-badge__field" x="0" y="0" width="100" height="100" />
         <Pattern pattern={badge.pattern} />

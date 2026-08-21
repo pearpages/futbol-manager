@@ -142,6 +142,36 @@ export const QUADRANTS: readonly Quadrant[] = [
   },
 ]
 
+/**
+ * One half of the fixture line: a crest with the club's name under it.
+ *
+ * `lg` on both, so the two clubs read at the same weight as the identity crest
+ * directly above them. The badge is left unlabelled — the name is right there,
+ * and the whole side is hidden from assistive technology anyway, which reads the
+ * sentence beside it instead.
+ *
+ * The name wraps rather than truncates: `San Sebastián` is the longest in the
+ * division and two names now share an 18rem column, so something has to give and
+ * a clipped club name is worse than a two-line one.
+ */
+function FixtureSide({
+  club,
+  you,
+  unknown,
+}: {
+  readonly club:
+    { readonly id: string; readonly name: string; readonly shortName: string } | undefined
+  readonly you: boolean
+  readonly unknown: string
+}) {
+  return (
+    <span className={`hub__side${you ? ' is-you' : ''}`} aria-hidden="true">
+      {club !== undefined && <ClubBadge club={club} size="lg" />}
+      <span className="hub__side-name">{club?.name ?? unknown}</span>
+    </span>
+  )
+}
+
 export function HubScreen() {
   const game = useGame((s) => s.game)
   const feed = useGame((s) => s.feed)
@@ -157,6 +187,11 @@ export function HubScreen() {
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
+  // The fixture as it is written, not as it is played from here: home first.
+  // `matchdayFor` answers *your* side of it, so this is the one place that turns
+  // "am I at home" back into "who is the home club".
+  const homeClub = matchday === null ? undefined : matchday.home ? club : matchday.opponent
+  const awayClub = matchday === null ? undefined : matchday.home ? matchday.opponent : club
   const form = recentResultsFor(game.season.fixtures, game.managedClubId, FORM_MATCHES)
   const clubName = (id: ClubId) => game.clubs.find((c) => c.id === id)?.name ?? '???'
 
@@ -256,14 +291,36 @@ export function HubScreen() {
             <p className="screen__note">{t('hub.seasonOver')}</p>
           ) : (
             <div className="hub__next-body">
-              {/* The badge belongs beside the name, not instead of it — a crest
-                  says *which* club faster than three letters do, and the name
-                  still has to be readable to a first-time player. */}
-              <p className="hub__opponent">
-                {matchday.opponent !== undefined && (
-                  <ClubBadge club={matchday.opponent} size="lg" />
-                )}
-                {describeOpponent(translator, matchday)}
+              {/*
+                The fixture as a fixture: two crests with the home club on the
+                left, which is how one is written everywhere. **Order is what
+                says where the match is played** — so the `(L)`/`(V)` letter that
+                used to sit here is a second copy of the same fact for the eye,
+                and it is gone. What order cannot say is which side is *yours*,
+                so that one takes `is-you`, the gold five other screens already
+                use for exactly this question.
+
+                The visual half is `aria-hidden` and the sentence beneath it is
+                the string a screen reader heard before this change, venue letter
+                and all. That is deliberate: the letter leaving the screen must
+                not take the venue away from anyone who cannot see the order, and
+                announcing both would say the same thing twice.
+              */}
+              <p className="hub__fixture">
+                <span className="visually-hidden">{describeOpponent(translator, matchday)}</span>
+                <FixtureSide
+                  club={homeClub}
+                  you={matchday.home}
+                  unknown={t('fixture.unknownClub')}
+                />
+                <span className="hub__versus" aria-hidden="true">
+                  –
+                </span>
+                <FixtureSide
+                  club={awayClub}
+                  you={!matchday.home}
+                  unknown={t('fixture.unknownClub')}
+                />
               </p>
               <p className={`hub__when${matchday.due ? ' is-due' : ''}`}>
                 {matchday.due ? t('hub.today') : plural('hub.inDays', matchday.daysAway)}
