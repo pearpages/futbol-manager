@@ -148,6 +148,18 @@ There is no `404.html` and none is needed: the app has **no router**, so `/` is 
 | Artifact    | `packages/app/dist`, about 6 MB, most of it the stadium ladder                                                         |
 | Environment | `github-pages`, restricted to the `main` branch                                                                        |
 
+### The share card
+
+`packages/app/public/og.jpg` — **1200×630, JPEG, 130 KB** — is what a link to the site unfurls as, declared by the Open Graph tags in `packages/app/index.html`.
+
+**Those tags have to be static in `index.html`.** There is no SSR and no prerender, and every unfurler fetches the file without running React — so anything a component injects is invisible to all of them. That also decides the language: the app picks one from `localStorage` long after a crawler has gone, so one static answer had to be chosen, and it is English for reach while `lang` stays `ca-ES` because that is what the page opens in.
+
+**`og:image` must stay an absolute URL.** A scraper does not resolve a relative path against the page it found it on; `/og.jpg` looks perfectly correct in a browser and unfurls as nothing.
+
+**JPEG rather than the WebP used everywhere else.** This is the one asset whose whole job is being read by other people's crawlers, and WebP still unfurls unreliably on some of them. PNG was the other candidate and lands about 1.2 MB — over the few hundred KB some chat clients budget for a preview thumbnail. At q92 the lettering is indistinguishable from lossless at 2× zoom, which was checked rather than assumed.
+
+The card is rendered from the real page in headless Chrome, loading the app's own stylesheet so `.landing__wordmark` arrives verbatim — the condensed face, the tracking, the colour and the two-layer shadow all come from source. It is a scripted one-off, not a build step: **a change to the cover art or to the wordmark's styling does not propagate on its own.** `packages/app/src/meta.test.ts` catches a wrong size or a missing file, not a stale picture.
+
 **`packages/app/public/CNAME` is deliberate belt-and-braces.** GitHub applies the custom domain from repository settings, so the site works without it — but that setting was the only copy of the domain, and a file in the artifact means it survives a settings reset.
 
 `.github/workflows/ci.yml` uses `jdx/mise-action@v2` in **both** jobs rather than `actions/setup-node`, so `mise.toml` stays the single source for Node and pnpm and this file never becomes a second one. `actions/configure-pages` is deliberately absent — it writes to the Pages API, and the domain and certificate are already configured; add it only if a run reports Pages is not enabled.

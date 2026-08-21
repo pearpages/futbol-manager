@@ -5,6 +5,65 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Futbol Manager</title>
+
+    <!--
+      Sharing metadata, and it has to live here rather than anywhere in React.
+
+      There is no SSR and no prerender: every unfurler — Facebook, X, LinkedIn,
+      Slack, WhatsApp, iMessage — fetches this file and never runs the app. Tags
+      injected at runtime would be invisible to all of them.
+
+      That also settles the language, which the app decides from `localStorage`
+      long after a crawler has gone. One static answer had to be picked, and it
+      is English for reach, while `lang` above stays `ca-ES` because that really
+      is what the page opens in. The copy is the shipped English landing text
+      (`landing.tagline` + `landing.about.p1`), trimmed under 200 characters so
+      nothing truncates — not new prose, which would be a fourth place the game
+      describes itself.
+
+      `Futbol` is unaccented deliberately: ADR 0012 decision 3 makes one spelling
+      reach the cover, the shell bar and the tab, and this is a fourth surface.
+
+      Absolute URLs are not optional here — a scraper does not resolve a relative
+      `og:image` against the page it found it on.
+    -->
+    <meta
+      name="description"
+      content="Take charge of a Spanish club. A football management game in the idiom of the nineties Spanish CD-ROMs — you pick the eleven, set the approach, and the result is resolved on the numbers."
+    />
+    <link rel="canonical" href="https://futbol.pearpages.com/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Futbol Manager" />
+    <meta property="og:url" content="https://futbol.pearpages.com/" />
+    <meta property="og:title" content="Futbol Manager" />
+    <meta
+      property="og:description"
+      content="Take charge of a Spanish club. A football management game in the idiom of the nineties Spanish CD-ROMs — you pick the eleven, set the approach, and the result is resolved on the numbers."
+    />
+    <!--
+      JPEG rather than the WebP this repo uses everywhere else. The card is the
+      one asset whose whole job is being read by other people's crawlers, and
+      WebP still unfurls unreliably on some of them. See `docs/stack.md`.
+    -->
+    <meta property="og:image" content="https://futbol.pearpages.com/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="A manager in a long coat on the touchline of a floodlit stadium in the rain, painted in the style of nineties CD-ROM box art."
+    />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:locale:alternate" content="ca_ES" />
+    <meta property="og:locale:alternate" content="es_ES" />
+
+    <!--
+      Card type only. X falls back to the `og:` tags above for the title, the
+      description, the image and its alt text, so repeating them here would be
+      four more lines that can disagree with the four above.
+    -->
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

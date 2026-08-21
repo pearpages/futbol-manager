@@ -71,6 +71,12 @@ pin in `stack.md`.
 - **Reversal is cheap and stays cheap.** One file in `public/`, one `<img>`, one
   block of CSS. The pixel-art technique is intact in five other modules if it is
   ever wanted back here.
+- **The share card is the one raster the name is composited into**, and decision 2
+  does not forbid it. That decision is about a _model_ spelling the name, and about
+  a live heading being crisper and translatable — neither applies to a flat 1200×630
+  Open Graph card, which has no DOM to put a heading over. `packages/app/public/og.jpg`
+  is the same cover art with the real `<h1>` rendered into it from the real
+  stylesheet, so the type cannot drift from the page. See `docs/stack.md`.
 - **The old cover's guards are gone with it** — 15 tests describing a grid that no
   longer exists. What replaces them: the asset exists and is inside a first-paint
   budget, the wordmark is visible rather than `visually-hidden`, the image carries
