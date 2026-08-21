@@ -1,162 +1,272 @@
 /*
- * The ground.
+ * The ground on the Estadi screen.
  *
- * Same arrangement as `club-badges.css`, `radar.css`, `hub-figures.css` and
- * `trophies.css`: **every colour lives here and `stadium.ts` holds none**, and
- * every rule that paints reads a custom property rather than a value.
- *
- * ## Four colours, and everything else is derived
- *
- * `turf`, `line`, `concrete` and `roof` are declared. The seating comes from the
- * club's own palette — `club-badges.css` sets `--badge-a` for whatever carries
- * `data-colours`, and the seats are that **mixed toward the concrete**, never
- * used raw: the `white` and `yellow` palettes would otherwise put a glaring blob
- * on the near-black screen. Everything else — the mown band, the three lighting
- * tones, the gangway, the apron — is `color-mix`ed from one of those four.
- *
- * That is the lesson the badge rim paid for: hand-chosen neighbours look fine
- * and are wrong, and the fix is deriving them from a colour that is already
- * right. `stadium.test.ts` refuses a literal on any derived value.
- *
- * ## Reading against the screen material
- *
- * This sits on the near-black `.screen` (`--fm-screen`), so **nothing may be
- * dark enough to lose its silhouette** — the constraint `hub-figures.css` states
- * and the reason the roof is a mid slate rather than the near-black it would be
- * in life. `pitch.css`'s turf is deliberately murky because it is a tactics
- * diagram carrying position discs; this is a picture of a ground and wants a
- * green you can see. Neither may reach for a band colour (`--fm-win` and
- * friends) for grass: those are named for the competition, not the role, which
- * `tokens.css` explains at length.
- *
- * ## There is no small variant, deliberately
- *
- * 49 rows at `12.25rem` is four device pixels a row — the ratio that already
- * makes the hub figures and the trophy read as pixel art. Shrunk to a badge's
- * size the decks, the gangways and the roofs would collapse into a smear, which
- * is what the trophy learned. So the ground appears once, on Estadio, and this
- * file offers nobody an `is-sm` to try it with.
+ * Painted box art, not a pixel grid — see ADR 0012. That took most of this file
+ * with it: nine ink rules, five derived `color-mix` values, the four `data-ahead`
+ * ghost depths and the `--badge-a` seat colour were all describing a drawing this
+ * stylesheet no longer owns. Colour is in the image.
  */
 
 .stadium {
-  --stadium-turf: #2f6b3a;
-  --stadium-line: #d2e2d5;
-  --stadium-concrete: #4b5560;
-  /* Mid slate rather than the near black a roof really is, so it still reads
-     against `--fm-screen`. */
-  --stadium-roof: #39434e;
-
-  /* The club's seats. `--badge-a` arrives via `data-colours`; the mix toward the
-     concrete is what keeps all thirteen palettes inside a usable band. */
-  --stadium-seat: color-mix(
-    in srgb,
-    var(--badge-a, var(--stadium-concrete)),
-    var(--stadium-concrete) 45%
-  );
-
-  /* Derived, never declared — see the note above. */
-  --stadium-lit: color-mix(in srgb, var(--stadium-seat), #fff 22%);
-  --stadium-mid: var(--stadium-seat);
-  --stadium-shade: color-mix(in srgb, var(--stadium-seat), #000 30%);
-  --stadium-seam: color-mix(in srgb, var(--stadium-seat), #000 55%);
-  --stadium-walk: var(--stadium-concrete);
-  --stadium-apron: color-mix(in srgb, var(--stadium-concrete), #000 55%);
-  --stadium-stripe: color-mix(in srgb, var(--stadium-turf), #fff 12%);
-
   display: block;
-  /* The SVG has an intrinsic ratio from its viewBox, so height alone keeps it in
-     proportion. Shrinks rather than pushing the panel into scroll. */
   width: auto;
-  height: 12.25rem;
-  min-height: 0;
-  flex: none;
+  /*
+   * **Sized by the ground, because otherwise size says nothing.** Every drawing is
+   * cropped to its own content, so left at one height a 200,000-seat ground
+   * rendered exactly as large as a 15,000-seat one and hugeness had to be inferred
+   * by counting decks — which is why 83k never read as big. The scale below does
+   * half the work; the architecture does the other half.
+   */
+  height: calc(var(--stadium-h, 16) * 1rem);
+  max-width: 100%;
+  object-fit: contain;
+  /* Centred in its panel. One painting left-aligned sat in the corner of a 1180px
+     panel looking stranded. */
+  margin-inline: auto;
 }
 
 /*
- * The two drawings, side by side.
+ * 10rem to 21rem across the fifty-four grounds, **logarithmic in seats**.
  *
- * They share a row and a height, and the section's grid is the same 49 rows as
- * the plan's, so both render at one pixel scale — which is the whole reason they
- * can sit together and be read as one ground.
- */
-.stadium-pair {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: var(--fm-space-2);
-  min-width: 0;
-}
-
-/*
- * What you have not built yet.
+ * The rungs are dense at the bottom and sparse at the top, because that is where
+ * the drawings are — so a straight ramp over the *rung index* would make 100k to
+ * 110k the same visual jump as 24k to 25k. On a log scale a real club (14k–105k)
+ * spans roughly 12.9rem to 18.8rem, and the last few rungs still separate.
  *
- * Four buckets, fading with distance: the next thing is plainly legible, the far
- * end of the ladder is a hint. Anything already built carries no `data-ahead` at
- * all, so the default is full strength and the ghost is the exception.
+ * Keyed on the seats rather than a tier index: the filename says the same number,
+ * so a rule and its drawing cannot drift apart. A lettered variant is the same size
+ * as its base, so `StadiumView` writes the *rung* here and the two share a scale.
+ *
+ * Attribute selectors rather than a JSX `style` prop, which the styling convention
+ * forbids — the same call `PlayerScreen`'s bucketed `data-fill` bars make. One
+ * custom property rather than fifty-four `height` rules, so the narrow breakpoint
+ * restates the scale once instead of restating every step.
+ *
+ * The ends are measured: 21rem already fitted the panel at 1280x720 with room, and
+ * the smallest ground at 10rem still reads as a building rather than a token.
  */
-.stadium [data-ahead='next'] {
-  opacity: 0.34;
+.stadium[data-seats='6k'] {
+  --stadium-h: 10;
 }
 
-.stadium [data-ahead='soon'] {
-  opacity: 0.2;
+.stadium[data-seats='10k'] {
+  --stadium-h: 11.6;
 }
 
-.stadium [data-ahead='far'] {
-  opacity: 0.12;
+.stadium[data-seats='11k'] {
+  --stadium-h: 11.9;
 }
 
-.stadium [data-ahead='distant'] {
-  opacity: 0.07;
+.stadium[data-seats='12k'] {
+  --stadium-h: 12.17;
 }
 
-.stadium [data-ink='roof'] {
-  fill: var(--stadium-roof);
+.stadium[data-seats='13k'] {
+  --stadium-h: 12.43;
 }
 
-.stadium [data-ink='walk'] {
-  fill: var(--stadium-walk);
+.stadium[data-seats='14k'] {
+  --stadium-h: 12.66;
 }
 
-.stadium [data-ink='lit'] {
-  fill: var(--stadium-lit);
+.stadium[data-seats='15k'] {
+  --stadium-h: 12.87;
 }
 
-.stadium [data-ink='mid'] {
-  fill: var(--stadium-mid);
+.stadium[data-seats='16k'] {
+  --stadium-h: 13.08;
 }
 
-.stadium [data-ink='shade'] {
-  fill: var(--stadium-shade);
+.stadium[data-seats='17k'] {
+  --stadium-h: 13.27;
 }
 
-.stadium [data-ink='seam'] {
-  fill: var(--stadium-seam);
+.stadium[data-seats='18k'] {
+  --stadium-h: 13.45;
 }
 
-.stadium [data-ink='apron'] {
-  fill: var(--stadium-apron);
+.stadium[data-seats='19k'] {
+  --stadium-h: 13.62;
 }
 
-.stadium [data-ink='turf'] {
-  fill: var(--stadium-turf);
+.stadium[data-seats='20k'] {
+  --stadium-h: 13.78;
 }
 
-.stadium [data-ink='stripe'] {
-  fill: var(--stadium-stripe);
+.stadium[data-seats='22k'] {
+  --stadium-h: 14.08;
 }
 
-.stadium [data-ink='line'] {
-  fill: var(--stadium-line);
+.stadium[data-seats='23k'] {
+  --stadium-h: 14.22;
 }
 
+.stadium[data-seats='24k'] {
+  --stadium-h: 14.35;
+}
+
+.stadium[data-seats='25k'] {
+  --stadium-h: 14.48;
+}
+
+.stadium[data-seats='26k'] {
+  --stadium-h: 14.6;
+}
+
+.stadium[data-seats='27k'] {
+  --stadium-h: 14.72;
+}
+
+.stadium[data-seats='28k'] {
+  --stadium-h: 14.83;
+}
+
+.stadium[data-seats='29k'] {
+  --stadium-h: 14.94;
+}
+
+.stadium[data-seats='30k'] {
+  --stadium-h: 15.05;
+}
+
+.stadium[data-seats='31k'] {
+  --stadium-h: 15.15;
+}
+
+.stadium[data-seats='32k'] {
+  --stadium-h: 15.25;
+}
+
+.stadium[data-seats='33k'] {
+  --stadium-h: 15.35;
+}
+
+.stadium[data-seats='34k'] {
+  --stadium-h: 15.44;
+}
+
+.stadium[data-seats='35k'] {
+  --stadium-h: 15.53;
+}
+
+.stadium[data-seats='36k'] {
+  --stadium-h: 15.62;
+}
+
+.stadium[data-seats='37k'] {
+  --stadium-h: 15.71;
+}
+
+.stadium[data-seats='38k'] {
+  --stadium-h: 15.79;
+}
+
+.stadium[data-seats='39k'] {
+  --stadium-h: 15.87;
+}
+
+.stadium[data-seats='40k'] {
+  --stadium-h: 15.95;
+}
+
+.stadium[data-seats='41k'] {
+  --stadium-h: 16.03;
+}
+
+.stadium[data-seats='42k'] {
+  --stadium-h: 16.1;
+}
+
+.stadium[data-seats='44k'] {
+  --stadium-h: 16.25;
+}
+
+.stadium[data-seats='45k'] {
+  --stadium-h: 16.32;
+}
+
+.stadium[data-seats='46k'] {
+  --stadium-h: 16.39;
+}
+
+.stadium[data-seats='48k'] {
+  --stadium-h: 16.52;
+}
+
+.stadium[data-seats='50k'] {
+  --stadium-h: 16.65;
+}
+
+.stadium[data-seats='53k'] {
+  --stadium-h: 16.83;
+}
+
+.stadium[data-seats='55k'] {
+  --stadium-h: 16.95;
+}
+
+.stadium[data-seats='62k'] {
+  --stadium-h: 17.33;
+}
+
+.stadium[data-seats='65k'] {
+  --stadium-h: 17.47;
+}
+
+.stadium[data-seats='70k'] {
+  --stadium-h: 17.71;
+}
+
+.stadium[data-seats='75k'] {
+  --stadium-h: 17.92;
+}
+
+.stadium[data-seats='80k'] {
+  --stadium-h: 18.13;
+}
+
+.stadium[data-seats='85k'] {
+  --stadium-h: 18.32;
+}
+
+.stadium[data-seats='90k'] {
+  --stadium-h: 18.5;
+}
+
+.stadium[data-seats='95k'] {
+  --stadium-h: 18.66;
+}
+
+.stadium[data-seats='100k'] {
+  --stadium-h: 18.83;
+}
+
+.stadium[data-seats='110k'] {
+  --stadium-h: 19.12;
+}
+
+.stadium[data-seats='130k'] {
+  --stadium-h: 19.65;
+}
+
+.stadium[data-seats='150k'] {
+  --stadium-h: 20.1;
+}
+
+.stadium[data-seats='170k'] {
+  --stadium-h: 20.49;
+}
+
+.stadium[data-seats='200k'] {
+  --stadium-h: 21;
+}
 /*
- * Below Estadio's own breakpoint the two columns stack, so the drawings stop
- * sharing a row with the building panel and start pushing it down the page. This
- * file knows that breakpoint because the ground has exactly one home.
+ * Below this the two columns stack, so the ground stops sharing a row with the
+ * building panel and starts pushing it down the page. Measured before: left alone
+ * at the full height it put that panel outside its own grid area.
  */
 @media (width < 60rem) {
   .stadium {
-    height: 9.5rem;
+    height: calc(var(--stadium-h, 16) * 0.62rem);
   }
 }

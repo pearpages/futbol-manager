@@ -2075,3 +2075,344 @@ the brief was Catalan.
 this one** — it deleted `CoverArt.tsx`, `cover.ts` and `cover.test.ts` and replaced the pixel cover
 with a photograph. It kept every `landing.*` key, so the two changes compose; the suite is 64 files
 here where it was 65, and that is theirs, not a regression.
+
+### 2026-08-19 (c) — the rest of the art, generated
+
+**"Improve the rest of the pixel art with gemini too."** The hub figures, the trophy and the
+stadium are now painted box art; **the badges are not, and that was decided by looking rather than
+by arguing.** 1193 tests, `pnpm season` untouched (everything under `packages/app`),
+`SCHEMA_VERSION` still 10. ~2,000 lines of pixel-art code deleted across nine files — `sprites.ts`,
+`trophies.ts`, both stadium grids, and `pixels.ts`, which was orphaned once its last three
+consumers went.
+
+**Three modules could never be pictures, and the reason is structural.** `radar.ts` plots the
+player's eight live attribute values — a chart of data. `pitch.ts` derives lanes from the live XI
+and every player is a `<g role="button">` with keyboard handling — an interactive control.
+`TileIcon.tsx` renders at 18px. **So the real line is not "box art versus UI" as
+[ADR 0012](docs/adr/0012-generated-cover-art.md) first argued — it is whether the drawing is
+parameterised or interactive.** A badge takes club colours, a radar takes eight values, a pitch
+takes a team sheet. A cover, a figure, a trophy and a stadium tier are drawn once and only ever
+selected. ADR 0012's decision 1 is superseded in place with that reasoning.
+
+**The badges were sampled and rejected on the evidence.** Generated crests read well at 120px, hold
+at 44px, and are **mush at 20px** — which is the table size, with ~228 on screen at once on the
+market. A sheet at the three real sizes showed all of them reduced to indistinguishable smudges in
+a row. Two more failures: the model would not hold a specified colour (asked red-and-white, got
+black-and-white) and **kit colour is club identity here**; and each invented detail nobody asked
+for. The drawn badges are the one piece of art in this app designed for its rendered size, they
+carry the three-letter code that stays legible when a mark does not, and `badges.test.ts` proves no
+two clubs share a `(colours, pattern, shape)` triple — a guarantee 57 independent generations
+cannot offer. **Sample-first is what made this cheap**: three images and a contact sheet, not
+fifty-seven.
+
+**The chroma key had to become self-tuning, and that was found by measuring.** Every figure is
+generated on flat magenta and keyed on **`min(r, b) - g`**, which isolates magenta specifically —
+pure red scores zero, so the agent's tie survives where a naive "red and blue are both high" test
+erases it. But a fixed threshold broke: measured, the **figure** generations put the backdrop at
+`k≈90` and the **stadium** ones at `k≈39`, because the model simply mixes a duller magenta some
+days. A constant tuned to the first set half-keyed the second and left a semi-opaque purple wash
+behind every ground — visible only in a contact sheet, invisible in the raw file. It now samples
+each image's own border and takes the median. Cropping is to the **largest connected blob**, not to
+every solid pixel: these generations carry a detached grey wisp in one corner solid enough to pass
+any alpha threshold, and cropping to it shoved the subject off centre with dead space beside it.
+
+**The stadium coherence check failed first time, exactly as predicted, and the cause was mine.**
+Tier 1 came out a small rectangular terrace and tier 12 a colossal oval bowl with no floodlights —
+two different buildings, so expanding would visibly replace your ground. The prompts had
+_described_ different architectures. **A fixed architectural skeleton repeated verbatim — rectangular
+footprint, four straight stands, four corner lattice pylons, same camera — with only the deck count
+varying is what makes the ladder hold.** Regenerate one tier with a fresh description and it breaks.
+A second failure came from over-correcting: asking for "cool blue-grey" to fix two warm outliers
+turned four tiers strongly blue, worse than the problem. The tonal consistency came from the
+_original_ wording; only the architecture ever needed changing.
+
+**What the stadium cost, and it is a real feature.** The ground used to render every module it had
+not earned yet, faded, so a small club could see there was more to build — and the seats took the
+club's kit colour through `--badge-a`. A painting has neither. The ghosting test was **deleted with
+the behaviour rather than weakened**, with a comment saying so where it used to be.
+
+**Weight is measured per screen, not per set.** The twelve grounds are ~840 KB on disk and that
+number is misleading: with the ghost preview gone a career only ever fetches the one tier its club
+has earned. The guard is on the largest single drawing (<140 KB) and on the four hub figures
+together (<120 KB), because those are the ones that share a screen.
+
+**`art.test.ts` replaces the pixel guards.** Those asserted round-trips, module disjointness and
+merge ratios — none of which can be said about a raster. What can: every file a component asks for
+exists, there is exactly one drawing per rung of the ladder (derived from `TOP_TIER`, so adding a
+threshold fails until its drawing lands), the weight budgets above, and **that every shipped
+cut-out actually carries alpha** — the VP8X flag, checked because a keying failure produces a
+magenta rectangle on the panel and a perfectly green suite otherwise. Verified it discriminates:
+`cover.webp` reads false, the cut-outs read true.
+
+**Driving note:** batched extension clicks race the re-render even with waits between them, and
+cost several turns here. The scripted CDP driver is the reliable route for anything multi-step —
+it clicked landing → club picker → hub → Estadi and measured both viewports in one pass (4 figures
+loaded at 128px; stadium tier 7 at 550×320, inside its panel, no scroll at 1440×900 or 1280×720).
+
+### 2026-08-19 (d) — the badges, generated and then reverted
+
+**Built in full, then reverted on the owner's call.** The crests are gone; `badges.ts`,
+`badges.test.ts`, the SVG `ClubBadge`, `BadgeDefs` and the seventeen palette blocks are all back,
+and `is-sm` is back to 1.25rem. The figures, the trophy and the stadium from entry (c) are
+untouched. 1166 tests, `pnpm season` untouched, `SCHEMA_VERSION` still 10.
+
+**Worth writing down because it will be tried again, and because two of the three findings
+outlived the work:**
+
+**Sheets, not singles — the technique, and it generalises.** Nine crests per generation in a 3x3
+grid, sliced apart afterwards. **A single generation is what makes a set share a style;**
+generating them one at a time drifted immediately — the first sample grew a bird, an arrow and a
+range of mountains across three images. Seven sheets covered 57 clubs and the style held. The
+stadium ladder holds together by the same mechanism.
+
+**Measured, so it does not have to be re-measured:** rendered at 20, 28, 32 and 44px, generated
+crests are mush below about 28 and fine at 32; 290 of them render on the market screen with none
+broken. And **the blank band a crest is generated with lands at a different height in every one**,
+so a single fixed offset put the code on the stripes for a third of the set — a CSS-drawn plate
+works where a baked offset does not.
+
+**One bug found here is kept, because it was never about the badges.** The chroma key's spill
+suppression fired on any pixel with `min(r,b) - g > 0`. A flat crest red (207,32,39) scores 7, so
+it clamped r and b toward g and turned every red crest charcoal. Spill can only exist on the
+anti-aliased fringe, so suppression is now restricted to partially transparent pixels. **The same
+bug was latent in the figures and the stadium and simply never fired** — the agent's red tie
+scores exactly 0. A defect that looks like the generator's is worth measuring before it is
+re-prompted.
+
+**The other colour failure was the prompt's.** "A thick dark **navy** outline" leaked out of the
+outlines and into the fills; a third of the set came back navy where it should have been red.
+Naming it _charcoal_, giving every colour as explicit hex, and adding "do not substitute navy for
+any other colour" fixed it in one pass.
+
+**Why the drawn badges are the right answer here, restated once:** they are the only art in this
+app designed for its rendered size, they carry the three-letter code that stays legible when a mark
+does not, and `badges.test.ts` proves no two of the 57 share a `(colours, pattern, shape)` triple —
+a distinctness guarantee rasters cannot offer.
+
+**One tidy-up the revert did not undo:** the palettes no longer name `.stadium` beside
+`.club-badge`. The ground is a generated picture now and takes its colour from the image, so those
+seventeen selectors were dead the moment entry (c) landed.
+
+### 2026-08-19 (e) — the stadium ladder, widened to 24
+
+**"We need way more stadiums… a 80k stadium is already big. Bernabeu and Barcelona are huge
+already, they need to look huge. just that 200k must look even bigger."** Two causes, and the
+count was the smaller one. 1194 tests, `pnpm season` untouched, `SCHEMA_VERSION` still 10,
+everything under `packages/app`.
+
+**The ladder was distributed wrong, and it is measurable: the entire shipped league sat in tiers
+1–7 of 12.** Barcelona (105,000) and Madrid (83,186) _shared tier 7_ despite a 22k gap, while five
+rungs were reserved for a 130k–200k range no club starts in. Now 24 rungs, dense where clubs live
+(2k–8k apart) and coarse above: **Madrid 20, Barcelona 21, the league spans 1–21**, three left for
+a career that keeps building. `FINANCE.MAX_EXPANSION` is 15,000 a season, so a maxed job still
+moves two or three rungs.
+
+**The ladder is purely cosmetic** — `stadiumTierFor`'s only non-test caller is `EstadioScreen`, so
+retuning it can never move a calibrated band. Worth knowing before anyone treats it as gameplay.
+
+**Half the impression of size was CSS, not the drawing.** Every image is cropped to its own
+content, so at one fixed height a 200,000-seat ground rendered _exactly as large_ as a 15,000-seat
+one and size said nothing at all. The height ramps 11rem → 21rem now, through a `--stadium-h`
+custom property set by 24 `[data-tier]` rules — attribute selectors rather than a JSX `style` prop,
+the call `PlayerScreen`'s `data-fill` bars already make.
+
+**The finding that will be needed again: from a fixed aerial camera, "bigger" is a ratio, not a
+height.** The top five rungs first came back looking _smaller_ than the ones below them — a
+three-quarter view from above hides how tall a stand is, so "more decks" did not read at all. What
+reads is how much of the footprint the pitch takes: nearly all of it at the bottom of the ladder, a
+small green rectangle inside a vast ring at the top. Naming that fraction explicitly ("the pitch
+occupies about a seventh of the footprint") fixed all five in one pass.
+
+**Two of my own tests were wrong, and only a mutation sweep found them:**
+
+- **The scale test read the twenty-four custom properties and never checked anything consumed
+  them.** Replacing the height with a flat `16rem` left it green — twenty-four declarations and no
+  consumer. It now asserts every `height` on `.stadium` goes through the property.
+- **The hand-restated ladder only guarded the rungs its one club straddled.** Moving 46,500 to
+  47,500 failed nothing. The typed-out literal is now compared to `STADIUM_TIERS` directly, which
+  guards all 23. And the expectation is deliberately _not_ `filter(capacity > t).length + 1` —
+  that is `stadiumTierFor`'s own algorithm rewritten, so it would miss a `>` turned into a `>=`;
+  finding the first rung the ground does not clear is a genuinely different formulation.
+
+**Weight:** 24 drawings, 1.72 MB on disk, largest single file 130 KB — and a career still fetches
+exactly one. `du -sk` reports 2.5 MB for that directory; that is block allocation across 24 small
+files, not payload.
+
+**Verified in the browser** at 1440×900 and 1280×720: Madrid tier 20 at 504×308, Barcelona tier 21
+at 544×315, a 30,778-seat ground tier 10 at 408×239 — all inside their panel, no scrolling.
+
+### 2026-08-19 (f) — the ladder anchored at 60,000
+
+**"The problem is that until stadium 22 all of them look small. Let's say that 22 is for 60k or
+something like that."** That diagnosis was better than mine and it inverted the work. 1194 tests,
+`pnpm season` untouched, `SCHEMA_VERSION` still 10.
+
+**I had been solving the wrong problem.** I read "more layers" as _the ladder stops too early_ and
+was about to extend it upward. The actual fault: **the drawings were fine and the numbers behind
+them were wrong.** The art ramps from a bare terrace to a colossal bowl, and the ones that read as
+_big_ start around rung 22 — but rung 22 meant 110,000 seats, so every real club drew a ground far
+smaller than it has. Barcelona got a drawing sized for a mid-table club.
+
+**So the capacities were remapped onto the existing drawings.** 30 rungs, anchored so tier 22 means
+~60k: **Heliópolis on the anchor, Madrid 24, Barcelona 25**, five rungs above Barcelona to 255k and
+open-ended. Twenty-one rungs sit below the anchor because twenty-one of the twenty-five clubs do.
+**Only tiers 25–30 needed new art — six images rather than thirty**, which is the whole payoff of
+that framing.
+
+**The colour rule, now learned three times: never put a colour instruction in a stadium prompt.**
+"Cool blue-grey" swung four rungs blue at 12 tiers. This time "cool dusk lighting, no orange or
+terracotta tones" — added to fix two warm outliers — swung four rungs pale blue, **with the note
+warning against exactly this already sitting in `StadiumView.tsx`**. Reverting to the plain wording
+fixed it in one pass. Architecture and scale can be pushed on; colour cannot. The structural
+constraint needed the opposite treatment: one rung came back an _oval_ despite "RECTANGULAR" being
+in the skeleton, so that clause is now emphatic.
+
+**A meta-lesson about the mutation harness.** Two of the four mutations reported `SKIP anchor x0`
+after the ladder changed — their anchors were the old threshold pair and the old top-tier scale
+value. A skipped mutation looks almost like a passing one in the output and silently proves
+nothing. **Re-point the anchors whenever the data under test moves**, and check the sweep for
+`SKIP` as carefully as for `NOTHING FAILED`. Re-run, all four fail exactly their own test.
+
+**Verified in the browser** at 1440×900 and 1280×720: Madrid tier 24 (466×292), Barcelona tier 25
+(487×299), Heliópolis tier 22 (483×278), a 30k club tier 12 (375×212) — all inside their panel, no
+scrolling. Madrid now draws a deep multi-tier enclosed bowl with a small pitch, which is the thing
+that was wrong.
+
+**Honest limit:** tiers 25–30 differ only by the pitch shrinking inside a deeper ring, so adjacent
+pairs up there are subtle. Predicted in the plan, still true, and the height ramp (10rem → 21rem
+across the thirty) carries the rest. Payload 2.36 MB across 30 files, largest 130 KB, and a career
+still fetches exactly one.
+
+### 2026-08-19 (g) — the rungs were not in size order
+
+**"Look at how many levels and width the stadiums have. I am sure they are not well sorted."**
+Correct: measured, **twelve of twenty-nine steps went backwards**. 1194 tests, no code change at
+all — the fix is a permutation of thirty files.
+
+**The lesson generalises past stadiums: naming a size in a prompt is not the same as getting it.**
+Each rung was generated with an intended deck count and the model only approximated it. The
+drawing sitting at rung 21 was one of the two largest in the set; the one generated as "the
+largest imaginable" ranked twenty-fourth; rung 19 was smaller than rung 13. **A generated ladder
+has to be measured and sorted afterwards.** Because a rung is only a filename, that sort is a
+rename — the thresholds, the thirty CSS scale rules and every test are untouched.
+
+**Two proxies, averaged, because each has a blind spot.** _Ring spread_ — footprint bounding box
+over pitch bounding box — is the intuitive one, but a splayed floodlight pylon is inside the
+footprint box and inflates it. _Mass_ — built pixels over pitch bbox area — ignores pylons because
+they are thin, but a steeper camera angle inflates it. The two agree strongly at the top and
+disagree through the crowded middle, so the final order averages their ranks and was then checked
+against a contact sheet by eye. Sorting by spread alone put rungs my eye read as backwards at 18-19
+and 28-30.
+
+**A measurement bug that would have silently produced a wrong sort.** The first turf detector
+tested `g > r + 18`. **These pitches are olive** — `g − r` is only 7–15, while `g − b` is 47–64 —
+so it rejected nearly all real turf and reported 0.0% for five tiers. Calibrating against the
+actual centre pixels of the failing images is what found it. The working test is
+`g > r + 3 && g > b + 30`; the `g > r` clause is what keeps amber seating from counting as grass.
+Separately, a pitch-**area** metric lies wherever the pitch is painted in deep shadow — one
+mid-sized ground read as one of the biggest — whereas the pitch **bounding box** survives it.
+
+**Verified** by contact sheet before and after, then in the browser: Madrid tier 24, Barcelona 25,
+Heliópolis 22, a 30k club 12, all inside their panel at 1440×900 and 1280×720.
+
+**Known and flagged, not fixed:** after sorting, the bottom third of the ladder is compressed —
+those small-ground generations barely varied in ring depth, so tiers 1–12 look much alike and an
+expansion low down changes the architecture very little. The CSS height ramp still separates them.
+Regrading the low end with deliberately stepped ring depths is a separate job.
+
+### 2026-08-19 (h) — the stadium ladder, finally built on something countable
+
+**"I don't think it is well sorted, probably the higher, the more seats, the bigger number of
+rings."** Right, and the reason is worse than a bad sort: **the rings were never there to sort.**
+1194 tests, no code change — thirty images replaced.
+
+**Three rounds were spent measuring and re-ordering drawings that did not contain the
+progression.** Counted at high zoom, the seating rings across all thirty spanned about **1 to 2**.
+"Four decks", "six decks", "eight decks" were ignored in every prompt; the model drew one bowl and
+varied the outer facade and ring depth. I measured ring _spread_, then built _mass_, then averaged
+their ranks — increasingly elaborate ways of sorting a set whose range did not exist. **The lesson
+is to verify the thing the prompt asked for before building machinery on top of it.**
+
+**"Storeys of outer facade" is countable to this model; "decks" and "rings" are not.** Probed
+directly, and the difference is stark: 1/3/5 _rings_ produced three identical buildings, while
+2/5/9 _storeys_ produced unmistakably different ones on the first attempt. Size is now set by
+facade height — **laddered 1 to 15 storeys** across the thirty rungs, with roofing and corner
+infill varying inside each storey group.
+
+**The camera had to move, and both directions were wrong before 40°.** The old near-overhead view
+hides vertical stacking completely — a six-tier stand and a two-tier stand project almost the same,
+so there was neither pressure on the model to draw the difference nor a way for a player to see it.
+But the first correction went to ~20° and the probes came back as **office blocks and multi-storey
+car parks** with no pitch at all. **About 40° is the window**: the whole ground and the green pitch
+stay visible while wall height becomes obvious.
+
+**The ladder is correct by construction now, not by permutation — so do not re-apply the geometric
+proxies.** They still disagree with it in places, because built-pixel mass is sensitive to how
+light or dark a drawing happens to be. Trusting them over the deliberate storey ladder is precisely
+what produced two rounds of futile re-sorting.
+
+**Two shell traps, both zsh, both cost a cycle:** unquoted `$rest` and `$FILES` do **not** word-split
+in zsh, so a list of thirty paths arrived as one argument — once silently (all nine names became one
+filename) and once as `ENAMETOOLONG`. Use an array and `"${FILES[@]}"`. And a `f-*.png` glob matched
+the already-keyed outputs, whose transparent background made the chroma key throw `k=0`.
+
+**Verified**: contact sheet of all thirty, a zoom on the top six, full suite green, and in the
+browser Madrid tier 24, Barcelona 25, Heliópolis 22, a 30k club 12 — all inside the panel at
+1440×900 and 1280×720. Payload 2.19 MB, largest file 132 KB, one fetched per career.
+
+### 2026-08-19 (i) — thirty grounds redrawn on one Spanish word
+
+**Prompted by "the created stadiums are ugly as hell, all of them almost identical, of brutalist style. discard them all. generate different ones from different styles. ask for 'graderias', 1,2,3,4,5,6... improve your prompts."** All correct, and the cause was mine: the prompts said "pale concrete stands", "rows of arches" and "outer facade", which are three ingredients, and every one of the thirty was made of them. 1194 tests, typecheck / lint / format clean, `SCHEMA_VERSION` still 10 — **only `packages/app/public/art/stadium/01–30.webp` changed**, plus two docs. The thresholds in `stadium.ts`, the thirty scale rules in `stadium.css` and every test are untouched.
+
+**`gradería` is the instruction that should have been used from the start**, and the failure chain is worth keeping because it cost four rounds. "Decks" and "rings" were **ignored outright** — measured, all thirty spanned 1–2 rings whatever the prompt asked for. "Storeys of outer facade" was **obeyed and distorted the architecture** into arcades and car parks. `gradería` is the specific Spanish term for a banked stand, it is countable, and stated as a count and repeated it is followed. The user supplied it; I had spent three rounds re-sorting images that never contained the progression the prompts asked for.
+
+**And the second half was not a size instruction at all: architectural style now tracks size.** Six bands of five — village ground with grass banks and trees, 1920s red brick with gabled roofs, 1950s white concrete cantilever, 1970s deep bowl, modern steel and glass, super-stadium with a translucent roof ring. That is historically true and it makes expansion a narrative: the club modernises as it grows rather than swapping one building for an unrelated one. **The cost is stated rather than hidden** — crossing a band boundary changes the material in one expansion, which is the intended reading.
+
+**The rule that lets a varied set still look like a set: the _architecture_ varies, the _illustration_ must not.** Same painted medium, same dusk mood, same 40° camera, same flat magenta background, same framing, as fixed text in all thirty prompts. That does the job the repeated architectural skeleton used to do — which was right to introduce and was what made them siblings — and it costs none of the variety.
+
+**Beauty was asked for explicitly.** None of the earlier prompts ever asked for the drawing to be attractive.
+
+**The three-image probe before spending thirty generations** — tier 3 village, tier 13 concrete, tier 28 super-stadium — is the gate that caught the badges and the "rings" wording, and it passed clearly here on the first attempt. **And the verification that had been missing for three rounds ran first: contact-sheet all thirty and count the graderías band by band**, before trusting anything built on top of them.
+
+**Do not re-apply the geometric proxies.** The ladder is correct by construction; ring-spread and built-pixel mass are sensitive to how light or dark a drawing came out and disagree with it wherever one is, and trusting them over the deliberate ladder is exactly what produced two wasted rounds.
+
+**Pipeline unchanged and proven:** flat magenta → self-tuning threshold from each image's own border median → **fringe-only** spill suppression (`a > 0 && a < 255`, the fix that stopped saturated crest red being clamped to near-black) → crop to largest connected blob → `cwebp -q 80 -alpha_q 90` at 680px. Largest file 123 KB against the 140 KB per-image budget, 1.7 MB across the ladder.
+
+**Verified in a real browser** over CDP at 1440×900 and 1280×720, on port 4321 — **never 4173**, where another project's service worker intercepts the origin. Four clubs: smallest 30,778 → tier 12 (three separate white-roofed stands, open corners), Heliópolis 60,270 → **tier 22**, which is the anchor the user asked for by name; Madrid 83,186 → tier 24, Barcelona 105,000 → tier 25 (a fully enclosed lit bowl, unmistakably a different order of building). Every one loaded, inside its panel, no panel scroll and no page scrolling sideways at either viewport.
+
+**Still uncommitted, all of it** — the foreign-transfer fix, the cover, the hub figures, the trophy and this ladder.
+
+### 2026-08-21 — the grounds are named for their seats
+
+**Prompted by "guess how many seats a picture has and put it in the file name… if two pictures look a lot alike then put a letter as a variant", and then "show the one that gets closer to the amount of seats a club has".** Two sittings: a sort, then the wiring. 1197 tests, `pnpm season` **byte-identical to `02ee718` on seeds 1, 7 and 42**, `SCHEMA_VERSION` still 10, no migration.
+
+**Fifty-six drawings, `6k.webp` to `200k.webp`**, replacing thirty index-named files plus a separate table of thresholds — two things that had to be kept in step and said nothing on their own. The filename is now the fact.
+
+**The sort came before the naming, and only that order works.** Each picture was judged by eye from contact sheets on the one signal that survives a fixed aerial camera: **how much of the footprint the pitch takes.** Pixel dimensions say nothing — every image is cropped to its own content. **The geometric proxies were deliberately not used**; they are sensitive to how light or dark a drawing came out and had already cost two rounds of futile re-sorting.
+
+**Two cross-set corrections came out of looking at the first pass**, and neither was predictable from the individual sets: full brick rings out-mass shallow pale rings (21k → 25k), and an enclosed white oval swapped with a flat grey bowl that had been rated higher. The two sets were drawn to different conventions, so their rungs are not comparable index-for-index.
+
+**Only two pairs earned a letter.** `24k`/`24ka` and `25k`/`25ka`. Five other candidates were compared close-up and rejected — same family, visibly different colour or depth. **A letter means "the same ground twice", not "two sizes".**
+
+**Nearest, not a floor** — that is what "closer to the amount of seats" asks for, and it is right now the names are honest: 14,708 draws `15k` where a floor would say `14k`. **Ties go to the smaller drawing** so the picture never overstates, and that is not hypothetical: **Barcelona's 105,000 sits exactly between `100k` and `110k`** and resolves to 100k in a real career.
+
+**The tie-break had no test until one was written for it**, and the mutation sweep is what proved it: flipping `<` to `<=` in `nearestRung` failed **only** the assertion added for it. The two screen-level tests drive real club capacities and exact rung values, and **no club sits on a midpoint** — so both were blind to the rule. Same shape as the other "passes for free" traps this log records.
+
+**The variant is hashed from the club id, never drawn.** Something has to choose, eight of twenty-five clubs sit between 21k and 25k — exactly where the variants are — and without it they would all draw the same picture. `hashSeed` is now exported from the domain index (one line, second caller after the foreign layer, which is what ground rule 5 waits for). **It returns a _signed_ 32-bit int**, so the index needs `Math.abs`; a negative modulo yields an undefined suffix and a 404 that nothing else would catch, and there is a test for it.
+
+**The scale ramp went logarithmic in seats.** The rungs are dense at the bottom and sparse at the top because that is where the art is, so a straight ramp over the _rung index_ would make 100k→110k the same visual jump as 24k→25k. Ends unchanged and still measured.
+
+**`data-tier` became `data-seats`.** The attribute holds a capacity now; calling it a tier would be a lie, and it is screen-local with no external contract.
+
+**The test that replaced the old one is stronger, not equivalent.** `art.test.ts` asserted the directory held exactly `TOP_TIER` files — **a stray file and a stray declaration cancel out** in a count. It is set equality now and catches either alone. Two things to leave alone there: the `readdirSync` stays **non-recursive** and the `.webp` filter stays, because `stadium/small/` holds four village grounds parked rather than declared, and because `statSync` answers for a directory rather than throwing.
+
+**Seven mutations, one at a time, each failing exactly its own tests** — always the first rung, tie-break flipped, variant forced to the base, `Math.abs` removed, ramp flattened, one scale rule deleted, attribute renamed back.
+
+**Two process notes, both previously recorded and both hit again.**
+
+- **`pnpm test -- --run <name>` does not filter** — the `--` passthrough swallows it and all 61 files run. That made each mutation take 90s instead of 12s and **timed the sweep out at ten minutes, killing it before its own `finally` restored the tree** — which left `StadiumView.tsx` mutated. `git status` after an interrupted sweep, every time. Use **`pnpm exec vitest run --project app <file>`** for a fast single-file run.
+- **A fresh `git worktree` prints pnpm's install preamble on its first command**, which lands in stdout and breaks a naive `pnpm season | md5` comparison. Seed 1 read DIFFERS and seeds 7 and 42 identical — the tell that it is the _first_ run, not the code. Warm the worktree once, then compare.
+
+**Verified in a real browser** over CDP against `vite preview` on **port 4321** — never 4173. Five clubs at 1440x900 and 1280x720, every image loaded, inside its panel, no panel scroll, no page scrolling sideways: 22,514 → `23k`, 30,778 → `31k`, 60,270 → `62k`, 83,186 → `85k`, 105,000 → `100k`, heights climbing 228 → 242 → 277 → 293 → 301px. Then the whole point of the feature, driven end to end: commission 4,000 seats at the smallest club, play out the season, roll over — **30,778 `31k.webp` → 34,778 `35k.webp`**, and the render grows 242px → 248px.
+
+**Known and left:** `packages/app/public/art/stadium/small/` holds four village grounds (bare pitch, grass banks, no real stands) that were parked rather than declared. They would sit below `6k`. Undeclared files in that directory are invisible to the guard by design — see the non-recursive note above.

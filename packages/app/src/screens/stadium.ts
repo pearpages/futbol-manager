@@ -1,198 +1,141 @@
-import { gridSize, type PixelRun, scanRuns } from './pixels.ts'
+import { hashSeed } from '@fm/domain'
 
 /**
- * The ground, as pixel art, drawn two ways and built a module at a time.
+ * Which drawing a ground of a given size gets.
  *
- * Capacity was a number and nothing else, and the ground is the only thing in
- * the game the manager *builds* — `StartExpansion` buys 1,000 to 15,000 seats,
- * the money leaves at once and the seats arrive at the rollover. A bigger
- * drawing is what turns an accounting line into something you can see you
- * bought.
+ * **The file is named for the seats it looks like**, so `35k.webp` is a picture of
+ * a thirty-five-thousand-seat ground and a club draws whichever name is *closest*
+ * to what it actually has. That replaces a ladder of index-named files
+ * (`01.webp`..`30.webp`) paired with a table of thresholds — two things that had to
+ * be kept in step and said nothing on their own.
  *
- * Same idiom as `sprites.ts` and `trophies.ts`: **geometry as text grids, colour
- * in `styles/stadium.css`**, not one hex value in any of these files. The scan
- * is shared; see `pixels.ts`.
+ * **Nearest, not a floor.** A 14,708-seat ground draws `15k`; a floor would give it
+ * `14k` and leave every drawing overstating by up to a rung. Ties break to the
+ * *smaller* drawing, so the picture never claims more than the club has.
  *
- * ## Modules, not twelve whole pictures
- *
- * The first version of this held one complete grid per tier. That cannot show
- * what you have *not* built, and showing it is the point — a ground you can keep
- * extending should say so. So the drawing is a list of modules, each holding
- * only the ring or the structure it adds. `StadiumView` paints the ones the club
- * has earned solid and the rest faded, fainter the further off they are, so the
- * whole ambition is on screen at once and the next step is the clearest ghost.
- *
- * **Modules are disjoint** — no cell is drawn by two of them. That is what makes
- * paint order free and, more importantly, what stops a ghost painting over
- * something already built. It is a test.
- *
- * Two views, because neither is enough alone. The **plan** says how far the
- * ground spreads; the **section** says how high it stands. Above about tier 7 a
- * plan view stops being able to tell you much — one more ring around an
- * unchanged pitch — while the section shows decks stacking clearly all the way
- * to the top of the ladder.
- *
- * ## The ladder
- *
- * Eleven thresholds, twelve tiers, topping out past 200,000. The first six are
- * the ones the seven-tier version shipped with, so the twenty clubs in the
- * league land exactly where they already did (2/4/3/4/3/2/2 across tiers 1-7);
- * tiers 8-12 are the ghost future nobody starts in.
- *
- * The steps are not evenly spaced because grounds are not: the league runs
- * 14,708 to 105,000 with the bulk between 20,000 and 35,000, so even steps would
- * put most of the division in one bucket.
- *
- * **There is no cap on capacity in the domain** — `MIN_EXPANSION`/`MAX_EXPANSION`
- * bound a single job, not the ground — so tier 12 is open-ended and
- * `stadiumTierFor` clamps at both ends rather than throwing, the way `badgeFor`
- * does. At one max-size job a year, 200,000 is seven seasons from Barcelona and
- * thirteen from Vallecas.
+ * **Purely cosmetic.** Nothing reads this but the drawing: `stadiumArtFor`'s only
+ * non-test caller is `EstadioScreen`. No finance, no domain, no save format — so
+ * the ladder can be retuned freely, and a change here can never move a band.
  */
 
 /**
- * An ink is a role, never a colour. Single words, because `stadium.test.ts`
- * checks each has a matching `--stadium-<ink>` declaration and a fill rule.
+ * Every drawing on disk, ordered by seats. `variants` counts the *extra* lettered
+ * siblings — 0 means `24k.webp` alone, 1 means `24k.webp` and `24ka.webp`.
+ *
+ * The rungs are dense at the bottom and sparse at the top because that is where the
+ * art is: the league runs 14,624 to 105,000, so a thousand seats is a visible
+ * difference down there and is nothing at 150k. Spacing follows the drawings rather
+ * than a grid — the pictures were sorted by apparent size first and named after.
+ *
+ * A letter means two drawings were judged interchangeable, not that they are two
+ * sizes. Everything else is architecturally distinct enough to hold its own number.
  */
-export const STADIUM_INK_KEYS = [
-  'roof',
-  'walk',
-  'lit',
-  'mid',
-  'shade',
-  'seam',
-  'apron',
-  'turf',
-  'stripe',
-  'line',
+export const STADIUM_ART = [
+  { seats: 6_000, variants: 0 },
+  { seats: 10_000, variants: 0 },
+  { seats: 11_000, variants: 0 },
+  { seats: 12_000, variants: 0 },
+  { seats: 13_000, variants: 0 },
+  { seats: 14_000, variants: 0 },
+  { seats: 15_000, variants: 0 },
+  { seats: 16_000, variants: 0 },
+  { seats: 17_000, variants: 0 },
+  { seats: 18_000, variants: 0 },
+  { seats: 19_000, variants: 0 },
+  { seats: 20_000, variants: 0 },
+  { seats: 22_000, variants: 0 },
+  { seats: 23_000, variants: 0 },
+  { seats: 24_000, variants: 1 },
+  { seats: 25_000, variants: 1 },
+  { seats: 26_000, variants: 0 },
+  { seats: 27_000, variants: 0 },
+  { seats: 28_000, variants: 0 },
+  { seats: 29_000, variants: 0 },
+  { seats: 30_000, variants: 0 },
+  { seats: 31_000, variants: 0 },
+  { seats: 32_000, variants: 0 },
+  { seats: 33_000, variants: 0 },
+  { seats: 34_000, variants: 0 },
+  { seats: 35_000, variants: 0 },
+  { seats: 36_000, variants: 0 },
+  { seats: 37_000, variants: 0 },
+  { seats: 38_000, variants: 0 },
+  { seats: 39_000, variants: 0 },
+  { seats: 40_000, variants: 0 },
+  { seats: 41_000, variants: 0 },
+  { seats: 42_000, variants: 0 },
+  { seats: 44_000, variants: 0 },
+  { seats: 45_000, variants: 0 },
+  { seats: 46_000, variants: 0 },
+  { seats: 48_000, variants: 0 },
+  { seats: 50_000, variants: 0 },
+  { seats: 53_000, variants: 0 },
+  { seats: 55_000, variants: 0 },
+  { seats: 62_000, variants: 0 },
+  { seats: 65_000, variants: 0 },
+  { seats: 70_000, variants: 0 },
+  { seats: 75_000, variants: 0 },
+  { seats: 80_000, variants: 0 },
+  { seats: 85_000, variants: 0 },
+  { seats: 90_000, variants: 0 },
+  { seats: 95_000, variants: 0 },
+  { seats: 100_000, variants: 0 },
+  { seats: 110_000, variants: 0 },
+  { seats: 130_000, variants: 0 },
+  { seats: 150_000, variants: 0 },
+  { seats: 170_000, variants: 0 },
+  { seats: 200_000, variants: 0 },
 ] as const
 
-export type StadiumInk = (typeof STADIUM_INK_KEYS)[number]
-
-/**
- * The character each ink is drawn with. Anything else in a grid is empty.
- *
- * `lit`, `mid` and `shade` are the same seating under different light: the far
- * side of the bowl catches it and the near side falls into shadow, which is what
- * turns a flat ring into something you are looking down into. `seam` is both the
- * gangway between two decks and the step line every fourth row — one dark ink
- * doing both, because a gangway and a row of steps are the same thing at two
- * scales.
- */
-export const STADIUM_INK_BY_CHAR: Readonly<Record<string, StadiumInk>> = {
-  r: 'roof',
-  c: 'walk',
-  l: 'lit',
-  n: 'mid',
-  h: 'shade',
-  k: 'seam',
-  a: 'apron',
-  g: 'turf',
-  s: 'stripe',
-  w: 'line',
+/** A chosen drawing: the rung it came from, and the file to load. */
+export type StadiumArt = {
+  /** The rung's seats, e.g. `24_000`. Drives the render scale. */
+  readonly seats: number
+  /** Base name without extension, e.g. `24k` or `24ka`. */
+  readonly file: string
 }
 
-/** How full a ground has to be to earn each module. The last is open-ended. */
-export const STADIUM_TIERS = [
-  18_000, 24_000, 32_000, 42_000, 55_000, 75_000, 105_000, 130_000, 155_000, 180_000, 200_000,
-] as const
-
-export type StadiumTier = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
-
-/** The highest tier there is. Derived, so adding a threshold moves it. */
-export const TOP_TIER = (STADIUM_TIERS.length + 1) as StadiumTier
-
-/**
- * Which tier a capacity has earned.
- *
- * Clamps rather than throws at both ends — a career can build past anything the
- * league ships, and a ground below the floor should still get the smallest
- * drawing rather than bring the screen down.
- */
-export function stadiumTierFor(capacity: number): StadiumTier {
-  if (!Number.isFinite(capacity)) return 1
-  const earned = STADIUM_TIERS.filter((threshold) => capacity > threshold).length
-  return (earned + 1) as StadiumTier
+/** `24_000` -> `24k`. The key the scale in `stadium.css` is written against. */
+export function seatsKey(seats: number): string {
+  return `${String(seats / 1000)}k`
 }
 
 /**
- * How faint an unbuilt module is drawn, bucketed rather than a raw distance.
+ * The drawing closest to what this club has built.
  *
- * Four steps, not eleven. Eleven opacities are not distinguishable from one
- * another, and "fading with distance" only needs enough to say *next*, *soon*
- * and *someday*. `null` for something already built is what the view keys on, so
- * a built module carries no ghost attribute at all.
+ * Clamps at both ends rather than throwing: a career can build past anything
+ * shipped, and a ground below the smallest drawing must still render rather than
+ * bring the screen down.
  *
- * A bucketed attribute, never a JSX `style` prop — the styling convention has no
- * exception for data-driven values, and `.attr__fill[data-fill='0..20']` is the
- * precedent for a handful of small rules.
+ * **The variant is chosen from the club id, never drawn.** Something has to pick
+ * between `24k` and `24ka`, and eight of the twenty-five clubs sit between 21k and
+ * 25k — so without this they would all draw the same picture. Deterministic, so it
+ * holds still across re-renders, navigation and a save/reload, and nothing has to be
+ * stored. Same reasoning as `marketSeed` in `MarketScreen.tsx`.
  */
-export type GhostDepth = 'next' | 'soon' | 'far' | 'distant'
-
-export function ghostDepth(moduleTier: number, current: StadiumTier): GhostDepth | null {
-  const ahead = moduleTier - current
-  if (ahead <= 0) return null
-  if (ahead === 1) return 'next'
-  if (ahead <= 3) return 'soon'
-  if (ahead <= 6) return 'far'
-  return 'distant'
+export function stadiumArtFor(capacity: number, clubId: string): StadiumArt {
+  const rung = nearestRung(capacity)
+  // `hashSeed` returns a *signed* 32-bit int, so this needs the abs — a negative
+  // modulo indexes off the front of the alphabet and yields an undefined suffix.
+  const pick = rung.variants === 0 ? 0 : Math.abs(hashSeed(clubId)) % (rung.variants + 1)
+  const suffix = pick === 0 ? '' : String.fromCharCode(96 + pick)
+  return { seats: rung.seats, file: `${seatsKey(rung.seats)}${suffix}` }
 }
 
-/** One thing you can build, and the tier that earns it. */
-export interface StadiumModule {
-  readonly key: string
-  readonly tier: StadiumTier
-  readonly grid: readonly string[]
-}
+type Rung = (typeof STADIUM_ART)[number]
 
-/** Every run of one ink. */
-export interface StadiumInkRuns {
-  readonly ink: StadiumInk
-  readonly runs: readonly Omit<PixelRun, 'char'>[]
-}
+function nearestRung(capacity: number): Rung {
+  // Annotated, not inferred: `STADIUM_ART` is `as const`, so indexing element zero
+  // narrows to *that rung's* literal type and nothing else can be assigned to it.
+  const first: Rung | undefined = STADIUM_ART[0]
+  /* c8 ignore next */
+  if (first === undefined) throw new Error('no stadium art')
+  if (!Number.isFinite(capacity)) return first
 
-export interface DecodedStadium {
-  readonly width: number
-  readonly height: number
-  /** In `STADIUM_INK_KEYS` order, and only the inks the grid actually uses. */
-  readonly inks: readonly StadiumInkRuns[]
-}
-
-/** A module with its geometry worked out. */
-export interface DecodedModule extends DecodedStadium {
-  readonly key: string
-  readonly tier: StadiumTier
-}
-
-/**
- * Groups a grid's runs by ink.
- *
- * Flat, like `decodeTrophy` and unlike `decodeSprite` — a ground has no parts to
- * animate, so the part axis that file needs would be one group wrapped around
- * everything.
- */
-export function decodeStadium(rows: readonly string[]): DecodedStadium {
-  const found = new Map<StadiumInk, Omit<PixelRun, 'char'>[]>()
-
-  for (const { char, x, y, w } of scanRuns(rows)) {
-    const ink = STADIUM_INK_BY_CHAR[char]
-    if (ink === undefined) continue
-    const runs = found.get(ink)
-    if (runs === undefined) found.set(ink, [{ x, y, w }])
-    else runs.push({ x, y, w })
+  let best: Rung = first
+  for (const rung of STADIUM_ART) {
+    // Strictly closer, so an exact tie keeps the earlier — the smaller — rung.
+    if (Math.abs(rung.seats - capacity) < Math.abs(best.seats - capacity)) best = rung
   }
-
-  // Iterated in `STADIUM_INK_KEYS` order rather than insertion order, so the
-  // emitted groups do not depend on which pixel the grid happens to draw first.
-  const inks = STADIUM_INK_KEYS.flatMap<StadiumInkRuns>((ink) => {
-    const runs = found.get(ink)
-    return runs === undefined ? [] : [{ ink, runs }]
-  })
-
-  return { ...gridSize(rows), inks }
-}
-
-/** Decoded once at module load — the same reasoning as `FIGURES` and `TROPHIES`. */
-export function decodeAll(modules: readonly StadiumModule[]): readonly DecodedModule[] {
-  return modules.map((m) => ({ key: m.key, tier: m.tier, ...decodeStadium(m.grid) }))
+  return best
 }

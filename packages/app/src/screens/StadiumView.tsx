@@ -1,99 +1,51 @@
-import { badgeFor } from './badges.ts'
-import { PLAN_MODULES } from './stadium-plan.ts'
-import { SECTION_MODULES } from './stadium-section.ts'
-import { decodeAll, ghostDepth, type StadiumTier } from './stadium.ts'
+import { seatsKey, type StadiumArt } from './stadium.ts'
 import '../styles/stadium.css'
 
 /**
- * The ground: what you have built, and what you could.
+ * The ground you have built.
  *
- * Modelled on `TrophyIcon.tsx` — inline SVG, the `viewBox` in the markup and the
- * size in CSS, geometry as a constant, and **no colour values in this file**.
- * Everything arrives through the custom properties in `styles/stadium.css`.
+ * **Painted box art rather than a pixel grid — see [ADR 0012].** It was two views
+ * (a plan and a section) assembled from disjoint modules, where an unbuilt module
+ * rendered ghosted so the screen showed what you could still buy, and the seats
+ * took the club's kit colour through `--badge-a`. **Both of those went with the
+ * grid**: a painting is one image, so there is no module to fade and no seat to
+ * recolour. What is kept is the thing the screen is actually for — fifty-six
+ * drawings, and yours changes when you expand.
  *
- * Two levels of `<g>`: the outer one is a module, which is what carries the
- * ghost, and the inner one is an ink. A trophy needs only the ink level because
- * a trophy is all one object; here the module level is the whole feature.
+ * **They have to be one ground growing, not fifty-six grounds**, which is the whole
+ * risk in generating them. What holds the set together is that the *illustration*
+ * is fixed — same painted medium, same dusk mood, same 40-degree camera, same
+ * framing — while the architecture varies with size, from a village pitch with
+ * grass banks to an enclosed super-stadium. Regenerate one and reuse that wording.
+ * Do not add colour-temperature wording either: it has swung the whole set three
+ * separate times, most recently turning four rungs pale blue.
  *
- * **The seats take the club's own colours.** `badgeFor` already gives every club
- * a palette, so `data-colours` hands the stylesheet a `--badge-a` to derive from
- * and no new colour is invented. Thirteen palettes across twenty clubs, so some
- * grounds match — acceptable, since the tier drawing differs anyway.
+ * **From a fixed aerial camera, "bigger" is a ratio, not a height.** A
+ * three-quarter view from above hides how tall a stand is, so more decks simply do
+ * not read. What reads is how much of the footprint the pitch takes: a small ground
+ * is nearly all pitch, and a 200,000-seat one is a small green rectangle inside a
+ * vast ring. That is also the signal the drawings were sorted by.
  *
- * **`aria-hidden` is load-bearing, not politeness.** The capacity these drawings
- * describe is stated as a number a few centimetres away in the same panel, so
- * they have nothing to add and would only pollute whatever later wraps them. It
- * is also what keeps this clear of the assertions across the suite that resolve
- * a control by its exact accessible name. Same precedent as `TileIcon`,
- * `HubFigure` and `TrophyIcon` — and, being decoration, it is why the whole
- * feature needs no dictionary key in any of the three languages.
+ * **Half the impression of size is CSS, not the drawing.** Every image is cropped
+ * to its own content, so at one fixed height a 200,000-seat ground rendered exactly
+ * as large as a 15,000-seat one — see the scale ramp in `stadium.css`.
+ *
+ * **`aria-hidden` is load-bearing, not politeness.** The capacity this describes
+ * is stated as a number a few centimetres away in the same panel, so it has
+ * nothing to add and would only pollute whatever later wraps it. Same precedent
+ * as `TileIcon`, `HubFigure` and `TrophyIcon` — and, being decoration, it is why
+ * the whole feature needs no dictionary key in any of the three languages.
  */
-
-const PLAN = decodeAll(PLAN_MODULES)
-const SECTION = decodeAll(SECTION_MODULES)
-
-function View({
-  view,
-  modules,
-  tier,
-  colours,
-}: {
-  readonly view: 'plan' | 'section'
-  readonly modules: typeof PLAN
-  readonly tier: StadiumTier
-  readonly colours: string
-}) {
-  const { width, height } = modules[0] ?? { width: 0, height: 0 }
-
+export function StadiumView({ art }: { readonly art: StadiumArt }) {
   return (
-    <svg
-      className={`stadium stadium--${view}`}
-      data-colours={colours}
-      data-tier={tier}
-      viewBox={`0 0 ${String(width)} ${String(height)}`}
+    <img
+      className="stadium"
+      /* The rung, not the file: a variant is the same size as its base, so the two
+         share a scale. */
+      data-seats={seatsKey(art.seats)}
+      src={`/art/stadium/${art.file}.webp`}
+      alt=""
       aria-hidden="true"
-    >
-      {modules.map((module) => {
-        const ghost = ghostDepth(module.tier, tier)
-        return (
-          <g
-            key={module.key}
-            data-module={module.key}
-            {...(ghost === null ? {} : { 'data-ahead': ghost })}
-          >
-            {module.inks.map(({ ink, runs }) => (
-              <g key={ink} data-ink={ink}>
-                {runs.map((run) => (
-                  <rect
-                    key={`${String(run.x)}-${String(run.y)}`}
-                    x={run.x}
-                    y={run.y}
-                    width={run.w}
-                    height={1}
-                  />
-                ))}
-              </g>
-            ))}
-          </g>
-        )
-      })}
-    </svg>
-  )
-}
-
-export function StadiumView({
-  tier,
-  clubId,
-}: {
-  readonly tier: StadiumTier
-  readonly clubId: string
-}) {
-  const colours = badgeFor(clubId).colours
-
-  return (
-    <div className="stadium-pair">
-      <View view="plan" modules={PLAN} tier={tier} colours={colours} />
-      <View view="section" modules={SECTION} tier={tier} colours={colours} />
-    </div>
+    />
   )
 }

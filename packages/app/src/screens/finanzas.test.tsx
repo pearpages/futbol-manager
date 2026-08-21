@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import {
@@ -16,7 +18,7 @@ import { useGame } from '../store.ts'
 import { advanceUntil, back, labelStem, openScreen } from '../testing.ts'
 import { LINES, PROJECTED, signed } from './CajaScreen.tsx'
 import { fillFor } from './EstadioScreen.tsx'
-import { STADIUM_TIERS } from './stadium.ts'
+import { seatsKey, STADIUM_ART, stadiumArtFor } from './stadium.ts'
 
 /**
  * The three Finanzas screens, and the board behind them.
@@ -290,103 +292,149 @@ describe('Estadio', () => {
     /* c8 ignore next */
     if (capacity === undefined) throw new Error('no club')
 
-    // The ladder is restated by hand rather than read from `stadiumTierFor`.
-    // Asking the function under test what it expects is a test that passes for
-    // free — this one was written that way first and survived flattening the
-    // whole function to `return 1`.
-    const expected =
-      capacity <= 18_000
-        ? 1
-        : capacity <= 24_000
-          ? 2
-          : capacity <= 32_000
-            ? 3
-            : capacity <= 42_000
-              ? 4
-              : capacity <= 55_000
-                ? 5
-                : capacity <= 75_000
-                  ? 6
-                  : capacity <= 105_000
-                    ? 7
-                    : 8
+    // **Restated by hand rather than read from `stadiumArtFor`.** Asking the
+    // function under test what it expects is a test that passes for free — this one
+    // was written that way first and survived flattening the whole function to
+    // `return 1`. These numbers are typed out here, not imported.
+    const ladder = [
+      6_000, 10_000, 11_000, 12_000, 13_000, 14_000, 15_000, 16_000, 17_000, 18_000, 19_000, 20_000,
+      22_000, 23_000, 24_000, 25_000, 26_000, 27_000, 28_000, 29_000, 30_000, 31_000, 32_000,
+      33_000, 34_000, 35_000, 36_000, 37_000, 38_000, 39_000, 40_000, 41_000, 42_000, 44_000,
+      45_000, 46_000, 48_000, 50_000, 53_000, 55_000, 62_000, 65_000, 70_000, 75_000, 80_000,
+      85_000, 90_000, 95_000, 100_000, 110_000, 130_000, 150_000, 170_000, 200_000,
+    ]
+    // Typed out above, compared to the source here: without this the literal only
+    // guards whichever rungs *this* club's capacity happens to straddle, and moving
+    // any other one failed nothing.
+    expect(STADIUM_ART.map((rung) => rung.seats)).toEqual(ladder)
 
-    for (const svg of document.querySelectorAll('.stadium')) {
-      expect(svg.getAttribute('data-tier')).toBe(String(expected))
+    // Deliberately *not* an argmin over `|seats - capacity|` — that is
+    // `stadiumArtFor`'s own algorithm rewritten, so it would catch a wrong rung and
+    // miss a flipped tie-break. Finding the first rung whose midpoint to the next is
+    // at or above the capacity is different arithmetic reaching the same answer, and
+    // the `<=` is what pins ties to the smaller drawing.
+    const found = ladder.findIndex(
+      (seats, i) => capacity <= (seats + (ladder[i + 1] ?? Infinity)) / 2,
+    )
+    const expected = ladder[found === -1 ? ladder.length - 1 : found]
+
+    for (const art of document.querySelectorAll('.stadium')) {
+      expect(art.getAttribute('data-seats')).toBe(seatsKey(expected as number))
     }
-    // Both views, side by side — the plan for the footprint, the section for the
-    // height. One of them alone says nothing about the top half of the ladder.
-    expect(document.querySelectorAll('.stadium')).toHaveLength(2)
+    // One painting now, not a plan and a section side by side — the pair existed
+    // because neither drawn view could carry the whole ladder alone. See ADR 0012.
+    expect(document.querySelectorAll('.stadium')).toHaveLength(1)
   })
 
-  it('builds another module every time the seats arrive', () => {
-    // The point of the whole drawing. Capacity is set directly rather than built
-    // up through a rollover, because *that* composition is already covered — the
-    // test above takes the money and defers the seats, and the domain adds them
-    // when the season opens. What is unproven without this is that the picture
-    // follows the number.
+  it('changes the ground every time the seats arrive', () => {
+    // The point of the whole drawing: the picture follows the number. Capacity is
+    // set directly rather than built up through a rollover, because *that*
+    // composition is already covered — the test above takes the money and defers
+    // the seats, and the domain adds them when the season opens.
     //
-    // Counting *solid* modules rather than rects: every module is always in the
-    // markup, because the unbuilt ones are what the ghost is made of. A rect
-    // count is therefore constant, and the first version of this test asserted
-    // exactly that and failed.
+    // The claim with teeth is that every rung draws a different file: a component
+    // that ignored its input and always served one image would satisfy `data-seats`
+    // alone.
     render(<App />)
     openScreen('nav.estadio')
 
-    const solid = () => document.querySelectorAll('.stadium [data-module]:not([data-ahead])').length
-
-    const seen = STADIUM_TIERS.map((threshold, i) => {
+    const seen = STADIUM_ART.map((rung) => {
       act(() => {
         useGame.setState({
           game: {
             ...game(),
-            clubs: game().clubs.map((c) => (c.id === MID ? { ...c, capacity: threshold } : c)),
+            clubs: game().clubs.map((c) => (c.id === MID ? { ...c, capacity: rung.seats } : c)),
           },
         })
       })
-      const svg = document.querySelector('.stadium')
-      expect(svg?.getAttribute('data-tier'), `${String(threshold)} seats`).toBe(String(i + 1))
-      return solid()
+      const art = document.querySelector('.stadium')
+      expect(art?.getAttribute('data-seats'), `${String(rung.seats)} seats`).toBe(
+        seatsKey(rung.seats),
+      )
+      return art?.getAttribute('src') ?? ''
     })
 
-    for (let i = 1; i < seen.length; i++) {
-      expect(seen[i], `tier ${String(i + 1)} built nothing new`).toBeGreaterThan(
-        seen[i - 1] as number,
-      )
+    expect(new Set(seen).size, 'two grounds share a drawing').toBe(seen.length)
+    for (const src of seen) expect(src).toMatch(/^\/art\/stadium\/\d+k[a-z]?\.webp$/)
+  })
+
+  it('rounds to the nearest ground, and gives a tie to the smaller one', () => {
+    // **Nothing else reaches this.** The two tests above drive real club capacities
+    // and exact rung values, and no club sits on a midpoint — so the rounding rule
+    // and its tie-break are invisible to both. Checked by hand: 24k and 25k are
+    // adjacent rungs, so 24,500 is exactly between them.
+    const id = 'madrid'
+    expect(stadiumArtFor(24_100, id).seats).toBe(24_000)
+    expect(stadiumArtFor(24_900, id).seats).toBe(25_000)
+    // The tie. Smaller, so the picture never claims more than the club has.
+    expect(stadiumArtFor(24_500, id).seats).toBe(24_000)
+
+    // Clamped at both ends rather than throwing: a career can build past anything
+    // shipped, and a ground under the floor still has to render.
+    expect(stadiumArtFor(1, id).seats).toBe(6_000)
+    expect(stadiumArtFor(9_000_000, id).seats).toBe(200_000)
+    expect(stadiumArtFor(Number.NaN, id).seats).toBe(6_000)
+  })
+
+  it('picks the same variant for a club every time, and not the same one for all', () => {
+    // **The only thing that can see the variant selection.** Two drawings sharing a
+    // capacity are interchangeable, so nothing about the rendered size or the rung
+    // would change if the pick were hardcoded to the base file — and eight of the
+    // twenty-five clubs sit between 21k and 25k, which is exactly where the variants
+    // are and exactly why they must not all draw the same picture.
+    const withVariants = STADIUM_ART.find((rung) => rung.variants > 0)
+    /* c8 ignore next */
+    if (withVariants === undefined) throw new Error('no variant to test')
+    const { seats } = withVariants
+
+    // Stable: the ground must not change under a club as the screen re-renders or a
+    // save is reloaded, which is why this is derived from the id and never drawn.
+    expect(stadiumArtFor(seats, 'madrid').file).toBe(stadiumArtFor(seats, 'madrid').file)
+
+    const ids = game().clubs.map((c) => c.id)
+    const drawn = new Set(ids.map((id) => stadiumArtFor(seats, id).file))
+    expect(drawn.size, 'every club draws the same variant').toBeGreaterThan(1)
+    // Whatever it picks has to exist. A negative modulo — `hashSeed` is signed —
+    // yields an undefined suffix and a 404 nothing else here would catch.
+    const legal = new Set(
+      Array.from(
+        { length: withVariants.variants + 1 },
+        (_, i) => `${seatsKey(seats)}${i === 0 ? '' : String.fromCharCode(96 + i)}`,
+      ),
+    )
+    for (const file of drawn) expect(legal.has(file), file).toBe(true)
+  })
+
+  it('draws a bigger ground bigger, not just differently', () => {
+    // **The claim nothing else makes.** Every drawing is cropped to its own
+    // content, so at one fixed height a 200,000-seat ground rendered exactly as
+    // large as a 15,000-seat one and size said nothing at all. The scale is half
+    // of what makes the ladder legible; flatten it and the seats attribute still
+    // changes, the file still changes, and every other test here still passes.
+    const css = readFileSync(resolve(process.cwd(), 'packages/app/src/styles/stadium.css'), 'utf8')
+    const heights = [
+      ...css.matchAll(/\[data-seats='(\d+)k'\]\s*\{\s*--stadium-h:\s*([\d.]+)/g),
+    ].map((m) => [Number(m[1]) * 1000, Number(m[2])] as const)
+
+    // One rule per rung — a variant shares its base's size, so it gets no rule of
+    // its own and a stray one here would mean the two had drifted apart.
+    expect(heights).toHaveLength(STADIUM_ART.length)
+    expect(heights.map((h) => h[0])).toEqual(STADIUM_ART.map((rung) => rung.seats))
+
+    const ordered = [...heights].sort((a, b) => a[0] - b[0])
+    for (let i = 1; i < ordered.length; i++) {
+      expect(
+        ordered[i]![1],
+        `${String(ordered[i]![0])} seats is not taller than the ground below`,
+      ).toBeGreaterThan(ordered[i - 1]![1])
     }
   })
 
-  it('shows what is not built yet, faded, and stops once it is', () => {
-    // "You can keep making it bigger" is the thing the drawing has to say at a
-    // small club, and it can only say it by showing the modules that are missing.
-    render(<App />)
-    openScreen('nav.estadio')
-
-    const ghosts = () => document.querySelectorAll('.stadium [data-module][data-ahead]').length
-    const setCapacity = (capacity: number) => {
-      act(() => {
-        useGame.setState({
-          game: {
-            ...game(),
-            clubs: game().clubs.map((c) => (c.id === MID ? { ...c, capacity } : c)),
-          },
-        })
-      })
-    }
-
-    setCapacity(15_000)
-    const small = ghosts()
-    expect(small).toBeGreaterThan(0)
-    // The nearest one is the most visible of them.
-    expect(document.querySelectorAll('.stadium [data-ahead="next"]').length).toBeGreaterThan(0)
-
-    setCapacity(90_000)
-    expect(ghosts()).toBeLessThan(small)
-
-    // Nothing left to build, so nothing left to fade.
-    setCapacity(500_000)
-    expect(ghosts()).toBe(0)
-  })
+  // **Deleted with the behaviour, not because it was inconvenient.** The drawing
+  // used to render every module it had *not* earned yet, faded, so a small club
+  // could see there was more to build. A painting has no modules to fade, so that
+  // is a real feature this change costs — recorded in ADR 0012 rather than left
+  // to be noticed later as a gap in the tests.
 })
 
 describe('the sack', () => {

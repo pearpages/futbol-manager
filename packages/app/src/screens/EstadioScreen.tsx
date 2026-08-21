@@ -11,7 +11,7 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { useAttempt } from '../attempt.ts'
 import { Explain } from './Explain.tsx'
-import { stadiumTierFor } from './stadium.ts'
+import { stadiumArtFor } from './stadium.ts'
 import { StadiumView } from './StadiumView.tsx'
 import './EstadioScreen.css'
 
@@ -69,7 +69,7 @@ export function EstadioScreen() {
               than when the work is commissioned — which is what `estadio.underWay`
               already promises while the building is going on. */}
           <div className="estadio-screen__ground">
-            <StadiumView tier={stadiumTierFor(club.capacity)} clubId={club.id} />
+            <StadiumView art={stadiumArtFor(club.capacity, club.id)} />
           </div>
 
           <div className="estadio-screen__stats">

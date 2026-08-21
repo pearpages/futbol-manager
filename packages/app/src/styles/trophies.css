@@ -1,86 +1,29 @@
 /*
- * The silverware.
+ * The palmarés trophy.
  *
- * Same arrangement as `club-badges.css`, `radar.css` and `hub-figures.css`: **a
- * variant selector sets custom properties and nothing else**, every rule that
- * paints reads a property, and `trophies.ts` holds no colour at all. A second
- * competition is one five-line block here, not a new set of painting rules.
+ * Painted box art now, not a pixel grid — see ADR 0012. The gold, the plinth and
+ * the sheen are in the image, so the four ink rules and their `color-mix` derived
+ * values went with the grid.
  *
- * ## Two colours per trophy, and the rest is derived
- *
- * A trophy declares `--trophy-metal` and `--trophy-plinth`. The highlight and the
- * shadow are `color-mix`ed from the metal, so they cannot be picked by hand and
- * cannot drift away from the colour they are meant to be lighting. That is the
- * lesson the badge rim paid for — six hand-chosen neutrals looked fine and were
- * wrong — and `trophies.test.ts` enforces it by refusing a literal on either.
- *
- * ## There is no small variant, deliberately
- *
- * These sit on the near-black `.screen` at `5rem` over a 20-row grid, which is
- * four device pixels a row — the same ratio that makes the hub figures read as
- * pixel art. At a badge's `1.25rem` it would be one pixel a row and the handles,
- * the sheen and the stem would all vanish into a gold smear. So the trophy appears
- * once per competition in the honours panel and never inside a table row, and this
- * file offers nothing to reach for that would break that.
+ * **5rem, and there is deliberately no small variant.** The pixel version could
+ * not survive being shrunk — one device pixel per row turned it to a smear — so a
+ * trophy appears once per competition in the honours panel and never inside a
+ * table row. That is still the right call for a painting: a detailed cup at a
+ * badge's 1.25rem is a gold smudge, and offering an `is-sm` is how someone tries.
  */
 
 .trophy {
-  /* Derived, never declared per trophy — see the note above. */
-  --trophy-sheen: color-mix(in srgb, var(--trophy-metal), #fff 38%);
-  --trophy-shade: color-mix(in srgb, var(--trophy-metal), #000 32%);
-  /* The plinth's shadow line. Reads against the plinth, never against the panel,
-     so it can be genuinely dark where the metal cannot. */
-  --trophy-ink: #17120a;
-
   display: block;
-  /* The SVG has an intrinsic ratio from its viewBox, so height alone keeps it in
-     proportion. Shrinks rather than pushing the panel into scroll. */
   width: auto;
   height: 5rem;
-  min-height: 0;
-  flex: none;
+  object-fit: contain;
 }
 
 /*
- * A competition nobody has won yet.
- *
- * Shown rather than hidden, for the reason the hub shows its unbuilt tiles: the
- * shape of what is winnable should be visible before you win any of it. Opacity
- * rather than a grey palette, so it is plainly the same object dimmed and not a
- * different, sadder trophy.
+ * A competition nobody has won yet: dimmed rather than hidden, so the palmarés
+ * shows the shape of what is winnable from the first day of a career.
  */
 .trophy.is-empty {
   opacity: 0.3;
-}
-
-.trophy [data-ink='metal'] {
-  fill: var(--trophy-metal);
-}
-
-.trophy [data-ink='sheen'] {
-  fill: var(--trophy-sheen);
-}
-
-.trophy [data-ink='shade'] {
-  fill: var(--trophy-shade);
-}
-
-.trophy [data-ink='plinth'] {
-  fill: var(--trophy-plinth);
-}
-
-.trophy [data-ink='ink'] {
-  fill: var(--trophy-ink);
-}
-
-/*
- * The league: gold on a dark wooden plinth.
- *
- * Warm rather than a yellow — a lemon gold reads as plastic, and this sits beside
- * the gold `--fm-champion` band the classification already uses for first place,
- * so the two should look like the same idea.
- */
-.trophy[data-trophy='league'] {
-  --trophy-metal: #d8a72c;
-  --trophy-plinth: #4a3520;
+  filter: grayscale(0.7);
 }

@@ -1,26 +1,33 @@
-import { TROPHIES, type TrophyKey } from './trophies.ts'
 import '../styles/trophies.css'
 
+/** One competition so far. Also the filename under `public/art`. */
+export const TROPHY_KEYS = ['league'] as const
+
+export type TrophyKey = (typeof TROPHY_KEYS)[number]
+
 /**
- * One trophy.
+ * One trophy, on the palmarés honours panel.
  *
- * Modelled on `HubFigure.tsx` — inline SVG, the `viewBox` in the markup and the
- * size in CSS, geometry as a constant, and **no colour values in this file**.
- * Everything arrives through the custom properties in `styles/trophies.css`, keyed
- * on `data-trophy`.
+ * **Generated box art rather than a pixel grid — see [ADR 0012].** It was a 16x20
+ * character grid, and the handles were the hard part: attached at both ends with a
+ * pixel of daylight through the middle, because a handle fixed only at the rim
+ * reads as a wing. A painting has no such problem, which is most of why this one
+ * was the cleanest swap in the app — one image, no parameterisation, no states.
  *
- * One level of `<g>` rather than two: a figure needs `data-part` so the hub can
- * animate a prop without dragging a necktie along, and a trophy has no moving
- * pieces.
+ * Cut out against alpha the same way the hub figures are, so it sits on the panel
+ * rather than in a box of its own.
  *
- * **`aria-hidden` is load-bearing, not politeness.** Dozens of assertions across
- * the suite resolve a control by its exact accessible name, and this sits inside
- * the honours panel beside the competition's name in real text — so the graphic
- * has nothing to add and would only pollute whatever later wraps it. Same
- * precedent as `TileIcon`, `HubFigure` and the market's sort arrows.
+ * **A generic invented cup, not a real competition's trophy.** [ADR 0007] puts
+ * artwork and emblems on the protected side, and a trophy is a competition's
+ * emblem as much as a crest is a club's. That constraint outlived the pixel
+ * version and applies to the prompt just as it applied to the grid.
  *
  * `empty` dims a competition nobody has won yet rather than hiding it, so the
  * palmarés shows the shape of what is winnable from the first day of a career.
+ *
+ * **`aria-hidden` is load-bearing**: this sits beside the competition's name in
+ * real text, so the graphic has nothing to add and would only pollute whatever
+ * later wraps it.
  */
 export function TrophyIcon({
   trophy,
@@ -29,22 +36,13 @@ export function TrophyIcon({
   readonly trophy: TrophyKey
   readonly empty?: boolean
 }) {
-  const { width, height, inks } = TROPHIES[trophy]
-
   return (
-    <svg
+    <img
       className={`trophy${empty ? ' is-empty' : ''}`}
       data-trophy={trophy}
-      viewBox={`0 0 ${width} ${height}`}
+      src={`/art/${trophy}.webp`}
+      alt=""
       aria-hidden="true"
-    >
-      {inks.map(({ ink, runs }) => (
-        <g key={ink} data-ink={ink}>
-          {runs.map((run) => (
-            <rect key={`${run.x}-${run.y}`} x={run.x} y={run.y} width={run.w} height={1} />
-          ))}
-        </g>
-      ))}
-    </svg>
+    />
   )
 }

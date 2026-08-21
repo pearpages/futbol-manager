@@ -1,51 +1,43 @@
-import { FIGURES, type FigureKey } from './sprites.ts'
 import '../styles/hub-figures.css'
 
+/** The four people, one per hub quadrant. Also the filenames under `public/art`. */
+export const FIGURE_KEYS = ['assistant', 'trainer', 'agent', 'director'] as const
+
+export type FigureKey = (typeof FIGURE_KEYS)[number]
+
 /**
- * One pixel-art figure, at the foot of its quadrant.
+ * One painted figure, at the foot of its quadrant.
  *
- * Modelled on `TileIcon.tsx` — inline SVG, the `viewBox` in the markup and the
- * size in CSS, geometry as a constant, and **no colour values in this file**.
- * Everything arrives through the custom properties in `styles/hub-figures.css`,
- * keyed on `data-figure`, which is the whole colour handoff.
+ * **Generated box art rather than a pixel grid — see [ADR 0012].** These were four
+ * 28x32 character grids decoded to SVG rects, with four prop animations and a
+ * hover smile driven by `data-part` groups. All of that went with them: a painting
+ * is one image and cannot animate a clipboard without animating the man holding
+ * it. What is kept is the slot — same quadrant, same 8rem, same layout.
+ *
+ * **Cut out against alpha, not pasted on a background.** Each was generated on a
+ * flat magenta backdrop and keyed on `min(r, b) - g`, which isolates magenta
+ * specifically: pure red scores zero, so the agent's tie survives where the naive
+ * "red and blue are both high" test erases it. Then cropped to the largest
+ * connected blob — the generations carry a detached grey wisp in one corner that
+ * is solid enough to pass any alpha threshold, and cropping to every solid pixel
+ * shoved the subject off centre with dead space beside it.
  *
  * **`aria-hidden` is load-bearing, not politeness.** Two dozen assertions across
- * five test files find a hub tile by its exact accessible name, and
- * `openScreen('Fichar')` matches the whole string. A figure sits inside the
- * `<section>` rather than inside a `<button>`, so it could not rename a tile —
- * but it *would* land in the accessible name of anything that later wrapped it,
- * and it says nothing a screen reader wants in the first place. Same precedent
- * as `TileIcon` and the market's sort arrows.
- *
- * The runs are decoded once at module load in `sprites.ts`; this component only
- * reads them, because the hub re-renders on every tick of the day clock.
- *
- * **Two levels of `<g>`, and the outer one earns its keep.** `data-part` is what
- * the hover animation moves — one element per part, so a prop drawn in three
- * inks cannot drift out of step with itself. The nine fill rules are descendant
- * selectors, so `data-ink` keeps painting through the extra nesting.
+ * five test files find a hub tile by its exact accessible name, and `openScreen`
+ * matches the whole string. A figure sits inside the `<section>` rather than
+ * inside a `<button>`, so it could not rename a tile — but it *would* land in the
+ * accessible name of anything that later wrapped it, and it says nothing a screen
+ * reader wants. Same precedent as `TileIcon` and the market's sort arrows. The
+ * empty `alt` goes with it: without one, a screen reader reads the file name.
  */
 export function HubFigure({ figure }: { readonly figure: FigureKey }) {
-  const { width, height, parts } = FIGURES[figure]
-
   return (
-    <svg
+    <img
       className="hub-figure"
       data-figure={figure}
-      viewBox={`0 0 ${width} ${height}`}
+      src={`/art/${figure}.webp`}
+      alt=""
       aria-hidden="true"
-    >
-      {parts.map(({ part, inks }) => (
-        <g key={part} data-part={part}>
-          {inks.map(({ ink, runs }) => (
-            <g key={ink} data-ink={ink}>
-              {runs.map((run) => (
-                <rect key={`${run.x}-${run.y}`} x={run.x} y={run.y} width={run.w} height={1} />
-              ))}
-            </g>
-          ))}
-        </g>
-      ))}
-    </svg>
+    />
   )
 }

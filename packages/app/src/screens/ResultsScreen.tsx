@@ -13,8 +13,7 @@ import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
-import { TROPHY_KEYS } from './trophies.ts'
-import { TrophyIcon } from './TrophyIcon.tsx'
+import { TROPHY_KEYS, TrophyIcon } from './TrophyIcon.tsx'
 import './ResultsScreen.css'
 
 /**

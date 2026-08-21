@@ -7,7 +7,7 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { QUADRANTS } from './HubScreen.tsx'
-import { FIGURE_KEYS } from './sprites.ts'
+import { FIGURE_KEYS } from './HubFigure.tsx'
 import { ICON_KEYS } from './TileIcon.tsx'
 
 /**
@@ -80,18 +80,22 @@ describe('every section has its figure', () => {
     expect(document.querySelectorAll('.hub-figure')).toHaveLength(QUADRANTS.length)
   })
 
-  it('renders the prop as its own group, which is what the hover moves', () => {
-    // The stylesheet guards cover the selectors and `sprites.test.ts` covers the
-    // decode, but neither can see the markup in between: drop the outer `<g>`
-    // from `HubFigure` and both still pass while nothing on the hub ever moves.
+  it('paints each figure from its own file, cut out against alpha', () => {
+    // Replaces the prop-group guard. There is no prop to animate any more — a
+    // painting is one image — so what is worth pinning is that the four are
+    // distinct files and none has silently fallen back to a shared one.
     render(<App />)
 
-    for (const { key } of QUADRANTS) {
+    const sources = QUADRANTS.map(({ key }) => {
       const art = document.querySelector(`.hub__quadrant[data-quadrant='${key}'] .hub-figure`)
-      const prop = art?.querySelector(`[data-part='prop']`)
-      expect(prop, `${key} has no prop to animate`).not.toBeNull()
-      expect(prop?.querySelectorAll('rect').length, `${key} draws an empty prop`).toBeGreaterThan(0)
-    }
+      expect(art, `${key} has no figure`).not.toBeNull()
+      // Decorative: the empty `alt` is what stops a reader announcing the file name.
+      expect(art?.getAttribute('alt'), key).toBe('')
+      return art?.getAttribute('src') ?? ''
+    })
+
+    expect(new Set(sources).size, 'two quadrants share a figure').toBe(QUADRANTS.length)
+    for (const src of sources) expect(src).toMatch(/^\/art\/[a-z]+\.webp$/)
   })
 
   it('gives every section its own, so no two hire the same person', () => {

@@ -17,15 +17,16 @@
  * a kit-coloured edge for free and cannot drift off-palette without someone
  * writing a hex — which a test forbids.
  *
- * **`.stadium` is the second customer**, so the seating in `stadium.css` can be
- * the club's own colour without inventing one. Each palette names both selectors
- * explicitly rather than being loosened to a bare `[data-colours]`: that would
+ * **The badge is the only customer again.** `.stadium` used to share every palette
+ * so the seating could be the club's own colour; the ground became a generated
+ * image (ADR 0012) and takes its colour from the picture now, so those selectors
+ * went with it. Should a second customer ever appear, name it explicitly beside
+ * `.club-badge` rather than loosening these to a bare `[data-colours]` — that would
  * drop the specificity of every block below the `.club-badge` rules underneath,
- * `--badge-rim` among them. A third customer joins the list the same way.
+ * `--badge-rim` among them.
  */
 
-.club-badge[data-colours='white'],
-.stadium[data-colours='white'] {
+.club-badge[data-colours='white'] {
   --badge-a: #f4f4f2;
   /* Not rendered as a mark — this badge is solid — so it exists for the rim.
      White with navy trim. */
@@ -33,8 +34,7 @@
   --badge-ink: #1d2330;
 }
 
-.club-badge[data-colours='garnet-blue'],
-.stadium[data-colours='garnet-blue'] {
+.club-badge[data-colours='garnet-blue'] {
   --badge-a: #7b1330;
   --badge-b: #17376b;
   --badge-ink: #f6d66b;
@@ -43,106 +43,91 @@
   --badge-rim: var(--badge-ink);
 }
 
-.club-badge[data-colours='red-white'],
-.stadium[data-colours='red-white'] {
+.club-badge[data-colours='red-white'] {
   --badge-a: #cf2027;
   --badge-b: #f4f4f2;
   --badge-ink: #1d2330;
 }
 
-.club-badge[data-colours='white-red'],
-.stadium[data-colours='white-red'] {
+.club-badge[data-colours='white-red'] {
   --badge-a: #f4f4f2;
   --badge-b: #cf2027;
   --badge-ink: #8f1419;
 }
 
-.club-badge[data-colours='blue-white'],
-.stadium[data-colours='blue-white'] {
+.club-badge[data-colours='blue-white'] {
   --badge-a: #17376b;
   --badge-b: #f4f4f2;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='orange-black'],
-.stadium[data-colours='orange-black'] {
+.club-badge[data-colours='orange-black'] {
   --badge-a: #f4f4f2;
   --badge-b: #e8720c;
   --badge-ink: #1d2330;
 }
 
-.club-badge[data-colours='yellow'],
-.stadium[data-colours='yellow'] {
+.club-badge[data-colours='yellow'] {
   --badge-a: #f2c422;
   --badge-b: #1f4ea1;
   --badge-ink: #2a2410;
 }
 
-.club-badge[data-colours='green-white'],
-.stadium[data-colours='green-white'] {
+.club-badge[data-colours='green-white'] {
   --badge-a: #0f7a43;
   --badge-b: #f4f4f2;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='sky'],
-.stadium[data-colours='sky'] {
+.club-badge[data-colours='sky'] {
   --badge-a: #5aa7dd;
   --badge-b: #f4f4f2;
   --badge-ink: #10314a;
 }
 
-.club-badge[data-colours='red'],
-.stadium[data-colours='red'] {
+.club-badge[data-colours='red'] {
   --badge-a: #c8202b;
   --badge-b: #14213a;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='red-black'],
-.stadium[data-colours='red-black'] {
+.club-badge[data-colours='red-black'] {
   --badge-a: #c8202b;
   --badge-b: #1a1a1c;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='blue'],
-.stadium[data-colours='blue'] {
+.club-badge[data-colours='blue'] {
   --badge-a: #1f4ea1;
   --badge-b: #f4f4f2;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='white-blue'],
-.stadium[data-colours='white-blue'] {
+.club-badge[data-colours='white-blue'] {
   --badge-a: #f4f4f2;
   --badge-b: #1f4ea1;
   --badge-ink: #14213a;
 }
 
-.club-badge[data-colours='black-white'],
-.stadium[data-colours='black-white'] {
+.club-badge[data-colours='black-white'] {
   --badge-a: #22242a;
   --badge-b: #f4f4f2;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='claret-blue'],
-.stadium[data-colours='claret-blue'] {
+.club-badge[data-colours='claret-blue'] {
   --badge-a: #8b1d33;
   --badge-b: #e2a63b;
   --badge-ink: #f6e2b4;
 }
 
-.club-badge[data-colours='purple'],
-.stadium[data-colours='purple'] {
+.club-badge[data-colours='purple'] {
   --badge-a: #56247e;
   --badge-b: #f4f4f2;
   --badge-ink: #f4f4f2;
 }
 
-.club-badge[data-colours='gold-black'],
-.stadium[data-colours='gold-black'] {
+.club-badge[data-colours='gold-black'] {
   --badge-a: #c8901f;
   --badge-b: #a3232c;
   --badge-ink: #2a1c0c;
