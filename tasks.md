@@ -26,7 +26,6 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 - [ ] **Distribution bands still run on generated squads.** `simulateSeasons` takes `rosters` and the formation arms use them. The 50-season bands still run on `TEST_CLUBS`, where generated squads are arguably right because they describe the shape of a league rather than this one.
 - [ ] **`TableScreen`'s "Últims resultats" is a weaker copy.** It reads `store.feed` (capped at 60, which does survive a reload), while `ResultsScreen` reads `season.fixtures`. The weaker of two copies keeps winning the click. Decide deliberately whether to remove it.
 - [ ] **The results grid pushes the page 14px at a 500px viewport.** The classification and the squad contain themselves at that width. Neither `min-width: 0` on the scroller nor `overflow-x: hidden` moves it, so the cause is further up the shell. Everything from 900px up is clean.
-- [ ] **The landing cover overlaps the aside at 900×650.** `.landing` keeps `height: 100%` in the `width < 60rem` branch, so the hero compresses to 292px against a 496px image and spills over the tagline and both buttons. It is identical at HEAD and probably needs `height: auto`. Re-measure at 820×600 too.
 - [ ] **`BAR_FLOOR = 45` contradicts its own comment ("plotted from 40").** In `PlayerScreen.tsx` an attribute of 45 draws an empty bar. Measure the league's lowest attribute first, then fix one of the two. Generation also gives a player very little internal spread (the best keeper spans 71–80), which limits the radar more than the floor does.
 - [ ] **Stadium expansion is a dominant strategy.** `occupancy` never reads `capacity` (`finance.ts`), so gate income is linear in seats. A bigger ground also raises `debtLimit` and lowers `wagePremium`. It needs a demand ceiling. This will move calibrated bands.
 - [ ] **A season reaches only nine settlement days.** Settlement is the 1st of the month, and the clock runs 15 Aug → 1 May, so wages, TV and sponsorship are paid at 9/12. `calendar.test.ts` pins the nine dates and will fail loudly when this is fixed.
@@ -39,8 +38,8 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 - [ ] **`ShellFoot.test.tsx` quick-save race** reproduces under two concurrent full suites: it asserts `queryByRole('dialog')` synchronously while the close lands a tick later.
 - [ ] **`competition.name` is still `'Primera División'` inside `GameState`**, so the title bar names it while the rest of the app no longer does. It needs a migration.
 - [ ] **`es.ts` keeps the calques fixed in Catalan** (`en el idioma de`, `el calendario`, `Mostrando`, `cubrir este sistema`). `attribute.short.finishing` (`DEF`) collides with `position.DF` on the ficha.
+- [ ] **The settings cog covers the wordmark's last letter at 820–900px wide.** The cog is placed against `.landing` and the wordmark against the cover, so once the layout stacks they land in the same corner. Cosmetic, and it only shows when stacked on a wide screen. — `LandingScreen.css`
 - [ ] **Verify the Open Graph card unfurls** in a real client now that the tags are live.
-- [ ] **`/favicon.ico` 404s** on the live site.
 - [ ] **`importSave` / `exportSave` are unwired.** When they are wired, validate imported saves (see security.md).
 
 ### Scaffold follow-ups
@@ -51,6 +50,8 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 
 ## Done
 
+- [x] 2026-10-02: Advertising-readiness fixes. The stacked landing page no longer lets the cover overlap the tagline and buttons (checked at 900×650, 820×600 and a 390px phone). Added a favicon (an SVG plus `.ico`) and an apple-touch-icon, guarded by `meta.test.ts`. package.json metadata, and the GitHub repo's description, website and topics. The README gained a cover image, badges, a What's new section and a Contributing section saying contributions are not accepted.
+- [x] 2026-10-02: Maturity assessment. Verdict: Ready after blockers. 8 gaps added to Open.
 - [x] 2026-10-02: Scaffolded project knowledge files. Created AGENTS.md, principles.md, architecture.md, decisions.md, ADR 0013, security.md, tasks.md, README.md, LICENSE and .editorconfig. CLAUDE.md is now a shim, its session log became the Done lines below, and the roadmap's Known open items moved here.
 - [x] 2026-08-21: Open Graph metadata and a 1200×630 share card rendered from the real landing page, guarded by `meta.test.ts`.
 - [x] 2026-08-21: CI builds on every PR and deploys `main` to GitHub Pages at futbol.pearpages.com.

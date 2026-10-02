@@ -1,5 +1,11 @@
 # Futbol Manager
 
+[![CI](https://github.com/pearpages/futbol-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/pearpages/futbol-manager/actions/workflows/ci.yml)
+[![Play it](https://img.shields.io/badge/play-futbol.pearpages.com-e8b33a)](https://futbol.pearpages.com)
+[![License: proprietary](https://img.shields.io/badge/license-proprietary-lightgrey)](LICENSE)
+
+[![A manager in a long coat on the touchline of a floodlit stadium in the rain, with the words Futbol Manager](packages/app/public/og.jpg)](https://futbol.pearpages.com)
+
 A football management game for the browser, in the style of Dinamic's PC Fútbol 5.0
 (1996/97).
 
@@ -10,6 +16,23 @@ their cities, and it ships in Catalan, Spanish and English.
 
 **Play it:** <https://futbol.pearpages.com>. Careers are saved in your browser and nothing
 leaves your device.
+
+## What's new
+
+- **August 2026.** The game is live at futbol.pearpages.com. It has a new cover and landing page, a
+  market abroad with 32 foreign clubs to buy from, contract renewals, and named save slots.
+- **The polish phase.** Every screen is in Catalan, Spanish and English. Club badges are drawn
+  from kit colours. The hub has news, form and the league position. Line-up and tactics share
+  one screen with a pitch on it, and every table can be sorted.
+- **M5: money and the board.** Gate, TV and sponsorship income, wages and debt. Ticket
+  pricing and stadium expansion. A board that judges you by your league position.
+- **M4: the transfer market.** Bids, contract terms, free agents, the transfer list, offers
+  for your players, and an AI market that runs on its own.
+- **M1–M3: the league.** Twenty clubs and a 38-round season with results worked out from team
+  ratings. Squads, formations and tactics, and saves that survive updates.
+
+What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
+injuries, form and training (M6).
 
 ## Install
 
@@ -37,6 +60,11 @@ pnpm build             # production bundle in packages/app/dist
 - [decisions.md](decisions.md): why things are the way they are
 
 Contributors and agents start at [AGENTS.md](AGENTS.md).
+
+## Contributing
+
+This is a personal project and it doesn't take contributions. Pull requests will be closed
+without review. To report a security problem, see [security.md](security.md).
 
 ## License
 

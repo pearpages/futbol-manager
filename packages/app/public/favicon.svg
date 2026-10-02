@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    A pitch seen from above: touchlines, halfway line, centre circle and the ball
+    on the spot. Drawn rather than traced (principles P17), in the app's own
+    palette: the screen, screen-ink and champion tokens of tokens.css. Literal
+    colours, because a favicon is rendered outside the page and cannot read its
+    custom properties. (No double hyphen in here: XML forbids one in a comment,
+    and the file then fails to parse.)
+    `apple-touch-icon.png` and `favicon.ico` are rasterised from this file.
+  -->
+  <rect width="32" height="32" rx="6" fill="#0e1f16" />
+  <g fill="none" stroke="#d3e6d6" stroke-width="2">
+    <rect x="4" y="7" width="24" height="18" />
+    <line x1="16" y1="7" x2="16" y2="25" />
+    <circle cx="16" cy="16" r="4.5" />
+  </g>
+  <circle cx="16" cy="16" r="2" fill="#e8b33a" />
+</svg>

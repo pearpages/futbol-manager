@@ -136,6 +136,19 @@ describe('sharing metadata', () => {
     expect(html).toContain(`<title>${en['shell.wordmark']}</title>`)
   })
 
+  it('links icons that exist in public/', () => {
+    // A missing icon fails quietly: the tab shows a blank page and the live
+    // site logs a 404, which is how `/favicon.ico` went unnoticed until launch.
+    const icons = [...html.matchAll(/<link rel="(icon|apple-touch-icon)" href="\/([^"]+)"/g)]
+    expect(icons.map(([, rel]) => rel)).toEqual(['icon', 'icon', 'apple-touch-icon'])
+    for (const [, , name] of icons) {
+      expect(
+        () => statSync(resolve(ROOT, 'public', name ?? '')),
+        `${name} is not in public/`,
+      ).not.toThrow()
+    }
+  })
+
   it('keeps the description short enough to survive every card', () => {
     // Around 200 is where the tighter surfaces start cutting. Both copies are the
     // same sentence and must stay that way.
