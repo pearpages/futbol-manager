@@ -75,4 +75,4 @@ Everything in steps 2–3 is pure and reproducible from `(seed, commands)`, whic
 - **Hosting:** GitHub Pages (Actions source), custom domain `futbol.pearpages.com`, kept by
   `packages/app/public/CNAME`. Because the site is served from a domain root, Vite's `base` is
   `/` and root-absolute asset paths work. The build embeds the short commit hash as
-  `VITE_COMMIT` for the footer. `index.html` carries static Open Graph tags and `og.jpg`.
+  `VITE_COMMIT` for the footer. `index.html` carries static Open Graph tags and `og.jpg`, plus the favicon (`favicon.svg`, with `favicon.ico` and `apple-touch-icon.png` rendered from it).

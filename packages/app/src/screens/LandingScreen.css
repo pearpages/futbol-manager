@@ -168,6 +168,17 @@
     overflow-y: auto;
   }
 
+  /*
+   * The picture's full height, not whatever is left over. `min-height: 0` is
+   * right beside the aside, where the hero is a fixed-height column. Stacked in a
+   * `.landing` that keeps `height: 100%`, it let the `auto` row shrink below the
+   * picture: at 900 x 650 the cover spilled 200px over the tagline and both
+   * buttons, which still held their place underneath it.
+   */
+  .landing__hero {
+    min-height: auto;
+  }
+
   .landing__aside {
     overflow-y: visible;
     /*
