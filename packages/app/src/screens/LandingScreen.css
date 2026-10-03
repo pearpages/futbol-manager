@@ -169,6 +169,19 @@
   }
 
   /*
+   * The cog moves to the left corner. It is placed against `.landing` and the
+   * wordmark against the cover, and once stacked the cover fills the width, so
+   * on the right they share a corner: at 820-900px the cog sat on the
+   * wordmark's last letter. The left corner is floodlight with no lettering.
+   * A row of its own was tried and rejected: its 40px pushed both buttons
+   * below the fold at 820 x 600, which the reorder below exists to prevent.
+   */
+  .landing__settings {
+    right: auto;
+    left: var(--fm-space-2);
+  }
+
+  /*
    * The picture's full height, not whatever is left over. `min-height: 0` is
    * right beside the aside, where the hero is a fixed-height column. Stacked in a
    * `.landing` that keeps `height: 100%`, it let the `auto` row shrink below the

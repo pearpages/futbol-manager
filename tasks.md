@@ -38,8 +38,6 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 - [ ] **`ShellFoot.test.tsx` quick-save race** reproduces under two concurrent full suites: it asserts `queryByRole('dialog')` synchronously while the close lands a tick later.
 - [ ] **`competition.name` is still `'Primera División'` inside `GameState`**, so the title bar names it while the rest of the app no longer does. It needs a migration.
 - [ ] **`es.ts` keeps the calques fixed in Catalan** (`en el idioma de`, `el calendario`, `Mostrando`, `cubrir este sistema`). `attribute.short.finishing` (`DEF`) collides with `position.DF` on the ficha.
-- [ ] **The settings cog covers the wordmark's last letter at 820–900px wide.** The cog is placed against `.landing` and the wordmark against the cover, so once the layout stacks they land in the same corner. Cosmetic, and it only shows when stacked on a wide screen. — `LandingScreen.css`
-- [ ] **Verify the Open Graph card unfurls** in a real client now that the tags are live.
 - [ ] **`importSave` / `exportSave` are unwired.** When they are wired, validate imported saves (see security.md).
 
 ### Scaffold follow-ups
@@ -50,6 +48,7 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 
 ## Done
 
+- [x] 2026-10-03: The landing page's settings cog moves to the top-left corner once the page stacks, so it no longer covers the wordmark at 820–900px. A row of its own was rejected because it pushed the buttons below the fold at 820×600. The share card is verified live: Facebook, X, Slack, WhatsApp, LinkedIn, Telegram and Discord crawlers all get the page, 13 og tags and the 1200×630 JPEG, and opengraph.xyz renders the card.
 - [x] 2026-10-02: Advertising-readiness fixes. The stacked landing page no longer lets the cover overlap the tagline and buttons (checked at 900×650, 820×600 and a 390px phone). Added a favicon (an SVG plus `.ico`) and an apple-touch-icon, guarded by `meta.test.ts`. package.json metadata, and the GitHub repo's description, website and topics. The README gained a cover image, badges, a What's new section and a Contributing section saying contributions are not accepted.
 - [x] 2026-10-02: Maturity assessment. Verdict: Ready after blockers. 8 gaps added to Open.
 - [x] 2026-10-02: Scaffolded project knowledge files. Created AGENTS.md, principles.md, architecture.md, decisions.md, ADR 0013, security.md, tasks.md, README.md, LICENSE and .editorconfig. CLAUDE.md is now a shim, its session log became the Done lines below, and the roadmap's Known open items moved here.
