@@ -70,6 +70,14 @@ This is a **version in the sense of a build identifier, not a dependency pin** â
 
 `@types/react*` version independently of React â€” do not assume they match.
 
+|                       | Version    | Scope                                                                        |
+| --------------------- | ---------- | ---------------------------------------------------------------------------- |
+| storybook             | **10.6.1** | `app`, dev only: the screen stories (ADR 0017). Never deployed.              |
+| @storybook/react-vite | **10.6.1** | Its Vite 8 + React 19 framework. The three Storybook packages move together. |
+| @storybook/react      | **10.6.1** | `composeStories`, which runs every story under Vitest                        |
+
+pnpm refuses esbuild's install script (`allowBuilds` in `pnpm-workspace.yaml`): Storybook's esbuild arrives as a platform package and needs none.
+
 `@fm/design-system` declares react and react-dom as **peer dependencies at `^19`** and pins 19.2.8 as dev dependencies for its tests and its bundle. The app's pin is what runs in the game; the bundle inlines its own copy (ADR 0016).
 
 **Zustand** is the store behind the roadmap's "table-heavy screens reading from a store". It holds _projected_ state and dispatches commands; it never becomes a second source of truth. Ground rule 2 still owns state.

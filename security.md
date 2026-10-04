@@ -48,6 +48,9 @@ Small by construction. This is a static single-page app on GitHub Pages:
 ## Dependencies
 
 - Minimal runtime: `react`, `react-dom`, `zustand`, `idb`. `@fm/domain` has no dependencies at all.
+- Storybook (ADR 0017) is a dev-only tool in `packages/app`, never built into the game or
+  deployed. Install scripts are refused by default; esbuild's is explicitly refused in
+  `pnpm-workspace.yaml`, because its binary arrives as a platform package without one.
 - `@fm/design-system` adds only dev dependencies (Vite's library build, `vite-plugin-dts`,
   `@microsoft/api-extractor`). Its `dist/bundle.js` is for the Claude Design System artifact
   and is never loaded by the game. A build step fails it if it imports, requires or fetches

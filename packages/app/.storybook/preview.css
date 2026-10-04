@@ -1,0 +1,6 @@
+/* The game's shell fills the window; Storybook's root has to let it. */
+html,
+body,
+#storybook-root {
+  height: 100%;
+}

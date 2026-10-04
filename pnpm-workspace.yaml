@@ -1,4 +1,8 @@
 packages:
   - 'packages/*'
+# Install scripts are refused by default. esbuild's only checks its binary, which
+# pnpm already installs as a platform package (Storybook's dependency).
+allowBuilds:
+  esbuild: false
 minimumReleaseAgeExclude:
   - zustand@5.0.15
