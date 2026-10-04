@@ -1,7 +1,7 @@
 {
   "name": "futbol-manager",
   "version": "0.0.0",
-  "description": "A football management game for the browser, in the style of Dinamic's PC Fútbol 5.0.",
+  "description": "A football management game for the browser, in the style of Dinamic's PC F\u00fatbol 5.0.",
   "keywords": [
     "football",
     "soccer",
@@ -30,6 +30,7 @@
   "scripts": {
     "dev": "pnpm --filter @fm/app dev",
     "dev:lan": "pnpm --filter @fm/app dev --host",
+    "storybook": "pnpm --filter @fm/app storybook",
     "build": "pnpm -r build",
     "test": "vitest",
     "season": "node scripts/season.ts",

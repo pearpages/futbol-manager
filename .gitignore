@@ -10,3 +10,4 @@ coverage/
 # The rules are tracked; the images never are.
 assets/*
 !assets/README.md
+storybook-static/

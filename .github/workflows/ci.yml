@@ -39,6 +39,11 @@ jobs:
       # and is already paid for — so this is effectively free on every PR.
       - run: pnpm build
 
+      # The screen stories' config and every story compile (ADR 0017). Each story
+      # is also rendered by the test step above; this catches what only a real
+      # Storybook build would.
+      - run: pnpm --filter @fm/app build-storybook
+
   # ── The live site ───────────────────────────────────────────────────────────
   #
   # https://futbol.pearpages.com, deployed from `main` only, and only once `check`
