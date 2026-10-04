@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { AUTOSAVE_SLOT, loadGame } from '@fm/persistence'
@@ -222,5 +222,39 @@ describe('quick save', () => {
     // test's in-flight write can reach across into.
     expect(await loadGame(AUTOSAVE_SLOT)).toBeNull()
     expect(useGame.getState().currentSlot).toBeNull()
+  })
+})
+
+describe('on a phone', () => {
+  // jsdom has no `matchMedia`, which is why every other test sees the desk.
+  beforeEach(() => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(width < 40rem)',
+      addEventListener() {},
+      removeEventListener() {},
+    }))
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps save, saves and quit behind one More button, in one row', () => {
+    render(<App />)
+    const bar = within(foot())
+    expect(bar.queryByRole('button', { name: t('action.saves') })).toBeNull()
+
+    fireEvent.click(bar.getByRole('button', { name: t('action.more') }))
+    const menu = within(bar.getByRole('group', { name: t('action.more') }))
+    expect(menu.getByRole('button', { name: t('action.save') })).toBeDefined()
+    expect(menu.getByRole('button', { name: t('action.saves') })).toBeDefined()
+    expect(menu.getByRole('button', { name: t('action.quit') })).toBeDefined()
+  })
+
+  it('closes the menu once a choice is made', () => {
+    render(<App />)
+    const bar = within(foot())
+    fireEvent.click(bar.getByRole('button', { name: t('action.more') }))
+    fireEvent.click(bar.getByRole('button', { name: t('action.saves') }))
+    expect(bar.queryByRole('group', { name: t('action.more') })).toBeNull()
   })
 })

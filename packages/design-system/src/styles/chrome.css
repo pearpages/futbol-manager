@@ -746,3 +746,28 @@
   align-items: center;
   gap: var(--fm-space-2);
 }
+
+/*
+ * ── Phone: every control is at least 24px to press (WCAG 2.2, 2.5.8; ADR 0018).
+ *
+ * On a desk a 15px-tall name in a table row is a fine target for a pointer. Under
+ * a thumb it is not, so below 40rem, and on any touch screen, the inline controls grow their hit area. Only
+ * their height changes; the text stays where it was.
+ */
+@media (width < 40rem), (pointer: coarse) {
+  .button,
+  .player-link,
+  .data-table__sort,
+  .slider {
+    min-block-size: 1.5rem;
+  }
+
+  .data-table__sort {
+    min-inline-size: 1.5rem;
+  }
+
+  .explain {
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+  }
+}

@@ -40,6 +40,17 @@ flowchart LR
 | `docs/`                   | Roadmap, stack, model specs and `adr/`.                                                                                                                                                                                                                                                                                                                                                                      |
 | `assets/`                 | Local PC Fútbol reference screenshots. Gitignored except its README.                                                                                                                                                                                                                                                                                                                                         |
 
+## Layouts: desk and phone
+
+One shell serves both (ADR 0018). On a desk it is a frame the height of the window and each
+screen scrolls inside its own panel. Below 40rem it becomes a document: the page scrolls, the
+bar takes two lines, and the footer is one sticky row whose save, saves and quit sit behind
+a More button (`ShellFoot` asks `usePhone`, the only phone logic in code). Every other phone
+rule is CSS behind `@media (width < 40rem)`, or `pointer: coarse` for touch targets, so the
+desk never changes; `breakpoints.test.ts` keeps the set of queries closed. Every screen has a
+story (`packages/app/src/stories`), rendered by Storybook at 390, 768 and 1280 (ADR 0017)
+and by Vitest in CI.
+
 ## Data flow
 
 1. **Start.** The landing screen offers Continue, Load or New career. The store's `entry` and

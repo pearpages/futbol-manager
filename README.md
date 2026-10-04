@@ -46,6 +46,7 @@ mise trust && mise install && pnpm install
 
 ```sh
 pnpm dev               # the game on a local dev server
+pnpm storybook         # every screen at phone, tablet and desk width
 pnpm test -- --run     # the full test suite, once
 pnpm season 42         # simulate a season headless and print the final table
 pnpm build             # the game into packages/app/dist (and the design system's bundle)

@@ -408,11 +408,18 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: auto auto auto;
   }
+  /* As many 17rem columns as fit: three from 52rem, two below it, where three
+     cut the budget off the identity panel. */
   .hub__centre {
     grid-column: 1 / -1;
     grid-row: 1;
     grid-template-rows: none;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
+
+  /* "Show all" used to sit over the heading once the panel narrowed. */
+  .hub__news-head {
+    flex-wrap: wrap;
   }
   .hub__quadrant[data-quadrant='seguimiento'] {
     grid-column: 1;
@@ -436,5 +443,32 @@
      is the one screen that has to be reachable in a glance. */
   .hub-figure {
     display: none;
+  }
+}
+
+/* Two columns in the centre band: the news takes a row of its own rather than
+   half of one. */
+@media (width < 52rem) {
+  .hub__news {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Phone: one column, who you are first, then the four sections (ADR 0018). */
+@media (width < 40rem) {
+  .hub {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .hub__centre {
+    grid-column: 1;
+    grid-row: auto;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hub__quadrant[data-quadrant] {
+    grid-column: 1;
+    grid-row: auto;
   }
 }

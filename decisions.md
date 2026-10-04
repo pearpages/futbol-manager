@@ -28,6 +28,8 @@ record same-day partial reversals in place, which predates this rule.)
 | [0014](docs/adr/0014-design-system-package.md)       | A design-system package, for the app and for Claude Design                         | Accepted (amends P11)                           | 2026-10-04 |
 | [0015](docs/adr/0015-design-system-library-build.md) | How the design-system package is built                                             | Accepted                                        | 2026-10-04 |
 | [0016](docs/adr/0016-design-system-iife-bundle.md)   | The design system ships one self-contained script for the artifact                 | Accepted                                        | 2026-10-04 |
+| [0017](docs/adr/0017-storybook.md)                   | Storybook for the screens                                                          | Accepted                                        | 2026-10-04 |
+| [0018](docs/adr/0018-mobile-layout.md)               | The game on a phone                                                                | Accepted                                        | 2026-10-04 |
 
 ## Format
 

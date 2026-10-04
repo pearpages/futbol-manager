@@ -28,6 +28,7 @@ export const es: Dictionary = {
   'action.saving': 'Grabando…',
   'action.saved': 'Grabado · {date}',
   'action.saves': 'Partidas',
+  'action.more': 'Más',
   'action.unread.one': '{count} sin leer',
   'action.unread.other': '{count} sin leer',
   'action.newCareer': 'Nueva carrera',

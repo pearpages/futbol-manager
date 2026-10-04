@@ -97,11 +97,31 @@ The game is one shell, a single-column grid:
           made by pearpages · build           credit
 ```
 
-Screens lay out their own blocks in CSS grid. Breakpoints are width-only and **today they
-are per screen**: `60rem` on most, `68rem` on the hub and results, `64rem` on the lineup,
-`52rem` and `48rem` on two more, plus one container query on the landing cover. The game was
-built desktop-first. Phone layouts are the next piece of work, and settling a small shared
-set of breakpoints is part of it.
+On a phone (below `40rem`) the same shell changes shape:
+
+```
+┌──────────────────────────┐
+│ SCREEN TITLE         cog │  bar, two lines
+│ where · jornada   window │
+├──────────────────────────┤
+│ panels, one under the    │  the page scrolls,
+│ next, at full height     │  not each panel
+│ …                        │
+├──────────────────────────┤
+│ Torna   Més   Avança dia │  footer: one row, stuck to the bottom
+└──────────────────────────┘
+```
+
+- **One phone breakpoint, `width < 40rem`.** Write phone rules behind it, never into the
+  desk rules. The screens' own steps between phone and desk (`48`, `52`, `60`, `64`, `68rem`)
+  stay as they are; don't add new ones.
+- **Touch targets are 24px at least** below 40rem and on any touch screen
+  (`pointer: coarse`): `Button`, `PlayerLink`, sort headers and sliders grow their height,
+  the Explain "i" its size.
+- **Tables scroll sideways inside their `Screen`** when wider than the phone; the page never
+  does. On a phone a list may become two-line rows instead (the club picker).
+- Screens lay out their own blocks in CSS grid, with one container query on the landing
+  cover.
 
 ## Navigation
 
@@ -113,7 +133,8 @@ There is no router and no menu bar.
 - **One way back**: the footer's Torna returns to the hub, or from a player's ficha to the
   screen you came from.
 - The footer also holds save, saves, quit and the day's action (advance a day, or play the
-  match).
+  match). On a phone save, saves and quit sit behind one "More" button, so the footer stays
+  one row.
 - A **dialog** (`Modal`) is for a question or a table that belongs on top of what you were
   doing; anything bigger is a screen.
 

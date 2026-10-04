@@ -4,6 +4,7 @@ import { useT } from '../i18n/useT.ts'
 import { matchdayFor } from '../matchday.ts'
 import { useGame } from '../store.ts'
 import { Button, Modal, Panel, ScreenActions } from '@fm/design-system'
+import { usePhone } from '../usePhone.ts'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import '../styles/shell-foot.css'
 
@@ -37,6 +38,8 @@ export function ShellFoot(): React.JSX.Element {
 
   const { t, date } = useT()
 
+  const phone = usePhone()
+  const [moreOpen, setMoreOpen] = useState(false)
   const [savesOpen, setSavesOpen] = useState(false)
   const [leaving, setLeaving] = useState(false)
   // The `n` is what makes two saves on the same day retrigger the timer; the
@@ -75,6 +78,32 @@ export function ShellFoot(): React.JSX.Element {
     })
   }
 
+  const gameButtons = (
+    <>
+      <Button type="button" disabled={saving} onClick={quickSave}>
+        {saving ? t('action.saving') : t('action.save')}
+      </Button>
+      <Button
+        type="button"
+        onClick={() => {
+          setSavesOpen(true)
+        }}
+      >
+        {t('action.saves')}
+      </Button>
+      {/* Furthest from the quick save on purpose: one is a press you make
+                every few minutes and the other ends the career. */}
+      <Button
+        type="button"
+        onClick={() => {
+          setLeaving(true)
+        }}
+      >
+        {t('action.quit')}
+      </Button>
+    </>
+  )
+
   return (
     <>
       <Panel className="shell__foot">
@@ -97,27 +126,35 @@ export function ShellFoot(): React.JSX.Element {
         </div>
 
         <div className="shell__foot-group">
-          <Button type="button" disabled={saving} onClick={quickSave}>
-            {saving ? t('action.saving') : t('action.save')}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              setSavesOpen(true)
-            }}
-          >
-            {t('action.saves')}
-          </Button>
-          {/* Furthest from the quick save on purpose: one is a press you make
-              every few minutes and the other ends the career. */}
-          <Button
-            type="button"
-            onClick={() => {
-              setLeaving(true)
-            }}
-          >
-            {t('action.quit')}
-          </Button>
+          {/* On a phone the three go behind one button, so the footer stays one
+              row (ADR 0018). Same buttons, same order, opening upwards. */}
+          {phone ? (
+            <span className="shell__more">
+              <Button
+                type="button"
+                aria-expanded={moreOpen}
+                onClick={() => {
+                  setMoreOpen(!moreOpen)
+                }}
+              >
+                {t('action.more')}
+              </Button>
+              {moreOpen && (
+                <Panel
+                  className="shell__more-menu"
+                  role="group"
+                  aria-label={t('action.more')}
+                  onClick={() => {
+                    setMoreOpen(false)
+                  }}
+                >
+                  {gameButtons}
+                </Panel>
+              )}
+            </span>
+          ) : (
+            gameButtons
+          )}
           {/* Says it worked. The label flicking to "Desant…" is over too fast to
               read, and a save with no visible result is indistinguishable from a
               broken button — which is how this feature was first reported. */}

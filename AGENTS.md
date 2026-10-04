@@ -70,10 +70,16 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
   `packages/design-system/dist`, then the game into `packages/app/dist`.
 - `pnpm --filter @fm/design-system tokens:build`: regenerate `tokens.css` from `tokens.json`.
   Edit the JSON, never the CSS; a test fails if they disagree.
+- `pnpm storybook`: every screen of the game in Storybook, at phone, tablet and desk width
+  and in three languages (ADR 0017). The phone layout is reviewed there.
 - `pnpm dev`: the app on a Vite dev server, on localhost only. `pnpm dev:lan` also
   serves it to the local network, to try it on a phone.
 
 ## Pitfalls that have bitten before
+
+- **jsdom has no `matchMedia`**, so tests always see the desk layout. The phone footer is only
+  tested where `matchMedia` is stubbed (`ShellFoot.test.tsx`); look at anything else phone-only
+  in Storybook at 390.
 
 - **Green suite, broken screen.** The app project runs with `css: false` and jsdom does no
   layout, so clipping, overflow, wrapping, colour and stacking are invisible to every test.

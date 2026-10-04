@@ -28,6 +28,7 @@ export const ca: Dictionary = {
   'action.saving': 'Desant…',
   'action.saved': 'Desat · {date}',
   'action.saves': 'Partides',
+  'action.more': 'Més',
   'action.unread.one': '{count} sense llegir',
   'action.unread.other': '{count} sense llegir',
   'action.newCareer': 'Nova carrera',
