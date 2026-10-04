@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n/useT.ts'
 import { EXPLAIN_TOPICS, type ExplainTopic, type ExplainTopicId } from './explain-topics.ts'
-import { Modal } from '@fm/design-system'
+import { Button, Modal, ScreenActions, ScreenNote } from '@fm/design-system'
 
 /**
  * A small "i" beside something the game has not explained, which opens the
@@ -75,25 +75,25 @@ export function Explain({ topic }: ExplainProps): React.JSX.Element {
             }}
           >
             {Array.from({ length: spec.paragraphs }, (_, index) => (
-              <p className="screen__note" key={index}>
+              <ScreenNote key={index}>
                 {t(`explain.${topic}.p${String(index + 1)}`, values)}
-              </p>
+              </ScreenNote>
             ))}
             {/* Sticky, because the longest topic runs past the height of the box
                 and the close button would otherwise sit below nine paragraphs of
                 scroll. Escape and the backdrop still work; an affordance you have
                 to go looking for is not one. */}
-            <div className="screen-actions explain__actions">
-              <button
+            <ScreenActions className="explain__actions">
+              <Button
+                primary
                 type="button"
-                className="button is-primary"
                 onClick={() => {
                   setOpen(false)
                 }}
               >
                 {t('action.close')}
-              </button>
-            </div>
+              </Button>
+            </ScreenActions>
           </Modal>,
           document.body,
         )}

@@ -3,7 +3,16 @@ import { askingPrice, FINANCE, type Player, reluctancePremium, signingOutlay } f
 import { useAttempt } from '../attempt.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { Modal } from '@fm/design-system'
+import {
+  Button,
+  Field,
+  FieldLabel,
+  Hint,
+  Modal,
+  NumberInput,
+  ScreenActions,
+  ScreenNote,
+} from '@fm/design-system'
 import './BidPanel.css'
 
 /**
@@ -61,49 +70,46 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
         {/* The mechanism, never the multiple. Naming the number would turn the
             squad screen into a lookup, which is exactly why the "Improves" column
             came off the market at M4c. */}
-        <p className="screen__note">
+        <ScreenNote>
           {t(premium > 1 ? 'bid.reluctant' : 'bid.willing', {
             club: club(owner.name, { caps: true }),
           })}
-        </p>
+        </ScreenNote>
 
-        <div className="field">
-          <label className="field__label" htmlFor="bid-fee">
-            {t('market.feeField', { fee: money(wanted) })}
-          </label>
-          <input
+        <Field>
+          <FieldLabel htmlFor="bid-fee">{t('market.feeField', { fee: money(wanted) })}</FieldLabel>
+          <NumberInput
             id="bid-fee"
-            className="number-input"
             type="number"
             min={1}
             step={50}
             value={fee}
             onChange={(event) => setFee(event.target.value)}
           />
-        </div>
+        </Field>
 
-        <p className="hint">
+        <Hint>
           {t('market.outlay', {
             bonus: money(outlay - (Number(fee) || 0)),
             total: money(outlay),
             percent: percent(FINANCE.SIGNING_BONUS),
           })}
-        </p>
-        <p className="hint">{t('market.bidHint')}</p>
+        </Hint>
+        <Hint>{t('market.bidHint')}</Hint>
 
         {error !== null && (
-          <p className="screen__note is-out" role="alert">
+          <ScreenNote className="is-out" role="alert">
             {error}
-          </p>
+          </ScreenNote>
         )}
 
-        <div className="screen-actions bid__actions">
-          <button type="button" className="button" onClick={onClose}>
+        <ScreenActions className="bid__actions">
+          <Button type="button" onClick={onClose}>
             {t('action.cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
+            primary
             type="button"
-            className="button is-primary"
             onClick={() => {
               const events = attempt(() =>
                 dispatch({ type: 'MakeBid', playerId: player.id, fee: Number(fee) }),
@@ -115,8 +121,8 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
             }}
           >
             {t('market.makeBid')}
-          </button>
-        </div>
+          </Button>
+        </ScreenActions>
       </div>
     </Modal>
   )

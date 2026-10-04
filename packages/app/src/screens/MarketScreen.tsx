@@ -37,7 +37,23 @@ import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { useAttempt } from '../attempt.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
-import { Pager, type Sort, SortHeader, sortedBy } from '@fm/design-system'
+import {
+  Button,
+  DataTable,
+  Field,
+  FieldLabel,
+  NumberInput,
+  Pager,
+  Screen,
+  ScreenHeading,
+  ScreenNote,
+  type Sort,
+  sortedBy,
+  SortHeader,
+  Stat,
+  StatLabel,
+  StatValue,
+} from '@fm/design-system'
 import { POSITION_ORDER, positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
 
@@ -470,29 +486,29 @@ export function MarketScreen() {
 
   return (
     <div className="market-screen">
-      <section className="screen market-screen__main">
-        <h2 className="screen__heading">{t('market.heading')}</h2>
+      <Screen className="market-screen__main">
+        <ScreenHeading>{t('market.heading')}</ScreenHeading>
 
         {/* Two buttons with `aria-pressed`, not a `role="tablist"` — the same call
             `ResultsScreen` records, and for the same reason: a tablist owes
             arrow-key navigation to be honest about the role. */}
         <div className="market-screen__tabs">
           {(['forSale', 'clubs'] as const).map((key) => (
-            <button
+            <Button
+              primary={tab === key}
               key={key}
               type="button"
-              className={`button${tab === key ? ' is-primary' : ''}`}
               aria-pressed={tab === key}
               onClick={changing(() => {
                 setTab(key)
               })}
             >
               {t(`market.tab.${key}`)}
-            </button>
+            </Button>
           ))}
         </div>
 
-        {!open && <p className="screen__note">{t('market.windowShut')}</p>}
+        {!open && <ScreenNote>{t('market.windowShut')}</ScreenNote>}
 
         {tab === 'clubs' ? (
           <ClubBrowser
@@ -514,10 +530,11 @@ export function MarketScreen() {
             <div className="market-screen__filters">
               <span className="market-screen__positions">
                 {POSITIONS.map((position) => (
-                  <button
+                  <Button
+                    primary={positions.includes(position)}
                     key={position}
                     type="button"
-                    className={`button market-screen__mini${positions.includes(position) ? ' is-primary' : ''}`}
+                    className="market-screen__mini"
                     aria-pressed={positions.includes(position)}
                     onClick={changing(() => setPositions(toggle(positions, position)))}
                   >
@@ -525,42 +542,45 @@ export function MarketScreen() {
                         above a Pos column that has always been translated, so in
                         Catalan the filters read GK/DF/MF/FW over POR/DEF/MIG/DAV. */}
                     {t(`position.${position}`)}
-                  </button>
+                  </Button>
                 ))}
               </span>
-              <button
+              <Button
+                primary={onlyAffordable}
                 type="button"
-                className={`button market-screen__mini${onlyAffordable ? ' is-primary' : ''}`}
+                className="market-screen__mini"
                 aria-pressed={onlyAffordable}
                 onClick={changing(() => setOnlyAffordable(!onlyAffordable))}
               >
                 {t('market.withinBudget')}
-              </button>
-              <button
+              </Button>
+              <Button
+                primary={onlyFree}
                 type="button"
-                className={`button market-screen__mini${onlyFree ? ' is-primary' : ''}`}
+                className="market-screen__mini"
                 aria-pressed={onlyFree}
                 onClick={changing(() => setOnlyFree(!onlyFree))}
               >
                 {t('market.freeAgents')}
-              </button>
-              <button
+              </Button>
+              <Button
+                primary={onlyShortlist}
                 type="button"
-                className={`button market-screen__mini${onlyShortlist ? ' is-primary' : ''}`}
+                className="market-screen__mini"
                 aria-pressed={onlyShortlist}
                 onClick={changing(() => setOnlyShortlist(!onlyShortlist))}
               >
                 {t('market.shortlistOnly')}
-              </button>
+              </Button>
               <span className="market-screen__count">
                 {t('market.showing', { shown: listings.length, total: all.length })}
               </span>
             </div>
 
             {listings.length === 0 ? (
-              <p className="screen__note">{t('market.noMatches')}</p>
+              <ScreenNote>{t('market.noMatches')}</ScreenNote>
             ) : (
-              <table className="data-table">
+              <DataTable>
                 <thead className="data-table__head">
                   <tr>
                     <th className="is-text">{t('market.column.position')}</th>
@@ -609,9 +629,9 @@ export function MarketScreen() {
                         </td>
                         <td>{listing.fee === 0 ? t('market.free') : money(listing.fee)}</td>
                         <td className="is-text market-screen__actions">
-                          <button
+                          <Button
                             type="button"
-                            className="button market-screen__mini"
+                            className="market-screen__mini"
                             aria-pressed={shortlisted.has(player.id)}
                             onClick={() =>
                               dispatch({
@@ -622,10 +642,11 @@ export function MarketScreen() {
                             }
                           >
                             {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            primary
                             type="button"
-                            className="button is-primary market-screen__mini"
+                            className="market-screen__mini"
                             disabled={!open}
                             onClick={() => {
                               setTarget(player.id)
@@ -633,13 +654,13 @@ export function MarketScreen() {
                             }}
                           >
                             {listing.from === null ? t('market.sign') : t('market.bid')}
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     )
                   })}
                 </tbody>
-              </table>
+              </DataTable>
             )}
 
             {pageCount > 1 && (
@@ -663,37 +684,37 @@ export function MarketScreen() {
             )}
           </>
         )}
-      </section>
+      </Screen>
 
       <aside className="market-screen__side">
-        <section className="screen market-screen__panel">
+        <Screen className="market-screen__panel">
           <div className="market-screen__money">
-            <div className="stat">
-              <span className="stat__label">{t('market.budget')}</span>
-              <span className="stat__value">{money(club?.budget ?? 0)}</span>
-            </div>
+            <Stat>
+              <StatLabel>{t('market.budget')}</StatLabel>
+              <StatValue>{money(club?.budget ?? 0)}</StatValue>
+            </Stat>
             {/* The balance alone contradicts the filter beside it, which spends to
                 the overdraft because the reducer does. This is the figure "Within
                 budget" is actually testing against. */}
-            <div className="stat">
-              <span className="stat__label">{t('caja.available')}</span>
-              <span className="stat__value">{money(spendable)}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('market.window')}</span>
-              <span className="stat__value market-screen__window">
+            <Stat>
+              <StatLabel>{t('caja.available')}</StatLabel>
+              <StatValue>{money(spendable)}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('market.window')}</StatLabel>
+              <StatValue className="market-screen__window">
                 {open ? t('market.windowOpen') : t('market.windowClosed')}
-              </span>
-            </div>
+              </StatValue>
+            </Stat>
           </div>
-        </section>
+        </Screen>
 
         {error !== null && (
-          <section className="screen market-screen__panel">
-            <p className="screen__note market-screen__error" role="alert">
+          <Screen className="market-screen__panel">
+            <ScreenNote className="market-screen__error" role="alert">
               {error}
-            </p>
-          </section>
+            </ScreenNote>
+          </Screen>
         )}
 
         {selected !== null && (
@@ -714,10 +735,10 @@ export function MarketScreen() {
           />
         )}
 
-        <section className="screen market-screen__panel">
-          <h2 className="screen__heading">{t('market.upForSale')}</h2>
+        <Screen className="market-screen__panel">
+          <ScreenHeading>{t('market.upForSale')}</ScreenHeading>
           {onSale.length === 0 ? (
-            <p className="screen__note">{t('market.nobodyListed')}</p>
+            <ScreenNote>{t('market.nobodyListed')}</ScreenNote>
           ) : (
             <ul className="offer-list">
               {onSale.map((player) => (
@@ -732,9 +753,9 @@ export function MarketScreen() {
                     })}
                   </span>
                   <span className="offer-list__actions">
-                    <button
+                    <Button
                       type="button"
-                      className="button market-screen__mini"
+                      className="market-screen__mini"
                       onClick={() =>
                         attempt(() =>
                           dispatch({ type: 'ListPlayer', playerId: player.id, on: false }),
@@ -742,18 +763,18 @@ export function MarketScreen() {
                       }
                     >
                       {t('market.takeOff')}
-                    </button>
+                    </Button>
                   </span>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Screen>
 
-        <section className="screen market-screen__panel market-screen__inbox">
-          <h2 className="screen__heading">{t('market.offersForYours')}</h2>
+        <Screen className="market-screen__panel market-screen__inbox">
+          <ScreenHeading>{t('market.offersForYours')}</ScreenHeading>
           {incoming.length === 0 ? (
-            <p className="screen__note">{t('market.noOffers')}</p>
+            <ScreenNote>{t('market.noOffers')}</ScreenNote>
           ) : (
             <ul className="offer-list">
               {incoming.map((bid) => (
@@ -767,9 +788,10 @@ export function MarketScreen() {
                     {money(bid.fee)}
                   </span>
                   <span className="offer-list__actions">
-                    <button
+                    <Button
+                      primary
                       type="button"
-                      className="button is-primary market-screen__mini"
+                      className="market-screen__mini"
                       onClick={() =>
                         attempt(() =>
                           dispatch({ type: 'RespondToOffer', bidId: bid.id, accept: true }),
@@ -777,10 +799,10 @@ export function MarketScreen() {
                       }
                     >
                       {t('market.accept')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="button market-screen__mini"
+                      className="market-screen__mini"
                       onClick={() =>
                         attempt(() =>
                           dispatch({ type: 'RespondToOffer', bidId: bid.id, accept: false }),
@@ -788,18 +810,18 @@ export function MarketScreen() {
                       }
                     >
                       {t('market.reject')}
-                    </button>
+                    </Button>
                   </span>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Screen>
 
-        <section className="screen market-screen__panel market-screen__outbox">
-          <h2 className="screen__heading">{t('market.yourBids')}</h2>
+        <Screen className="market-screen__panel market-screen__outbox">
+          <ScreenHeading>{t('market.yourBids')}</ScreenHeading>
           {outgoing.length === 0 ? (
-            <p className="screen__note">{t('market.noBids')}</p>
+            <ScreenNote>{t('market.noBids')}</ScreenNote>
           ) : (
             <ul className="offer-list">
               {outgoing.map((bid) => (
@@ -815,31 +837,31 @@ export function MarketScreen() {
                     {money(bid.fee)} · {describeBid(bid, translator)}
                   </span>
                   <span className="offer-list__actions">
-                    <button
+                    <Button
                       type="button"
-                      className="button market-screen__mini"
+                      className="market-screen__mini"
                       onClick={() => {
                         setTarget(bid.playerId)
                         clearError()
                       }}
                     >
                       {t('market.openNegotiation')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="button market-screen__mini"
+                      className="market-screen__mini"
                       onClick={() =>
                         attempt(() => dispatch({ type: 'WithdrawBid', bidId: bid.id }))
                       }
                     >
                       {t('market.withdraw')}
-                    </button>
+                    </Button>
                   </span>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </Screen>
       </aside>
     </div>
   )
@@ -1024,9 +1046,9 @@ function ClubBrowser({
             a Volver at the foot of its rail, and a second button with that name
             makes `testing.ts`'s `back()` ambiguous — which would break tests that
             have nothing to do with this screen. */}
-        <button type="button" className="button" onClick={() => onPick(null)}>
+        <Button type="button" onClick={() => onPick(null)}>
           {t('market.allClubs')}
-        </button>
+        </Button>
         <ClubBadge club={club} size="sm" />
         <span className="club-grid__heading">{club.name}</span>
         <span className="market-screen__count">
@@ -1034,7 +1056,7 @@ function ClubBrowser({
         </span>
       </div>
 
-      <table className="data-table">
+      <DataTable>
         <thead className="data-table__head">
           <tr>
             {column('position', t('market.column.position'))}
@@ -1059,7 +1081,7 @@ function ClubBrowser({
             </tr>
           ))}
         </tbody>
-      </table>
+      </DataTable>
     </>
   )
 }
@@ -1077,35 +1099,34 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
   const feeAgreed = listing.from === null || bid?.status === 'accepted'
 
   return (
-    <section className="screen market-screen__panel" ref={ref}>
+    <Screen className="market-screen__panel" ref={ref}>
       {/* The name is the heading *and* a way into his ficha — this panel asks
           you to commit money to a man whose card was two screens away. A button
           inside a heading still computes into the heading's accessible name, so
           `getByRole('heading', { name })` is unaffected. */}
-      <h2 className="screen__heading">
+      <ScreenHeading>
         <PlayerLink player={player} />
-      </h2>
+      </ScreenHeading>
 
       <div className="market-screen__deal">
         {!feeAgreed && (
           <>
-            <div className="field">
-              <label className="field__label" htmlFor="fee">
+            <Field>
+              <FieldLabel htmlFor="fee">
                 {t('market.feeField', { fee: money(bid?.counterFee ?? listing.fee) })}
-              </label>
-              <input
+              </FieldLabel>
+              <NumberInput
                 id="fee"
-                className="number-input"
                 type="number"
                 min={1}
                 step={50}
                 value={fee}
                 onChange={(event) => setFee(event.target.value)}
               />
-            </div>
-            <button
+            </Field>
+            <Button
+              primary
               type="button"
-              className="button is-primary"
               disabled={!open}
               onClick={() =>
                 onAttempt(() => {
@@ -1115,44 +1136,40 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               }
             >
               {t(bid === undefined ? 'market.makeBid' : 'market.bidAgain')}
-            </button>
+            </Button>
             {/* The bonus was charged silently — `affordable` has always counted it,
                 so the only way to find out it existed was to be refused, or to read
                 it off the accounts a week later as a line you did not authorise. */}
-            <p className="screen__note market-screen__hint">
+            <ScreenNote className="market-screen__hint">
               {t('market.outlay', {
                 bonus: money(signingOutlay(Number(fee) || 0) - (Number(fee) || 0)),
                 total: money(signingOutlay(Number(fee) || 0)),
                 percent: percent(FINANCE.SIGNING_BONUS),
               })}
-            </p>
-            <p className="screen__note market-screen__hint">{t('market.bidHint')}</p>
+            </ScreenNote>
+            <ScreenNote className="market-screen__hint">{t('market.bidHint')}</ScreenNote>
           </>
         )}
 
         {feeAgreed && (
           <>
-            <div className="field">
-              <label className="field__label" htmlFor="wage">
+            <Field>
+              <FieldLabel htmlFor="wage">
                 {t('market.wageField', { wage: money(wanted.wage) })}
-              </label>
-              <input
+              </FieldLabel>
+              <NumberInput
                 id="wage"
-                className="number-input"
                 type="number"
                 min={0}
                 step={50}
                 value={wage}
                 onChange={(event) => setWage(event.target.value)}
               />
-            </div>
-            <div className="field">
-              <label className="field__label" htmlFor="years">
-                {t('market.yearsField')}
-              </label>
-              <input
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="years">{t('market.yearsField')}</FieldLabel>
+              <NumberInput
                 id="years"
-                className="number-input"
                 type="number"
                 min={MIN_CONTRACT_YEARS}
                 max={MAX_CONTRACT_YEARS}
@@ -1160,10 +1177,10 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
                 value={years}
                 onChange={(event) => setYears(event.target.value)}
               />
-            </div>
-            <button
+            </Field>
+            <Button
+              primary
               type="button"
-              className="button is-primary"
               disabled={!open}
               onClick={() =>
                 onAttempt(() =>
@@ -1177,15 +1194,15 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               }
             >
               {t(listing.from === null ? 'market.signHim' : 'market.offerTerms')}
-            </button>
-            <p className="screen__note market-screen__hint">{t('market.termsHint')}</p>
+            </Button>
+            <ScreenNote className="market-screen__hint">{t('market.termsHint')}</ScreenNote>
           </>
         )}
 
-        <button type="button" className="button" onClick={onClose}>
+        <Button type="button" onClick={onClose}>
           {t('action.close')}
-        </button>
+        </Button>
       </div>
-    </section>
+    </Screen>
   )
 }

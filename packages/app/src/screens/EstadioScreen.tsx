@@ -13,6 +13,22 @@ import { useAttempt } from '../attempt.ts'
 import { Explain } from './Explain.tsx'
 import { stadiumArtFor } from './stadium.ts'
 import { StadiumView } from './StadiumView.tsx'
+import {
+  AttrBar,
+  Button,
+  Field,
+  FieldLabel,
+  Hint,
+  NumberInput,
+  Screen,
+  ScreenActions,
+  ScreenHeading,
+  ScreenNote,
+  Slider,
+  Stat,
+  StatLabel,
+  StatValue,
+} from '@fm/design-system'
 import './EstadioScreen.css'
 
 /**
@@ -60,8 +76,8 @@ export function EstadioScreen() {
 
   return (
     <div className="estadio-screen">
-      <section className="screen estadio-screen__main">
-        <h2 className="screen__heading">{t('estadio.heading')}</h2>
+      <Screen className="estadio-screen__main">
+        <ScreenHeading>{t('estadio.heading')}</ScreenHeading>
 
         <div className="estadio-screen__body">
           {/* The ground: what is built, solid, and what could be, faded. It reads
@@ -73,52 +89,51 @@ export function EstadioScreen() {
           </div>
 
           <div className="estadio-screen__stats">
-            <div className="stat">
-              <span className="stat__label">{t('estadio.capacity')}</span>
-              <span className="stat__value estadio-screen__figure">{count(club.capacity)}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">
+            <Stat>
+              <StatLabel>{t('estadio.capacity')}</StatLabel>
+              <StatValue className="estadio-screen__figure">{count(club.capacity)}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>
                 {t('estadio.occupancy')}
                 <Explain topic="occupancy" />
-              </span>
-              <span className="stat__value estadio-screen__figure">{Math.round(full * 100)}%</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('estadio.perMatch')}</span>
-              <span className="stat__value estadio-screen__figure">{money(perMatch)}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('estadio.season')}</span>
-              <span className="stat__value estadio-screen__figure">
+              </StatLabel>
+              <StatValue className="estadio-screen__figure">{Math.round(full * 100)}%</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('estadio.perMatch')}</StatLabel>
+              <StatValue className="estadio-screen__figure">{money(perMatch)}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('estadio.season')}</StatLabel>
+              <StatValue className="estadio-screen__figure">
                 {money(perMatch * ROUNDS_PER_HALF)}
-              </span>
-            </div>
+              </StatValue>
+            </Stat>
           </div>
 
           {/* The ficha's bar primitive, reused. Width comes from a bucketed
               `data-fill`, never a JSX style prop. */}
-          <div className="attr estadio-screen__gauge">
+          <AttrBar className="estadio-screen__gauge">
             <span className="attr__label">{t('estadio.full')}</span>
             <span className="attr__track">
               <span className="attr__fill" data-fill={fillFor(full)} />
             </span>
             <span className="attr__value">{Math.round(full * 100)}</span>
-          </div>
+          </AttrBar>
 
-          <div className="field estadio-screen__field">
+          <Field className="estadio-screen__field">
             {/* The "i" is a sibling of the label rather than inside it: a
                 `<label for>` forwards a click to its control, so a button nested
                 in one would focus the slider on the way to opening the dialog. */}
             <div className="estadio-screen__label-row">
-              <label className="field__label" htmlFor="ticket">
+              <FieldLabel htmlFor="ticket">
                 {t('estadio.price', { price: ticket(club.ticketPrice) })}
-              </label>
+              </FieldLabel>
               <Explain topic="ticket" />
             </div>
-            <input
+            <Slider
               id="ticket"
-              className="slider"
               type="range"
               min={low}
               max={high}
@@ -130,33 +145,30 @@ export function EstadioScreen() {
                 })
               }
             />
-            <p className="hint">{t('estadio.priceHint')}</p>
-          </div>
+            <Hint>{t('estadio.priceHint')}</Hint>
+          </Field>
         </div>
-      </section>
+      </Screen>
 
       <aside className="estadio-screen__side">
-        <section className="screen estadio-screen__panel">
-          <h2 className="screen__heading">
+        <Screen className="estadio-screen__panel">
+          <ScreenHeading>
             {t('estadio.works')}
             <Explain topic="expansion" />
-          </h2>
+          </ScreenHeading>
           {club.expansion !== null ? (
-            <p className="screen__note">
+            <ScreenNote>
               {plural('estadio.underWay', club.expansion.seats, {
                 seats: count(club.expansion.seats),
                 season: season(club.expansion.readyYear),
               })}
-            </p>
+            </ScreenNote>
           ) : (
             <div className="estadio-screen__body">
-              <div className="field">
-                <label className="field__label" htmlFor="seats">
-                  {t('estadio.seats', { cost: money(cost) })}
-                </label>
-                <input
+              <Field>
+                <FieldLabel htmlFor="seats">{t('estadio.seats', { cost: money(cost) })}</FieldLabel>
+                <NumberInput
                   id="seats"
-                  className="number-input"
                   type="number"
                   min={FINANCE.MIN_EXPANSION}
                   max={FINANCE.MAX_EXPANSION}
@@ -164,12 +176,12 @@ export function EstadioScreen() {
                   value={seats}
                   onChange={(event) => setSeats(Number(event.target.value))}
                 />
-              </div>
-              <p className="hint">{t('estadio.seatsHint')}</p>
-              <div className="screen-actions estadio-screen__build">
-                <button
+              </Field>
+              <Hint>{t('estadio.seatsHint')}</Hint>
+              <ScreenActions className="estadio-screen__build">
+                <Button
+                  primary
                   type="button"
-                  className="button is-primary"
                   onClick={() =>
                     attempt(() => {
                       dispatch({ type: 'StartExpansion', seats })
@@ -177,18 +189,18 @@ export function EstadioScreen() {
                   }
                 >
                   {t('estadio.begin')}
-                </button>
-              </div>
+                </Button>
+              </ScreenActions>
             </div>
           )}
-        </section>
+        </Screen>
 
         {error !== null && (
-          <section className="screen estadio-screen__panel">
-            <p className="screen__note is-out" role="alert">
+          <Screen className="estadio-screen__panel">
+            <ScreenNote className="is-out" role="alert">
               {error}
-            </p>
-          </section>
+            </ScreenNote>
+          </Screen>
         )}
       </aside>
     </div>

@@ -19,7 +19,22 @@ import {
 import { useState } from 'react'
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
-import { AttributeRadar } from '@fm/design-system'
+import {
+  AttrBar,
+  AttributeRadar,
+  Button,
+  Field,
+  FieldLabel,
+  Hint,
+  Screen,
+  ScreenActions,
+  ScreenHeading,
+  ScreenNote,
+  Select,
+  Stat,
+  StatLabel,
+  StatValue,
+} from '@fm/design-system'
 import { BidPanel } from './BidPanel.tsx'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
@@ -126,7 +141,7 @@ function ModelGroup({
   return (
     <div className="model-group">
       <h4 className="model-group__title">{title}</h4>
-      {note !== undefined && <p className="hint">{note}</p>}
+      {note !== undefined && <Hint>{note}</Hint>}
       {used.length > 0 && (
         <ul className="model-group__list">
           {used.map((entry) => (
@@ -195,10 +210,10 @@ export function PlayerScreen() {
 
   if (player === undefined) {
     return (
-      <section className="screen">
-        <h2 className="screen__heading">{t('player.none')}</h2>
-        <p className="screen__note">{t('player.pickOne')}</p>
-      </section>
+      <Screen>
+        <ScreenHeading>{t('player.none')}</ScreenHeading>
+        <ScreenNote>{t('player.pickOne')}</ScreenNote>
+      </Screen>
     )
   }
 
@@ -228,7 +243,7 @@ export function PlayerScreen() {
   const ratio = edge / expectedGoals(EVEN, EVEN, false) - 1
 
   return (
-    <section className="screen ficha">
+    <Screen className="ficha">
       <header className="ficha__head">
         <div className="ficha__identity">
           {positionChip(player.position, positionName)}
@@ -245,32 +260,32 @@ export function PlayerScreen() {
       </header>
 
       <dl className="ficha__vitals">
-        <div className="stat">
-          <dt className="stat__label">{t('player.overall')}</dt>
-          <dd className="stat__value">{overall(player)}</dd>
-        </div>
-        <div className="stat">
-          <dt className="stat__label">{t('player.age')}</dt>
-          <dd className="stat__value">{ageOn(player, game.season.currentDate)}</dd>
-        </div>
-        <div className="stat">
-          <dt className="stat__label">{t('player.attack')}</dt>
-          <dd className="stat__value">{Math.round(playerAttack(player))}</dd>
-        </div>
-        <div className="stat">
-          <dt className="stat__label">{t('player.defence')}</dt>
-          <dd className="stat__value">{Math.round(playerDefence(player))}</dd>
-        </div>
+        <Stat>
+          <StatLabel as="dt">{t('player.overall')}</StatLabel>
+          <StatValue as="dd">{overall(player)}</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel as="dt">{t('player.age')}</StatLabel>
+          <StatValue as="dd">{ageOn(player, game.season.currentDate)}</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel as="dt">{t('player.attack')}</StatLabel>
+          <StatValue as="dd">{Math.round(playerAttack(player))}</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel as="dt">{t('player.defence')}</StatLabel>
+          <StatValue as="dd">{Math.round(playerDefence(player))}</StatValue>
+        </Stat>
         {/* The terms. A ficha that says how good he is and not what he costs is
             half a card — and for a market target it is the half you are buying. */}
-        <div className="stat">
-          <dt className="stat__label">{t('player.wage')}</dt>
-          <dd className="stat__value">{money(player.contract.wage)}</dd>
-        </div>
-        <div className="stat">
-          <dt className="stat__label">{t('player.contract')}</dt>
-          <dd className="stat__value">{toCivil(player.contract.until).y}</dd>
-        </div>
+        <Stat>
+          <StatLabel as="dt">{t('player.wage')}</StatLabel>
+          <StatValue as="dd">{money(player.contract.wage)}</StatValue>
+        </Stat>
+        <Stat>
+          <StatLabel as="dt">{t('player.contract')}</StatLabel>
+          <StatValue as="dd">{toCivil(player.contract.until).y}</StatValue>
+        </Stat>
       </dl>
 
       <div className="ficha__body">
@@ -299,10 +314,9 @@ export function PlayerScreen() {
             </ul>
           )}
 
-          <label className="field ficha__compare">
-            <span className="field__label">{t('player.compare')}</span>
-            <select
-              className="select"
+          <Field as="label" className="ficha__compare">
+            <FieldLabel as="span">{t('player.compare')}</FieldLabel>
+            <Select
               value={compared?.id ?? ''}
               onChange={(event) => compare(event.target.value === '' ? null : event.target.value)}
             >
@@ -318,8 +332,8 @@ export function PlayerScreen() {
                     })}
                   </option>
                 ))}
-            </select>
-          </label>
+            </Select>
+          </Field>
         </div>
 
         <div className="ficha__attributes">
@@ -328,7 +342,7 @@ export function PlayerScreen() {
             const other = otherValues?.[index]
             const difference = other === undefined ? 0 : value - other
             return (
-              <div key={key} className={`attr${other === undefined ? '' : ' is-compare'}`}>
+              <AttrBar key={key} className={`${other === undefined ? '' : ' is-compare'}`}>
                 <span className="attr__label">{t(`attribute.${key}`)}</span>
                 <span className="attr__track">
                   {/* Width comes from a bucketed data attribute rather than an
@@ -345,7 +359,7 @@ export function PlayerScreen() {
                     {difference > 0 ? `+${String(difference)}` : String(difference)}
                   </span>
                 )}
-              </div>
+              </AttrBar>
             )
           })}
         </div>
@@ -400,27 +414,26 @@ export function PlayerScreen() {
           owner and costs no fee — he goes through `OfferContract` on the market
           screen instead, which is why the bid button needs `owner`. */}
       {isYours && (
-        <div className="screen-actions">
-          <button type="button" className="button" onClick={() => setRenewing(true)}>
+        <ScreenActions>
+          <Button type="button" onClick={() => setRenewing(true)}>
             {t('squad.renew')}
-          </button>
-        </div>
+          </Button>
+        </ScreenActions>
       )}
 
       {!isYours && owner !== undefined && (
-        <div className="screen-actions">
+        <ScreenActions>
           {/* Disabled rather than hidden while the window is shut: the button
               disappearing would read as "you cannot buy this man" rather than
               "not today". */}
-          <button
+          <Button
             type="button"
-            className="button"
             disabled={!isTransferWindowOpen(game.season.currentDate)}
             onClick={() => setBidding(true)}
           >
             {t('player.bid')}
-          </button>
-        </div>
+          </Button>
+        </ScreenActions>
       )}
 
       {isYours && renewing && (
@@ -430,6 +443,6 @@ export function PlayerScreen() {
       {!isYours && owner !== undefined && bidding && (
         <BidPanel key={player.id} player={player} owner={owner} onClose={() => setBidding(false)} />
       )}
-    </section>
+    </Screen>
   )
 }

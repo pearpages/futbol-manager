@@ -1,5 +1,6 @@
 import { type ClubResult } from '@fm/domain'
 import { type Translator } from '../i18n/useT.ts'
+import { VisuallyHidden } from '@fm/design-system'
 
 /** How many matches the strip shows — about a quarter of a season's shape. */
 export const FORM_MATCHES = 10
@@ -31,7 +32,7 @@ export function FormStrip({
     <ul className="form-strip" aria-label={t('table.latestResults')}>
       {Array.from({ length: blanks }, (_, i) => (
         <li key={`blank-${String(i)}`} className="form-strip__pip" title={t('form.notPlayed')}>
-          <span className="visually-hidden">{t('form.notPlayed')}</span>
+          <VisuallyHidden>{t('form.notPlayed')}</VisuallyHidden>
         </li>
       ))}
       {results.map((result) => {
@@ -56,7 +57,7 @@ export function FormStrip({
             className={`form-strip__pip is-${result.outcome}`}
             title={sentence}
           >
-            <span className="visually-hidden">{sentence}</span>
+            <VisuallyHidden>{sentence}</VisuallyHidden>
           </li>
         )
       })}

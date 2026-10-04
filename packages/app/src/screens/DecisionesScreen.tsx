@@ -1,6 +1,7 @@
 import { computeTable, STRIKES_ALLOWED } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { Screen, ScreenHeading, ScreenNote, Stat, StatLabel, StatValue } from '@fm/design-system'
 import './DecisionesScreen.css'
 
 /**
@@ -27,8 +28,8 @@ export function DecisionesScreen() {
 
   return (
     <div className="decisiones-screen">
-      <section className="screen decisiones-screen__main">
-        <h2 className="screen__heading">{t('board.heading')}</h2>
+      <Screen className="decisiones-screen__main">
+        <ScreenHeading>{t('board.heading')}</ScreenHeading>
 
         <div className="decisiones-screen__body">
           <p className="decisiones-screen__demand">
@@ -45,31 +46,31 @@ export function DecisionesScreen() {
           </p>
 
           <div className="decisiones-screen__stats">
-            <div className="stat">
-              <span className="stat__label">{t('board.target')}</span>
-              <span className="stat__value">{target}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('board.now')}</span>
-              <span className={`stat__value${onCourse ? ' is-in' : ' is-out'}`}>
+            <Stat>
+              <StatLabel>{t('board.target')}</StatLabel>
+              <StatValue>{target}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('board.now')}</StatLabel>
+              <StatValue className={`${onCourse ? ' is-in' : ' is-out'}`}>
                 {standing > 0 ? standing : t('squad.notSelected')}
-              </span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('board.played')}</span>
-              <span className="stat__value">{played / 10}</span>
-            </div>
+              </StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('board.played')}</StatLabel>
+              <StatValue>{played / 10}</StatValue>
+            </Stat>
           </div>
 
           <p className={`decisiones-screen__verdict${onCourse ? ' is-in' : ' is-out'}`}>
             {t(played === 0 ? 'board.nothingPlayed' : onCourse ? 'board.onCourse' : 'board.below')}
           </p>
         </div>
-      </section>
+      </Screen>
 
       <aside className="decisiones-screen__side">
-        <section className="screen decisiones-screen__panel">
-          <h2 className="screen__heading">{t('board.patience')}</h2>
+        <Screen className="decisiones-screen__panel">
+          <ScreenHeading>{t('board.patience')}</ScreenHeading>
           <div className="decisiones-screen__body">
             {/* Warnings shown as marks rather than a number, because "one strike"
                 means nothing until you can see how many there are. */}
@@ -81,19 +82,19 @@ export function DecisionesScreen() {
                 />
               ))}
             </p>
-            <p className="screen__note">
+            <ScreenNote>
               {strikes === 0
                 ? t('board.clean', { strikes: STRIKES_ALLOWED })
                 : t(left === 1 ? 'board.warned' : 'board.sacked')}
-            </p>
+            </ScreenNote>
           </div>
-        </section>
+        </Screen>
 
-        <section className="screen decisiones-screen__panel">
-          <h2 className="screen__heading">{t('board.whatCounts')}</h2>
-          <p className="screen__note">{t('board.whatCountsNote')}</p>
-          <p className="screen__note">{t('board.targetNote')}</p>
-        </section>
+        <Screen className="decisiones-screen__panel">
+          <ScreenHeading>{t('board.whatCounts')}</ScreenHeading>
+          <ScreenNote>{t('board.whatCountsNote')}</ScreenNote>
+          <ScreenNote>{t('board.targetNote')}</ScreenNote>
+        </Screen>
       </aside>
     </div>
   )

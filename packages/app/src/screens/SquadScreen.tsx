@@ -10,7 +10,17 @@ import {
   toCivil,
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
+import {
+  Button,
+  Chip,
+  DataTable,
+  Screen,
+  ScreenHeading,
+  type Sort,
+  sortedBy,
+  SortHeader,
+  VisuallyHidden,
+} from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { Explain } from './Explain.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
@@ -49,7 +59,7 @@ const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
  * rendered, and nowhere near the data.
  */
 export function positionChip(position: Position, label: string) {
-  return <span className={`chip is-${position.toLowerCase()}`}>{label}</span>
+  return <Chip className={`is-${position.toLowerCase()}`}>{label}</Chip>
 }
 
 export function SquadScreen() {
@@ -126,12 +136,12 @@ export function SquadScreen() {
   }
 
   return (
-    <section className="screen squad-screen">
-      <h2 className="screen__heading">
+    <Screen className="squad-screen">
+      <ScreenHeading>
         {t('squad.heading', { club: club?.name ?? '' })}
         <Explain topic="squadTable" />
-      </h2>
-      <table className="data-table">
+      </ScreenHeading>
+      <DataTable>
         <thead className="data-table__head">
           <tr>
             {/* A running count, not a shirt number. Squad size is load-bearing —
@@ -185,15 +195,16 @@ export function SquadScreen() {
                     accessible name from reading "2027His contract expires". */}
                 <td className={expiring ? 'squad-screen__expiry is-expiring' : undefined}>
                   <span>{toCivil(player.contract.until).y}</span>
-                  {expiring && <span className="visually-hidden"> {t('squad.expiring')}</span>}
+                  {expiring && <VisuallyHidden> {t('squad.expiring')}</VisuallyHidden>}
                 </td>
                 <td className="is-text squad-screen__selected">
                   {starting.has(player.id) ? t('squad.starting') : t('squad.notSelected')}
                 </td>
                 <td className="is-text squad-screen__sale">
-                  <button
+                  <Button
+                    primary={onSale}
                     type="button"
-                    className={`button squad-screen__list${onSale ? ' is-primary' : ''}`}
+                    className="squad-screen__list"
                     aria-pressed={onSale}
                     // Unlisting stays available even once he is back in the XI —
                     // otherwise a listed player who wins his place back is stuck on
@@ -205,25 +216,25 @@ export function SquadScreen() {
                     }
                   >
                     {onSale ? t('squad.listed') : t('squad.list')}
-                  </button>
+                  </Button>
                 </td>
                 <td className="is-text squad-screen__sale">
                   {/* Never disabled. Renewal is available at any point in a deal,
                       and the reducer refuses the one case that would be a slip —
                       an offer shorter than the contract he is already on. */}
-                  <button
+                  <Button
                     type="button"
-                    className="button squad-screen__list"
+                    className="squad-screen__list"
                     onClick={() => setRenewing(player.id)}
                   >
                     {t('squad.renew')}
-                  </button>
+                  </Button>
                 </td>
               </tr>
             )
           })}
         </tbody>
-      </table>
+      </DataTable>
 
       {renewingPlayer !== null && (
         <RenewPanel
@@ -232,6 +243,6 @@ export function SquadScreen() {
           onClose={() => setRenewing(null)}
         />
       )}
-    </section>
+    </Screen>
   )
 }

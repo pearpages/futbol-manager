@@ -9,6 +9,15 @@ import {
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import {
+  DataTable,
+  Screen,
+  ScreenHeading,
+  ScreenNote,
+  Stat,
+  StatLabel,
+  StatValue,
+} from '@fm/design-system'
 import './CajaScreen.css'
 
 /**
@@ -83,9 +92,9 @@ export function CajaScreen() {
 
   return (
     <div className="caja-screen">
-      <section className="screen caja-screen__main">
-        <h2 className="screen__heading">{t('caja.heading')}</h2>
-        <table className="data-table">
+      <Screen className="caja-screen__main">
+        <ScreenHeading>{t('caja.heading')}</ScreenHeading>
+        <DataTable>
           <thead className="data-table__head">
             <tr>
               <th className="is-text">{t('caja.column.line')}</th>
@@ -117,43 +126,41 @@ export function CajaScreen() {
               </td>
             </tr>
           </tbody>
-        </table>
-        <p className="screen__note">{t('caja.note')}</p>
-      </section>
+        </DataTable>
+        <ScreenNote>{t('caja.note')}</ScreenNote>
+      </Screen>
 
       <aside className="caja-screen__side">
-        <section className="screen caja-screen__panel">
+        <Screen className="caja-screen__panel">
           <div className="caja-screen__stats">
-            <div className="stat">
-              <span className="stat__label">{t('caja.balance')}</span>
-              <span className={`stat__value caja-screen__figure ${amountClass(club.budget)}`}>
+            <Stat>
+              <StatLabel>{t('caja.balance')}</StatLabel>
+              <StatValue className={`caja-screen__figure ${amountClass(club.budget)}`}>
                 {money(club.budget)}
-              </span>
-            </div>
+              </StatValue>
+            </Stat>
             {/* What you can actually commit, which is the number a manager wants
                 before he bids — and the one the reducer itself tests against. */}
-            <div className="stat">
-              <span className="stat__label">{t('caja.available')}</span>
-              <span
-                className={`stat__value caja-screen__figure ${amountClass(club.budget + limit)}`}
-              >
+            <Stat>
+              <StatLabel>{t('caja.available')}</StatLabel>
+              <StatValue className={`caja-screen__figure ${amountClass(club.budget + limit)}`}>
                 {money(club.budget + limit)}
-              </span>
-            </div>
+              </StatValue>
+            </Stat>
             {/* Stated positive, and labelled as a ceiling. Rendered as `-limit` it
                 read as money owed sitting next to a balance that was in credit —
                 which is the one thing this panel must not be able to say. */}
-            <div className="stat">
-              <span className="stat__label">{t('caja.overdraftLimit')}</span>
-              <span className="stat__value caja-screen__figure">{money(limit)}</span>
-            </div>
+            <Stat>
+              <StatLabel>{t('caja.overdraftLimit')}</StatLabel>
+              <StatValue className="caja-screen__figure">{money(limit)}</StatValue>
+            </Stat>
           </div>
-          <p className="screen__note">{t('caja.overdraftNote')}</p>
-        </section>
+          <ScreenNote>{t('caja.overdraftNote')}</ScreenNote>
+        </Screen>
 
-        <section className="screen caja-screen__panel">
-          <h2 className="screen__heading">{t('caja.projection')}</h2>
-          <table className="data-table caja-screen__projection">
+        <Screen className="caja-screen__panel">
+          <ScreenHeading>{t('caja.projection')}</ScreenHeading>
+          <DataTable className="caja-screen__projection">
             <tbody>
               {PROJECTED.map((line) => (
                 <tr key={line.key} className="data-table__row">
@@ -172,28 +179,28 @@ export function CajaScreen() {
                 </td>
               </tr>
             </tbody>
-          </table>
-          <p className="screen__note">
+          </DataTable>
+          <ScreenNote>
             {t(forecast.position === null ? 'caja.projectionNoteEarly' : 'caja.projectionNote', {
               position: forecast.position ?? 0,
             })}
-          </p>
-        </section>
+          </ScreenNote>
+        </Screen>
 
-        <section className="screen caja-screen__panel">
-          <h2 className="screen__heading">{t('caja.wages')}</h2>
+        <Screen className="caja-screen__panel">
+          <ScreenHeading>{t('caja.wages')}</ScreenHeading>
           <div className="caja-screen__stats">
-            <div className="stat">
-              <span className="stat__label">{t('caja.annual')}</span>
-              <span className="stat__value caja-screen__figure">{money(wageBill(squad))}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('caja.squad')}</span>
-              <span className="stat__value caja-screen__figure">{squad.length}</span>
-            </div>
+            <Stat>
+              <StatLabel>{t('caja.annual')}</StatLabel>
+              <StatValue className="caja-screen__figure">{money(wageBill(squad))}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('caja.squad')}</StatLabel>
+              <StatValue className="caja-screen__figure">{squad.length}</StatValue>
+            </Stat>
           </div>
-          <p className="screen__note">{t('caja.wagesNote')}</p>
-        </section>
+          <ScreenNote>{t('caja.wagesNote')}</ScreenNote>
+        </Screen>
       </aside>
     </div>
   )

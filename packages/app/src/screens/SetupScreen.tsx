@@ -2,7 +2,17 @@ import { useState } from 'react'
 import type { Club } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
+import {
+  Button,
+  ClubCell,
+  DataTable,
+  Screen,
+  ScreenHeading,
+  ScreenNote,
+  type Sort,
+  sortedBy,
+  SortHeader,
+} from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import './SetupScreen.css'
@@ -102,20 +112,20 @@ export function SetupScreen() {
 
   return (
     <div className="setup">
-      <section className="screen setup__panel">
-        <h2 className="screen__heading">{t('setup.heading')}</h2>
+      <Screen className="setup__panel">
+        <ScreenHeading>{t('setup.heading')}</ScreenHeading>
         {/* Landing here with a career already saved means storage could not be
             read, not that there is nothing to read. Without saying so, the club
             picker reads as "your career is gone". */}
         {storageBlocked ? (
-          <p className="screen__note is-out" role="alert">
+          <ScreenNote className="is-out" role="alert">
             {t('setup.storageBlocked')}
-          </p>
+          </ScreenNote>
         ) : (
-          <p className="screen__note">{t('setup.note')}</p>
+          <ScreenNote>{t('setup.note')}</ScreenNote>
         )}
 
-        <table className="data-table">
+        <DataTable>
           <thead className="data-table__head">
             <tr>
               {column('club', t('setup.column.club'))}
@@ -132,10 +142,10 @@ export function SetupScreen() {
               return (
                 <tr key={club.id} className="data-table__row">
                   <td className="is-text setup__club">
-                    <span className="club-cell">
+                    <ClubCell>
                       <ClubBadge club={club} />
                       {club.name}
-                    </span>
+                    </ClubCell>
                   </td>
                   <td>{club.attack}</td>
                   <td>{club.defence}</td>
@@ -143,20 +153,16 @@ export function SetupScreen() {
                     <strong>{t(tier.label)}</strong> <span>{t(tier.note)}</span>
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="button is-primary"
-                      onClick={() => newGame(club.id)}
-                    >
+                    <Button primary type="button" onClick={() => newGame(club.id)}>
                       {t('setup.takeCharge')}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               )
             })}
           </tbody>
-        </table>
-      </section>
+        </DataTable>
+      </Screen>
     </div>
   )
 }

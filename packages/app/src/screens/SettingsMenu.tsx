@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { LANGUAGE_NAMES, LANGUAGES } from '../i18n/index.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { Button, Panel } from '@fm/design-system'
 import './SettingsMenu.css'
 
 /**
@@ -22,9 +23,9 @@ export function SettingsMenu() {
 
   return (
     <span className="settings">
-      <button
+      <Button
         type="button"
-        className="button settings__cog"
+        className="settings__cog"
         aria-label={t('action.settings')}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
@@ -34,16 +35,17 @@ export function SettingsMenu() {
           <path d="M12 8.2a3.8 3.8 0 1 1 0 7.6 3.8 3.8 0 0 1 0-7.6zm0 2a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6z" />
           <path d="M10.6 1h2.8l.4 2.6q.9.3 1.7.8l2.4-1.1 2 3.4-2 1.7q.1.5.1 1t-.1 1l2 1.7-2 3.4-2.4-1.1q-.8.5-1.7.8L13.4 23h-2.8l-.4-2.8q-.9-.3-1.7-.8l-2.4 1.1-2-3.4 2-1.7q-.1-.5-.1-1t.1-1l-2-1.7 2-3.4 2.4 1.1q.8-.5 1.7-.8z" />
         </svg>
-      </button>
+      </Button>
 
       {open && (
-        <div className="panel settings__menu" role="group" aria-label={t('action.language')}>
+        <Panel className="settings__menu" role="group" aria-label={t('action.language')}>
           <p className="settings__label">{t('action.language')}</p>
           {LANGUAGES.map((option) => (
-            <button
+            <Button
+              primary={option === language}
               key={option}
               type="button"
-              className={`button settings__choice${option === language ? ' is-primary' : ''}`}
+              className="settings__choice"
               aria-pressed={option === language}
               onClick={() => {
                 setLanguage(option)
@@ -51,9 +53,9 @@ export function SettingsMenu() {
               }}
             >
               {LANGUAGE_NAMES[option]}
-            </button>
+            </Button>
           ))}
-        </div>
+        </Panel>
       )}
     </span>
   )

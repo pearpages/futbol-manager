@@ -3,6 +3,7 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { SettingsMenu } from './SettingsMenu.tsx'
+import { Button, Screen, ScreenActions, ScreenNote } from '@fm/design-system'
 import './LandingScreen.css'
 
 /**
@@ -64,7 +65,7 @@ export function LandingScreen(): React.JSX.Element {
         </figure>
       </div>
 
-      <section className="screen landing__aside">
+      <Screen className="landing__aside">
         <p className="landing__tagline">{t('landing.tagline')}</p>
 
         {/* Storage being unreadable used to surface only on the club picker, which
@@ -72,20 +73,20 @@ export function LandingScreen(): React.JSX.Element {
             with a saved game now meets this screen instead, and no Continue button
             with no explanation reads as "your career is gone". */}
         {storageBlocked && (
-          <p className="screen__note is-out" role="alert">
+          <ScreenNote className="is-out" role="alert">
             {t('setup.storageBlocked')}
-          </p>
+          </ScreenNote>
         )}
 
         <p className="landing__copy">{t('landing.about.p1')}</p>
         <p className="landing__copy">{t('landing.about.p2')}</p>
         <p className="landing__copy">{t('landing.about.p3')}</p>
 
-        <div className="screen-actions landing__actions">
+        <ScreenActions className="landing__actions">
           {canContinue && (
-            <button type="button" className="button is-primary" onClick={continueCareer}>
+            <Button primary type="button" onClick={continueCareer}>
               {t('landing.continue')}
-            </button>
+            </Button>
           )}
           {/* Primary only when Continue is not there to be it. */}
           <button
@@ -95,11 +96,11 @@ export function LandingScreen(): React.JSX.Element {
           >
             {t('action.newCareer')}
           </button>
-          <button type="button" className="button" onClick={() => setSavesOpen(true)}>
+          <Button type="button" onClick={() => setSavesOpen(true)}>
             {t('landing.load')}
-          </button>
-        </div>
-      </section>
+          </Button>
+        </ScreenActions>
+      </Screen>
 
       {/* The picker's second call site — `ShellFoot` is the first. It needs no
           knowledge of the landing: `load()` sets `entry` itself, so a successful
