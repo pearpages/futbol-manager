@@ -8,8 +8,9 @@ permission).
 ## Reporting a vulnerability
 
 Report it privately through a GitHub security advisory on
-[pearpages/futbol-manager](https://github.com/pearpages/futbol-manager/security/advisories/new).
-Never open a public issue for an unfixed vulnerability.
+[pearpages/futbol-manager](https://github.com/pearpages/futbol-manager/security/advisories/new)
+(private vulnerability reporting is enabled on the repository). Never open a public issue for
+an unfixed vulnerability.
 
 ## Surface
 
@@ -27,8 +28,15 @@ Small by construction. This is a static single-page app on GitHub Pages:
   migration chain, which already refuses a save from a future version, and must be validated
   before it reaches the reducer. A malformed save should fail closed, not crash the app (there
   is no `ErrorBoundary`).
-- **CI/CD.** The deploy job holds `pages: write` and `id-token: write`, only on `main`, and
-  only after the `check` job passes. The repository's default token is read-only.
+- **CI/CD.** The workflow declares `contents: read` at the top, so the `check` job, which
+  runs pull-request code, holds a read-only token whatever the repository default says. The
+  deploy job alone adds `pages: write` and `id-token: write`, only on `main`, and only after
+  `check` passes.
+- **`main` is protected** by the "Protect main" ruleset: no force-push, no deletion, and the
+  `check` status is required. Repository admins may bypass it, which keeps a direct push
+  possible; it still deploys only if `check` passes.
+- **The dev server.** `pnpm dev` binds to localhost. `pnpm dev:lan` exposes it to the local
+  network, which is opt-in, for trying the game on a phone.
 
 ## Secrets
 

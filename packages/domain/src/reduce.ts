@@ -34,7 +34,14 @@ import {
 } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import type { Country } from './foreign.ts'
-import { BALANCED, type Lineup, startersOf, type Tactics, teamRating } from './lineup.ts'
+import {
+  BALANCED,
+  FORMATIONS,
+  type Lineup,
+  startersOf,
+  type Tactics,
+  teamRating,
+} from './lineup.ts'
 import {
   aiSaleRefusal,
   applyTransfers,
@@ -456,9 +463,28 @@ export function reduce(state: GameState, command: Command, rng: Rng): ReduceResu
 }
 
 function setLineup(state: GameState, command: SetLineup): ReduceResult {
+  refuseUnlessManaged(state, command.clubId)
   // Validated here rather than in the UI. A screen can forget; the reducer is the
   // only way in, so an illegal XI cannot reach a matchday through any other route.
-  startersOf(state.squads[command.clubId] ?? [], command.lineup)
+  const starters = startersOf(state.squads[command.clubId] ?? [], command.lineup)
+
+  // The label has to be on the menu and the banks have to match it. An off-menu
+  // shape is tempo 0 for free, which beat every listed formation at 7 of 20 clubs,
+  // and the rollover's `fieldableFormation` crashes on a label it does not know.
+  const shape = Object.hasOwn(FORMATIONS, command.lineup.formation)
+    ? FORMATIONS[command.lineup.formation]
+    : undefined
+  if (
+    shape === undefined ||
+    (['DF', 'MF', 'FW'] as const).some(
+      (position) => starters.filter((p) => p.position === position).length !== shape[position],
+    )
+  ) {
+    throw new GameError(
+      'error.lineup.shape',
+      `The XI does not line up as ${String(command.lineup.formation)}`,
+    )
+  }
 
   return {
     state: { ...state, lineups: { ...state.lineups, [command.clubId]: command.lineup } },
@@ -467,6 +493,7 @@ function setLineup(state: GameState, command: SetLineup): ReduceResult {
 }
 
 function setTactics(state: GameState, command: SetTactics): ReduceResult {
+  refuseUnlessManaged(state, command.clubId)
   const attacking = command.tactics.attacking
   if (!Number.isFinite(attacking) || attacking < 0 || attacking > 100) {
     throw new GameError(
@@ -482,6 +509,18 @@ function setTactics(state: GameState, command: SetTactics): ReduceResult {
 }
 
 /**
+ * Team sheets and tactics are the manager's own business.
+ *
+ * Both commands carry a `clubId`, and nothing used to check it: a dispatch could
+ * rewrite a rival's XI, which then held all season because AI lineups are only
+ * re-picked after a transfer or at the rollover.
+ */
+function refuseUnlessManaged(state: GameState, clubId: ClubId): void {
+  if (clubId !== state.managedClubId)
+    throw new GameError('error.club.notYours', `${clubId} is not your club`)
+}
+
+/**
  * Roll into next season, then do the summer's business.
  *
  * The AI window runs with the human's club excluded — this is the difference
@@ -492,6 +531,9 @@ function startNewSeason(state: GameState, command: StartNewSeason, rng: Rng): Re
   if (!isSeasonComplete(state)) {
     throw new GameError('error.season.notOver', 'The season is not over yet')
   }
+  if (state.board.sacked) throw new GameError('error.career.over', 'You have been sacked')
+  // Reference data, not a choice: an empty pool names every youth "Youth Player".
+  if (command.names.length === 0) throw new Error('StartNewSeason needs a name pool')
 
   const rolled = rolloverSeason(state, rng, {
     names: command.names,
@@ -647,24 +689,7 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
   // stayed free to offer for anyone of yours who was merely out of your team
   // sheet. The only refusals left are the two that protect the seller's squad;
   // what he would rather keep is priced instead, by `reluctancePremium`.
-  const sellerSquad = squadOfAnyClub(state, found.club)
-  const refusal = aiSaleRefusal(sellerSquad, found.player)
-  if (refusal === 'squadFloor') {
-    throw new GameError(
-      'error.player.squadFloor',
-      `${found.player.name}'s club has too small a squad to sell anybody`,
-      { player: found.player.name },
-    )
-  }
-  if (refusal === 'shape') {
-    throw new GameError(
-      'error.player.lastAtPosition',
-      `${found.player.name} is the last ${found.player.position} his club can spare`,
-      // The position is in the English sentence but deliberately not a parameter:
-      // it would arrive at a Catalan dictionary as the bare code `GK`.
-      { player: found.player.name },
-    )
-  }
+  refuseUnsellable(state, found.club, found.player)
 
   if (!Number.isFinite(command.fee) || command.fee <= 0) {
     throw new GameError('error.bid.positive', `A bid must be a positive fee, got ${command.fee}`)
@@ -684,10 +709,13 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
     })
   }
 
+  // Deterministic and unique, with no rng (see bids.ts). One live bid per player
+  // is enforced above, but a withdrawn bid keeps its id, so a second bid on the
+  // same day takes a suffix: otherwise `WithdrawBid` would match both.
+  const base = `${command.playerId}-${date}`
+  const sameDay = state.bids.filter((b) => b.id === base || b.id.startsWith(`${base}-`)).length
   const bid: Bid = {
-    // Deterministic and unique: one live bid per player is enforced above, so the
-    // player and the day it was made are enough. No rng — see bids.ts.
-    id: `${command.playerId}-${date}` as BidId,
+    id: (sameDay === 0 ? base : `${base}-${sameDay}`) as BidId,
     playerId: command.playerId,
     from: state.managedClubId,
     to: found.club,
@@ -701,6 +729,35 @@ function makeBid(state: GameState, command: MakeBid): ReduceResult {
   return {
     state: { ...state, bids: [...state.bids, bid] },
     events: [{ type: 'BidMade', bidId: bid.id, playerId: bid.playerId, fee: bid.fee }],
+  }
+}
+
+/**
+ * The two refusals that protect a selling club's squad.
+ *
+ * Asked twice: when the bid is made, and again when the contract completes it.
+ * The second time is not redundant. Every bid is judged against the squad as it
+ * stands, so four bids made the same morning all pass against a full squad and
+ * then complete one after another, which took Santander down to 15 with two
+ * forwards — and once a position ran short, the seller's re-pick crashed.
+ */
+function refuseUnsellable(state: GameState, seller: ClubId, player: Player): void {
+  const refusal = aiSaleRefusal(squadOfAnyClub(state, seller), player)
+  if (refusal === 'squadFloor') {
+    throw new GameError(
+      'error.player.squadFloor',
+      `${player.name}'s club has too small a squad to sell anybody`,
+      { player: player.name },
+    )
+  }
+  if (refusal === 'shape') {
+    throw new GameError(
+      'error.player.lastAtPosition',
+      `${player.name} is the last ${player.position} his club can spare`,
+      // The position is in the English sentence but deliberately not a parameter:
+      // it would arrive at a Catalan dictionary as the bare code `GK`.
+      { player: player.name },
+    )
   }
 }
 
@@ -750,6 +807,7 @@ function offerContract(state: GameState, command: OfferContract): ReduceResult {
   }
   if (found.club === state.managedClubId)
     throw new GameError('error.player.yours', 'He is already yours')
+  if (found.club !== null) refuseUnsellable(state, found.club, found.player)
 
   if (!Number.isInteger(command.years)) {
     throw new GameError(
@@ -1263,7 +1321,7 @@ function startExpansion(state: GameState, command: StartExpansion): ReduceResult
   if (club.expansion !== null)
     throw new GameError('error.expansion.underWay', 'Building work is already under way')
   if (
-    !Number.isFinite(command.seats) ||
+    !Number.isInteger(command.seats) ||
     command.seats < FINANCE.MIN_EXPANSION ||
     command.seats > FINANCE.MAX_EXPANSION
   ) {
@@ -1275,7 +1333,9 @@ function startExpansion(state: GameState, command: StartExpansion): ReduceResult
   }
 
   const cost = expansionCost(command.seats)
-  if (!affordable(state, club, cost)) {
+  // The bare cost, not `affordable`: that adds a transfer's signing bonus, which
+  // building work does not pay, and refused a club landing exactly on its limit.
+  if (!canAfford(club, cost, state.competition.clubIds.length, ROUNDS_PER_HALF)) {
     throw new GameError('error.bid.overdraft', 'That would take you past your overdraft limit')
   }
 
@@ -1384,8 +1444,11 @@ function settleFinances(
 }
 
 function advanceDay(state: GameState, rng: Rng): ReduceResult {
+  // The clock stops at the last matchday; `StartNewSeason` moves it on. Ticking
+  // past it walked into July, opened and closed a summer window and paid months
+  // of extra wages, and the rollover then set the clock backwards (P4).
+  if (isSeasonComplete(state)) throw new GameError('error.season.over', 'The season is over')
   const today = state.season.currentDate
-  const wasComplete = isSeasonComplete(state)
   const market = tickMarket(state, today)
   state = market.state
   const events: Event[] = [...market.events]
@@ -1475,8 +1538,8 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
     }
   }
 
-  // Emitted once, on the transition — not on every subsequent day.
-  if (!wasComplete && isSeasonComplete(next)) {
+  // Emitted once: the guard at the top refuses every day after this one.
+  if (isSeasonComplete(next)) {
     events.push({ type: 'SeasonEnded', startYear: next.season.startYear })
     return { state: closeWithBoard(next, events), events }
   }

@@ -38,8 +38,8 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 |                        | Version    | Scope                                                                                                                   |
 | ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Vite                   | **8.2.1**  | `app` only. The other three are consumed from source and never build.                                                   |
-| Vitest                 | **4.1.10** | Root `vitest.config.ts` with a `projects` array over all four packages — this is what makes one command run everything. |
-| @vitest/coverage-v8    | **4.1.10** | Must track Vitest exactly.                                                                                              |
+| Vitest                 | **4.1.11** | Root `vitest.config.ts` with a `projects` array over all four packages — this is what makes one command run everything. |
+| @vitest/coverage-v8    | **4.1.11** | Must track Vitest exactly.                                                                                              |
 | jsdom                  | **30.0.1** | `app` only                                                                                                              |
 | @testing-library/react | **16.3.2** | `app` only                                                                                                              |
 | fake-indexeddb         | **6.2.5**  | `persistence` and `app`, dev only                                                                                       |
@@ -128,7 +128,8 @@ pnpm test -- --run       # always --run; bare `pnpm test` starts watch mode and 
 pnpm typecheck
 pnpm lint
 pnpm format
-pnpm dev                 # app only
+pnpm dev                 # app only, on localhost
+pnpm dev:lan             # the same, reachable from the local network (a phone)
 pnpm build               # app only; also runs in CI, and is what gets deployed
 ```
 

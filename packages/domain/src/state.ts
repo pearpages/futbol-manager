@@ -18,7 +18,10 @@ export interface GameState {
   readonly season: Season
   /** Squad per club. Added at M3; the v1→v2 migration generates them for older saves. */
   readonly squads: Readonly<Record<string, readonly Player[]>>
-  /** Selected XI and tactics per club. AI clubs are re-picked from `bestXI` each matchday. */
+  /**
+   * Selected XI and tactics per club. Only the manager sets their own. AI clubs are
+   * picked from `bestXI` at creation and re-picked after a transfer or at rollover.
+   */
   readonly lineups: Readonly<Record<string, Lineup>>
   readonly tactics: Readonly<Record<string, Tactics>>
   /**

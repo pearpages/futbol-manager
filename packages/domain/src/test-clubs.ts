@@ -1,3 +1,4 @@
+import type { GameState } from './state.ts'
 import type { Club, ClubId } from './entities.ts'
 import { COUNTRIES, type Country, type ForeignClub } from './foreign.ts'
 import { EMPTY_LEDGER, FINANCE } from './finance.ts'
@@ -129,4 +130,15 @@ export const TEST_INTL_NAMES: Readonly<Record<Country, readonly string[]>> = {
   NL: poolFor('NL'),
   BE: poolFor('BE'),
   TR: poolFor('TR'),
+}
+
+/**
+ * The manager given their job back, for a test that plays several seasons.
+ *
+ * `StartNewSeason` refuses a sacked manager. A test that measures the market over
+ * a career is not about the board, so it reinstates them first. Nothing in the
+ * rollover reads `sacked`, so this changes no draw and no outcome.
+ */
+export function reinstated(state: GameState): GameState {
+  return state.board.sacked ? { ...state, board: { ...state.board, sacked: false } } : state
 }

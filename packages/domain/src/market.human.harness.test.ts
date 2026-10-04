@@ -18,7 +18,7 @@ import { createRng, type Rng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
 import type { GameState } from './state.ts'
 import { computeTable } from './table.ts'
-import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
+import { reinstated, TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { askingPrice } from './valuation.ts'
 
 /**
@@ -205,7 +205,7 @@ function career(seed: number, shop: Shopping): CareerResult {
     states.push(state)
 
     if (season < SEASONS - 1) {
-      state = reduce(state, { type: 'StartNewSeason', names: TEST_NAMES }, rng).state
+      state = reduce(reinstated(state), { type: 'StartNewSeason', names: TEST_NAMES }, rng).state
     }
   }
 

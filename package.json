@@ -28,7 +28,8 @@
     "node": ">=24.16.0"
   },
   "scripts": {
-    "dev": "pnpm --filter @fm/app dev --host",
+    "dev": "pnpm --filter @fm/app dev",
+    "dev:lan": "pnpm --filter @fm/app dev --host",
     "build": "pnpm --filter @fm/app build",
     "test": "vitest",
     "season": "node scripts/season.ts",
@@ -42,11 +43,11 @@
     "@eslint/js": "10.0.1",
     "@types/node": "26.2.0",
     "@vitejs/plugin-react": "6.0.5",
-    "@vitest/coverage-v8": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "10.8.1",
     "prettier": "3.9.6",
     "typescript": "6.0.3",
     "typescript-eslint": "8.67.0",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   }
 }
