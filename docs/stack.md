@@ -86,7 +86,7 @@ packages/design-system/src/
   styles/chrome.css    shared primitives: panels, tables, stat rows, field labels
   components/<Comp>/   a shared component and its own Comp.css
 packages/app/src/styles/
-  pitch.css, stadium.css, shell-*.css   app-only art and shell styles
+  shell-foot.css   the one app-only shared stylesheet; screens keep their own
 ```
 
 **Screens use the primitives through their React wrappers** (`Screen`, `Panel`, `Button`, `DataTable`, `Stat`, `Field`… from `@fm/design-system`), which render exactly the element and classes `chrome.css` styles, plus any screen class passed as `className`. Writing `className="screen"` by hand still works; the wrappers are what the design system documents and the artifact shows.

@@ -1,6 +1,17 @@
-import { overall, type Player, type PlayerId } from '@fm/domain'
-import { PITCH_MARKINGS, PITCH_VIEWBOX, pitchSlots, SLOT_RADIUS } from './pitch.ts'
-import '../styles/pitch.css'
+import { PITCH_MARKINGS, PITCH_VIEWBOX, pitchSlots, type Position, SLOT_RADIUS } from './pitch.ts'
+import './PitchView.css'
+
+/** One starter on the pitch. */
+export interface PitchPlayer {
+  readonly id: string
+  readonly position: Position
+  /** The native tooltip. */
+  readonly name: string
+  /** The figure on the disc. */
+  readonly rating: number
+  /** The slot's accessible name, built by the caller, which owns the dictionary. */
+  readonly label: string
+}
 
 /**
  * The eleven, where they stand.
@@ -26,15 +37,13 @@ import '../styles/pitch.css'
 
 export interface PitchViewProps {
   /** In `lineup.starters` order — see `pitchSlots`, which depends on it. */
-  readonly starters: readonly Player[]
-  readonly selected: PlayerId | null
-  readonly onPick: (id: PlayerId) => void
-  /** Built by the caller, which owns the dictionary. */
-  readonly label: (player: Player) => string
+  readonly starters: readonly PitchPlayer[]
+  readonly selected: string | null
+  readonly onPick: (id: string) => void
   readonly title: string
 }
 
-export function PitchView({ starters, selected, onPick, label, title }: PitchViewProps) {
+export function PitchView({ starters, selected, onPick, title }: PitchViewProps) {
   const slots = pitchSlots(starters.map((player) => player.position))
 
   return (
@@ -77,7 +86,7 @@ export function PitchView({ starters, selected, onPick, label, title }: PitchVie
             role="button"
             tabIndex={0}
             aria-pressed={isSelected}
-            aria-label={label(player)}
+            aria-label={player.label}
             onClick={() => onPick(player.id)}
             onKeyDown={(event) => {
               if (event.key !== 'Enter' && event.key !== ' ') return
@@ -90,7 +99,7 @@ export function PitchView({ starters, selected, onPick, label, title }: PitchVie
             <title>{player.name}</title>
             <circle className="pitch__disc" cx={slot.x} cy={slot.y} r={SLOT_RADIUS} />
             <text className="pitch__ovr" x={slot.x} y={slot.y}>
-              {overall(player)}
+              {player.rating}
             </text>
           </g>
         )

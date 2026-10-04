@@ -10,6 +10,7 @@ import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import {
   Button,
   HubFigure,
+  NotificationList,
   type IconKey,
   Modal,
   Screen,
@@ -23,7 +24,6 @@ import {
   VisuallyHidden,
 } from '@fm/design-system'
 import { artSrc, type FigureKey } from './art.ts'
-import { NotificationList } from './NotificationList.tsx'
 import './HubScreen.css'
 
 /**

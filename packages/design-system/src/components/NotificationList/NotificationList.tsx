@@ -1,5 +1,11 @@
-import { type Notice } from '../notifications.ts'
-import { ScreenNote } from '@fm/design-system'
+import { ScreenNote } from '../ScreenNote/ScreenNote.tsx'
+
+/** One line of news: its key, how it reads (good, bad or plain) and the sentence. */
+export interface NoticeItem {
+  readonly key: string
+  readonly tone: 'good' | 'bad' | 'plain'
+  readonly text: string
+}
 
 /**
  * The hub's news panel. It was rendered in two places until the title bar's
@@ -7,7 +13,14 @@ import { ScreenNote } from '@fm/design-system'
  * state is a real branch and inlining it would put a conditional in the middle
  * of the hub's layout.
  */
-export function NotificationList({ notices, empty }: { notices: Notice[]; empty: string }) {
+export function NotificationList({
+  notices,
+  empty,
+}: {
+  readonly notices: readonly NoticeItem[]
+  /** What to say when there is no news. */
+  readonly empty: string
+}) {
   if (notices.length === 0) return <ScreenNote>{empty}</ScreenNote>
 
   return (

@@ -22,6 +22,7 @@ const COPIES: readonly [copy: string, original: string][] = [
   ['Images/agent.webp', 'art/agent.webp'],
   ['Images/director.webp', 'art/director.webp'],
   ['Images/league.webp', 'art/league.webp'],
+  ['Images/stadium-40k.webp', 'art/stadium/40k.webp'],
 ]
 
 /** A tile icon as a standalone file: the same geometry, inked with currentColor. */
