@@ -124,3 +124,90 @@
   color: var(--fm-accent-ink);
   font-weight: 700;
 }
+
+/*
+ * ── Phone ───────────────────────────────────────────────────────────────────
+ *
+ * Below 40rem the shell stops being a fixed frame (ADR 0018). On a desk the
+ * frame is the window and every screen scrolls inside its own panel; on a phone
+ * that leaves each panel a few rows tall, so here the page scrolls as one
+ * document instead. Screens let go of the height they pinned to the stage, and
+ * their `minmax(0, 1fr)` rows, now in a container of no fixed height, size to
+ * their content. A panel still scrolls sideways when a table is wider than the
+ * phone.
+ *
+ * The bar becomes two lines: what you are looking at and the cog, then where
+ * you are and the window.
+ */
+@media (width < 40rem) {
+  .shell {
+    height: auto;
+    min-height: 100%;
+    /* The stage takes what is left of a short page, so the foot still sits at
+       the bottom of the screen rather than under the last panel. */
+    grid-template-rows: auto 1fr auto auto;
+    gap: var(--fm-space-1);
+    padding: var(--fm-space-1);
+  }
+
+  .shell--setup {
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .shell--landing {
+    grid-template-rows: 1fr auto;
+  }
+
+  .shell__stage > * {
+    height: auto;
+  }
+
+  /* `relative` because a scroller only clips what it contains: the absolutely
+     placed `visually-hidden` labels inside a wide table otherwise take the page
+     itself as their box, and widen it. */
+  .shell__stage .screen {
+    position: relative;
+    overflow-x: auto;
+  }
+
+  .shell__bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fm-space-1) var(--fm-space-2);
+    padding: var(--fm-space-2) var(--fm-space-3);
+  }
+
+  .shell__title,
+  .shell--setup .shell__wordmark {
+    grid-row: 1;
+    grid-column: 1;
+    font-size: var(--fm-text-md);
+    text-align: left;
+  }
+
+  .shell__club {
+    display: contents;
+  }
+
+  .shell__bar .settings {
+    grid-row: 1;
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .shell__where,
+  .shell--setup .shell__date {
+    grid-row: 2;
+    grid-column: 1;
+    flex-wrap: wrap;
+    font-size: var(--fm-text-xs);
+  }
+
+  .shell__window {
+    grid-row: 2;
+    grid-column: 2;
+    justify-self: end;
+    font-size: var(--fm-text-xs);
+  }
+}

@@ -37,6 +37,7 @@ export const en: Dictionary = {
   'action.saving': 'Saving…',
   'action.saved': 'Saved · {date}',
   'action.saves': 'Saved games',
+  'action.more': 'More',
   'action.unread.one': '{count} unread',
   'action.unread.other': '{count} unread',
   'action.newCareer': 'New career',

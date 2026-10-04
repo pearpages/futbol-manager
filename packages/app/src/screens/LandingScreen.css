@@ -181,6 +181,12 @@
     left: var(--fm-space-2);
   }
 
+  /* And its menu opens to the right, or it hangs off the left edge. */
+  .landing__settings .settings__menu {
+    right: auto;
+    left: 0;
+  }
+
   /*
    * The picture's full height, not whatever is left over. `min-height: 0` is
    * right beside the aside, where the hero is a fixed-height column. Stacked in a

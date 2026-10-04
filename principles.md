@@ -130,6 +130,14 @@ afterwards comes from the name pools.
 _Why:_ a city name is not a trademark; a crest is. This is a legal constraint.
 _Check:_ review; `rosters.test.ts` (no two shipped players share a name).
 
+**P20. Every screen works on a 390px phone and looks the same on the desk.** No sideways
+page scroll, every control at least 24px to press, one phone breakpoint (`width < 40rem`).
+Phone rules live behind that breakpoint or `pointer: coarse`, never in the desk's rules.
+_Why:_ people open a shared link on their phone, and the desk layout is already right.
+[ADR 0018](docs/adr/0018-mobile-layout.md).
+_Check:_ `breakpoints.test.ts`; the screen stories at 390 and 768 in Storybook; the
+full-game screenshot comparison at 1280.
+
 ## Process
 
 **P19. Knowledge lives in its file.** How to work goes in `AGENTS.md`; rules go here; how it
