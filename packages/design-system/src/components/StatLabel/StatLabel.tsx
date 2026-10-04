@@ -1,4 +1,4 @@
-import { type ComponentProps, createElement } from 'react'
+import { type ComponentProps, createElement, type JSX } from 'react'
 import { cx } from '../../cx.ts'
 
 export type StatLabelProps = ComponentProps<'span'> & {
@@ -7,6 +7,6 @@ export type StatLabelProps = ComponentProps<'span'> & {
 }
 
 /** The label of a stat. */
-export function StatLabel({ as = 'span', className, ...rest }: StatLabelProps) {
+export function StatLabel({ as = 'span', className, ...rest }: StatLabelProps): JSX.Element {
   return createElement(as, { className: cx('stat__label', className), ...rest })
 }
