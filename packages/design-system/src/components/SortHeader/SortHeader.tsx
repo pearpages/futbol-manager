@@ -1,4 +1,4 @@
-import { nextSort, type Sort } from '../sorting.ts'
+import { nextSort, type Sort } from './sorting.ts'
 
 /**
  * A column header that sorts, cycling descending → ascending → source order.

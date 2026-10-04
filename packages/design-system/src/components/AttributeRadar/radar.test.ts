@@ -1,5 +1,4 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { labelAt, nodeAt, polygonPoints, RADAR_RINGS, ringPoints, spokes } from './radar.ts'
 
@@ -102,28 +101,25 @@ describe('nodeAt', () => {
 })
 
 describe('colour stays in the stylesheet', () => {
-  // `import.meta.url` is not a file URL under vite-node, so the path resolves from
-  // the working directory — the same dodge `badges.test.ts` documents.
-  const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8')
+  // Relative to this file, so the test runs the same from the repo root and from
+  // the package.
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
   it('declares both series as tokens, and draws with them', () => {
     // The pair is shared with the attribute rows beside the chart, which are not
     // inside it — so it is a token rather than a property on `.radar`.
-    const tokens = read('packages/design-system/src/tokens.css')
+    const tokens = read('../../tokens.css')
     expect(tokens).toContain('--fm-series-a:')
     expect(tokens).toContain('--fm-series-b:')
 
-    const css = read('packages/app/src/styles/radar.css')
+    const css = read('./AttributeRadar.css')
     expect(css).toContain('var(--fm-series-a)')
     expect(css).toContain('var(--fm-series-b)')
   })
 
   it('keeps every colour value out of the TypeScript', () => {
     // The split that makes the chart themeable at all: geometry here, colour there.
-    for (const path of [
-      'packages/app/src/screens/radar.ts',
-      'packages/app/src/screens/AttributeRadar.tsx',
-    ]) {
+    for (const path of ['./radar.ts', './AttributeRadar.tsx']) {
       expect(read(path), path).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     }
   })

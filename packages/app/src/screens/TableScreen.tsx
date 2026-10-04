@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { computeTable, type TableRow } from '@fm/domain'
 import { type Band, BANDS, bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, sortedBy } from '../sorting.ts'
+import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
-import { SortHeader } from './SortHeader.tsx'
 import './TableScreen.css'
 
 type SortKey =

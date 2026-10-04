@@ -2,10 +2,9 @@ import { useState } from 'react'
 import type { Club } from '@fm/domain'
 import { DEFAULT_CLUBS } from '@fm/data'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, sortedBy } from '../sorting.ts'
+import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
-import { SortHeader } from './SortHeader.tsx'
 import './SetupScreen.css'
 
 /**

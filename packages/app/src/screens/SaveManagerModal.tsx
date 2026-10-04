@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { nameFor, type SaveSummary } from '@fm/persistence'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { Modal } from './Modal.tsx'
+import { Modal } from '@fm/design-system'
 import './SaveManagerModal.css'
 
 /**

@@ -3,7 +3,7 @@ import { isSeasonComplete } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { matchdayFor } from '../matchday.ts'
 import { useGame } from '../store.ts'
-import { Modal } from './Modal.tsx'
+import { Modal } from '@fm/design-system'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import '../styles/shell-foot.css'
 

@@ -1,9 +1,4 @@
-import '../styles/trophies.css'
-
-/** One competition so far. Also the filename under `public/art`. */
-export const TROPHY_KEYS = ['league'] as const
-
-export type TrophyKey = (typeof TROPHY_KEYS)[number]
+import './TrophyIcon.css'
 
 /**
  * One trophy, on the palmarés honours panel.
@@ -31,16 +26,20 @@ export type TrophyKey = (typeof TROPHY_KEYS)[number]
  */
 export function TrophyIcon({
   trophy,
+  src,
   empty = false,
 }: {
-  readonly trophy: TrophyKey
+  /** Which competition, for `data-trophy`. The game's are listed in the app. */
+  readonly trophy: string
+  /** Where the cut-out image is served from. */
+  readonly src: string
   readonly empty?: boolean
 }) {
   return (
     <img
       className={`trophy${empty ? ' is-empty' : ''}`}
       data-trophy={trophy}
-      src={`/art/${trophy}.webp`}
+      src={src}
       alt=""
       aria-hidden="true"
     />

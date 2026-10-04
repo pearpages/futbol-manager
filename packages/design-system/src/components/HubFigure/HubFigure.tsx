@@ -1,9 +1,4 @@
-import '../styles/hub-figures.css'
-
-/** The four people, one per hub quadrant. Also the filenames under `public/art`. */
-export const FIGURE_KEYS = ['assistant', 'trainer', 'agent', 'director'] as const
-
-export type FigureKey = (typeof FIGURE_KEYS)[number]
+import './HubFigure.css'
 
 /**
  * One painted figure, at the foot of its quadrant.
@@ -30,14 +25,14 @@ export type FigureKey = (typeof FIGURE_KEYS)[number]
  * reader wants. Same precedent as `TileIcon` and the market's sort arrows. The
  * empty `alt` goes with it: without one, a screen reader reads the file name.
  */
-export function HubFigure({ figure }: { readonly figure: FigureKey }) {
-  return (
-    <img
-      className="hub-figure"
-      data-figure={figure}
-      src={`/art/${figure}.webp`}
-      alt=""
-      aria-hidden="true"
-    />
-  )
+export function HubFigure({
+  figure,
+  src,
+}: {
+  /** Which figure, for `data-figure`. The game's are listed in the app. */
+  readonly figure: string
+  /** Where the cut-out image is served from. */
+  readonly src: string
+}) {
+  return <img className="hub-figure" data-figure={figure} src={src} alt="" aria-hidden="true" />
 }

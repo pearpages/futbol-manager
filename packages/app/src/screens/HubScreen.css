@@ -18,7 +18,7 @@
  * is most of why its hub reads at a glance rather than as twelve words. Ours
  * were four identical grey panels distinguishable only by reading the heading.
  *
- * The mechanism is `club-badges.css`'s: **a variant selector sets custom
+ * The mechanism is the design system's `Badge.css`'s: **a variant selector sets custom
  * properties and nothing else**, and every rule that paints reads a property. A
  * fifth section would be one two-line block, not a new set of painting rules.
  *
@@ -128,7 +128,7 @@
  * a quadrant holds a heading plus three tiles, so there is slack below the tiles
  * on a normal window and the figure fills what is already there. `margin-top:
  * auto` puts it on the floor of the panel; the sizing that lets it give way
- * first lives in `hub-figures.css` beside the palettes. */
+ * first lives in the design system's `HubFigure.css` beside the palettes. */
 .hub__quadrant .hub-figure {
   margin-top: auto;
   margin-left: auto;
@@ -170,16 +170,6 @@
 
 .hub__tile-label {
   flex: 1;
-}
-
-/* Sized in `em` so it tracks the tile's own type rather than needing a second
-   number kept in step with it. `currentColor` means the icon is the tile's ink,
-   including once `.button:disabled` has faded it. */
-.tile-icon {
-  flex: none;
-  width: 1.35em;
-  height: 1.35em;
-  fill: currentcolor;
 }
 
 /* A disabled tile says which milestone brings it, so an empty slot reads as

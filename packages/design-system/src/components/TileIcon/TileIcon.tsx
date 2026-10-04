@@ -1,3 +1,5 @@
+import './TileIcon.css'
+
 /**
  * The hub's tile icons.
  *

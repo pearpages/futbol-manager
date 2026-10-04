@@ -9,7 +9,7 @@ import {
 import { useAttempt } from '../attempt.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { Modal } from './Modal.tsx'
+import { Modal } from '@fm/design-system'
 import './RenewPanel.css'
 
 /**

@@ -11,7 +11,8 @@ import { ALL_CLUBS, FOREIGN_CLUBS } from '@fm/data'
  * exactly the kind of thing a test has to catch instead of a person.
  */
 const EVERY_CLUB = [...ALL_CLUBS, ...FOREIGN_CLUBS]
-import { BADGES, badgeFor, COLOUR_KEYS, needsNameplate } from './badges.ts'
+import { COLOUR_KEYS, needsNameplate } from '@fm/design-system'
+import { BADGES, badgeFor } from './badges.ts'
 
 /**
  * The badge table, checked without rendering.
@@ -84,7 +85,7 @@ describe('no two clubs look the same', () => {
 })
 
 describe('the palettes are declared', () => {
-  it('only names schemes club-badges.css defines a rule for', () => {
+  it('only names schemes Badge.css defines a rule for', () => {
     // A typo'd key renders an unstyled badge — ugly rather than obviously broken,
     // which is exactly the kind of thing that ships.
     const declared = new Set<string>(COLOUR_KEYS)
@@ -110,7 +111,7 @@ describe('every palette is fully declared in CSS', () => {
   // Resolved from the repo root rather than `import.meta.url`: under vite-node
   // that is not a file URL, and `readFileSync` refuses it.
   const css = readFileSync(
-    resolve(process.cwd(), 'packages/app/src/styles/club-badges.css'),
+    resolve(process.cwd(), 'packages/design-system/src/components/Badge/Badge.css'),
     'utf8',
   )
 

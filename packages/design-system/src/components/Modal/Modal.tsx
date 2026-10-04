@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef } from 'react'
-import '../styles/modal.css'
+import './Modal.css'
 
 /**
  * The app's first dialog, and its first keyboard handling of any kind.

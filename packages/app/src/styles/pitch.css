@@ -1,7 +1,7 @@
 /*
  * The lineup pitch.
  *
- * Same arrangement as `club-badges.css` and `radar.css`: every rule reads a
+ * Same arrangement as the design system's `Badge.css` and `AttributeRadar.css`: every rule reads a
  * custom property and the component file holds no colour at all.
  *
  * The properties live on `.pitch` rather than in `tokens.css` because nothing
