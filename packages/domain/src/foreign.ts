@@ -1,10 +1,11 @@
 import type { Club, ClubId, Ledger } from './entities.ts'
 import { EMPTY_LEDGER } from './finance.ts'
 import { COVER_AT_POSITION } from './market.ts'
-import { ageOn, type Player, type Position, POSITIONS } from './player.ts'
+import { ageOn, contractMonthsLeft, type Player, type Position, POSITIONS } from './player.ts'
 import { createRng, hashSeed } from './rng.ts'
 import { generateSquad, referenceValues, type RosterEntry } from './squad.ts'
 import type { DayNumber } from './time.ts'
+import { renewedContract } from './valuation.ts'
 
 /**
  * Clubs abroad — a **source of players and nothing else**.
@@ -271,7 +272,23 @@ export function refreshForeignLeague(
         .slice(0, Math.round(squad.length * CHURN_RATE))
         .map((player) => player.id),
     )
-    const kept = squad.filter((player) => !leaving.has(player.id))
+    // **Everyone kept whose deal has run out is given a new one**, the way the
+    // rollover renews at home. Without it nobody abroad was ever renewed: a lapsed
+    // contract prices a player at 0, so by 2029 388 of 758 foreign players could
+    // be signed for a fee of 1, an overall-92 among them, and the AI imported most
+    // of its signings for nothing.
+    //
+    // Its own derived stream, not `rng` above: drawing renewal lengths from that
+    // one would shift every recruit generated below, and not the main stream
+    // either, which would move every calibrated band at home.
+    const renewals = createRng(hashSeed(club.id, 'renew', startYear))
+    const kept = squad
+      .filter((player) => !leaving.has(player.id))
+      .map((player) =>
+        contractMonthsLeft(player, options.seasonStart) > 0
+          ? player
+          : { ...player, contract: renewedContract(player, options.seasonStart, renewals) },
+      )
 
     // **Replacements arrive at the club's own standard, not out of its academy**,
     // and that is the difference between a source that lasts and one that wears

@@ -17,7 +17,7 @@ import {
 import { defaultSeasonStart, rolloverSeason } from './season.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
-import { POSITIONS } from './player.ts'
+import { contractMonthsLeft, POSITIONS } from './player.ts'
 import type { GameState } from './state.ts'
 import { TEST_CLUBS, TEST_FOREIGN_CLUBS, TEST_INTL_NAMES, TEST_NAMES } from './test-clubs.ts'
 
@@ -55,12 +55,15 @@ const openingDomestic = new Set(
   TEST_CLUBS.flatMap((club) => state.squads[club.id] ?? []).map((player) => player.id),
 )
 const states: GameState[] = []
+/** Each season as it opens, before anybody has bought anything. */
+const openings: GameState[] = []
 /** Fees in minus fees out, from the domestic league's point of view. */
 let crossBorderNet = 0
 
 const domesticIds = new Set(TEST_CLUBS.map((club) => club.id))
 
 for (let season = 0; season < SEASONS; season++) {
+  openings.push(state)
   const transfers = runTransferWindow(state, rng)
   for (const transfer of transfers) {
     const sellerIsHome = transfer.from !== null && domesticIds.has(transfer.from)
@@ -138,6 +141,31 @@ describe('a career with a market abroad', () => {
     for (const run of states) {
       expect(totalBudget(run)).toBeGreaterThan(base * 0.4)
       expect(totalBudget(run)).toBeLessThan(base * 3)
+    }
+  })
+
+  it('opens every season with nobody at a club on an expired contract', () => {
+    // **A lapsed contract is a free player**: `contractFactor` is 0 past `until`,
+    // so the asking price is 0 and `answerBid` takes any fee. Abroad nobody used
+    // to renew anybody, so by 2029 half the foreign league could be signed for a
+    // fee of 1, the best players in the world among them. Free agents hold
+    // lapsed deals by definition, so the claim is about clubs, at home and abroad.
+    for (const opening of openings) {
+      const start = opening.season.currentDate
+      const year = String(opening.season.startYear)
+      const holders = [
+        ...opening.clubs.map((club) => [club.id, opening.squads[club.id] ?? []] as const),
+        ...opening.foreign.clubs.map(
+          (club) => [club.id, opening.foreign.squads[club.id] ?? []] as const,
+        ),
+      ]
+      for (const [clubId, squad] of holders) {
+        const lapsed = squad.filter((player) => contractMonthsLeft(player, start) <= 0)
+        expect(
+          lapsed.map((player) => player.name),
+          `${clubId} in ${year}`,
+        ).toEqual([])
+      }
     }
   })
 

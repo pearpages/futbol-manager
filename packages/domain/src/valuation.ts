@@ -1,5 +1,14 @@
-import { ageOn, contractMonthsLeft, overall, type Player, type Position } from './player.ts'
-import type { DayNumber } from './time.ts'
+import {
+  ageOn,
+  type Contract,
+  contractExpiry,
+  contractMonthsLeft,
+  overall,
+  type Player,
+  type Position,
+} from './player.ts'
+import type { Rng } from './rng.ts'
+import { type DayNumber, toCivil } from './time.ts'
 
 /**
  * What a player is worth, in thousands.
@@ -152,4 +161,31 @@ export function formatMoney(thousands: number): string {
     return `€${text.replace(/\.0$/, '')}M`
   }
   return `€${value}k`
+}
+
+/**
+ * How long a renewal runs, by age. Clubs commit long to players entering their
+ * peak and short to those leaving it, which is what stops a league silently
+ * filling with thirty-somethings on five-year deals.
+ */
+function renewalYears(age: number, rng: Rng): number {
+  if (age <= 23) return 3 + Math.floor(rng.next() * 2)
+  if (age <= 29) return 2 + Math.floor(rng.next() * 3)
+  if (age <= 32) return 1 + Math.floor(rng.next() * 2)
+  return 1
+}
+
+/**
+ * The new deal a club gives a player it keeps at the rollover, on the season
+ * opening on `start`.
+ *
+ * One function for home and abroad, so the two leagues renew the same way. Abroad
+ * used to renew nobody: a lapsed contract prices a player at 0, so half the
+ * foreign league could be signed for a fee of 1 within three seasons.
+ */
+export function renewedContract(player: Player, start: DayNumber, rng: Rng): Contract {
+  return {
+    until: contractExpiry(toCivil(start).y + renewalYears(ageOn(player, start), rng)),
+    wage: expectedWage(player, start),
+  }
 }

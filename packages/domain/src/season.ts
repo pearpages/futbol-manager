@@ -6,7 +6,6 @@ import { COUNTRIES, type Country, refreshForeignLeague } from './foreign.ts'
 import { COVER_AT_POSITION, needFor } from './market.ts'
 import {
   ageOn,
-  contractExpiry,
   contractMonthsLeft,
   overall,
   type Player,
@@ -17,7 +16,7 @@ import { generateYouthPlayer } from './squad.ts'
 import type { Rng } from './rng.ts'
 import type { GameState } from './state.ts'
 import { type DayNumber, fromCivil, toCivil } from './time.ts'
-import { expectedWage } from './valuation.ts'
+import { renewedContract } from './valuation.ts'
 
 /**
  * Rolling one season into the next — what makes a career rather than a sequence
@@ -38,18 +37,6 @@ import { expectedWage } from './valuation.ts'
 /** Mid-August, the traditional opening weekend. */
 export function defaultSeasonStart(startYear: number): DayNumber {
   return fromCivil(startYear, 8, 15)
-}
-
-/**
- * How long a renewal runs, by age. Clubs commit long to players entering their
- * peak and short to those leaving it, which is what stops a league silently
- * filling with thirty-somethings on five-year deals.
- */
-function renewalYears(age: number, rng: Rng): number {
-  if (age <= 23) return 3 + Math.floor(rng.next() * 2)
-  if (age <= 29) return 2 + Math.floor(rng.next() * 3)
-  if (age <= 32) return 1 + Math.floor(rng.next() * 2)
-  return 1
 }
 
 /**
@@ -349,13 +336,7 @@ export function rolloverSeason(state: GameState, rng: Rng, options: RolloverOpti
     const squad = working.map((player) =>
       contractMonthsLeft(player, start) > 0
         ? player
-        : {
-            ...player,
-            contract: {
-              until: contractExpiry(nextYear + renewalYears(ageOn(player, start), rng)),
-              wage: expectedWage(player, start),
-            },
-          },
+        : { ...player, contract: renewedContract(player, start, rng) },
     )
 
     // **After the releases, not instead of them.** A club sheds who it does not

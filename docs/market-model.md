@@ -158,6 +158,7 @@ expectedWage = playerWorth × 0.22        (floor 50)
 
 - **Quality is steeply convex** (`^3.2`). Only the top of the market wins you anything; a linear curve would make squad-filling as efficient as star-buying.
 - **Scarcity is measured, not tasteful.** `GK 1.45`, `FW 1.1`, `DF 1.0`, `MF 0.95` — a goalkeeper carries 35% of a team's defensive rating on his own, so pricing on `overall` alone would systematically underprice keepers and a human would empty the league of them.
+- **Nobody at a club holds a lapsed contract when a season opens, at home or abroad.** `rolloverSeason` renews everyone a domestic club keeps, and `refreshForeignLeague` renews everyone a foreign club keeps, both through `renewedContract`. Abroad used to renew nobody, and since a lapsed contract prices a player at 0, by 2029 388 of 758 foreign players could be signed for a fee of 1. Foreign renewal lengths come from their own derived stream, so the recruits and the main stream are untouched. `market.foreign.harness.test.ts` asserts it at every season start.
 - **A fee and a wage move in opposite directions as a contract runs down.** `valuePlayer` applies `contractFactor`, which falls to zero at expiry — six months left and he walks for free, so nobody pays a fee. `expectedWage` deliberately does **not**: a player out of contract wants more, not a token. Deriving both from one number was a real bug — every renewal and every free agent came out on the 50 floor.
 
 ---
