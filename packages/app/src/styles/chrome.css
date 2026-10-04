@@ -103,7 +103,7 @@
   padding: 0;
   margin-inline-start: var(--fm-space-2);
   border: 1px solid currentcolor;
-  border-radius: 50%;
+  border-radius: var(--fm-radius-round);
   background: none;
   color: var(--fm-screen-ink-soft);
   font-family: var(--fm-font);
@@ -174,15 +174,15 @@
 }
 
 .data-table__row:nth-child(even) {
-  background: rgb(255 255 255 / 3%);
+  background: var(--fm-overlay-1);
 }
 
 .data-table__row.is-you {
-  background: rgb(232 179 58 / 12%);
+  background: var(--fm-accent-wash);
 }
 
 .data-table__row.is-you td {
-  color: #fff;
+  color: var(--fm-highlight);
   font-weight: 700;
 }
 
@@ -192,7 +192,7 @@
 
 .data-table__row.is-clickable:hover td,
 .data-table__row.is-clickable:focus-visible td {
-  background: rgb(255 255 255 / 7%);
+  background: var(--fm-overlay-3);
 }
 
 .data-table__num {
@@ -313,7 +313,7 @@
   text-align: center;
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
   color: var(--fm-screen-ink-soft);
 }
@@ -345,7 +345,7 @@
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-align: center;
 }
 
@@ -363,7 +363,7 @@
 }
 .chip.is-fw {
   border-color: var(--fm-relegation);
-  color: #e08a7e;
+  color: var(--fm-chip-fw);
 }
 
 /* ── Attribute bars — the ficha's signature ──────────────────────────────── */
@@ -373,7 +373,7 @@
   grid-template-columns: 5.5rem 1fr 2ch;
   align-items: center;
   gap: var(--fm-space-2);
-  padding: 2px 0;
+  padding: var(--fm-space-hair) 0;
   font-size: var(--fm-text-xs);
 }
 
@@ -556,7 +556,7 @@
 }
 
 .button.is-primary:hover {
-  background: #f2c157;
+  background: var(--fm-accent-hover);
 }
 
 /*
@@ -619,7 +619,7 @@
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--fm-space-hair);
 }
 
 .stat__label {
@@ -702,7 +702,7 @@
 /* Graduated from `.lineup-row__select` when the ficha's compare picker became the
    second one — a control on the dark screen material, not a panel one. */
 .select {
-  padding: 2px var(--fm-space-1);
+  padding: var(--fm-space-hair) var(--fm-space-1);
   background: var(--fm-screen-raised);
   border: 1px solid var(--fm-screen-rule);
   color: var(--fm-screen-ink);

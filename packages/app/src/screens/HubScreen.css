@@ -366,7 +366,7 @@
   margin: var(--fm-space-3) 0 0;
   padding-top: var(--fm-space-2);
   border-top: 1px solid var(--fm-screen-rule);
-  color: #e8a79c;
+  color: var(--fm-relegation-tint);
   font-size: var(--fm-text-sm);
 }
 
@@ -412,9 +412,9 @@
    rather than a dot: "something happened" is less use than "three things did". */
 .hub__unread {
   padding: 0 0.35em;
-  border-radius: 999px;
+  border-radius: var(--fm-radius-pill);
   background: var(--fm-relegation);
-  color: #fff;
+  color: var(--fm-highlight);
   font-size: var(--fm-text-xs);
   font-variant-numeric: tabular-nums;
   line-height: 1.5;
@@ -441,11 +441,11 @@
 /* Distinct from Advance day, because this one is not reversible. */
 .hub__play {
   background: var(--fm-relegation);
-  color: #fff;
+  color: var(--fm-highlight);
 }
 
 .hub__play:hover {
-  background: #d4594a;
+  background: var(--fm-relegation-hover);
 }
 
 @media (width < 68rem) {

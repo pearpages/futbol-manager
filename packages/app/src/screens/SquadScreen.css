@@ -10,7 +10,7 @@
 }
 
 .squad-screen__list {
-  padding: 2px var(--fm-space-2);
+  padding: var(--fm-space-hair) var(--fm-space-2);
   font-size: var(--fm-text-xs);
 }
 

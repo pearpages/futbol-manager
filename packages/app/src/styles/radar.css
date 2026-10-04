@@ -33,7 +33,7 @@
   font-family: var(--fm-font-condensed);
   font-size: 7px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
 }
 
 .radar__area {

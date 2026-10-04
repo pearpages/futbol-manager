@@ -38,7 +38,7 @@
   margin: 0;
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-sm);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
 }
 
@@ -75,7 +75,7 @@
   gap: var(--fm-space-4);
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-sm);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
 }
 

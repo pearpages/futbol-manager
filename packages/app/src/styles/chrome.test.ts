@@ -159,7 +159,7 @@ describe('the explainer button', () => {
     expect(rule).toMatch(/text-transform:\s*none/)
     expect(rule).toMatch(/letter-spacing:\s*0/)
     expect(rule).toMatch(/cursor:\s*pointer/)
-    expect(rule).toMatch(/border-radius:\s*50%/)
+    expect(rule).toMatch(/border-radius:\s*var\(--fm-radius-round\)/)
   })
 
   it('keeps the way out in view when the body scrolls', () => {
