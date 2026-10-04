@@ -1,4 +1,4 @@
-import { type ComponentProps, createElement } from 'react'
+import { type ComponentProps, createElement, type JSX } from 'react'
 import { cx } from '../../cx.ts'
 
 export type StatValueProps = ComponentProps<'span'> & {
@@ -7,6 +7,6 @@ export type StatValueProps = ComponentProps<'span'> & {
 }
 
 /** The figure of a stat, in tabular numerals. */
-export function StatValue({ as = 'span', className, ...rest }: StatValueProps) {
+export function StatValue({ as = 'span', className, ...rest }: StatValueProps): JSX.Element {
   return createElement(as, { className: cx('stat__value', className), ...rest })
 }

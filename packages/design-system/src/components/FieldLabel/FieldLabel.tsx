@@ -1,4 +1,4 @@
-import { type ComponentProps, createElement } from 'react'
+import { type ComponentProps, createElement, type JSX } from 'react'
 import { cx } from '../../cx.ts'
 
 export type FieldLabelProps = ComponentProps<'label'> & {
@@ -7,6 +7,6 @@ export type FieldLabelProps = ComponentProps<'label'> & {
 }
 
 /** The small uppercase label of a field. */
-export function FieldLabel({ as = 'label', className, ...rest }: FieldLabelProps) {
+export function FieldLabel({ as = 'label', className, ...rest }: FieldLabelProps): JSX.Element {
   return createElement(as, { className: cx('field__label', className), ...rest })
 }
