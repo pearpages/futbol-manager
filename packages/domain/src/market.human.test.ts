@@ -24,7 +24,7 @@ import { type Command, type Event, reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
 import type { GameState } from './state.ts'
-import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
+import { reinstated, TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { askingPrice } from './valuation.ts'
 
 /**
@@ -337,6 +337,50 @@ describe('what the reducer refuses — a screen can forget, this cannot', () => 
     }
 
     expect(answered?.status).toBe('rejected')
+  })
+
+  it('refuses to complete a signing the seller can no longer spare', () => {
+    // The other end of the case above. A bid accepted against a full squad stays
+    // accepted, so without a second check the contract went through regardless:
+    // four bids made the same morning took Santander to 15 players, and the
+    // seller's re-pick then crashed once a position ran short.
+    const starter = cheapestStarter(SELLER)
+    const fee = Math.round(
+      askingPrice(starter, state.season.currentDate) *
+        reluctancePremium(state.squads[SELLER] ?? [], starter),
+    )
+    expect(bidAndWait(starter, fee).status).toBe('accepted')
+
+    // `shrinkToFloor` keeps the best XI, so he is still there to be signed.
+    shrinkToFloor(SELLER)
+    expect(state.squads[SELLER]?.some((p) => p.id === starter.id)).toBe(true)
+
+    const terms = suggestedTerms(starter, state.season.currentDate)
+    expect(() =>
+      dispatch({
+        type: 'OfferContract',
+        playerId: starter.id,
+        wage: terms.wage,
+        years: terms.years,
+      }),
+    ).toThrow(/too small a squad/)
+    expect(state.squads[SELLER]).toHaveLength(MIN_SQUAD)
+  })
+
+  it('gives a second bid on the same day an id of its own', () => {
+    // A withdrawn bid keeps its id, and the id was the player and the day, so a
+    // bid made again that morning collided with it and `WithdrawBid` hit both.
+    const { player } = aListedPlayer()
+    const fee = askingPrice(player, state.season.currentDate)
+    dispatch({ type: 'MakeBid', playerId: player.id, fee })
+    const first = state.bids.at(-1)?.id
+    if (first === undefined) throw new Error('no bid')
+    dispatch({ type: 'WithdrawBid', bidId: first })
+    dispatch({ type: 'MakeBid', playerId: player.id, fee })
+
+    const ids = state.bids.map((bid) => bid.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(state.bids.at(-1)?.status).toBe('pending')
   })
 
   it('rejects a bid you cannot afford', () => {
@@ -701,7 +745,7 @@ describe('the transfer list — putting your own players up for sale', () => {
       dispatch({ type: 'ListPlayer', playerId: player.id, on: true })
     }
     for (let season = 0; season < 3; season++) {
-      state = simulateSeason(state, rng)
+      state = reinstated(simulateSeason(state, rng))
       dispatch({ type: 'StartNewSeason', names: TEST_NAMES })
 
       const squad = state.squads[MID] ?? []

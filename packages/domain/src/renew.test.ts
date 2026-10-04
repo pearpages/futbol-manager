@@ -12,7 +12,7 @@ import {
 import { type Command, type Event, reduce } from './reduce.ts'
 import { createRng, type Rng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
-import type { GameState } from './state.ts'
+import { type GameState, isSeasonComplete } from './state.ts'
 import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
 import { addDays, toCivil } from './time.ts'
 
@@ -215,7 +215,7 @@ describe('the warning', () => {
     const player = expireThisSeason(squad()[0] as Player)
 
     let warnings = 0
-    for (let day = 0; day < 300; day++) {
+    while (!isSeasonComplete(state)) {
       const events = dispatch({ type: 'AdvanceDay' })
       warnings += events.filter(
         (event) => event.type === 'ContractExpiring' && event.playerId === player.id,
@@ -247,7 +247,7 @@ describe('the warning', () => {
     if (safe === undefined) throw new Error('everyone is expiring')
 
     let warnings = 0
-    for (let day = 0; day < 300; day++) {
+    while (!isSeasonComplete(state)) {
       warnings += dispatch({ type: 'AdvanceDay' }).filter(
         (event) => event.type === 'ContractExpiring' && event.playerId === safe.id,
       ).length

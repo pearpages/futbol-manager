@@ -592,6 +592,10 @@ export const es: Dictionary = {
   'error.ticket.range': 'Una entrada tiene que costar entre {low} y {high}',
   'error.expansion.underWay': 'Ya hay obras en marcha',
   'error.expansion.range': 'Una ampliación va de {min} a {max} asientos',
+  'error.club.notYours': 'Ese no es tu club',
+  'error.lineup.shape': 'Ese once no encaja con la formación',
+  'error.season.over': 'La temporada ha terminado',
+  'error.career.over': 'La directiva te ha destituido',
 
   // ── La portada ──────────────────────────────────────────────────────────────
   'action.quit': 'Salir de la carrera',

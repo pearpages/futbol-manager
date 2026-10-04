@@ -605,6 +605,10 @@ export const en: Dictionary = {
   'error.ticket.range': 'A ticket must be priced between {low} and {high}',
   'error.expansion.underWay': 'Building work is already under way',
   'error.expansion.range': 'An expansion runs from {min} to {max} seats',
+  'error.club.notYours': 'That is not your club',
+  'error.lineup.shape': 'That eleven does not fit the formation',
+  'error.season.over': 'The season is over',
+  'error.career.over': 'The board have dismissed you',
 
   // ── The front page ──────────────────────────────────────────────────────────
   'action.quit': 'Leave career',

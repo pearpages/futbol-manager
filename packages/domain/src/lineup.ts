@@ -118,9 +118,9 @@ const FORMATION_TEMPO: Readonly<Record<Formation, number>> = {
  * The shape is read off the players actually on the pitch rather than the
  * `formation` label on the lineup, for two reasons. `teamRatingRaw` takes starters
  * and tactics and has never taken the formation, so the label is not in scope; and
- * a `Lineup` can carry a label its banks do not match, because `setLineup` checks
- * the XI is legal but never that it matches its own declared shape. Deriving means
- * the tempo follows what is on the pitch, which is the honest answer either way.
+ * a save from before `setLineup` checked the banks against the label can still
+ * hold a lineup whose banks do not match it. Deriving means the tempo follows what
+ * is on the pitch, which is the honest answer either way.
  *
  * An integer key, not a template string: this is on the hot path that once pushed
  * the tactics harness past its timeout through allocation alone.

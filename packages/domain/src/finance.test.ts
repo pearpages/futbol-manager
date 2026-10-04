@@ -21,6 +21,7 @@ import {
 } from './finance.ts'
 import { ROUNDS_PER_HALF } from './fixtures.ts'
 import { reduce } from './reduce.ts'
+import { isSeasonComplete } from './state.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
 import { computeTable } from './table.ts'
@@ -255,9 +256,31 @@ describe('building work', () => {
     expect(mine()?.expansion).toBeNull()
   })
 
+  it('builds when the cost lands exactly on the overdraft limit', () => {
+    // Building work pays no signing bonus. The check used to add one, so a club
+    // whose bare cost fitted was refused while the screen showed it could pay.
+    const rng = createRng(20260814)
+    const fresh = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng })
+    const seats = 4000
+    const cost = expansionCost(seats)
+    const clubs = fresh.competition.clubIds.length
+    const atLimit = fresh.clubs.map((c) =>
+      c.id === fresh.managedClubId
+        ? { ...c, budget: cost - debtLimit(c, clubs, ROUNDS_PER_HALF) }
+        : c,
+    )
+    const state = { ...fresh, clubs: atLimit }
+
+    expect(() => reduce(state, { type: 'StartExpansion', seats }, rng)).not.toThrow()
+    expect(() => reduce(state, { type: 'StartExpansion', seats: seats + 1 }, rng)).toThrow(
+      /overdraft limit/,
+    )
+  })
+
   it('refuses a job outside the sensible range', () => {
     const rng = createRng(20260814)
     const state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng })
+    expect(() => reduce(state, { type: 'StartExpansion', seats: 4000.5 }, rng)).toThrow(/runs from/)
     expect(() => reduce(state, { type: 'StartExpansion', seats: 10 }, rng)).toThrow(/runs from/)
     expect(() => reduce(state, { type: 'StartExpansion', seats: 999_999 }, rng)).toThrow(
       /runs from/,
@@ -282,7 +305,7 @@ describe('the balance identity', () => {
     const rng = createRng(20260814)
     let state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng })
 
-    for (let day = 0; day < 365; day++) {
+    for (let day = 0; !isSeasonComplete(state); day++) {
       const before = state.clubs
       state = reduce(state, { type: 'AdvanceDay' }, rng).state
 

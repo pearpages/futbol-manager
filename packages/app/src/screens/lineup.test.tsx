@@ -201,16 +201,14 @@ describe('the pitch', () => {
   })
 
   it('reads the shape off the players, not off the lineup’s own label', () => {
-    // `setLineup` validates that an XI is *legal* and never that it matches the
-    // formation it declares — the same hole `teamRatingRaw` derives around. A
-    // pitch that trusted the label would draw two forwards here.
+    // `setLineup` now refuses an XI that does not match its label, but a save
+    // from before it did can still hold one, so it is written straight into the
+    // state rather than dispatched. A pitch that trusted the label would draw two
+    // forwards here.
     render(<App />)
     const clubId = game().managedClubId
-    useGame.getState().dispatch({
-      type: 'SetLineup',
-      clubId,
-      lineup: { formation: '4-4-2', starters: bestXI(squadOf(), '4-3-3').starters },
-    })
+    const lineup = { formation: '4-4-2' as const, starters: bestXI(squadOf(), '4-3-3').starters }
+    useGame.setState({ game: { ...game(), lineups: { ...game().lineups, [clubId]: lineup } } })
     openScreen('nav.lineup')
 
     expect(slots('FW')).toHaveLength(3)

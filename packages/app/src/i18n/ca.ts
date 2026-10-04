@@ -593,6 +593,10 @@ export const ca: Dictionary = {
   'error.ticket.range': 'Una entrada ha de costar entre {low} i {high}',
   'error.expansion.underWay': 'Ja hi ha obres en marxa',
   'error.expansion.range': 'Una ampliació va de {min} a {max} seients',
+  'error.club.notYours': 'Aquest no és el teu club',
+  'error.lineup.shape': 'Aquest onze no encaixa amb la formació',
+  'error.season.over': 'La temporada ha acabat',
+  'error.career.over': 'La junta t’ha destituït',
 
   // ── La portada ──────────────────────────────────────────────────────────────
   'action.quit': 'Surt de la carrera',

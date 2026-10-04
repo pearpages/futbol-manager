@@ -8,6 +8,12 @@ on:
   # want that build again without inventing a change to make it happen.
   workflow_dispatch:
 
+# Read-only unless a job says otherwise. The repository default is already
+# read-only, but a default can be changed in Settings without touching this file;
+# stated here, the token `check` runs PR code with cannot write to anything.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -49,9 +55,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
-    # Job-level permissions *replace* the workflow default rather than adding to
-    # it, and this repository's default token is read-only — so all three have to
-    # be named here, `contents: read` included, or the checkout fails.
+    # Job-level permissions *replace* the workflow-level ones rather than adding
+    # to them, so all three have to be named here, `contents: read` included, or
+    # the checkout fails.
     permissions:
       contents: read
       pages: write

@@ -45,8 +45,12 @@ flowchart LR
    `localStorage` and loads that save through the migration chain.
 2. **Commands.** A screen dispatches a command. The store calls `reduce(state, command, rng)`,
    which validates it (throwing a coded `GameError` on a refusal), returns the new
-   `GameState` plus a list of `Event`s, and advances the serialised PRNG state.
-3. **The tick.** `AdvanceDay` is the pipeline: it plays fixtures that are due, settles money
+   `GameState` plus a list of `Event`s, and advances the serialised PRNG state. Lineups and
+   tactics are accepted only for the managed club, and only in a listed formation.
+   A signing re-checks that the seller can still spare the player when the contract is agreed,
+   not only when the bid was made.
+3. **The tick.** `AdvanceDay` is the pipeline, and it is refused once the last matchday is
+   played (so is `StartNewSeason` for a sacked manager): it plays fixtures that are due, settles money
    on the 1st of each month, resolves bids, generates AI offers weekly while a window is open,
    and emits window, contract and board events. `StartNewSeason` runs `rolloverSeason`
    (prize money, ageing, retirement, contract expiry, youth top-up, a fresh fixture list

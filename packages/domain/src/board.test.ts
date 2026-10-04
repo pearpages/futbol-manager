@@ -136,11 +136,11 @@ describe('the board through the reducer', () => {
     expect(verdict.target).toBe(openingBoard(WORST.id, TEST_CLUBS).target)
   })
 
-  it('says it once, not on every subsequent day', () => {
-    // Same discipline as `SeasonEnded`: emitted on the transition.
+  it('says it once: there is no day after the last one to say it again', () => {
+    // Same discipline as `SeasonEnded`: emitted on the transition, and the clock
+    // refuses to tick past it.
     const { finished, rng } = play()
-    const again = reduce(finished, { type: 'AdvanceDay' }, rng)
-    expect(again.events.some((e) => e.type === 'BoardVerdict')).toBe(false)
+    expect(() => reduce(finished, { type: 'AdvanceDay' }, rng)).toThrow(/season is over/)
   })
 
   it('carries the target into the next season', () => {

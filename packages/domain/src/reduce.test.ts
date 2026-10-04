@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import type { ClubId } from './entities.ts'
+import { FINANCE } from './finance.ts'
 import { FIXTURES_PER_ROUND } from './fixtures.ts'
+import { bestXI, type Formation, worstXI } from './lineup.ts'
 import { TEST_CLUBS, TEST_NAMES } from './test-clubs.ts'
-import { type Event, reduce } from './reduce.ts'
+import { type Command, type Event, reduce } from './reduce.ts'
 import { createRng } from './rng.ts'
 import { newSeason, simulateSeason } from './simulate.ts'
 import { type GameState, isSeasonComplete } from './state.ts'
@@ -83,14 +86,14 @@ describe('reduce · AdvanceDay', () => {
     const rng = createRng(7)
     let endings = 0
 
-    for (let day = 0; day < 400; day++) {
+    while (!isSeasonComplete(state)) {
       const result = reduce(state, { type: 'AdvanceDay' }, rng)
       state = result.state
       endings += result.events.filter((e) => e.type === 'SeasonEnded').length
     }
 
-    expect(isSeasonComplete(state)).toBe(true)
     expect(endings).toBe(1)
+    expect(() => reduce(state, { type: 'AdvanceDay' }, rng)).toThrow(/season is over/)
   })
 })
 
@@ -144,5 +147,138 @@ describe('simulateSeason', () => {
       },
     }
     expect(() => simulateSeason(unreachable, createRng(1))).toThrow(/did not complete/)
+  })
+})
+
+/**
+ * The commands a screen never sends wrong, and the reducer refuses anyway: P2
+ * says validation lives here, because a screen can forget and this cannot.
+ */
+describe('reduce · SetLineup and SetTactics', () => {
+  const managed = (state: GameState) => state.managedClubId
+  const squadOf = (state: GameState) => state.squads[managed(state)] ?? []
+  const rival = (state: GameState) => {
+    const id = state.clubs.find((c) => c.id !== managed(state))?.id
+    /* c8 ignore next */
+    if (id === undefined) throw new Error('no rival')
+    return id
+  }
+  const run = (state: GameState, command: Command) => reduce(state, command, createRng(1))
+
+  it('sets the manager’s own XI and says so', () => {
+    const state = fresh()
+    const lineup = bestXI(squadOf(state), '4-3-3')
+    const result = run(state, { type: 'SetLineup', clubId: managed(state), lineup })
+
+    expect(result.state.lineups[managed(state)]).toEqual(lineup)
+    expect(result.events).toEqual([{ type: 'LineupChanged', clubId: managed(state) }])
+  })
+
+  it('refuses another club’s team sheet', () => {
+    const state = fresh()
+    const theirs = rival(state)
+    const lineup = worstXI(state.squads[theirs] ?? [], '4-4-2')
+
+    expect(() => run(state, { type: 'SetLineup', clubId: theirs, lineup })).toThrow(
+      expect.objectContaining({ code: 'error.club.notYours' }),
+    )
+  })
+
+  it('refuses a club that does not exist', () => {
+    const state = fresh()
+    const lineup = bestXI(squadOf(state), '4-4-2')
+    expect(() => run(state, { type: 'SetLineup', clubId: 'nobody' as ClubId, lineup })).toThrow(
+      expect.objectContaining({ code: 'error.club.notYours' }),
+    )
+  })
+
+  it('refuses a formation that is not on the menu', () => {
+    const state = fresh()
+    const lineup = { ...bestXI(squadOf(state), '4-4-2'), formation: '9-9-9' as Formation }
+
+    expect(() => run(state, { type: 'SetLineup', clubId: managed(state), lineup })).toThrow(
+      expect.objectContaining({ code: 'error.lineup.shape' }),
+    )
+  })
+
+  it('refuses an XI whose banks do not match its own label', () => {
+    // A legal eleven, one keeper, nobody twice, lined up 4-3-3 and called 4-4-2.
+    const state = fresh()
+    const lineup = { ...bestXI(squadOf(state), '4-3-3'), formation: '4-4-2' as Formation }
+
+    expect(() => run(state, { type: 'SetLineup', clubId: managed(state), lineup })).toThrow(
+      expect.objectContaining({ code: 'error.lineup.shape' }),
+    )
+  })
+
+  it('takes the slider at both ends and says so', () => {
+    const state = fresh()
+    for (const attacking of [0, 100]) {
+      const result = run(state, {
+        type: 'SetTactics',
+        clubId: managed(state),
+        tactics: { attacking },
+      })
+      expect(result.state.tactics[managed(state)]).toEqual({ attacking })
+      expect(result.events).toEqual([{ type: 'TacticsChanged', clubId: managed(state) }])
+    }
+  })
+
+  it('refuses the slider past either end, and NaN', () => {
+    const state = fresh()
+    for (const attacking of [-1, 101, Number.NaN]) {
+      expect(() =>
+        run(state, { type: 'SetTactics', clubId: managed(state), tactics: { attacking } }),
+      ).toThrow(expect.objectContaining({ code: 'error.tactics.range' }))
+    }
+  })
+
+  it('refuses another club’s tactics', () => {
+    const state = fresh()
+    expect(() =>
+      run(state, { type: 'SetTactics', clubId: rival(state), tactics: { attacking: 100 } }),
+    ).toThrow(expect.objectContaining({ code: 'error.club.notYours' }))
+  })
+})
+
+describe('reduce · SetTicketPrice', () => {
+  const low = FINANCE.TICKET * FINANCE.MIN_TICKET_FACTOR
+  const high = FINANCE.TICKET * FINANCE.MAX_TICKET_FACTOR
+  const priceOf = (state: GameState) =>
+    state.clubs.find((c) => c.id === state.managedClubId)?.ticketPrice
+
+  it('takes either bound and says so', () => {
+    for (const price of [low, high]) {
+      const result = reduce(fresh(), { type: 'SetTicketPrice', price }, createRng(1))
+      expect(priceOf(result.state)).toBe(price)
+      expect(result.events).toEqual([{ type: 'TicketPriceSet', price }])
+    }
+  })
+
+  it('refuses a price outside the bounds, and NaN', () => {
+    for (const price of [low - 1, high + 1, Number.NaN]) {
+      expect(() => reduce(fresh(), { type: 'SetTicketPrice', price }, createRng(1))).toThrow(
+        expect.objectContaining({ code: 'error.ticket.range' }),
+      )
+    }
+  })
+})
+
+describe('reduce · the end of a season', () => {
+  const finished = () => simulateSeason(fresh(), createRng(3))
+
+  it('refuses to roll over for a manager the board has sacked', () => {
+    const done = finished()
+    const sacked: GameState = { ...done, board: { ...done.board, sacked: true } }
+
+    expect(() =>
+      reduce(sacked, { type: 'StartNewSeason', names: TEST_NAMES }, createRng(1)),
+    ).toThrow(expect.objectContaining({ code: 'error.career.over' }))
+  })
+
+  it('refuses an empty name pool rather than naming everyone "Youth Player"', () => {
+    expect(() => reduce(finished(), { type: 'StartNewSeason', names: [] }, createRng(1))).toThrow(
+      /name pool/,
+    )
   })
 })

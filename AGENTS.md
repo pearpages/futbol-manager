@@ -67,7 +67,8 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
   adding the next migration, never after.
 - `pnpm typecheck` · `pnpm lint` · `pnpm format` (`pnpm format:check` in CI)
 - `pnpm build`: the production bundle, into `packages/app/dist`.
-- `pnpm dev`: the app on a Vite dev server.
+- `pnpm dev`: the app on a Vite dev server, on localhost only. `pnpm dev:lan` also
+  serves it to the local network, to try it on a phone.
 
 ## Pitfalls that have bitten before
 
