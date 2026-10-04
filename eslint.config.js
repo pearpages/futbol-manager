@@ -1,7 +1,9 @@
 import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 
-// The dependency direction is app → persistence → data → domain.
+// The dependency direction is app → persistence → data → domain, with
+// design-system as a side branch: app → design-system, which imports no @fm
+// package at all (ADR 0014).
 // Under pnpm, node_modules layout already blocks undeclared imports; this is the
 // second layer, and the one that produces a readable error. See ADR 0001.
 //
@@ -12,7 +14,7 @@ const forbidden = (packages, message) => ({
 })
 
 const DIRECTION =
-  'Dependency direction is app → persistence → data → domain. See docs/adr/0001-workspace-tooling.md.'
+  'Dependency direction is app → persistence → data → domain, plus app → design-system. See docs/adr/0001-workspace-tooling.md and 0014.'
 
 export default tseslint.config(
   {
@@ -40,6 +42,8 @@ export default tseslint.config(
                 '@fm/persistence/*',
                 '@fm/app',
                 '@fm/app/*',
+                '@fm/design-system',
+                '@fm/design-system/*',
               ],
               message: `${DIRECTION} \`domain\` sits at the bottom and imports nothing.`,
             },
@@ -84,7 +88,7 @@ export default tseslint.config(
       'no-restricted-imports': [
         'error',
         forbidden(
-          ['@fm/persistence', '@fm/app'],
+          ['@fm/persistence', '@fm/app', '@fm/design-system'],
           `${DIRECTION} \`data\` may only reach \`domain\`.`,
         ),
       ],
@@ -97,7 +101,45 @@ export default tseslint.config(
     rules: {
       'no-restricted-imports': [
         'error',
-        forbidden(['@fm/app'], `${DIRECTION} \`persistence\` may not reach \`app\`.`),
+        forbidden(
+          ['@fm/app', '@fm/design-system'],
+          `${DIRECTION} \`persistence\` may not reach \`app\` or \`design-system\`.`,
+        ),
+      ],
+    },
+  },
+
+  // ── design-system ─────────────────────────────────────────────────────────
+  // A leaf that the app and the Claude Design System artifact both consume. It
+  // knows nothing about the game: no package of ours, no store, no state
+  // library, no storage. Text arrives as props, so translation stays in the app.
+  {
+    files: ['packages/design-system/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '@fm/domain',
+                '@fm/domain/*',
+                '@fm/data',
+                '@fm/data/*',
+                '@fm/persistence',
+                '@fm/persistence/*',
+                '@fm/app',
+                '@fm/app/*',
+              ],
+              message: `${DIRECTION} \`design-system\` imports no package of ours.`,
+            },
+            {
+              group: ['zustand', 'idb'],
+              message:
+                '`design-system` holds no state and touches no storage. Pass values in as props.',
+            },
+          ],
+        },
       ],
     },
   },

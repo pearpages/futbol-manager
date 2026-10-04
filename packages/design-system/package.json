@@ -1,0 +1,38 @@
+{
+  "name": "@fm/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Futbol Manager's tokens, primitives and shared components, for the app and for the Claude Design System artifact.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./tokens.json": "./src/tokens.json",
+    "./reset.css": "./src/styles/reset.css",
+    "./chrome.css": "./src/styles/chrome.css",
+    "./bundle": "./dist/bundle.js",
+    "./bundle.css": "./dist/bundle.css"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build:bundle": "vite build -c vite.lib.config.ts",
+    "build": "pnpm build:bundle",
+    "test": "vitest run --root ../.. --project design-system"
+  },
+  "peerDependencies": {
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@microsoft/api-extractor": "7.59.3",
+    "@testing-library/react": "16.3.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "30.0.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "vite": "8.2.1",
+    "vite-plugin-dts": "5.1.1"
+  }
+}

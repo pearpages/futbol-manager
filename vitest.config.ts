@@ -2,8 +2,8 @@ import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 /**
- * One command runs all four packages. Each project is named, so `pnpm test -- --run`
- * output shows which package a failure came from — and shows that all four actually
+ * One command runs all five packages. Each project is named, so `pnpm test -- --run`
+ * output shows which package a failure came from — and shows that all five actually
  * ran, rather than one silently matching nothing.
  */
 export default defineConfig({
@@ -82,6 +82,8 @@ export default defineConfig({
           testTimeout: 15_000,
         },
       },
+      // Its own config file, so the package can be tested on its own (ADR 0014).
+      'packages/design-system',
       {
         // Not a package — this asserts the repo's own config, chiefly that the
         // ESLint boundary rule still fires. See tests/boundaries.test.ts.

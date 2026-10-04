@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fm/data": "workspace:*",
+    "@fm/design-system": "workspace:*",
     "@fm/domain": "workspace:*",
     "@fm/persistence": "workspace:*",
     "idb": "8.0.3",
