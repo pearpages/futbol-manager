@@ -59,14 +59,17 @@ Domain references. Read the one that covers the area you are changing:
 First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins Node and pnpm).
 
 - `pnpm test -- --run`: the whole suite, once. Bare `pnpm test` starts watch mode and hangs.
-- `pnpm exec vitest run --project <domain|data|persistence|app> <file>`: one file, fast.
+- `pnpm exec vitest run --project <domain|data|persistence|design-system|app> <file>`: one file, fast.
   `pnpm test -- --run <name>` does **not** filter; the `--` swallows the name and all files run.
 - `pnpm season [seed]`: a headless season that prints the final table. Byte-identical across
   runs for a seed, which makes it the cheapest determinism check there is.
 - `pnpm fixture`: write a save fixture for the **current** schema version. Run it _before_
   adding the next migration, never after.
 - `pnpm typecheck` · `pnpm lint` · `pnpm format` (`pnpm format:check` in CI)
-- `pnpm build`: the production bundle, into `packages/app/dist`.
+- `pnpm build`: `pnpm -r build` — the design system's artifact bundle into
+  `packages/design-system/dist`, then the game into `packages/app/dist`.
+- `pnpm --filter @fm/design-system tokens:build`: regenerate `tokens.css` from `tokens.json`.
+  Edit the JSON, never the CSS; a test fails if they disagree.
 - `pnpm dev`: the app on a Vite dev server, on localhost only. `pnpm dev:lan` also
   serves it to the local network, to try it on a phone.
 
