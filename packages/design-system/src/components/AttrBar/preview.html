@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AttrBar · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { AttrBar, Screen } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(
+          Screen,
+          null,
+          h(
+            AttrBar,
+            null,
+            h('span', { className: 'attr__label' }, 'Porteria'),
+            h(
+              'span',
+              { className: 'attr__track' },
+              h('span', { className: 'attr__fill is-strong', 'data-fill': '17' }),
+            ),
+            h('span', { className: 'attr__value' }, '87'),
+          ),
+        ),
+      )
+    </script>
+  </body>
+</html>

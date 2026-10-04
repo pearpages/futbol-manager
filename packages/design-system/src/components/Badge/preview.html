@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Badge · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { Badge, BadgeDefs, Screen } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(
+          Screen,
+          { className: 'preview-row' },
+          h(BadgeDefs),
+          h(Badge, {
+            badge: { colours: 'white', pattern: 'solid', shape: 'circle' },
+            code: 'MAD',
+            name: 'Madrid',
+            size: 'lg',
+            labelled: true,
+          }),
+          h(Badge, {
+            badge: { colours: 'garnet-blue', pattern: 'stripes', shape: 'shield' },
+            code: 'BAR',
+            name: 'Barcelona',
+            size: 'lg',
+            labelled: true,
+          }),
+          h(Badge, {
+            badge: { colours: 'orange-black', pattern: 'sash', shape: 'lozenge' },
+            code: 'VAL',
+            name: 'Valencia',
+            size: 'lg',
+            labelled: true,
+          }),
+          h(Badge, {
+            badge: { colours: 'white-blue', pattern: 'halves', shape: 'circle' },
+            code: 'VIT',
+            name: 'Vitoria',
+            size: 'lg',
+            labelled: true,
+          }),
+        ),
+      )
+    </script>
+  </body>
+</html>

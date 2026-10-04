@@ -18,8 +18,8 @@ import './AttributeRadar.css'
  * a radar rather than a pizza — wedges cannot overlay.
  *
  * Inline SVG with classes only, no `style` prop, and **no colour value in this
- * file** — everything arrives through the custom properties in `radar.css`, the
- * same arrangement `ClubBadge` uses.
+ * file** — everything arrives through the custom properties in `AttributeRadar.css`,
+ * the same arrangement `Badge` uses.
  */
 
 export interface AttributeRadarProps {

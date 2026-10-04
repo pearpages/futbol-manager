@@ -1,0 +1,26 @@
+/*
+ * Layout for the component previews only: a gutter around the page and a row
+ * for showing several variants side by side. Not part of the bundle.
+ */
+
+.preview {
+  display: grid;
+  align-content: start;
+  gap: var(--fm-space-4);
+  padding: var(--fm-space-4);
+}
+
+.preview-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+/* The hub tile's own gap between icon and label, which the app's hub provides. */
+.preview-tile {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}
