@@ -46,7 +46,7 @@
 /* The four positions read as one control, so they sit tighter than the gap. */
 .market-screen__positions {
   display: flex;
-  gap: 2px;
+  gap: var(--fm-space-hair);
 }
 
 .market-screen__count {
@@ -61,7 +61,7 @@
   color: var(--fm-uecl);
   font-family: var(--fm-font-condensed);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
 }
 
@@ -72,7 +72,7 @@
 }
 
 .market-screen__mini {
-  padding: 2px var(--fm-space-2);
+  padding: var(--fm-space-hair) var(--fm-space-2);
   font-size: var(--fm-text-xs);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .market-screen__error {
-  color: #e8a79c;
+  color: var(--fm-relegation-tint);
 }
 
 .market-screen__deal {
@@ -114,7 +114,7 @@
 
 .offer-list__item {
   display: grid;
-  gap: 2px;
+  gap: var(--fm-space-hair);
   padding: var(--fm-space-2) var(--fm-space-4);
   border-top: 1px solid var(--fm-screen-rule);
   font-size: var(--fm-text-sm);
@@ -129,7 +129,7 @@
  */
 .offer-list__item.is-active {
   box-shadow: inset 3px 0 0 var(--fm-champion);
-  background: rgb(255 255 255 / 4%);
+  background: var(--fm-overlay-2);
 }
 
 .offer-list__name {
@@ -223,7 +223,7 @@
   gap: var(--fm-space-1);
   padding: var(--fm-space-2) var(--fm-space-1);
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: var(--fm-radius-sm);
   background: none;
   color: var(--fm-screen-ink);
   font: inherit;

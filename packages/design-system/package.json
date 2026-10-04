@@ -15,8 +15,9 @@
   },
   "types": "./dist/index.d.ts",
   "scripts": {
+    "tokens:build": "node scripts/tokens-build.ts",
     "build:bundle": "vite build -c vite.lib.config.ts",
-    "build": "pnpm build:bundle",
+    "build": "pnpm tokens:build && pnpm build:bundle",
     "test": "vitest run --root ../.. --project design-system"
   },
   "peerDependencies": {

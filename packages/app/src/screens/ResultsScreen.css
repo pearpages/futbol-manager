@@ -63,7 +63,7 @@
 .results-screen__season-label {
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
   color: var(--fm-screen-ink-soft);
 }
@@ -90,7 +90,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--fm-space-hair);
   min-width: 9rem;
 }
 
@@ -127,7 +127,7 @@
   padding: var(--fm-space-2) var(--fm-space-3);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--fm-space-hair);
   overflow-y: auto;
   min-height: 0;
 }
@@ -375,7 +375,7 @@
 .honours__name {
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
   color: var(--fm-screen-ink-soft);
 }

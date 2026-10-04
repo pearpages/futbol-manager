@@ -42,7 +42,7 @@
   color: var(--fm-screen-ink-soft);
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-xs);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-transform: uppercase;
 }
 
@@ -71,7 +71,7 @@
 .result-list__club {
   font-family: var(--fm-font-condensed);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: var(--fm-track-narrow);
   text-align: right;
 }
 

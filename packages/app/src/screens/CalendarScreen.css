@@ -112,8 +112,8 @@
 
 /*
  * Reuses the form strip's tokens rather than inventing three colours. Those are
- * deliberately aliases (`--fm-win: var(--fm-uecl)`) because `tokens.css` is
- * emphatic that a band colour is named for its competition, not its role — so
+ * deliberately separate names for the same colours (`--fm-win` is `--fm-uecl`'s
+ * green) because the design system's tokens are emphatic that a band colour is named for its competition, not its role — so
  * writing `--fm-uecl` here to mean "won" is exactly the mistake that comment is a
  * monument to.
  */

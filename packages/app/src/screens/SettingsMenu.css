@@ -7,7 +7,7 @@
 .settings__cog {
   display: inline-flex;
   align-items: center;
-  padding: 2px var(--fm-space-2);
+  padding: var(--fm-space-hair) var(--fm-space-2);
 }
 
 .settings__icon {
@@ -26,7 +26,7 @@
   gap: var(--fm-space-1);
   min-width: 9rem;
   padding: var(--fm-space-2);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+  box-shadow: var(--fm-shadow-menu);
 }
 
 .settings__label {

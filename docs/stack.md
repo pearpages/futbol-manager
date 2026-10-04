@@ -79,8 +79,10 @@ This is a **version in the sense of a build identifier, not a dependency pin** �
 No CSS Modules, no Sass, no CSS-in-JS. **Never** inline styles, style objects, or a JSX `style` prop.
 
 ```
+packages/design-system/src/
+  tokens.json   the tokens, as data — the source of truth (the artifact reads it)
+  tokens.css    generated from tokens.json by `tokens:build`; committed
 packages/app/src/styles/
-  tokens.css    custom properties — palette, spacing, type scale
   reset.css
   chrome.css    shared primitives: panels, tables, stat rows, field labels
 ```

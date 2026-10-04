@@ -1,0 +1,61 @@
+/*
+ * Generated from tokens.json by `pnpm --filter @fm/design-system tokens:build`.
+ * Do not edit: change tokens.json and rebuild. tokens.test.ts fails if this
+ * file and tokens.json disagree.
+ */
+
+:root {
+  --fm-panel: #b9bfae;
+  --fm-panel-raised: #c5cbba;
+  --fm-bevel-light: #dfe4d4;
+  --fm-bevel-dark: #7f8676;
+  --fm-ink: #171c14;
+  --fm-ink-soft: #4c5348;
+  --fm-screen: #0e1f16;
+  --fm-screen-raised: #16301f;
+  --fm-screen-ink: #d3e6d6;
+  --fm-screen-ink-soft: #7e9b86;
+  --fm-screen-rule: #23422e;
+  --fm-void: #0a120c;
+  --fm-champion: #e8b33a;
+  --fm-ucl: #4a86c8;
+  --fm-uel: #d97a2b;
+  --fm-uecl: #4fa88a;
+  --fm-relegation: #c0483a;
+  --fm-series-a: #e8b33a;
+  --fm-series-b: #4a86c8;
+  --fm-win: #4fa88a;
+  --fm-draw: #4a86c8;
+  --fm-loss: #c0483a;
+  --fm-accent: #e8b33a;
+  --fm-accent-ink: #201704;
+  --fm-accent-hover: #f2c157;
+  --fm-accent-wash: rgb(232 179 58 / 12%);
+  --fm-highlight: #fff;
+  --fm-relegation-tint: #e8a79c;
+  --fm-relegation-hover: #d4594a;
+  --fm-chip-fw: #e08a7e;
+  --fm-overlay-1: rgb(255 255 255 / 3%);
+  --fm-overlay-2: rgb(255 255 255 / 4%);
+  --fm-overlay-3: rgb(255 255 255 / 7%);
+  --fm-scrim: rgb(10 18 12 / 72%);
+  --fm-font: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --fm-font-condensed: 'Helvetica Neue Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+  --fm-text-xs: 0.6875rem;
+  --fm-text-sm: 0.8125rem;
+  --fm-text-md: 0.9375rem;
+  --fm-text-lg: 1.25rem;
+  --fm-text-xl: 1.75rem;
+  --fm-track-wide: 0.14em;
+  --fm-track-narrow: 0.06em;
+  --fm-space-hair: 2px;
+  --fm-space-1: 0.25rem;
+  --fm-space-2: 0.5rem;
+  --fm-space-3: 0.75rem;
+  --fm-space-4: 1rem;
+  --fm-space-6: 1.5rem;
+  --fm-radius-sm: 3px;
+  --fm-radius-round: 50%;
+  --fm-radius-pill: 999px;
+  --fm-shadow-menu: 0 8px 24px rgb(0 0 0 / 45%);
+}

@@ -109,7 +109,7 @@ describe('colour stays in the stylesheet', () => {
   it('declares both series as tokens, and draws with them', () => {
     // The pair is shared with the attribute rows beside the chart, which are not
     // inside it — so it is a token rather than a property on `.radar`.
-    const tokens = read('packages/app/src/styles/tokens.css')
+    const tokens = read('packages/design-system/src/tokens.css')
     expect(tokens).toContain('--fm-series-a:')
     expect(tokens).toContain('--fm-series-b:')
 
