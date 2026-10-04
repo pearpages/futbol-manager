@@ -89,6 +89,8 @@ packages/app/src/styles/
   pitch.css, stadium.css, shell-*.css   app-only art and shell styles
 ```
 
+**Screens use the primitives through their React wrappers** (`Screen`, `Panel`, `Button`, `DataTable`, `Stat`, `Field`… from `@fm/design-system`), which render exactly the element and classes `chrome.css` styles, plus any screen class passed as `className`. Writing `className="screen"` by hand still works; the wrappers are what the design system documents and the artifact shows.
+
 Screens get a sibling `.css` file (`SquadScreen.css`) with block-element names — `.squad-screen`, `.squad-screen__row` — imported for its side effect: `import './SquadScreen.css'`.
 
 **Why not CSS Modules**, given the roadmap originally said so. Modules exist to stop unrelated components' styles colliding — right when components have independent visual identities. These ~40 screens are the opposite: a league table, a squad list and a transfer list are the same object with different columns, sharing one chrome. Scoping guards a collision that shouldn't happen while making "every screen looks identical" harder — you either duplicate the chrome per module or build a `composes:` graph to climb back out of the scoping. It also defeats the block-element naming convention, since the mechanism _is_ generated names.

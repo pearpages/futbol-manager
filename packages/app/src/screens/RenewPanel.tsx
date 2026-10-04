@@ -9,7 +9,16 @@ import {
 import { useAttempt } from '../attempt.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { Modal } from '@fm/design-system'
+import {
+  Button,
+  Field,
+  FieldLabel,
+  Hint,
+  Modal,
+  NumberInput,
+  ScreenActions,
+  ScreenNote,
+} from '@fm/design-system'
 import './RenewPanel.css'
 
 /**
@@ -59,7 +68,7 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
   return (
     <Modal title={t('renew.title', { player: player.name })} onClose={onClose}>
       <div className="renew">
-        <p className="screen__note">
+        <ScreenNote>
           {/* The year is written bare, never through `count`. A year is an
               identifier rather than a quantity, and the thousands separator makes
               it "2,027" — the same class of mistake as pricing a €13.80 ticket
@@ -68,30 +77,26 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             wage: money(player.contract.wage),
             year: toCivil(player.contract.until).y,
           })}
-        </p>
+        </ScreenNote>
 
-        <div className="field">
-          <label className="field__label" htmlFor="renew-wage">
+        <Field>
+          <FieldLabel htmlFor="renew-wage">
             {t('market.wageField', { wage: money(wanted.wage) })}
-          </label>
-          <input
+          </FieldLabel>
+          <NumberInput
             id="renew-wage"
-            className="number-input"
             type="number"
             min={0}
             step={50}
             value={wage}
             onChange={(event) => setWage(event.target.value)}
           />
-        </div>
+        </Field>
 
-        <div className="field">
-          <label className="field__label" htmlFor="renew-years">
-            {t('market.yearsField')}
-          </label>
-          <input
+        <Field>
+          <FieldLabel htmlFor="renew-years">{t('market.yearsField')}</FieldLabel>
+          <NumberInput
             id="renew-years"
-            className="number-input"
             type="number"
             min={MIN_CONTRACT_YEARS}
             max={MAX_CONTRACT_YEARS}
@@ -99,23 +104,23 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             value={years}
             onChange={(event) => setYears(event.target.value)}
           />
-        </div>
+        </Field>
 
-        <p className="hint">{t('renew.hint')}</p>
+        <Hint>{t('renew.hint')}</Hint>
 
         {error !== null && (
-          <p className="screen__note is-out" role="alert">
+          <ScreenNote className="is-out" role="alert">
             {error}
-          </p>
+          </ScreenNote>
         )}
 
-        <div className="screen-actions renew__actions">
-          <button type="button" className="button" onClick={onClose}>
+        <ScreenActions className="renew__actions">
+          <Button type="button" onClick={onClose}>
             {t('action.cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
+            primary
             type="button"
-            className="button is-primary"
             onClick={() => {
               const events = attempt(() =>
                 dispatch({
@@ -133,8 +138,8 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             }}
           >
             {t('renew.offer')}
-          </button>
-        </div>
+          </Button>
+        </ScreenActions>
       </div>
     </Modal>
   )

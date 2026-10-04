@@ -3,7 +3,7 @@ import { isSeasonComplete } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { matchdayFor } from '../matchday.ts'
 import { useGame } from '../store.ts'
-import { Modal } from '@fm/design-system'
+import { Button, Modal, Panel, ScreenActions } from '@fm/design-system'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import '../styles/shell-foot.css'
 
@@ -77,50 +77,47 @@ export function ShellFoot(): React.JSX.Element {
 
   return (
     <>
-      <div className="panel shell__foot">
+      <Panel className="shell__foot">
         <div className="shell__foot-group">
           {/* Absent on the hub, which is where back goes. The *behaviour* stays
               contextual: a ficha opened from a two-hundred-row market list
               returns to that list, never to the hub. Only its position is
               now fixed. */}
           {!onHub && (
-            <button
+            <Button
               type="button"
-              className="button"
               onClick={() => {
                 if (screen === 'player') inspect(null)
                 else go('hub')
               }}
             >
               {t('action.back')}
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="shell__foot-group">
-          <button type="button" className="button" disabled={saving} onClick={quickSave}>
+          <Button type="button" disabled={saving} onClick={quickSave}>
             {saving ? t('action.saving') : t('action.save')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="button"
             onClick={() => {
               setSavesOpen(true)
             }}
           >
             {t('action.saves')}
-          </button>
+          </Button>
           {/* Furthest from the quick save on purpose: one is a press you make
               every few minutes and the other ends the career. */}
-          <button
+          <Button
             type="button"
-            className="button"
             onClick={() => {
               setLeaving(true)
             }}
           >
             {t('action.quit')}
-          </button>
+          </Button>
           {/* Says it worked. The label flicking to "Desant…" is over too fast to
               read, and a save with no visible result is indistinguishable from a
               broken button — which is how this feature was first reported. */}
@@ -141,16 +138,12 @@ export function ShellFoot(): React.JSX.Element {
               is the way on. `Fins la jornada` stays there for the same reason —
               skipping several days at once is a decision about the fixture. */}
           {!overForNow && matchday !== null && !matchday.due && (
-            <button
-              type="button"
-              className="button is-primary"
-              onClick={() => dispatch({ type: 'AdvanceDay' })}
-            >
+            <Button primary type="button" onClick={() => dispatch({ type: 'AdvanceDay' })}>
               {t('hub.advanceDay')}
-            </button>
+            </Button>
           )}
         </div>
-      </div>
+      </Panel>
 
       {savesOpen && (
         <SaveManagerModal
@@ -168,20 +161,19 @@ export function ShellFoot(): React.JSX.Element {
           }}
         >
           <p className="shell__question">{t('hub.confirmQuit')}</p>
-          <div className="screen-actions">
-            <button
+          <ScreenActions>
+            <Button
               type="button"
-              className="button"
               onClick={() => {
                 setLeaving(false)
               }}
             >
               {t('action.cancel')}
-            </button>
-            <button type="button" className="button is-primary" onClick={quitToLanding}>
+            </Button>
+            <Button primary type="button" onClick={quitToLanding}>
               {t('action.quit')}
-            </button>
-          </div>
+            </Button>
+          </ScreenActions>
         </Modal>
       )}
     </>

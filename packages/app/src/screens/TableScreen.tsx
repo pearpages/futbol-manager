@@ -2,7 +2,21 @@ import { useState } from 'react'
 import { computeTable, type TableRow } from '@fm/domain'
 import { type Band, BANDS, bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
+import {
+  ClubCell,
+  DataTable,
+  Screen,
+  ScreenHeading,
+  ScreenNote,
+  type Sort,
+  sortedBy,
+  SortHeader,
+  Stat,
+  StatLabel,
+  StatValue,
+  Swatch,
+  VisuallyHidden,
+} from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import './TableScreen.css'
@@ -87,9 +101,9 @@ export function TableScreen() {
 
   return (
     <div className="table-screen">
-      <section className="screen table-screen__main">
-        <h2 className="screen__heading">{game.competition.name}</h2>
-        <table className="data-table">
+      <Screen className="table-screen__main">
+        <ScreenHeading>{game.competition.name}</ScreenHeading>
+        <DataTable>
           <thead className="data-table__head">
             <tr>
               <th aria-label={t('table.qualification')} />
@@ -119,14 +133,14 @@ export function TableScreen() {
                   >
                     {/* The band is colour; this is what it says to a reader who
                         cannot use colour. Mid-table is genuinely nothing. */}
-                    {band !== null && <span className="visually-hidden">{t(band.label)}</span>}
+                    {band !== null && <VisuallyHidden>{t(band.label)}</VisuallyHidden>}
                   </td>
                   <td className="data-table__num">{position}</td>
                   <td className="is-text">
-                    <span className="club-cell">
+                    <ClubCell>
                       {club !== undefined && <ClubBadge club={club} />}
                       {club?.name ?? row.clubId}
-                    </span>
+                    </ClubCell>
                   </td>
                   <td>{row.played}</td>
                   <td>{row.won}</td>
@@ -142,39 +156,37 @@ export function TableScreen() {
               )
             })}
           </tbody>
-        </table>
+        </DataTable>
 
         {/* Built from BANDS, so a band can never be shown without being explained. */}
         <ul className="table-legend">
           {BANDS.map((band) => (
             <li key={band.className} className="table-legend__item">
-              <span className={`swatch ${band.className}`} />
+              <Swatch className={`${band.className}`} />
               {t(band.label)}
             </li>
           ))}
         </ul>
-      </section>
+      </Screen>
 
       <aside className="table-screen__side">
-        <section className="screen table-screen__meta">
+        <Screen className="table-screen__meta">
           <div className="table-screen__stats">
-            <div className="stat">
-              <span className="stat__label">{t('table.matchday')}</span>
-              <span className="stat__value">{round}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('table.date')}</span>
-              <span className="stat__value table-screen__date">
-                {date(game.season.currentDate)}
-              </span>
-            </div>
+            <Stat>
+              <StatLabel>{t('table.matchday')}</StatLabel>
+              <StatValue>{round}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('table.date')}</StatLabel>
+              <StatValue className="table-screen__date">{date(game.season.currentDate)}</StatValue>
+            </Stat>
           </div>
-        </section>
+        </Screen>
 
-        <section className="screen table-screen__results">
-          <h2 className="screen__heading">{t('table.latestResults')}</h2>
+        <Screen className="table-screen__results">
+          <ScreenHeading>{t('table.latestResults')}</ScreenHeading>
           {results.length === 0 ? (
-            <p className="screen__note">{t('table.noResults')}</p>
+            <ScreenNote>{t('table.noResults')}</ScreenNote>
           ) : (
             <ul className="result-list">
               {results.map((r) => (
@@ -186,7 +198,7 @@ export function TableScreen() {
               ))}
             </ul>
           )}
-        </section>
+        </Screen>
       </aside>
     </div>
   )

@@ -2,7 +2,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { nameFor, type SaveSummary } from '@fm/persistence'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { Modal } from '@fm/design-system'
+import {
+  Button,
+  DataTable,
+  Field,
+  FieldLabel,
+  Modal,
+  NumberInput,
+  Screen,
+  ScreenActions,
+  ScreenNote,
+} from '@fm/design-system'
 import './SaveManagerModal.css'
 
 /**
@@ -124,39 +134,31 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
         <p className="save-manager__question" role="alert">
           {question}
         </p>
-        <div className="screen-actions">
-          <button
+        <ScreenActions>
+          <Button
             type="button"
-            className="button"
             onClick={() => {
               setPending(null)
             }}
           >
             {t('action.cancel')}
-          </button>
-          <button
-            type="button"
-            className="button is-primary"
-            disabled={saving}
-            onClick={() => void confirm()}
-          >
+          </Button>
+          <Button primary type="button" disabled={saving} onClick={() => void confirm()}>
             {proceed}
-          </button>
-        </div>
+          </Button>
+        </ScreenActions>
       </Modal>
     )
   }
 
   return (
     <Modal title={t('saves.title')} onClose={onClose} wide>
-      <div className="field save-manager__name">
-        <label className="field__label" htmlFor="save-name">
-          {t('saves.nameLabel')}
-        </label>
+      <Field className="save-manager__name">
+        <FieldLabel htmlFor="save-name">{t('saves.nameLabel')}</FieldLabel>
         <div className="save-manager__row">
-          <input
+          <NumberInput
             id="save-name"
-            className="number-input save-manager__input"
+            className="save-manager__input"
             type="text"
             value={name}
             maxLength={40}
@@ -164,9 +166,9 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
               setName(event.target.value)
             }}
           />
-          <button
+          <Button
+            primary
             type="button"
-            className="button is-primary"
             // An empty name has nowhere to go, and the field being empty says so
             // more plainly than a refusal would.
             disabled={saving || typed === ''}
@@ -183,15 +185,15 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
             }}
           >
             {saving ? t('action.saving') : t('saves.write')}
-          </button>
+          </Button>
         </div>
-      </div>
+      </Field>
 
-      <div className="screen save-manager__list">
+      <Screen as="div" className="save-manager__list">
         {ordered.length === 0 ? (
-          <p className="screen__note">{t('saves.empty')}</p>
+          <ScreenNote>{t('saves.empty')}</ScreenNote>
         ) : (
-          <table className="data-table">
+          <DataTable>
             <thead className="data-table__head">
               <tr>
                 <th className="is-text">{t('saves.column.name')}</th>
@@ -218,37 +220,35 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
                   </td>
                   <td className="is-text save-manager__career">{describe(save)}</td>
                   <td className="save-manager__actions">
-                    <button
+                    <Button
                       type="button"
-                      className="button"
                       onClick={() => {
                         setPending({ kind: 'load', slot: save.slot, name: save.name })
                       }}
                     >
                       {t('saves.load')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
-                      className="button"
                       onClick={() => {
                         setPending({ kind: 'delete', slot: save.slot, name: save.name })
                       }}
                     >
                       {t('saves.delete')}
-                    </button>
+                    </Button>
                   </td>
                 </tr>
               ))}
             </tbody>
-          </table>
+          </DataTable>
         )}
-      </div>
+      </Screen>
 
-      <div className="screen-actions">
-        <button type="button" className="button" onClick={onClose}>
+      <ScreenActions>
+        <Button type="button" onClick={onClose}>
           {t('action.close')}
-        </button>
-      </div>
+        </Button>
+      </ScreenActions>
     </Modal>
   )
 }

@@ -11,6 +11,7 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { Explain } from './Explain.tsx'
+import { ClubCell, DataTable, Screen, ScreenHeading, VisuallyHidden } from '@fm/design-system'
 import './CalendarScreen.css'
 
 /**
@@ -124,11 +125,11 @@ export function CalendarScreen() {
   }, [nextId])
 
   return (
-    <section className="screen calendar-screen">
-      <h2 className="screen__heading">
+    <Screen className="calendar-screen">
+      <ScreenHeading>
         {t('calendar.heading', { season: season(game.season.startYear) })}
         <Explain topic="calendar" />
-      </h2>
+      </ScreenHeading>
 
       {/* Its own scroll container, because `.screen` carries `overflow: auto` and
           would otherwise take the heading — and the "i" that explains the deadline
@@ -136,7 +137,7 @@ export function CalendarScreen() {
           this had scrolled 218px to reach November, and the explainer was simply
           gone. `ResultsScreen` had already paid for the same lesson. */}
       <div className="calendar-screen__scroll">
-        <table className="data-table calendar-screen__table">
+        <DataTable className="calendar-screen__table">
           <thead className="data-table__head">
             <tr>
               <th>{t('calendar.column.round')}</th>
@@ -176,9 +177,9 @@ export function CalendarScreen() {
               ),
             )}
           </tbody>
-        </table>
+        </DataTable>
       </div>
-    </section>
+    </Screen>
   )
 }
 
@@ -230,7 +231,7 @@ function FixtureRow({ fixture, clubs, managedClubId, isNext, ref }: FixtureRowPr
       <td className="data-table__num">{fixture.round}</td>
       <td className="is-text">{date(fixture.date)}</td>
       <td className="is-text">
-        <span className="club-cell">
+        <ClubCell>
           {opponent !== undefined && <ClubBadge club={opponent} />}
           {/* Reuses the keys the hub's next-match panel renders. The venue letter
               abbreviates a *word* and the words differ — Catalan local/visitant,
@@ -239,7 +240,7 @@ function FixtureRow({ fixture, clubs, managedClubId, isNext, ref }: FixtureRowPr
           {t(home ? 'fixture.home' : 'fixture.away', {
             club: opponent === undefined ? t('fixture.unknownClub') : club(opponent.name),
           })}
-        </span>
+        </ClubCell>
       </td>
       <td className={`calendar-screen__score${outcome === null ? '' : ` is-${outcome}`}`}>
         {outcome === null || score === null ? (
@@ -251,7 +252,7 @@ function FixtureRow({ fixture, clubs, managedClubId, isNext, ref }: FixtureRowPr
                 and the form strip follow. The leading space is deliberate: nothing
                 in the DOM separates this from the score, and running them together
                 is how "CanteraM7" and "20Relegated" happened. */}
-            <span className="visually-hidden"> {t(OUTCOME_LABEL[outcome])}</span>
+            <VisuallyHidden> {t(OUTCOME_LABEL[outcome])}</VisuallyHidden>
           </>
         )}
       </td>

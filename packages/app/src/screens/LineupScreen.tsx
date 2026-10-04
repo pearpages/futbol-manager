@@ -18,6 +18,18 @@ import { Explain } from './Explain.tsx'
 import { PitchView } from './PitchView.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
+import {
+  Button,
+  Field,
+  FieldLabel,
+  Hint,
+  Screen,
+  ScreenHeading,
+  Slider,
+  Stat,
+  StatLabel,
+  StatValue,
+} from '@fm/design-system'
 import './LineupScreen.css'
 
 const POSITIONS: readonly Position[] = ['GK', 'DF', 'MF', 'FW']
@@ -102,34 +114,34 @@ export function LineupScreen() {
             and expects to find the numbers there. The hint that used to sit
             under them is the `title`: still said, but not costing three rows of
             the eleven below. */}
-        <section className="screen lineup-screen__vitals" title={t('lineup.ratingHint')}>
-          <h2 className="screen__heading">
+        <Screen className="lineup-screen__vitals" title={t('lineup.ratingHint')}>
+          <ScreenHeading>
             {t('lineup.thisXI')}
             <Explain topic="teamRating" />
-          </h2>
+          </ScreenHeading>
           <div className="lineup-screen__ratings">
-            <div className="stat">
-              <span className="stat__label">{t('lineup.attack')}</span>
-              <span className="stat__value">{rating.attack}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">{t('lineup.defence')}</span>
-              <span className="stat__value">{rating.defence}</span>
-            </div>
-            <div className="stat">
-              <span className="stat__label">
+            <Stat>
+              <StatLabel>{t('lineup.attack')}</StatLabel>
+              <StatValue>{rating.attack}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>{t('lineup.defence')}</StatLabel>
+              <StatValue>{rating.defence}</StatValue>
+            </Stat>
+            <Stat>
+              <StatLabel>
                 {t('lineup.tempo')}
                 <Explain topic="tempo" />
-              </span>
-              <span className="stat__value lineup-screen__word">
+              </StatLabel>
+              <StatValue className="lineup-screen__word">
                 {t(describeTempo(rating.tempo))}
-              </span>
-            </div>
+              </StatValue>
+            </Stat>
           </div>
-        </section>
+        </Screen>
 
-        <section className="screen lineup-screen__xi">
-          <h2 className="screen__heading">{t('lineup.startingXI')}</h2>
+        <Screen className="lineup-screen__xi">
+          <ScreenHeading>{t('lineup.startingXI')}</ScreenHeading>
           {POSITIONS.map((position) => {
             const inXI = squad.filter((p) => p.position === position && starters.has(p.id))
 
@@ -151,27 +163,27 @@ export function LineupScreen() {
                       controls — and cheap insurance, given that a `<g>` carrying
                       `tabIndex` is the one part of this screen no test can prove
                       behaves in a real browser. */}
-                    <button
+                    <Button
                       type="button"
-                      className="button lineup-row__pick"
+                      className="lineup-row__pick"
                       aria-pressed={player.id === selectedPlayer?.id}
                       onClick={() => pick(player.id)}
                     >
                       {t('lineup.pick')}
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
             )
           })}
-        </section>
+        </Screen>
 
         {/* Pinned as its own row, never scrolling away with the eleven above it.
             That is what makes it safe for the bench to sit across the screen
             from the pitch: the M4b transfer bug was an answer rendered outside
             the viewport, not an answer a few centimetres away. */}
-        <section className="screen lineup-screen__bench">
-          <h2 className="screen__heading">{t('lineup.bench')}</h2>
+        <Screen className="lineup-screen__bench">
+          <ScreenHeading>{t('lineup.bench')}</ScreenHeading>
           <div className="lineup-screen__bench-body">
             {/* Always one line here, never none. It carries the count idle — the
                 list caps at four rows and scrolls, so "17 available" is the only
@@ -179,13 +191,13 @@ export function LineupScreen() {
                 man is picked. A line that comes and goes would resize this panel
                 on every click, and the panel below the eleven resizing means a
                 striker drops out of the list above it. */}
-            <p className="hint">
+            <Hint>
               {selectedPlayer === null
                 ? plural('lineup.available', substitutes.length)
                 : t('lineup.replacing', { name: selectedPlayer.name })}
-            </p>
+            </Hint>
             {substitutes.length === 0 ? (
-              <p className="hint">{t('lineup.noSubs')}</p>
+              <Hint>{t('lineup.noSubs')}</Hint>
             ) : (
               <ul className="lineup-screen__subs">
                 {substitutes.map((sub) => (
@@ -202,32 +214,32 @@ export function LineupScreen() {
                         <span className="lineup-row__ovr">{overall(sub)}</span>
                       </div>
                     ) : (
-                      <button
+                      <Button
                         type="button"
-                        className="button lineup-screen__sub"
+                        className="lineup-screen__sub"
                         onClick={() => swap(selectedPlayer.id, sub.id)}
                       >
                         {positionChip(sub.position, t(`position.${sub.position}`))}
                         <span className="lineup-row__name">{sub.name}</span>
                         <span className="lineup-row__ovr">{overall(sub)}</span>
-                      </button>
+                      </Button>
                     )}
                   </li>
                 ))}
               </ul>
             )}
           </div>
-        </section>
+        </Screen>
       </div>
 
       {/* Right is the system, and the system drawn. They are cause and effect —
           pressing a shape is a change to the pitch — so they share a column. */}
       <div className="lineup-screen__system">
-        <section className="screen lineup-screen__panel">
-          <h2 className="screen__heading">{t('lineup.shape')}</h2>
+        <Screen className="lineup-screen__panel">
+          <ScreenHeading>{t('lineup.shape')}</ScreenHeading>
           <div className="lineup-screen__body">
-            <div className="field">
-              <span className="field__label">{t('lineup.formation')}</span>
+            <Field>
+              <FieldLabel as="span">{t('lineup.formation')}</FieldLabel>
               <div className="lineup-screen__formations">
                 {FORMATION_NAMES.map((formation) => {
                   // `bestXI` throws on a squad short at any bank, and `setFormation`
@@ -235,29 +247,28 @@ export function LineupScreen() {
                   // uncaught throw in an event handler, with no error boundary.
                   const playable = canField(squad, formation)
                   return (
-                    <button
+                    <Button
+                      primary={formation === lineup.formation}
                       key={formation}
                       type="button"
-                      className={`button${formation === lineup.formation ? ' is-primary' : ''}`}
                       disabled={!playable}
                       {...(playable ? {} : { title: t('lineup.cannotField') })}
                       onClick={() => setFormation(formation)}
                     >
                       {formation}
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
-              <p className="hint">{t('lineup.formationHint')}</p>
-            </div>
+              <Hint>{t('lineup.formationHint')}</Hint>
+            </Field>
 
-            <div className="field">
-              <label className="field__label" htmlFor="attacking">
+            <Field>
+              <FieldLabel htmlFor="attacking">
                 {t('lineup.approach', { approach: t(describeApproach(tactics.attacking)) })}
-              </label>
-              <input
+              </FieldLabel>
+              <Slider
                 id="attacking"
-                className="slider"
                 type="range"
                 min={0}
                 max={100}
@@ -271,16 +282,16 @@ export function LineupScreen() {
                   })
                 }
               />
-              <p className="hint">
+              <Hint>
                 {t('lineup.approachHint')}
                 <Explain topic="approach" />
-              </p>
-            </div>
+              </Hint>
+            </Field>
           </div>
-        </section>
+        </Screen>
 
-        <section className="screen lineup-screen__pitch-panel">
-          <h2 className="screen__heading">{t('lineup.pitch')}</h2>
+        <Screen className="lineup-screen__pitch-panel">
+          <ScreenHeading>{t('lineup.pitch')}</ScreenHeading>
           <PitchView
             starters={starterList}
             selected={selectedPlayer?.id ?? null}
@@ -288,7 +299,7 @@ export function LineupScreen() {
             label={slotLabel}
             title={t('lineup.pitch')}
           />
-        </section>
+        </Screen>
       </div>
     </div>
   )

@@ -13,7 +13,23 @@ import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
-import { Pager, TrophyIcon } from '@fm/design-system'
+import {
+  Button,
+  ClubCell,
+  DataTable,
+  Hint,
+  Pager,
+  Screen,
+  ScreenHeading,
+  ScreenNote,
+  Select,
+  Stat,
+  StatLabel,
+  StatValue,
+  Swatch,
+  TrophyIcon,
+  VisuallyHidden,
+} from '@fm/design-system'
 import { artSrc, TROPHY_KEYS } from './art.ts'
 import './ResultsScreen.css'
 
@@ -129,7 +145,7 @@ export function ResultsScreen() {
 
   return (
     <div className="results-screen">
-      <section className="screen results-screen__main">
+      <Screen className="results-screen__main">
         <div className="results-screen__bar">
           {/*
             Two buttons with `aria-pressed`, not a `role="tablist"`. A tablist owes
@@ -140,17 +156,17 @@ export function ResultsScreen() {
           */}
           <div className="results-screen__tabs">
             {(['round', 'grid', 'palmares'] as const).map((key) => (
-              <button
+              <Button
+                primary={tab === key}
                 key={key}
                 type="button"
-                className={`button${tab === key ? ' is-primary' : ''}`}
                 aria-pressed={tab === key}
                 onClick={() => {
                   setTab(key)
                 }}
               >
                 {t(`results.tab.${key}`)}
-              </button>
+              </Button>
             ))}
           </div>
 
@@ -162,8 +178,7 @@ export function ResultsScreen() {
           {tab !== 'palmares' && seasons.length > 1 && (
             <label className="results-screen__season">
               <span className="results-screen__season-label">{t('results.season')}</span>
-              <select
-                className="select"
+              <Select
                 value={year ?? ''}
                 onChange={(e) => {
                   setYear(e.target.value === '' ? null : Number(e.target.value))
@@ -175,7 +190,7 @@ export function ResultsScreen() {
                     {season(entry.label)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
         </div>
@@ -183,7 +198,7 @@ export function ResultsScreen() {
         {tab === 'palmares' ? (
           <SeasonHistory history={game.history} clubs={clubs} managed={game.managedClubId} />
         ) : viewing === null ? (
-          <p className="screen__note">{t('results.noSeason')}</p>
+          <ScreenNote>{t('results.noSeason')}</ScreenNote>
         ) : tab === 'round' ? (
           <RoundResults
             viewing={viewing}
@@ -195,34 +210,34 @@ export function ResultsScreen() {
         ) : (
           <ResultGrid viewing={viewing} clubs={clubs} managed={game.managedClubId} />
         )}
-      </section>
+      </Screen>
 
       <aside className="results-screen__side">
-        <section className="screen results-screen__panel">
-          <h2 className="screen__heading">{t('palmares.yours')}</h2>
+        <Screen className="results-screen__panel">
+          <ScreenHeading>{t('palmares.yours')}</ScreenHeading>
           <Honours history={game.history} clubId={game.managedClubId} />
-        </section>
+        </Screen>
 
-        <section className="screen results-screen__panel">
-          <h2 className="screen__heading">{t('palmares.league')}</h2>
+        <Screen className="results-screen__panel">
+          <ScreenHeading>{t('palmares.league')}</ScreenHeading>
           <RollOfHonour history={game.history} clubs={clubs} managed={game.managedClubId} />
-        </section>
+        </Screen>
 
-        <section className="screen results-screen__panel">
+        <Screen className="results-screen__panel">
           <div className="results-screen__vitals">
-            <div className="stat">
-              <span className="stat__label">{t('table.date')}</span>
-              <span className="stat__value results-screen__date">
+            <Stat>
+              <StatLabel>{t('table.date')}</StatLabel>
+              <StatValue className="results-screen__date">
                 {date(game.season.currentDate)}
-              </span>
-            </div>
-            <p className="hint">
+              </StatValue>
+            </Stat>
+            <Hint>
               {plural('results.archived', game.history.length, {
                 count: count(game.history.length),
               })}
-            </p>
+            </Hint>
           </div>
-        </section>
+        </Screen>
       </aside>
     </div>
   )
@@ -274,7 +289,7 @@ function RoundResults({
   const rank = useMemo(() => new Map(viewing.order.map((id, i) => [id, i])), [viewing.order])
 
   if (rounds.first === null || rounds.last === null) {
-    return <p className="screen__note">{t('results.noSeason')}</p>
+    return <ScreenNote>{t('results.noSeason')}</ScreenNote>
   }
 
   // Nothing played yet is a real state on day one, and matchday 1 is the right
@@ -354,7 +369,7 @@ function RoundResults({
                     ? '—'
                     : `${String(fixture.result.home)}–${String(fixture.result.away)}`}
                 </span>
-                <span className="visually-hidden">{told}</span>
+                <VisuallyHidden>{told}</VisuallyHidden>
               </span>
               <span className="round-list__side">
                 {away !== undefined && <ClubBadge club={away} />}
@@ -403,10 +418,10 @@ function ResultGrid({
 
   return (
     <>
-      <h2 className="screen__heading">
+      <ScreenHeading>
         {t('results.gridHeading', { season: season(viewing.startYear) })}
-      </h2>
-      <p className="screen__note">{t('results.gridNote')}</p>
+      </ScreenHeading>
+      <ScreenNote>{t('results.gridNote')}</ScreenNote>
 
       {/* Its own scroll container, so the tabs and the picker above do not scroll
           away with it. `.screen` carries `overflow: auto`, which would otherwise
@@ -417,7 +432,7 @@ function ResultGrid({
           <thead>
             <tr>
               <th className="results-grid__corner">
-                <span className="visually-hidden">{t('results.homeAway')}</span>
+                <VisuallyHidden>{t('results.homeAway')}</VisuallyHidden>
               </th>
               {viewing.order.map((awayId) => {
                 const club = clubs.get(awayId)
@@ -427,7 +442,7 @@ function ResultGrid({
                     className={`results-grid__head${awayId === managed ? ' is-you' : ''}`}
                   >
                     {club !== undefined && <ClubBadge club={club} />}
-                    <span className="visually-hidden">{name(awayId)}</span>
+                    <VisuallyHidden>{name(awayId)}</VisuallyHidden>
                   </th>
                 )
               })}
@@ -442,10 +457,10 @@ function ResultGrid({
                   className={`results-grid__row${homeId === managed ? ' is-you' : ''}`}
                 >
                   <th className="results-grid__side">
-                    <span className="club-cell">
+                    <ClubCell>
                       {club !== undefined && <ClubBadge club={club} />}
                       <span className="results-grid__club">{name(homeId)}</span>
-                    </span>
+                    </ClubCell>
                   </th>
                   {viewing.order.map((awayId) => {
                     if (homeId === awayId) {
@@ -455,12 +470,12 @@ function ResultGrid({
                     if (score === undefined) {
                       return (
                         <td key={awayId} className="results-grid__cell is-unplayed">
-                          <span className="visually-hidden">
+                          <VisuallyHidden>
                             {t('results.unplayed', {
                               home: name(homeId),
                               away: name(awayId),
                             })}
-                          </span>
+                          </VisuallyHidden>
                         </td>
                       )
                     }
@@ -483,7 +498,7 @@ function ResultGrid({
                         <span aria-hidden="true">
                           {score.home}–{score.away}
                         </span>
-                        <span className="visually-hidden">{told}</span>
+                        <VisuallyHidden>{told}</VisuallyHidden>
                       </td>
                     )
                   })}
@@ -519,16 +534,16 @@ function SeasonHistory({
   if (history.length === 0) {
     return (
       <>
-        <h2 className="screen__heading">{t('palmares.history')}</h2>
-        <p className="screen__note">{t('palmares.empty')}</p>
+        <ScreenHeading>{t('palmares.history')}</ScreenHeading>
+        <ScreenNote>{t('palmares.empty')}</ScreenNote>
       </>
     )
   }
 
   return (
     <>
-      <h2 className="screen__heading">{t('palmares.history')}</h2>
-      <table className="data-table">
+      <ScreenHeading>{t('palmares.history')}</ScreenHeading>
+      <DataTable>
         <thead className="data-table__head">
           <tr>
             <th className="is-text">{t('palmares.column.season')}</th>
@@ -549,10 +564,10 @@ function SeasonHistory({
               <tr key={archived.startYear} className="data-table__row">
                 <td className="is-text">{season(archived.startYear)}</td>
                 <td className="is-text">
-                  <ClubCell clubs={clubs} id={champion?.clubId} />
+                  <ResultClub clubs={clubs} id={champion?.clubId} />
                 </td>
                 <td className="is-text">
-                  <ClubCell clubs={clubs} id={second?.clubId} />
+                  <ResultClub clubs={clubs} id={second?.clubId} />
                 </td>
                 <td>{champion?.points ?? '—'}</td>
                 <td className="data-table__num">
@@ -563,8 +578,8 @@ function SeasonHistory({
                         so the class alone was silently inert here. */}
                     {band !== null && (
                       <>
-                        <span className={`swatch ${band.className}`} />
-                        <span className="visually-hidden"> {t(band.label)}</span>
+                        <Swatch className={`${band.className}`} />
+                        <VisuallyHidden> {t(band.label)}</VisuallyHidden>
                       </>
                     )}
                   </span>
@@ -573,12 +588,12 @@ function SeasonHistory({
             )
           })}
         </tbody>
-      </table>
+      </DataTable>
     </>
   )
 }
 
-function ClubCell({
+function ResultClub({
   clubs,
   id,
 }: {
@@ -588,10 +603,10 @@ function ClubCell({
   if (id === undefined) return <>—</>
   const club = clubs.get(id)
   return (
-    <span className="club-cell">
+    <ClubCell>
       {club !== undefined && <ClubBadge club={club} />}
       {club?.name ?? id}
-    </span>
+    </ClubCell>
   )
 }
 
@@ -661,13 +676,13 @@ function RollOfHonour({
   const { t, season } = useT()
   const roll = titlesByClub(history)
 
-  if (roll.length === 0) return <p className="screen__note">{t('palmares.noChampions')}</p>
+  if (roll.length === 0) return <ScreenNote>{t('palmares.noChampions')}</ScreenNote>
 
   return (
     <ul className="roll">
       {roll.map(({ clubId, years }) => (
         <li key={clubId} className={`roll__item${clubId === managed ? ' is-you' : ''}`}>
-          <ClubCell clubs={clubs} id={clubId} />
+          <ResultClub clubs={clubs} id={clubId} />
           <span className="roll__count">{years.length}</span>
           <span className="roll__years">{years.map((y) => season(y)).join(' · ')}</span>
         </li>

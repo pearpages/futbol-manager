@@ -1,4 +1,5 @@
 import { type Notice } from '../notifications.ts'
+import { ScreenNote } from '@fm/design-system'
 
 /**
  * The hub's news panel. It was rendered in two places until the title bar's
@@ -7,7 +8,7 @@ import { type Notice } from '../notifications.ts'
  * of the hub's layout.
  */
 export function NotificationList({ notices, empty }: { notices: Notice[]; empty: string }) {
-  if (notices.length === 0) return <p className="screen__note">{empty}</p>
+  if (notices.length === 0) return <ScreenNote>{empty}</ScreenNote>
 
   return (
     <ul className="notice-list">

@@ -3,8 +3,8 @@ import { transferWindowDaysLeft } from '@fm/domain'
 import { LOCALE_TAGS } from './i18n/format.ts'
 import { useT } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
-import { type Screen, useGame } from './store.ts'
-import { BadgeDefs } from '@fm/design-system'
+import { type Screen as ScreenKey, useGame } from './store.ts'
+import { BadgeDefs, Panel } from '@fm/design-system'
 import { HubScreen } from './screens/HubScreen.tsx'
 import { SettingsMenu } from './screens/SettingsMenu.tsx'
 import { ShellCredit } from './screens/ShellCredit.tsx'
@@ -39,7 +39,7 @@ import './App.css'
  * clicked" quietly stops being true — and with three languages it would have
  * stopped being true three times over.
  */
-const SCREEN_TITLES: Record<Screen, string> = {
+const SCREEN_TITLES: Record<ScreenKey, string> = {
   hub: 'nav.hub',
   table: 'nav.table',
   results: 'nav.results',
@@ -53,7 +53,7 @@ const SCREEN_TITLES: Record<Screen, string> = {
   estadio: 'nav.estadio',
 }
 
-const SCREENS: Record<Screen, () => React.JSX.Element | null> = {
+const SCREENS: Record<ScreenKey, () => React.JSX.Element | null> = {
   hub: HubScreen,
   table: TableScreen,
   results: ResultsScreen,
@@ -119,7 +119,7 @@ export function App() {
     return (
       <div className="shell shell--setup">
         <BadgeDefs />
-        <header className="panel shell__bar">
+        <Panel as="header" className="shell__bar">
           <h1 className="shell__wordmark">{t('shell.wordmark')}</h1>
           <p className="shell__club">
             <span className="shell__date">
@@ -127,7 +127,7 @@ export function App() {
             </span>
             <SettingsMenu />
           </p>
-        </header>
+        </Panel>
         <main className="shell__stage">
           <SetupScreen />
         </main>
@@ -139,7 +139,7 @@ export function App() {
   return (
     <div className="shell">
       <BadgeDefs />
-      <header className="panel shell__bar">
+      <Panel as="header" className="shell__bar">
         {/* When you are, not who you are. The club you manage never changes and the
             hub states it with a crest; what a title bar is for is the situation —
             which competition and which matchday. Position used to sit here too and
@@ -171,7 +171,7 @@ export function App() {
           )}
           <SettingsMenu />
         </p>
-      </header>
+      </Panel>
 
       <main className="shell__stage">
         <Current />
