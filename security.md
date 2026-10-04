@@ -48,6 +48,10 @@ Small by construction. This is a static single-page app on GitHub Pages:
 ## Dependencies
 
 - Minimal runtime: `react`, `react-dom`, `zustand`, `idb`. `@fm/domain` has no dependencies at all.
+- `@fm/design-system` adds only dev dependencies (Vite's library build, `vite-plugin-dts`,
+  `@microsoft/api-extractor`). Its `dist/bundle.js` is for the Claude Design System artifact
+  and is never loaded by the game. A build step fails it if it imports, requires or fetches
+  anything, or contains `</script` (ADR 0016).
 - Every version is an exact pin, decided only in [docs/stack.md](docs/stack.md). The lockfile
   is committed and CI installs with `--frozen-lockfile`.
 - pnpm's strict `node_modules` blocks undeclared imports.

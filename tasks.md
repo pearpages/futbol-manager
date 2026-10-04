@@ -40,6 +40,18 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 - [ ] **`es.ts` keeps the calques fixed in Catalan** (`en el idioma de`, `el calendario`, `Mostrando`, `cubrir este sistema`). `attribute.short.finishing` (`DEF`) collides with `position.DF` on the ficha.
 - [ ] **`importSave` / `exportSave` are unwired.** When they are wired, validate imported saves (see security.md). The validator is the audit's **Saves are trusted on load** item below.
 
+### Design system and mobile layouts
+
+The goal is phone versions of the game's layouts, designed in Claude Design on top of
+`@fm/design-system` (ADR 0014).
+
+- [ ] **Publish the Design System artifact.** From `packages/design-system`: `dist/bundle.js`, `bundle.css`, `tokens.json`, `assets/`, the READMEs and previews. Ask before publishing.
+- [ ] **Design the mobile layouts in Claude Design, one screen at a time.** Start with setup (a phone user cannot start a game) and the hub, then the footer and navigation, then the data screens. Two or three directions per screen, the owner picks.
+- [ ] **Propose an ADR for the mobile layout.** How the shell bar, footer and "back" work on a phone, and one small shared set of breakpoints in place of today's six per-screen values (60, 68, 64, 52, 48 and Calendar's `max-width: 40rem`).
+- [ ] **Build each approved layout**, one branch per screen, desktop pixel-identical (the screenshot gate at 1280), mobile checked against the design at 390 and 768. Closes the audit's hub, setup, footer and touch-target items as each lands.
+- [ ] **The Explain dialog is clipped and faint at 390px.** Seen in the design-system baseline screenshots: the body text runs off the right edge in soft ink on the panel. Part of the mobile work.
+- [ ] **Decide: merge the near-duplicate colours.** `chip-fw` (`#e08a7e`) and `relegation-tint` (`#e8a79c`) are close but not equal, and screen headings use 0.02em tracking and a few labels 0.04em beside the two tracking tokens. Merging is a visual change.
+
 ### Audit 2026-10-03
 
 Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.md). Four read-only passes: game model, UI and accessibility, code health, security and dependencies. Every high item was reproduced. The scratch repros are not in the repo; the descriptions carry what is needed to reproduce.
@@ -138,6 +150,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-04: `@fm/design-system`, a fifth package holding the game's look for the app and for a Claude Design System artifact (ADRs 0014–0016, P11 amended to allow the side branch). `tokens.json` is the source of truth and generates `tokens.css` (16 new tokens for values that were hardcoded, all at identical values). The reset and chrome stylesheets, eight shared components and 21 React wrappers for the chrome primitives moved in, and every screen uses the wrappers. `pnpm build` also emits an IIFE bundle (React inlined, checked for imports, network and `</script`), `bundle.css` and `index.d.ts`. Brand assets are copied with a drift test, and every component has a README, a preview (all 29 render from the bundle in headless Chrome) and a test. Every step was checked against 34 screenshots of the whole game at 1280 and 390 wide, byte-identical to `main`.
 - [x] 2026-10-04: Foreign clubs renew the contracts of players they keep at the rollover, as home clubs do, through one shared `renewedContract`. Lapsed foreign contracts had priced players at 0: in the audit's Málaga career 388 of 758 foreign players were signable for a fee of 1 by 2029, and now none is. Renewal lengths abroad draw from their own derived stream, so the recruits and the main stream are untouched and `pnpm season` is byte-identical. The foreign harness now asserts no club player at home or abroad opens a season on a lapsed contract (it failed before the fix). Existing saves heal at their next rollover.
 - [x] 2026-10-04: Reducer refusals and security quick wins from the 2026-10-03 audit. The reducer now refuses: a contract the seller can no longer spare (stacked bids stripped AI squads and crashed the next signing), lineups and tactics for any club but the manager's, formations off the menu or with mismatched banks, `AdvanceDay` after the last matchday, `StartNewSeason` for a sacked manager or with an empty name pool, and fractional seats. Stadium expansion checks the bare cost, without a transfer's signing bonus. A second bid on the same day gets its own id. New tests for `SetTactics` and `SetTicketPrice` bounds; every new refusal test fails on the old code. `pnpm season` is byte-identical. CI declares `contents: read`; `pnpm dev` binds to localhost (`dev:lan` for the network); Vitest 4.1.11 and a lockfile refresh clear all 16 dev-dependency advisories. On GitHub, private vulnerability reporting is on and a "Protect main" ruleset blocks force-push and deletion and requires `check`, with admin bypass.
 - [x] 2026-10-03: Architecture review (cohesion, modularity, layers, coupling). 12 items added under Open › Architecture review 2026-10-03, and the audit's oversized-modules item was folded into them.
