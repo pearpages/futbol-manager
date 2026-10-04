@@ -1,7 +1,7 @@
 /*
  * The attribute radar.
  *
- * Same arrangement as `club-badges.css`: every rule reads a custom property and
+ * Same arrangement as `Badge.css`: every rule reads a custom property and
  * the component file holds no colour at all.
  *
  * The two series live in `tokens.css` as `--fm-series-a` / `--fm-series-b` rather

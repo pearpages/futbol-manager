@@ -343,7 +343,7 @@
 /*
  * Your honours: one row per competition, the trophy carrying the weight.
  *
- * No small trophy variant exists, deliberately — see `trophies.css`. That is what
+ * No small trophy variant exists, deliberately — see the design system's `TrophyIcon.css`. That is what
  * fixes this as a list of a few large rows rather than a grid of many small ones,
  * and it is also what makes the cup and the supercup additive: two more rows.
  */

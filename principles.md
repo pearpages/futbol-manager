@@ -103,7 +103,7 @@ _Check:_ `pnpm install --frozen-lockfile` in CI.
 **P15. Styling is plain global `.css` with block-element class names**
 (`.squad-screen__row`). No CSS Modules, no Sass, no CSS-in-JS, no inline styles, no style
 objects and no JSX `style` prop, including for data-driven values (use bucketed `data-*`
-attribute selectors instead). Reach for `packages/app/src/styles/chrome.css` before writing
+attribute selectors instead). Reach for `packages/design-system/src/styles/chrome.css` before writing
 screen CSS.
 _Why:_ about forty screens share one chrome. See [`docs/stack.md`](docs/stack.md#styling--plain-css-global-block-element-class-names).
 _Check:_ review; stylesheet-as-text tests in `chrome.test.ts`.

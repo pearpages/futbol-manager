@@ -19,7 +19,7 @@ import {
 import { useState } from 'react'
 import { useGame } from '../store.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
-import { AttributeRadar } from './AttributeRadar.tsx'
+import { AttributeRadar } from '@fm/design-system'
 import { BidPanel } from './BidPanel.tsx'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'

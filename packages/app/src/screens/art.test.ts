@@ -1,8 +1,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { FIGURE_KEYS } from './HubFigure.tsx'
-import { TROPHY_KEYS } from './TrophyIcon.tsx'
+import { FIGURE_KEYS, TROPHY_KEYS } from './art.ts'
 import { STADIUM_ART, seatsKey } from './stadium.ts'
 
 /**

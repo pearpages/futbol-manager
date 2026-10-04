@@ -13,8 +13,8 @@ import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
-import { Pager } from './Pager.tsx'
-import { TROPHY_KEYS, TrophyIcon } from './TrophyIcon.tsx'
+import { Pager, TrophyIcon } from '@fm/design-system'
+import { artSrc, TROPHY_KEYS } from './art.ts'
 import './ResultsScreen.css'
 
 /**
@@ -622,7 +622,7 @@ function Honours({
         const won = years.length > 0
         return (
           <li key={trophy} className={`honours__item${won ? '' : ' is-empty'}`}>
-            <TrophyIcon trophy={trophy} empty={!won} />
+            <TrophyIcon trophy={trophy} src={artSrc(trophy)} empty={!won} />
             <div className="honours__text">
               <span className="honours__name">{t(`palmares.competition.${trophy}`)}</span>
               <span className="honours__count">

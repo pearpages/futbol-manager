@@ -82,9 +82,11 @@ No CSS Modules, no Sass, no CSS-in-JS. **Never** inline styles, style objects, o
 packages/design-system/src/
   tokens.json   the tokens, as data — the source of truth (the artifact reads it)
   tokens.css    generated from tokens.json by `tokens:build`; committed
+  styles/reset.css
+  styles/chrome.css    shared primitives: panels, tables, stat rows, field labels
+  components/<Comp>/   a shared component and its own Comp.css
 packages/app/src/styles/
-  reset.css
-  chrome.css    shared primitives: panels, tables, stat rows, field labels
+  pitch.css, stadium.css, shell-*.css   app-only art and shell styles
 ```
 
 Screens get a sibling `.css` file (`SquadScreen.css`) with block-element names — `.squad-screen`, `.squad-screen__row` — imported for its side effect: `import './SquadScreen.css'`.

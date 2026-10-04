@@ -1,7 +1,7 @@
 /**
  * Geometry for the attribute radar.
  *
- * Geometry lives here; **colour lives in `styles/radar.css`** — the same split as
+ * Geometry lives here; **colour lives in `AttributeRadar.css`** — the same split as
  * `badges.ts`. Nothing in this file knows what anything looks like, which is what
  * lets it be tested without a DOM.
  *

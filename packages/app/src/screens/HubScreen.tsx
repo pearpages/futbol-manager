@@ -7,10 +7,9 @@ import { noticesFrom } from '../notifications.ts'
 import { type Screen, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
-import { type FigureKey, HubFigure } from './HubFigure.tsx'
-import { Modal } from './Modal.tsx'
+import { HubFigure, type IconKey, Modal, TileIcon } from '@fm/design-system'
+import { artSrc, type FigureKey } from './art.ts'
 import { NotificationList } from './NotificationList.tsx'
-import { type IconKey, TileIcon } from './TileIcon.tsx'
 import './HubScreen.css'
 
 /**
@@ -239,7 +238,7 @@ export function HubScreen() {
               </button>
             ))}
           </div>
-          <HubFigure figure={quadrant.figure} />
+          <HubFigure figure={quadrant.figure} src={artSrc(quadrant.figure)} />
         </section>
       ))}
 

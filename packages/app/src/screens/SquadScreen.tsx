@@ -10,12 +10,11 @@ import {
   toCivil,
 } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
-import { type Sort, sortedBy } from '../sorting.ts'
+import { type Sort, SortHeader, sortedBy } from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { Explain } from './Explain.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { RenewPanel } from './RenewPanel.tsx'
-import { SortHeader } from './SortHeader.tsx'
 import './SquadScreen.css'
 
 /**

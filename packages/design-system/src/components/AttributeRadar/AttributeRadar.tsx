@@ -7,7 +7,7 @@ import {
   ringPoints,
   spokes,
 } from './radar.ts'
-import '../styles/radar.css'
+import './AttributeRadar.css'
 
 /**
  * The eight attributes as a shape.

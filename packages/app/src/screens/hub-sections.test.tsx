@@ -7,8 +7,8 @@ import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { QUADRANTS } from './HubScreen.tsx'
-import { FIGURE_KEYS } from './HubFigure.tsx'
-import { ICON_KEYS } from './TileIcon.tsx'
+import { ICON_KEYS } from '@fm/design-system'
+import { FIGURE_KEYS } from './art.ts'
 
 /**
  * The hub's four sections: a colour each, an icon per tile.

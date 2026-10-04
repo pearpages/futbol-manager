@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n/useT.ts'
 import { EXPLAIN_TOPICS, type ExplainTopic, type ExplainTopicId } from './explain-topics.ts'
-import { Modal } from './Modal.tsx'
+import { Modal } from '@fm/design-system'
 
 /**
  * A small "i" beside something the game has not explained, which opens the

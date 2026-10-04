@@ -1,0 +1,9 @@
+/* Sized in `em` so it tracks the tile's own type rather than needing a second
+   number kept in step with it. `currentColor` means the icon is the tile's ink,
+   including once `.button:disabled` has faded it. */
+.tile-icon {
+  flex: none;
+  width: 1.35em;
+  height: 1.35em;
+  fill: currentcolor;
+}

@@ -13,54 +13,14 @@
  * alone cannot tell them apart in a twenty-row table, so the shape does — and a
  * test asserts no two clubs share a `(colours, pattern, shape)` triple.
  *
- * Geometry lives here; **colour lives in `styles/club-badges.css`**, keyed on the
+ * The shapes, patterns and colour schemes are the design system's
+ * (`@fm/design-system`, `Badge`); **colour lives in its `Badge.css`**, keyed on the
  * `colours` name rather than the club. That split keeps every colour value in CSS
  * where the styling convention wants it, and keeps the twelve palettes from being
  * written out twenty times.
  */
 
-export type BadgePattern = 'solid' | 'stripes' | 'halves' | 'sash' | 'hoops'
-export type BadgeShape = 'shield' | 'circle' | 'square' | 'lozenge' | 'pennant'
-
-/**
- * Every palette `club-badges.css` defines a rule for.
- *
- * Exported so a test can assert the table only names schemes that exist — a
- * typo'd key would otherwise render an unstyled badge and look merely ugly
- * rather than broken.
- */
-export const COLOUR_KEYS = [
-  'white',
-  'garnet-blue',
-  // Barcelona's kit colours again, with a white code rather than a gold one —
-  // the third token is the code colour, and it is the only thing separating this
-  // from the palette above. See the block comment in `club-badges.css`.
-  'garnet-blue-white',
-  'red-white',
-  'white-red',
-  'blue-white',
-  'orange-black',
-  'yellow',
-  'green-white',
-  'sky',
-  'red',
-  'red-black',
-  'blue',
-  'white-blue',
-  // Four the Spanish set has no use for and the clubs abroad do.
-  'black-white',
-  'claret-blue',
-  'purple',
-  'gold-black',
-] as const
-
-export type BadgeColours = (typeof COLOUR_KEYS)[number]
-
-export interface Badge {
-  readonly colours: BadgeColours
-  readonly pattern: BadgePattern
-  readonly shape: BadgeShape
-}
+import type { BadgeSpec as Badge } from '@fm/design-system'
 
 /**
  * Keyed by club id, and covering every club in `@fm/data` — including the five in
@@ -147,12 +107,4 @@ export const BADGES: Readonly<Record<string, Badge>> = {
 /** Falls back rather than throwing: a missing badge should not blank a screen. */
 export function badgeFor(clubId: string): Badge {
   return BADGES[clubId] ?? { colours: 'white', pattern: 'solid', shape: 'shield' }
-}
-
-/**
- * Patterns whose busy-ness would swallow three letters at row size, so the code
- * gets a solid nameplate band behind it. Real badges solve this the same way.
- */
-export function needsNameplate(pattern: BadgePattern): boolean {
-  return pattern === 'stripes' || pattern === 'hoops' || pattern === 'sash'
 }

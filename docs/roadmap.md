@@ -405,7 +405,7 @@ Every schema change gets a migration and a round-trip test against a stored fixt
 **UI** _(continuous from M3)_
 Table-heavy screens reading from a store. Expect ~40 distinct views by M7. The retro chrome is fun to build, but each screen still needs wiring — budget for it.
 
-The mitigation for the screen-count risk is a shared chrome layer (`packages/app/src/styles/chrome.css`) good enough that a new screen is markup and data wiring with no new CSS. That is why styling is plain global CSS with block-element names rather than per-component modules — see [stack.md](./stack.md#styling--plain-css-global-block-element-class-names).
+The mitigation for the screen-count risk is a shared chrome layer (`packages/design-system/src/styles/chrome.css`) good enough that a new screen is markup and data wiring with no new CSS. That is why styling is plain global CSS with block-element names rather than per-component modules — see [stack.md](./stack.md#styling--plain-css-global-block-element-class-names).
 
 **Measured at ten screens, that mitigation is partly holding.** `chrome.css` carries 569 shared lines against ~1,000 lines of per-screen CSS — so "no new CSS" is not true, but the trend is right and the split is the one you would want: routine table screens are nearly free (Squad 40 lines, Setup 40, Estadio 67, Caja 71) while the signature screens are not (Hub 383, Market 193, Player 146). Keep graduating a primitive to `chrome.css` on its _second_ use and the routine screens stay cheap; the expensive ones are expensive because they are bespoke, which is the correct reason.
 
