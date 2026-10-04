@@ -18,7 +18,8 @@
     "tokens:build": "node scripts/tokens-build.ts",
     "build:bundle": "vite build -c vite.lib.config.ts && node scripts/check-bundle.ts",
     "build": "pnpm tokens:build && pnpm build:bundle",
-    "test": "vitest run --root ../.. --project design-system"
+    "test": "vitest run --root ../.. --project design-system",
+    "assets:build": "ASSETS_WRITE=1 vitest run --root ../.. --project design-system assets.test"
   },
   "peerDependencies": {
     "react": "^19",
