@@ -43,6 +43,14 @@ describe('package boundary enforcement', () => {
     ['data', 'packages/data/src/probe.ts', '@fm/persistence'],
     ['data', 'packages/data/src/probe.ts', '@fm/app'],
     ['persistence', 'packages/persistence/src/probe.ts', '@fm/app'],
+    ['domain', 'packages/domain/src/probe.ts', '@fm/design-system'],
+    ['data', 'packages/data/src/probe.ts', '@fm/design-system'],
+    ['persistence', 'packages/persistence/src/probe.ts', '@fm/design-system'],
+    ['design-system', 'packages/design-system/src/probe.ts', '@fm/domain'],
+    ['design-system', 'packages/design-system/src/probe.tsx', '@fm/data'],
+    ['design-system', 'packages/design-system/src/probe.tsx', '@fm/persistence'],
+    ['design-system', 'packages/design-system/src/probe.tsx', '@fm/app'],
+    ['design-system', 'packages/design-system/src/probe.tsx', 'zustand'],
   ])('rejects %s importing %s', async (_pkg, filePath, forbidden) => {
     const messages = await lintAs(filePath, `import x from '${forbidden}'\nexport default x\n`)
     expect(messages.join('\n')).toMatch(/no-restricted-imports/)
@@ -53,6 +61,8 @@ describe('package boundary enforcement', () => {
     ['persistence', 'packages/persistence/src/probe.ts', '@fm/domain'],
     ['persistence', 'packages/persistence/src/probe.ts', '@fm/data'],
     ['app', 'packages/app/src/probe.ts', '@fm/persistence'],
+    ['app', 'packages/app/src/probe.ts', '@fm/design-system'],
+    ['design-system', 'packages/design-system/src/probe.tsx', 'react'],
   ])('allows %s importing %s', async (_pkg, filePath, allowed) => {
     const messages = await lintAs(filePath, `import x from '${allowed}'\nexport default x\n`)
     expect(messages.join('\n')).not.toMatch(/no-restricted-imports/)

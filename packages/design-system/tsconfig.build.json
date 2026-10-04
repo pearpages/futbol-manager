@@ -1,0 +1,14 @@
+{
+  // Declarations for the bundle consumer, and nothing else. The base sets
+  // `noEmit` because nothing in this repo is compiled; this is the one exception,
+  // and `emitDeclarationOnly` keeps it to `.d.ts` (which is also what lets
+  // `allowImportingTsExtensions` stay on). See ADR 0015.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

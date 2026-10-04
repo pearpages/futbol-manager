@@ -30,7 +30,7 @@
   "scripts": {
     "dev": "pnpm --filter @fm/app dev",
     "dev:lan": "pnpm --filter @fm/app dev --host",
-    "build": "pnpm --filter @fm/app build",
+    "build": "pnpm -r build",
     "test": "vitest",
     "season": "node scripts/season.ts",
     "fixture": "node scripts/fixture.ts",

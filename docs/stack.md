@@ -15,7 +15,7 @@ Every version below was verified against the npm registry on 2026-08-13. Exact p
 
 Both pinned in `mise.toml` at the repo root, so `cd` into the project and they activate. **One-time setup:** `mise trust && mise install`. `packageManager` in the root `package.json` mirrors the pnpm pin.
 
-No Turborepo. Four packages, three consumed from source, nothing slow enough to cache — [ADR 0001](./adr/0001-workspace-tooling.md) records the trigger for revisiting.
+No Turborepo. Five packages, all consumed from source by the app, nothing slow enough to cache; `pnpm -r build` runs the two builds in dependency order — [ADR 0001](./adr/0001-workspace-tooling.md) records the trigger for revisiting.
 
 ## Language
 
@@ -35,14 +35,16 @@ ESM throughout (`"type": "module"`). Beyond `strict`, `tsconfig.base.json` sets:
 
 ## Build and test
 
-|                        | Version    | Scope                                                                                                                   |
-| ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Vite                   | **8.2.1**  | `app` only. The other three are consumed from source and never build.                                                   |
-| Vitest                 | **4.1.11** | Root `vitest.config.ts` with a `projects` array over all four packages — this is what makes one command run everything. |
-| @vitest/coverage-v8    | **4.1.11** | Must track Vitest exactly.                                                                                              |
-| jsdom                  | **30.0.1** | `app` only                                                                                                              |
-| @testing-library/react | **16.3.2** | `app` only                                                                                                              |
-| fake-indexeddb         | **6.2.5**  | `persistence` and `app`, dev only                                                                                       |
+|                          | Version    | Scope                                                                                                                   |
+| ------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Vite                     | **8.2.1**  | `app`, plus `design-system`'s artifact bundle (ADR 0015). Every package is consumed from source.                        |
+| vite-plugin-dts          | **5.1.1**  | `design-system` only: rolls the bundle's types into `dist/index.d.ts` (ADR 0015)                                        |
+| @microsoft/api-extractor | **7.59.3** | Peer of vite-plugin-dts; does the rolling-up                                                                            |
+| Vitest                   | **4.1.11** | Root `vitest.config.ts` with a `projects` array over all five packages — this is what makes one command run everything. |
+| @vitest/coverage-v8      | **4.1.11** | Must track Vitest exactly.                                                                                              |
+| jsdom                    | **30.0.1** | `app` and `design-system`                                                                                               |
+| @testing-library/react   | **16.3.2** | `app` and `design-system`                                                                                               |
+| fake-indexeddb           | **6.2.5**  | `persistence` and `app`, dev only                                                                                       |
 
 **`fake-indexeddb` is test-only and exists because neither Node nor jsdom implements IndexedDB at all.** Until named save slots landed, the storage layer had never had a test: `restore()` swallows the failure and starts a fresh season, which is correct behaviour and also meant the whole of `store.ts` was uncovered. A save picker is mostly storage, so the loop — write, list, load, delete — is now driven against a real implementation.
 
@@ -67,6 +69,8 @@ This is a **version in the sense of a build identifier, not a dependency pin** �
 | zustand              | **5.0.15**  |
 
 `@types/react*` version independently of React — do not assume they match.
+
+`@fm/design-system` declares react and react-dom as **peer dependencies at `^19`** and pins 19.2.8 as dev dependencies for its tests and its bundle. The app's pin is what runs in the game; the bundle inlines its own copy (ADR 0016).
 
 **Zustand** is the store behind the roadmap's "table-heavy screens reading from a store". It holds _projected_ state and dispatches commands; it never becomes a second source of truth. Ground rule 2 still owns state.
 

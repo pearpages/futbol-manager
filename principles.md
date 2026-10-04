@@ -77,10 +77,12 @@ _Check:_ sweep tests that assert the optimum is interior (e.g. ticket price, for
 
 ## Code conventions
 
-**P11. Imports flow strictly `app → persistence → data → domain`.** Never add an import that
-reverses or skips a step in that direction.
-_Why:_ it keeps `domain` dependency-free and the layers testable alone.
-[ADR 0001](docs/adr/0001-workspace-tooling.md).
+**P11. Imports flow strictly `app → persistence → data → domain`, plus `app →
+design-system`.** Never add an import that reverses or skips a step in that direction.
+`design-system` is a side branch: it imports no package of ours.
+_Why:_ it keeps `domain` dependency-free and the layers testable alone, and keeps the design
+system free of the game so a second consumer can load it.
+[ADR 0001](docs/adr/0001-workspace-tooling.md), [ADR 0014](docs/adr/0014-design-system-package.md).
 _Check:_ pnpm's strict `node_modules` plus ESLint `no-restricted-imports` on `@fm/*`.
 
 **P12. Relative imports carry `.ts` / `.tsx` extensions, never `.js`.**
