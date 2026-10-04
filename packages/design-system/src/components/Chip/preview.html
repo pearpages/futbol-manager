@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chip · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { Chip, Screen } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(
+          Screen,
+          { className: 'preview-row' },
+          h(Chip, { className: 'is-gk' }, 'POR'),
+          h(Chip, { className: 'is-df' }, 'DEF'),
+          h(Chip, { className: 'is-mf' }, 'MIG'),
+          h(Chip, { className: 'is-fw' }, 'DAV'),
+        ),
+      )
+    </script>
+  </body>
+</html>
