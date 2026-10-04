@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { FORMATION_NAMES, FORMATIONS, type Position } from '@fm/domain'
-import { laneX, PITCH_VIEWBOX, pitchSlots, SLOT_RADIUS } from './pitch.ts'
+import { laneX, PITCH_VIEWBOX, pitchSlots, SLOT_RADIUS } from '@fm/design-system'
 
 /**
  * The pitch's geometry, tested without a DOM — the `radar.test.ts` arrangement,
@@ -108,7 +108,7 @@ describe('colour stays in the stylesheet', () => {
   // `import.meta.url` is not a file URL under vite-node, so the path resolves
   // from the working directory — the dodge `badges.test.ts` documents.
   const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8')
-  const css = read('packages/app/src/styles/pitch.css')
+  const css = read('packages/design-system/src/components/PitchView/PitchView.css')
   /* Comments are stripped first. This project has been bitten twice by a comment
      being scanned as the rule it describes — the hub's `nth-of-type` guard, and
      the reduced-motion note beside the figure keyframes. */
@@ -116,8 +116,8 @@ describe('colour stays in the stylesheet', () => {
 
   it('keeps every colour value out of the TypeScript', () => {
     for (const path of [
-      'packages/app/src/screens/pitch.ts',
-      'packages/app/src/screens/PitchView.tsx',
+      'packages/design-system/src/components/PitchView/pitch.ts',
+      'packages/design-system/src/components/PitchView/PitchView.tsx',
     ]) {
       expect(read(path), path).not.toMatch(/#[0-9a-fA-F]{3,8}\b/)
     }
@@ -145,6 +145,8 @@ describe('colour stays in the stylesheet', () => {
 
   it('lets the SVG letterbox itself, which is what makes the breakpoints free', () => {
     expect(rules).toMatch(/\.pitch\s*\{[^}]*block-size/)
-    expect(read('packages/app/src/screens/PitchView.tsx')).toContain('preserveAspectRatio')
+    expect(read('packages/design-system/src/components/PitchView/PitchView.tsx')).toContain(
+      'preserveAspectRatio',
+    )
   })
 })

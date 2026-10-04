@@ -411,7 +411,10 @@ describe('Estadio', () => {
     // large as a 15,000-seat one and size said nothing at all. The scale is half
     // of what makes the ladder legible; flatten it and the seats attribute still
     // changes, the file still changes, and every other test here still passes.
-    const css = readFileSync(resolve(process.cwd(), 'packages/app/src/styles/stadium.css'), 'utf8')
+    const css = readFileSync(
+      resolve(process.cwd(), 'packages/design-system/src/components/StadiumView/StadiumView.css'),
+      'utf8',
+    )
     const heights = [
       ...css.matchAll(/\[data-seats='(\d+)k'\]\s*\{\s*--stadium-h:\s*([\d.]+)/g),
     ].map((m) => [Number(m[1]) * 1000, Number(m[2])] as const)

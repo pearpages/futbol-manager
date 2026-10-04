@@ -28,6 +28,26 @@ export { nextSort, type Sort, sortedBy } from './components/SortHeader/sorting.t
 export { ICON_KEYS, type IconKey, TileIcon } from './components/TileIcon/TileIcon.tsx'
 export { TrophyIcon } from './components/TrophyIcon/TrophyIcon.tsx'
 
+export { Explain } from './components/Explain/Explain.tsx'
+export { type FormPip, FormStrip } from './components/FormStrip/FormStrip.tsx'
+export {
+  type NoticeItem,
+  NotificationList,
+} from './components/NotificationList/NotificationList.tsx'
+export { type PitchPlayer, PitchView } from './components/PitchView/PitchView.tsx'
+export {
+  laneX,
+  PITCH_MARKINGS,
+  PITCH_VIEWBOX,
+  pitchSlots,
+  type Position,
+  SLOT_RADIUS,
+} from './components/PitchView/pitch.ts'
+export { PlayerLink } from './components/PlayerLink/PlayerLink.tsx'
+export { type LanguageOption, SettingsMenu } from './components/SettingsMenu/SettingsMenu.tsx'
+export { ShellCredit } from './components/ShellCredit/ShellCredit.tsx'
+export { StadiumView } from './components/StadiumView/StadiumView.tsx'
+
 // ── Primitives: React wrappers over chrome.css, rendering the same markup ──
 export { AttrBar, type AttrBarProps } from './components/AttrBar/AttrBar.tsx'
 export { Button, type ButtonProps } from './components/Button/Button.tsx'

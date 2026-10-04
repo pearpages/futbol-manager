@@ -1,4 +1,5 @@
-import { type Position } from '@fm/domain'
+/** The four positions a slot can hold. The game's own `Position` is the same union. */
+export type Position = 'GK' | 'DF' | 'MF' | 'FW'
 
 /**
  * Geometry for the lineup pitch.

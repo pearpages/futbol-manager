@@ -86,7 +86,7 @@ describe('the credit, which holds the only real link in the app', () => {
   // the house rule graduates a primitive on its second use and there is no second
   // link anywhere.
   const sheet = readFileSync(
-    resolve(process.cwd(), 'packages/app/src/styles/shell-credit.css'),
+    resolve(process.cwd(), 'packages/design-system/src/components/ShellCredit/ShellCredit.css'),
     'utf8',
   )
 

@@ -15,7 +15,6 @@ import { useState } from 'react'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { Explain } from './Explain.tsx'
-import { PitchView } from './PitchView.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
 import {
@@ -23,6 +22,7 @@ import {
   Field,
   FieldLabel,
   Hint,
+  PitchView,
   Screen,
   ScreenHeading,
   Slider,
@@ -293,10 +293,17 @@ export function LineupScreen() {
         <Screen className="lineup-screen__pitch-panel">
           <ScreenHeading>{t('lineup.pitch')}</ScreenHeading>
           <PitchView
-            starters={starterList}
+            starters={starterList.map((player) => ({
+              id: player.id,
+              position: player.position,
+              name: player.name,
+              rating: overall(player),
+              label: slotLabel(player),
+            }))}
             selected={selectedPlayer?.id ?? null}
-            onPick={pick}
-            label={slotLabel}
+            onPick={(id) => {
+              pick(id as PlayerId)
+            }}
             title={t('lineup.pitch')}
           />
         </Screen>

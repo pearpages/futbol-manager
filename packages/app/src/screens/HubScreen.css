@@ -233,41 +233,6 @@
   color: var(--fm-relegation);
 }
 
-/* ── Form strip ─────────────────────────────────────────────────────────────
-   Five squares, oldest on the left. Screen CSS rather than a chrome primitive
-   because this is its first use — it graduates the second time a screen wants
-   it, which the classification's sidebar plausibly will. Deliberately not
-   `.swatch`: that one exists so a position band always has a legend, and its
-   modifiers are competition names. */
-.form-strip {
-  display: flex;
-  justify-content: center;
-  gap: var(--fm-space-1);
-  margin: 0;
-  padding: 0 var(--fm-space-4) var(--fm-space-3);
-  list-style: none;
-}
-
-.form-strip__pip {
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--fm-screen-rule);
-  /* The unplayed state, and the base every result paints over. */
-  background: var(--fm-screen-raised);
-}
-
-.form-strip__pip.is-win {
-  background: var(--fm-win);
-}
-
-.form-strip__pip.is-draw {
-  background: var(--fm-draw);
-}
-
-.form-strip__pip.is-loss {
-  background: var(--fm-loss);
-}
-
 .hub__next-body {
   padding: var(--fm-space-3) var(--fm-space-4);
 }

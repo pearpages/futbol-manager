@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PlayerLink · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { PlayerLink, Screen, ScreenNote } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(
+          Screen,
+          null,
+          h(
+            ScreenNote,
+            null,
+            'El porter titular és ',
+            h(PlayerLink, { label: 'Thibaut Courtois', onClick() {} }),
+            '.',
+          ),
+        ),
+      )
+    </script>
+  </body>
+</html>
