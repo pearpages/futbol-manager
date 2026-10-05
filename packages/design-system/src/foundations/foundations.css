@@ -1,0 +1,100 @@
+/* Layout for the Storybook foundations only. Not part of the bundle. */
+
+.foundation {
+  display: grid;
+  gap: var(--fm-space-4);
+  padding: var(--fm-space-4);
+  color: var(--fm-ink);
+}
+
+.foundation__group {
+  display: grid;
+  gap: var(--fm-space-2);
+}
+
+.foundation__title {
+  margin: 0;
+  color: var(--fm-screen-ink);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-lg);
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+.foundation__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: var(--fm-space-2);
+}
+
+.foundation__item {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-2);
+  background: var(--fm-screen);
+  color: var(--fm-screen-ink);
+  font-size: var(--fm-text-sm);
+}
+
+.foundation__swatch {
+  inline-size: 3rem;
+  block-size: 3rem;
+  border: 1px solid var(--fm-screen-rule);
+}
+
+.foundation__name {
+  margin: 0;
+  font-weight: 700;
+}
+
+.foundation__meta {
+  margin: 0;
+  color: var(--fm-screen-ink-soft);
+  font-size: var(--fm-text-xs);
+  line-height: 1.4;
+}
+
+.foundation__sample {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fm-space-2);
+  padding: var(--fm-space-2) var(--fm-space-3);
+  font-weight: 700;
+}
+
+.foundation__bar {
+  display: block;
+  block-size: 0.75rem;
+  background: var(--fm-accent);
+}
+
+.foundation__box {
+  inline-size: 3rem;
+  block-size: 3rem;
+  background: var(--fm-panel-raised);
+}
+
+.foundation__icons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: var(--fm-space-2);
+}
+
+.foundation__icon {
+  display: grid;
+  justify-items: center;
+  gap: var(--fm-space-1);
+  padding: var(--fm-space-2);
+  background: var(--fm-screen);
+  color: var(--fm-screen-ink);
+  font-size: var(--fm-text-xs);
+}
+
+.foundation__icon .icon,
+.foundation__icon .tile-icon {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+}

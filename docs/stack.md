@@ -70,11 +70,11 @@ This is a **version in the sense of a build identifier, not a dependency pin** â
 
 `@types/react*` version independently of React â€” do not assume they match.
 
-|                       | Version    | Scope                                                                        |
-| --------------------- | ---------- | ---------------------------------------------------------------------------- |
-| storybook             | **10.6.1** | `app`, dev only: the screen stories (ADR 0017). Never deployed.              |
-| @storybook/react-vite | **10.6.1** | Its Vite 8 + React 19 framework. The three Storybook packages move together. |
-| @storybook/react      | **10.6.1** | `composeStories`, which runs every story under Vitest                        |
+|                       | Version    | Scope                                                                              |
+| --------------------- | ---------- | ---------------------------------------------------------------------------------- |
+| storybook             | **10.6.1** | `app` and `design-system`, dev only: the stories (ADR 0017, 0021). Never deployed. |
+| @storybook/react-vite | **10.6.1** | Its Vite 8 + React 19 framework. The three Storybook packages move together.       |
+| @storybook/react      | **10.6.1** | `composeStories`, which runs every story under Vitest                              |
 
 pnpm refuses esbuild's install script (`allowBuilds` in `pnpm-workspace.yaml`): Storybook's esbuild arrives as a platform package and needs none.
 

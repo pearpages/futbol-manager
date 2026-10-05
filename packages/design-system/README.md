@@ -180,6 +180,11 @@ game in Catalan, Spanish or English, which run to different lengths. Design for 
 
 ## Using it
 
+**See it first in Storybook** (`pnpm storybook`): foundations (every token, with each
+ink's contrast), primitives, components, then the game's screens, at phone, tablet and desk
+width. Each component's story sits beside it as `<Name>.stories.tsx`, on the surface it is
+drawn for (ADR 0021).
+
 In the game:
 
 ```tsx
