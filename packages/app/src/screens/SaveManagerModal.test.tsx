@@ -6,7 +6,7 @@ import { AUTOSAVE_SLOT, loadGame, saveGame, slotFor } from '@fm/persistence'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance, advanceUntil } from '../testing.ts'
+import { advance, advanceUntil, dismissResult } from '../testing.ts'
 
 /**
  * Naming a save, picking one back up, and throwing one away.
@@ -37,6 +37,9 @@ async function openPicker(): Promise<HTMLElement> {
   // The quick-save button carries the `saving` label, so a press issued while a
   // write is still settling looks for a name that is not on screen yet.
   await settled()
+  // A match played inside an `act` opens its result sheet only once the act
+  // ends, after `advance` looked for it.
+  dismissResult()
   fireEvent.click(screen.getByRole('button', { name: t('action.saves') }))
   const dialog = screen.getByRole('dialog')
   await settled()
@@ -88,6 +91,7 @@ describe('the save picker', () => {
     await act(async () => {
       advance(20)
     })
+    dismissResult()
     const round = nextFixtureFor(game().season.fixtures, game().managedClubId)?.round
     expect(round).toBeGreaterThan(1)
 
@@ -132,6 +136,7 @@ describe('the save picker', () => {
     await act(async () => {
       advance(3)
     })
+    dismissResult()
     expect(game().season.currentDate).toBeGreaterThan(savedDate)
 
     await openPicker()
@@ -156,6 +161,7 @@ describe('the save picker', () => {
     await act(async () => {
       advance(3)
     })
+    dismissResult()
 
     fireEvent.change(screen.getByLabelText(t('saves.nameLabel')), {
       target: { value: 'Same name' },
@@ -216,6 +222,7 @@ describe('the save picker', () => {
     await act(async () => {
       advance(5)
     })
+    dismissResult()
     await saveAs('Newer')
 
     expect(rows().map((row) => within(row).getAllByRole('cell')[0]?.textContent)).toEqual([
@@ -252,6 +259,7 @@ describe('saving again', () => {
     await act(async () => {
       advance(4)
     })
+    dismissResult()
     const now = game().season.currentDate
 
     // Reopening finds the name already there — retyping it exactly would be the
@@ -291,6 +299,7 @@ describe('saving again', () => {
     await act(async () => {
       advance(5)
     })
+    dismissResult()
     expect(game().season.currentDate).toBeGreaterThan(saved)
 
     expect(await useGame.getState().restore()).toBe(true)
@@ -310,6 +319,7 @@ describe('saving again', () => {
     await act(async () => {
       advance(5)
     })
+    dismissResult()
     expect(useGame.getState().currentSlot).toBeNull()
 
     expect(await useGame.getState().restore()).toBe(true)
@@ -410,6 +420,7 @@ describe('the news survives the save', () => {
     await act(async () => {
       advance(6)
     })
+    dismissResult()
     expect(useGame.getState().feed.length).toBeGreaterThan(quiet)
 
     await openPicker()

@@ -173,7 +173,7 @@ export const en: Dictionary = {
   'results.roundLabel': 'Matchday {round}',
   'results.prevRound': 'Previous matchday',
   'results.nextRound': 'Next matchday',
-  'results.tab.grid': 'Results',
+  'results.tab.grid': 'Grid',
   'results.tab.palmares': 'Honours',
   'results.season': 'Season',
   'results.gridHeading': 'Every result · {season}',

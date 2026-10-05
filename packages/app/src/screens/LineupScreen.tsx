@@ -326,7 +326,7 @@ export function LineupScreen() {
           Rather than ask first, it says what it did and offers it back. */}
       {replaced !== null && replaced.day === game.season.currentDate && (
         <Toast
-          className={phone ? 'phone-toast' : 'lineup-screen__toast'}
+          className="shell-toast"
           message={t('lineup.formationChanged', { formation: lineup.formation })}
           actionLabel={t('action.undo')}
           onAction={() => {

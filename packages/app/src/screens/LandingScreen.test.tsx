@@ -136,14 +136,14 @@ describe('the front door', () => {
       screen.getAllByRole('button', { name: t('setup.takeCharge') })[0] as HTMLElement,
     )
     confirm()
-    expect(screen.getByRole('heading', { name: t('nav.hub') })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
     expect(cover()).toBeNull()
   })
 
   it('goes Continue → straight back into the career that was already there', () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: t('landing.continue') }))
-    expect(screen.getByRole('heading', { name: t('nav.hub') })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
     expect(useGame.getState().game.managedClubId).toBe(MID)
   })
 
@@ -250,6 +250,6 @@ describe('leaving a career', () => {
 
     fireEvent.click(screen.getByRole('button', { name: t('landing.continue') }))
     expect(useGame.getState().game.season.currentDate).toBe(day)
-    expect(screen.getByRole('heading', { name: t('nav.hub') })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
   })
 })

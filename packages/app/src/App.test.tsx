@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import {
   bestXI,
-  computeTable,
   transferWindowDaysLeft,
   overall,
   startersOf,
@@ -12,7 +11,7 @@ import {
 import { App } from './App.tsx'
 import { translatorFor } from './i18n/useT.ts'
 import { matchdayFor } from './matchday.ts'
-import { QUADRANTS } from './screens/HubScreen.tsx'
+import { TABS } from './shell/tabs.ts'
 import { useGame } from './store.ts'
 import { advance, advanceUntil, back, openScreen } from './testing.ts'
 
@@ -45,13 +44,14 @@ const managed = () => {
 }
 
 describe('the shell', () => {
-  it('opens on the hub with the managed club named', () => {
+  it('opens on Avui with the managed club named', () => {
     render(<App />)
     const { game, clubId } = managed()
     const club = game.clubs.find((c) => c.id === clubId)
 
-    // The hub is home since the M4c refactor — four quadrants, not a table.
-    expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
+    // Avui, at every width (ADR 0022): the next match first.
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('hub.nextMatch') })).toBeDefined()
     expect(screen.getAllByText(club?.name ?? '').length).toBeGreaterThan(0)
   })
 
@@ -72,10 +72,9 @@ describe('the shell', () => {
     expect(document.querySelectorAll('.data-table__row.is-you')).toHaveLength(1)
   })
 
-  it('reaches every live section from the hub, and comes back', () => {
-    // There is no rail: the hub is the only branching point, so every screen is
-    // hub -> tile -> Volver -> hub. If any leg of this breaks, a screen has
-    // become unreachable.
+  it('reaches every screen from its place, and comes back', () => {
+    // Every screen through the tabs (the rail on the desk) and its segment. If
+    // any leg breaks, a screen has become unreachable.
     render(<App />)
 
     const legs = [
@@ -91,83 +90,57 @@ describe('the shell', () => {
       ['nav.estadio', /The ground/i],
     ] as const
 
-    // Guard on the guard, and it earned its keep immediately: this test is named
-    // "every live section" and was walking five of eight, because the three
-    // Finances tiles were never added when M5b built them. The legs are
-    // hand-written, since only a person can say what heading a screen ought to
-    // show — so without this, adding a live tile and forgetting a leg leaves the
-    // walk green while the new screen is never opened once.
-    const live = QUADRANTS.flatMap((quadrant) => quadrant.tiles)
-      .filter((tile) => tile.to !== null && tile.to !== 'hub')
-      .map((tile) => tile.key)
-    expect([...legs.map(([tile]) => tile)].sort()).toEqual([...live].sort())
+    // Guard on the guard: every screen a place holds has a leg, so adding a
+    // screen and forgetting its leg cannot leave the walk green.
+    const reachable = TABS.flatMap((place) => place.screens)
+      .filter((s) => s !== 'hub')
+      .map((s) => `nav.${s}`)
+    expect([...legs.map(([key]) => key)].sort()).toEqual([...reachable].sort())
 
-    for (const [tile, heading] of legs) {
-      openScreen(tile)
-      // Scoped to the stage: the bar's title and a screen's own heading are now
-      // the same word in English for some screens, which they were not while the
-      // bar spoke Spanish and the screens spoke English.
+    for (const [key, heading] of legs) {
+      openScreen(key)
       const stage = document.querySelector('.shell__stage') as HTMLElement
       expect(within(stage).getByRole('heading', { name: heading })).toBeDefined()
       back()
-      expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
+      expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
     }
   })
 })
 
-describe('the title bar says where you stand', () => {
-  // It used to say which club you manage — a fact that never changes and which
-  // the hub already states with a crest. What a title bar is for is the
-  // situation: which competition, which matchday, what position.
+describe('the title bar says where you are', () => {
+  // The place, and the one deadline the game enforces. The competition and the
+  // round left it, on the phone first and then everywhere (ADR 0022): the round
+  // lives on the match card.
   const bar = () => {
-    const element = document.querySelector('.shell__bar')
+    const element = document.querySelector('.shell-bar')
     if (element === null) throw new Error('no bar')
     return element as HTMLElement
   }
 
-  it('names the competition, not the club', () => {
+  it('names the place, not the competition or the club', () => {
     render(<App />)
     const { game, clubId } = managed()
     const club = game.clubs.find((c) => c.id === clubId)
 
-    expect(within(bar()).getByText('Primera División')).toBeDefined()
+    expect(within(bar()).getByRole('heading', { name: t('tab.today') })).toBeDefined()
+    expect(within(bar()).queryByText('Primera División')).toBeNull()
     expect(within(bar()).queryByText(club?.name ?? '')).toBeNull()
   })
 
-  it('shows the round you are about to play, not the one just finished', () => {
+  it('leaves the round to the match card, and it is the one about to be played', () => {
     render(<App />)
-    expect(within(bar()).getByText(t('shell.matchday', { round: 1 }))).toBeDefined()
+    const round = () => document.querySelector('.hub__round')?.textContent
+    expect(round()).toBe(t('shell.matchday', { round: 1 }))
 
     advance() // round one is dated on the season start, so this plays it
-    expect(within(bar()).getByText(t('shell.matchday', { round: 2 }))).toBeDefined()
+    expect(round()).toBe(t('shell.matchday', { round: 2 }))
   })
 
-  // Position moved to the hub, where it is looked at rather than passed. Asserted
-  // here so it cannot drift back into a bar that has no room to spare.
-  it('leaves the position to the hub', () => {
-    render(<App />)
-    advance()
-
-    const { game, clubId } = managed()
-    const table = computeTable(game.competition.clubIds, game.season.fixtures)
-    const place = table.findIndex((row) => row.clubId === clubId) + 1
-
-    expect(place).toBeGreaterThan(0)
-    expect(bar().querySelector('.shell__position')).toBeNull()
-    // And no dangling interpunct where it used to be — the separators are drawn
-    // on every child but the first, so the bar ends at the matchday.
-    expect(bar().querySelector('.shell__where')?.textContent?.trim().endsWith('·')).toBe(false)
-  })
-
-  // The date and the next fixture were a weaker copy of what the hub shows, and the
-  // hub is the only place the day can be advanced — so you pass the real ones every
-  // tick. The corner is worth more spent on the one deadline the game enforces.
-  it('leaves the date and the next fixture to the hub', () => {
+  it('leaves the position, the date and the next fixture to Avui', () => {
     render(<App />)
     const opponent = matchdayFor(managed().game)?.opponent
 
-    expect(bar().querySelector('.shell__date')).toBeNull()
-    expect(bar().querySelector('.shell__next')).toBeNull()
+    expect(bar().querySelector('.hub__position')).toBeNull()
     expect(within(bar()).queryByText(opponent?.name ?? 'no opponent')).toBeNull()
   })
 
@@ -175,12 +148,12 @@ describe('the title bar says where you stand', () => {
     render(<App />)
 
     // A career opens on 15 August, inside the summer window.
-    const badge = () => bar().querySelector('.shell__window')
-    expect(badge()?.textContent).toBe(plural('shell.windowOpen', 17))
+    const chip = () => within(bar()).queryByRole('button', { name: /Transfer window open/ })
+    expect(chip()?.textContent).toContain(plural('shell.windowOpen', 17))
 
     // Out the far side of it: a badge that is always there is furniture.
     advanceUntil(() => transferWindowDaysLeft(managed().game.season.currentDate) === null)
-    expect(badge()).toBeNull()
+    expect(chip()).toBeNull()
   })
 
   // The number falling is the actual claim. Asserting one static figure would pass
@@ -188,17 +161,21 @@ describe('the title bar says where you stand', () => {
   it('counts the days left down as the clock runs', () => {
     render(<App />)
     const seen: string[] = []
+    const name = () =>
+      within(bar()).getByRole('button', { name: /Transfer window open/ }).textContent ?? ''
 
     for (let i = 0; i < 4; i++) {
-      seen.push(bar().querySelector('.shell__window')?.textContent ?? '')
+      seen.push(name())
       advance()
     }
 
-    expect(seen).toEqual([17, 16, 15, 14].map((d) => plural('shell.windowOpen', d)))
+    expect(seen.map((s) => s.replace(/^.*?(Transfer)/, '$1'))).toEqual(
+      [17, 16, 15, 14].map((d) => plural('shell.windowOpen', d)),
+    )
 
     // On the last day it must read singular, not "1 days".
     advanceUntil(() => transferWindowDaysLeft(managed().game.season.currentDate) === 1)
-    expect(bar().querySelector('.shell__window')?.textContent).toBe(plural('shell.windowOpen', 1))
+    expect(name()).toContain(plural('shell.windowOpen', 1))
   })
 })
 

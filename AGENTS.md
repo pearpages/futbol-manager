@@ -82,9 +82,10 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 
 ## Pitfalls that have bitten before
 
-- **jsdom has no `matchMedia`**, so tests always see the desk layout. The phone shell is only
-  tested where `matchMedia` is stubbed (`phone/PhoneShell.test.tsx`); look at anything else
-  phone-only in Storybook at 390.
+- **jsdom has no `matchMedia`**, so tests see the desk width unless they stub it. The shell is
+  the same at both widths, but the game menu is folded behind ⋯ on a phone: phone tests stub
+  `matchMedia` (`shell/Shell.test.tsx`), and `shell/parity.test.tsx` stubs both. Layout is
+  only visible in Storybook at 390, 768 and 1280.
 
 - **Green suite, broken screen.** The app project runs with `css: false` and jsdom does no
   layout, so clipping, overflow, wrapping, colour and stacking are invisible to every test.

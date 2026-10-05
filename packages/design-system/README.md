@@ -88,38 +88,27 @@ uppercase. Never type capitals into a string; the style uppercases.
 
 ## Layout
 
-The game is one shell, a single-column grid:
+The game is one shell at every width (ADR 0022). Mobile first: the desk is the phone with
+more room, never a second design.
 
 ```
-┌──────────────────────────────────────────┐
-│ Panel: where · title · window · language │  shell bar
-├──────────────────────────────────────────┤
-│                                          │
-│ stage: one screen, scrolling inside it   │
-│                                          │
-├──────────────────────────────────────────┤
-│ Panel: back · save · saves · quit · next │  footer
-└──────────────────────────────────────────┘
-          made by pearpages · build           credit
+Phone (below 40rem)                Desk
+┌──────────────────────────┐      ┌──────┬──────────────────────────────────────────┐
+│ ‹  PLACE      ⇄ 7 d 📰 ⋯ │      │ PLACE        ⇄ 7 d  📰  Desa  Partides  Surt  CA│ bar
+├──────────────────────────┤      ├──────┼──────────────────────────────────────────┤
+│ [Segment] [Segment]      │      │ ⌂    │ [Segment] [Segment]                      │
+│ the screen; the page     │      │ 👕   │ the screen, scrolling inside the stage,  │
+│ scrolls as one document  │      │ ⇄    │ panels side by side                      │
+├──────────────────────────┤      │ ▮▮   │                                          │
+│ [ ▶ Play the match ]  ⏭  │      │ ⛉    │              [ ▶ Play the match ]  ⏭     │ action
+│  ⌂    👕    ⇄    ▮▮   ⛉   │      └──────┴──────────────────────────────────────────┘
+└──────────────────────────┘        rail
 ```
 
-On a phone (below `40rem`) the game has its own shell around the same screens (ADR 0019):
-
-```
-┌──────────────────────────┐
-│ ‹  TITLE       ⇄ 7 d   ⋯ │  bar: back, place, window, menu
-├──────────────────────────┤
-│ [Segment] [Segment]      │  the tab's screens
-│ panels, one under the    │  the page scrolls,
-│ next, at full height     │  not each panel
-├──────────────────────────┤
-│ [ ▶ Play the match ]  ⏭  │  action bar: the next thing
-│  ⌂    👕    ⇄    ▮▮   ⛉   │  TabBar: five places
-└──────────────────────────┘
-```
-
-- **One phone breakpoint, `width < 40rem`.** Write phone rules behind it, never into the
-  desk rules. The screens' own steps between phone and desk (`48`, `52`, `60`, `64`, `68rem`)
+- **The same parts at every width.** Places, words, icons, features and components are the
+  phone's; a wider screen only adds room. `usePhone()` may choose where something sits,
+  never whether it exists.
+- **One phone breakpoint, `width < 40rem`.** Write phone rules behind it. The screens' own steps between phone and desk (`48`, `52`, `60`, `64`, `68rem`)
   stay as they are; don't add new ones.
 - **Touch targets are 24px at least** below 40rem and on any touch screen
   (`pointer: coarse`): `Button`, `PlayerLink`, sort headers and sliders grow their height,
@@ -134,13 +123,13 @@ On a phone (below `40rem`) the game has its own shell around the same screens (A
 
 There is no router.
 
-- **On a desk** the hub (Menú Mànager) is the centre: four quadrants (Seguiment, Entrenador,
-  Mercat, Finances), each a list of tiles that open a screen. A tile whose feature is not
-  built yet is disabled and names its milestone. The footer's Torna is the one way back, and
-  the footer also holds save, saves, quit and advancing the day.
-- **On a phone** a `TabBar` of five places replaces the hub tiles, and `Segments` switch
-  between the screens a place holds. An action bar above the tabs carries the day's action on
-  every screen; save, saves, language and quit sit in the bar's ⋯ menu.
+- **Five places** in a `TabBar`: along the bottom on a phone, a rail on the left on the desk.
+  `Segments` switch between the screens a place holds, with each screen's tile icon. Avui is
+  home.
+- **The day's action** (advance, skip to the matchday, play, start the season) is on every
+  screen, under the stage; a played match shows its result in a sheet.
+- **The game menu** (save, saves, language, quit) is in the bar: inline on the desk, behind ⋯
+  on a phone.
 - A **dialog** (`Modal`) is for a question or a table that belongs on top of what you were
   doing; anything bigger is a screen. On a phone a short one (a question, a choice) rises
   from the bottom as a sheet, and a list or a form (`full`) takes the whole screen with a

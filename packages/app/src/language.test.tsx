@@ -7,7 +7,7 @@ import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, translate } from './i18n/index.ts'
 import { translatorFor } from './i18n/useT.ts'
 import { describeOpponent } from './matchday.ts'
 import { useGame } from './store.ts'
-import { labelStem, confirm } from './testing.ts'
+import { labelStem, confirm, openScreen } from './testing.ts'
 import type { DayNumber } from '@fm/domain'
 
 /**
@@ -53,17 +53,17 @@ describe('the language button', () => {
   it('changes the whole interface, not just the menu', () => {
     render(<App />)
     // The suite is pinned to English; this is the one place that moves it.
-    expect(screen.getByRole('heading', { name: 'Following' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: 'Today' })).toBeDefined()
 
     open()
     fireEvent.click(screen.getByRole('button', { name: 'Català' }))
 
-    expect(screen.getByRole('heading', { name: 'Seguiment' })).toBeDefined()
-    expect(screen.queryByRole('heading', { name: 'Following' })).toBeNull()
+    expect(screen.getByRole('heading', { level: 1, name: 'Avui' })).toBeDefined()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Today' })).toBeNull()
 
     open()
     fireEvent.click(screen.getByRole('button', { name: 'Español' }))
-    expect(screen.getByRole('heading', { name: 'Seguimiento' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: 'Hoy' })).toBeDefined()
   })
 
   it('marks the language you are in', () => {
@@ -161,7 +161,7 @@ describe('refusals are translated too', () => {
     render(<App />)
 
     const { t } = translatorFor('ca')
-    fireEvent.click(screen.getByRole('button', { name: t('nav.estadio') }))
+    openScreen('nav.estadio')
 
     const seats = screen.getByLabelText(labelStem(t('estadio.seats', { cost: '' })))
     fireEvent.change(seats, { target: { value: '999999' } })

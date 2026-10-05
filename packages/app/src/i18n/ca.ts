@@ -163,7 +163,7 @@ export const ca: Dictionary = {
   'results.roundLabel': 'Jornada {round}',
   'results.prevRound': 'Jornada anterior',
   'results.nextRound': 'Jornada següent',
-  'results.tab.grid': 'Resultats',
+  'results.tab.grid': 'Quadre',
   'results.tab.palmares': 'Palmarès',
   'results.season': 'Temporada',
   'results.gridHeading': 'Tots els resultats · {season}',

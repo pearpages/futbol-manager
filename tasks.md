@@ -28,6 +28,10 @@ at `0f75a23`), and each entry is one Done line below.
 
 - [ ] **Render the component previews from the stories.** Each component is described twice, its `preview.html` (for the Claude artifact) and its story, and the two can drift. Build the previews from the stories, or replace them once the artifact can load a Storybook build.
 
+### After the one shell (ADR 0022)
+
+- [ ] **Decide: bring back the hub's art on Avui.** The four staff figures and the quadrant colours retired with the PC Fútbol hub. They could return as decoration on the desk's Avui; nothing depends on them.
+
 ### Known open items
 
 Small, real, and deferred more than once. They moved here from the roadmap on 2026-10-02.
@@ -151,6 +155,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: One game at every width (ADR 0022, P20 rewritten). The phone's shell is the only shell: the desk gets the same bar (place, window chip, news, the game menu inline), the same five places as a rail, the same segments and the same day's action with the result sheet. Avui is home on both, and the quadrant hub retires. Listing a player from his card and clearing the market's filters work at every width. The results' grid tab is "Quadre", no longer a second "Resultats". `parity.test.tsx` requires the same controls on every screen at both widths.
 - [x] 2026-10-05: Storybook in levels (ADR 0021). Foundations (colour with each ink's contrast, type, space and radius, icons, all read from `tokens.json` and the icon sets), primitives and components join the screens, 55 stories in all, each component on the surface it is drawn for. `tokens:build` also writes the swatch stylesheet the foundations use, guarded by the drift test, and every design-system story renders under Vitest.
 - [x] 2026-10-05: Rows, filters and icons. On a phone tables keep 12px off the panel edge, the market cards are padded and their names no longer squeezed by the buttons, the squad drops its number column and the calendar its round so worth and result stay on screen. The market's filters and order open in sheets from one row (Filtres (n), Ordre), which brings back sorting on a phone. Every recurring verb has a glyph before its word on both layouts (`Button icon`, 10 new glyphs). The calendar's event rows are no longer 10px text. A padding audit (nothing within 8px of a panel edge), the contrast audit and the overflow check are clean at 390.
 - [x] 2026-10-05: Text contrast. An audit of every text element on every screen and dialog at 390, 768 and 1280 found 13 pairs below WCAG AA, now none. Dialog bodies are screen material (their fields, notes and lists were drawn for it and read at 1.6:1 on the panel: the faint news, saves and explanations). `ink-soft` darkened to `#454b41` (4.76:1 on the panel, was 4.22); new `relegation-ink` and `ucl-ink` for red and blue as text on the screen (were 3.45 and 3.75); the Seguiment tiles' green darkened to 4.66:1 (was 3.54); the build stamp lost its fade (was 4.01).

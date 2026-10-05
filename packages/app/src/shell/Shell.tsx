@@ -14,10 +14,12 @@ import {
 import { useT } from '../i18n/useT.ts'
 import { NewsDialog } from '../screens/NewsDialog.tsx'
 import { useGame } from '../store.ts'
-import { PhoneAction } from './PhoneAction.tsx'
-import { PhoneMenu } from './PhoneMenu.tsx'
+import { ShellCredit } from '../screens/ShellCredit.tsx'
+import { usePhone } from '../usePhone.ts'
+import { DayAction } from './DayAction.tsx'
+import { GameMenu } from './GameMenu.tsx'
 import { TABS, tabOf } from './tabs.ts'
-import './PhoneShell.css'
+import './Shell.css'
 
 /** What a screen is called when it is one segment of a tab. */
 const SEGMENT_TITLES: Readonly<Record<string, string>> = {
@@ -55,7 +57,7 @@ const SEGMENT_ICONS: Readonly<Record<string, IconKey>> = {
  * every other, and the press that runs the game — the clock, the match — is on
  * every screen.
  */
-export function PhoneShell({ children }: { readonly children: React.ReactNode }) {
+export function Shell({ children }: { readonly children: React.ReactNode }) {
   const game = useGame((s) => s.game)
   const screen = useGame((s) => s.screen)
   const inspectedFrom = useGame((s) => s.inspectedFrom)
@@ -65,6 +67,7 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
   const unread = useGame((s) => s.unread)
   const markRead = useGame((s) => s.markRead)
   const [newsOpen, setNewsOpen] = useState(false)
+  const phone = usePhone()
 
   const tab = tabOf(screen, inspectedFrom)
   const entry = TABS.find((e) => e.tab === tab) ?? TABS[0]
@@ -74,13 +77,13 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
   const offers = game.bids.filter((b) => b.to === game.managedClubId && b.status === 'pending')
 
   return (
-    <div className="shell shell--phone">
+    <div className="shell shell--app">
       <BadgeDefs />
-      <Panel as="header" className="phone-bar">
+      <Panel as="header" className="shell-bar">
         {screen === 'player' && (
           <Button
             type="button"
-            className="phone-bar__icon-button"
+            className="shell-bar__icon-button"
             aria-label={t('action.back')}
             onClick={() => {
               inspect(null)
@@ -89,12 +92,12 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
             <Icon name="back" />
           </Button>
         )}
-        <h1 className="phone-bar__title">{title}</h1>
+        <h1 className="shell-bar__title">{title}</h1>
         {/* The one deadline the game enforces, and a way straight to it. */}
         {windowDaysLeft !== null && (
           <Button
             type="button"
-            className="phone-bar__window"
+            className="shell-bar__window"
             onClick={() => {
               go('market')
             }}
@@ -108,7 +111,7 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
             screen. Opening it is what marks it read, as on the hub. */}
         <Button
           type="button"
-          className="phone-bar__icon-button phone-bar__news"
+          className="shell-bar__icon-button shell-bar__news"
           onClick={() => {
             setNewsOpen(true)
             markRead()
@@ -118,20 +121,20 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
           <VisuallyHidden>{t('hub.news')}</VisuallyHidden>
           {unread > 0 && (
             <>
-              <span className="phone-bar__badge" aria-hidden="true">
+              <span className="shell-bar__badge" aria-hidden="true">
                 {unread}
               </span>{' '}
               <VisuallyHidden>{plural('action.unread', unread)}</VisuallyHidden>
             </>
           )}
         </Button>
-        <PhoneMenu />
+        <GameMenu inline={!phone} />
       </Panel>
 
       <main className="shell__stage">
         {segments.length > 1 && (
           <Segments
-            className="phone-segments"
+            className="shell-segments"
             label={title}
             options={segments.map((s) => {
               const icon = SEGMENT_ICONS[s]
@@ -156,8 +159,8 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
         />
       )}
 
-      <div className="phone-dock">
-        <PhoneAction />
+      <div className="shell-dock">
+        <DayAction />
         <TabBar
           label={t('tab.nav')}
           items={TABS.map((e) => ({
@@ -175,6 +178,9 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
           }}
         />
       </div>
+
+      {/* On a phone the credit is in the menu; on the desk, under the frame. */}
+      {!phone && <ShellCredit />}
     </div>
   )
 }

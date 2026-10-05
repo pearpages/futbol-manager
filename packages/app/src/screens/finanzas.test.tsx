@@ -161,7 +161,7 @@ describe('Caja', () => {
     render(<App />)
     openScreen('nav.caja')
     back()
-    expect(screen.getByRole('heading', { name: t('quadrant.seguimiento') })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
   })
 })
 
@@ -461,7 +461,10 @@ describe('the sack', () => {
       }),
     ).toBeNull()
 
-    fireEvent.click(screen.getAllByRole('button', { name: t('action.quit') })[0] as HTMLElement)
+    // The day's action, which is the only way on once sacked; the bar's own
+    // "quit" asks first, as it does at any time.
+    const day = document.querySelector('.day-action') as HTMLElement
+    fireEvent.click(within(day).getByRole('button', { name: t('action.quit') }))
     // Back at the front door, which is where a finished career ends. Deliberately
     // not `needsSetup`: quitting leaves the career in memory. What makes this a
     // dead end is the landing refusing to offer Continue once you are sacked.

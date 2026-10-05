@@ -130,13 +130,15 @@ afterwards comes from the name pools.
 _Why:_ a city name is not a trademark; a crest is. This is a legal constraint.
 _Check:_ review; `rosters.test.ts` (no two shipped players share a name).
 
-**P20. Every screen works on a 390px phone and looks the same on the desk.** No sideways
-page scroll, every control at least 24px to press, one phone breakpoint (`width < 40rem`).
-Phone rules live behind that breakpoint or `pointer: coarse`, never in the desk's rules.
-_Why:_ people open a shared link on their phone, and the desk layout is already right.
-[ADR 0018](docs/adr/0018-mobile-layout.md), [ADR 0019](docs/adr/0019-phone-shell.md).
-_Check:_ `breakpoints.test.ts`; the screen stories at 390 and 768 in Storybook; the
-full-game screenshot comparison at 1280.
+**P20. Mobile first: one game at every width.** One shell, one vocabulary, one set of features,
+icons and components. A wider screen adds room — more columns, panels side by side, inline
+controls instead of a sheet — never a feature, a name or an icon of its own. Every screen
+works on a 390px phone: no sideways page scroll, every control at least 24px to press, one
+phone breakpoint (`width < 40rem`), and in code it only chooses where something sits.
+_Why:_ two layouts that each grew their own features became two games that drifted apart.
+[ADR 0022](docs/adr/0022-one-shell.md).
+_Check:_ `shell/parity.test.tsx` (the same controls on every screen at both widths);
+`breakpoints.test.ts`; the stories at 390, 768 and 1280 in Storybook.
 
 ## Process
 

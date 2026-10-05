@@ -1,184 +1,36 @@
 /*
- * Four quadrants around a centre column, which is the shape PC Fútbol used and
- * the reason it reads at a glance: every screen belongs to one of four questions,
- * and who-you-are sits in the middle where the eye lands first.
+ * Avui: the day, at every width (ADR 0022). The next match first, then where you
+ * stand and what the board wants, then the news. On a phone they stack and the
+ * page scrolls; on the desk the match and the standing take the left column and
+ * the news the right, with room for twelve lines instead of three.
  */
 .hub {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18rem minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'next news'
+    'identity news';
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: var(--fm-space-3);
   height: 100%;
   min-height: 0;
 }
 
-/* ── The four sections ───────────────────────────────────────────────────────
- *
- * PC Fútbol gave each quadrant its own colour — green, blue, red, amber — which
- * is most of why its hub reads at a glance rather than as twelve words. Ours
- * were four identical grey panels distinguishable only by reading the heading.
- *
- * The mechanism is the design system's `Badge.css`'s: **a variant selector sets custom
- * properties and nothing else**, and every rule that paints reads a property. A
- * fifth section would be one two-line block, not a new set of painting rules.
- *
- * Each section declares only a face and an ink. The bevels are *derived* from
- * the face rather than picked, which is the lesson the badge rim already paid
- * for: six hand-chosen neutrals looked fine and were wrong, and the fix was to
- * compute the colour from one that was already correct.
- *
- * These hues are deliberately not the five in `tokens.css`. Those mean
- * qualification and relegation — their own comment says they are named for the
- * competition rather than the colour's role — and lending them to a section
- * would give one colour two jobs.
- */
-/* A column so the figure can be pushed to the foot of the panel with
-   `margin-top: auto`. `.screen` already carries `overflow: auto`, which is what
-   keeps a short window from clipping the tiles rather than the art. */
-.hub__quadrant {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  border-top: 3px solid var(--quad-face);
-}
-
-.hub__quadrant[data-quadrant='seguimiento'] {
-  --quad-face: #4d7a31; /* white on it is 4.66:1; #5d8f3c was 3.54:1 */
-  --quad-ink: #f3f7ec;
-}
-
-.hub__quadrant[data-quadrant='entrenador'] {
-  --quad-face: #35659e;
-  --quad-ink: #eef4fb;
-}
-
-/* Brick rather than the reference's bright red on purpose: `.hub__play` is
-   already `--fm-relegation` and sits in the centre column, deliberately loud
-   because that press is the irreversible one. Two saturated reds side by side
-   would cost it exactly the distinctness it was given. */
-.hub__quadrant[data-quadrant='mercado'] {
-  --quad-face: #9c3b34;
-  --quad-ink: #fbeeec;
-}
-
-/* The one section whose face is light enough to want dark ink. */
-.hub__quadrant[data-quadrant='finanzas'] {
-  --quad-face: #c08a2a;
-  --quad-ink: #2a1d04;
-}
-
-/* The heading takes the colour too, so a quadrant reads as one group before you
-   look at any tile. Lifted off the face rather than set to it: the faces are
-   mid-tones chosen to hold white text, and `.screen` behind them is near-black,
-   so the raw value would be legible for the amber and murky for the other
-   three. Mixing toward white is one rule that works for all four. */
-.hub__quadrant .screen__heading {
-  color: color-mix(in srgb, var(--quad-face), #fff 45%);
-  border-bottom-color: var(--quad-face);
-}
-
-/* Source order is Seguimiento, Entrenador, Mercado, Finanzas — placed around the
-   centre rather than reordered, so the DOM reads the way the screen does.
-   Keyed on the name, not `:nth-of-type`: position used to follow position in the
-   QUADRANTS array, so reordering that list silently rearranged the screen. */
-.hub__quadrant[data-quadrant='seguimiento'] {
-  grid-column: 1;
-  grid-row: 1;
-}
-.hub__quadrant[data-quadrant='entrenador'] {
-  grid-column: 3;
-  grid-row: 1;
-}
-.hub__quadrant[data-quadrant='mercado'] {
-  grid-column: 1;
-  grid-row: 2;
-}
-.hub__quadrant[data-quadrant='finanzas'] {
-  grid-column: 3;
-  grid-row: 2;
-}
-
+/* The centre column of the old hub, kept as a wrapper and laid out by the grid. */
 .hub__centre {
-  grid-column: 2;
-  grid-row: 1 / -1;
-  display: grid;
-  /* identity · next match · news. The utilities used to be a fourth row here, and
-     that is what this change removed: below 68rem the centre becomes a
-     three-column band, so a fourth child fell into an implicit cell nobody had
-     designed. Game-level controls belong to the shell, not to an 18rem column. */
-  grid-template-rows: auto auto minmax(0, 1fr);
-  gap: var(--fm-space-3);
-  min-height: 0;
+  display: contents;
 }
 
-.hub__tiles {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  gap: var(--fm-space-2);
-  padding: var(--fm-space-3) var(--fm-space-4);
+.hub__next {
+  grid-area: next;
 }
 
-/* ── The figure at the foot of each section ──────────────────────────────────
- *
- * PC Fútbol's hub was illustrated, and this is the half of it we had not taken —
- * we copied the section colours at M5b and left the artwork behind.
- *
- * **It costs no layout height.** `.hub` is `height: 100%` over two `1fr` rows and
- * a quadrant holds a heading plus three tiles, so there is slack below the tiles
- * on a normal window and the figure fills what is already there. `margin-top:
- * auto` puts it on the floor of the panel; the sizing that lets it give way
- * first lives in the design system's `HubFigure.css` beside the palettes. */
-.hub__quadrant .hub-figure {
-  margin-top: auto;
-  margin-left: auto;
-  margin-right: var(--fm-space-4);
+.hub__identity {
+  grid-area: identity;
 }
 
-/* The tile wears the section's colour. Bevels are mixed from the face rather
-   than declared per section, so a section chooses one value and the raised
-   hardware still reads as raised. */
-.hub__tile {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--fm-space-3);
-  background: var(--quad-face);
-  border-top-color: color-mix(in srgb, var(--quad-face), #fff 38%);
-  border-left-color: color-mix(in srgb, var(--quad-face), #fff 38%);
-  border-right-color: color-mix(in srgb, var(--quad-face), #000 32%);
-  border-bottom-color: color-mix(in srgb, var(--quad-face), #000 32%);
-  color: var(--quad-ink);
-  text-align: left;
-}
-
-.hub__tile:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--quad-face), #fff 16%);
-}
-
-/* Unbuilt tiles keep the hue and lose the light, so the section still reads as
-   one family rather than as three tiles and a grey gap. `.button:disabled`
-   already dims the text; this stops the face from staying fully lit under it. */
-.hub__tile:disabled {
-  background: color-mix(in srgb, var(--quad-face), var(--fm-screen) 55%);
-  /* `.button:disabled` sets `--fm-ink-soft`, which is a dark neutral meant for
-     the grey panel face and disappears against a coloured one. Same specificity,
-     later file, so keeping the section's own ink wins — the `opacity: 0.55` it
-     also sets is what makes the tile read as disabled. */
-  color: var(--quad-ink);
-}
-
-.hub__tile-label {
-  flex: 1;
-}
-
-/* A disabled tile says which milestone brings it, so an empty slot reads as
-   "not yet" rather than "broken". */
-.hub__tile-milestone {
-  padding: 0 var(--fm-space-1);
-  border: 1px solid currentcolor;
-  font-size: var(--fm-text-xs);
-  opacity: 0.8;
+.hub__news {
+  grid-area: news;
 }
 
 .hub__identity,
@@ -375,156 +227,57 @@
   line-height: 1.5;
 }
 
-/* The day controls stack rather than sit in a row: the primary action wants the
-   full width, and "To matchday" is a smaller decision beneath it.
- *
- * Pinned to the foot of the panel, which is its own scroll container — `.screen`
- * carries `overflow: auto`. In a short window the panel does not fit and the one
- * press that starts a match went below the fold; two crests stacked over their
- * names made that worse, so it is fixed rather than inherited. The same device
- * `.explain__actions` and `.pager` use, for the same reason: an affordance you
- * have to go looking for is not one. The background must be opaque, or the
- * fixture scrolls through it. */
-.hub__controls {
-  position: sticky;
-  bottom: 0;
-  flex-direction: column-reverse;
-  align-items: stretch;
-  background: var(--fm-screen);
+/* The round of the next match, under it. */
+.hub__round {
+  margin: 0;
+  color: var(--fm-screen-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-align: center;
+  text-transform: uppercase;
 }
 
-/* Distinct from Advance day, because this one is not reversible. */
-.hub__play {
-  background: var(--fm-relegation);
-  color: var(--fm-highlight);
-}
-
-.hub__play:hover {
-  background: var(--fm-relegation-hover);
-}
-
-@media (width < 68rem) {
-  .hub {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-  }
-  /* As many 17rem columns as fit: three from 52rem, two below it, where three
-     cut the budget off the identity panel. */
-  .hub__centre {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    grid-template-rows: none;
-    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
-  }
-
-  /* "Show all" used to sit over the heading once the panel narrowed. */
-  .hub__news-head {
-    flex-wrap: wrap;
-  }
-  .hub__quadrant[data-quadrant='seguimiento'] {
-    grid-column: 1;
-    grid-row: 2;
-  }
-  .hub__quadrant[data-quadrant='entrenador'] {
-    grid-column: 2;
-    grid-row: 2;
-  }
-  .hub__quadrant[data-quadrant='mercado'] {
-    grid-column: 1;
-    grid-row: 3;
-  }
-  .hub__quadrant[data-quadrant='finanzas'] {
-    grid-column: 2;
-    grid-row: 3;
-  }
-
-  /* The rows go `auto` here, which is exactly the slack the figures were sitting
-     in. Keeping them would make the hub taller rather than fuller, and the hub
-     is the one screen that has to be reachable in a glance. */
-  .hub-figure {
-    display: none;
-  }
-}
-
-/* Two columns in the centre band: the news takes a row of its own rather than
-   half of one. */
-@media (width < 52rem) {
-  .hub__news {
-    grid-column: 1 / -1;
-  }
-}
-
-/* Phone only (below). */
-.hub__round,
+/* What the board wants, and the way to its page. */
 .hub__target {
-  display: none;
+  display: block;
+  width: 100%;
+  min-height: 2.75rem;
+  margin-top: var(--fm-space-2);
+  padding: var(--fm-space-2) var(--fm-space-4) 0;
+  border: 0;
+  border-top: 1px solid var(--fm-screen-rule);
+  background: none;
+  color: var(--fm-screen-ink);
+  font: inherit;
+  font-size: var(--fm-text-sm);
+  text-align: left;
+  cursor: pointer;
 }
 
-/*
- * ── Phone: "Avui" (ADR 0019). The four sections are the tab bar's job on a
- * phone, so they go, and what is left is read in order of use: the next match,
- * where you stand, then the news. The hub's controls go too — the action bar
- * above the tabs carries the same four states on every screen.
- */
-@media (width < 40rem) {
+.hub__target::after {
+  content: ' ›';
+  color: var(--fm-accent);
+}
+
+/* One column once the two no longer fit side by side, and on a phone the page
+   scrolls rather than each panel. Three lines of news there; the bar's news
+   button holds the rest. */
+@media (width < 52rem) {
   .hub {
+    grid-template-areas:
+      'next'
+      'identity'
+      'news';
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
+    height: auto;
   }
+}
 
-  .hub__quadrant[data-quadrant] {
-    display: none;
-  }
-
-  .hub__centre {
-    grid-column: 1;
-    grid-row: auto;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hub__next {
-    order: -1;
-  }
-
-  .hub__controls {
-    display: none;
-  }
-
-  /* Three lines, the latest; the bar's news button and "see all" open the rest. */
+@media (width < 40rem) {
   .hub__news li:nth-child(n + 4) {
     display: none;
-  }
-
-  .hub__round {
-    display: block;
-    margin: 0;
-    color: var(--fm-screen-ink-soft);
-    font-family: var(--fm-font-condensed);
-    font-size: var(--fm-text-xs);
-    font-weight: 700;
-    letter-spacing: var(--fm-track-wide);
-    text-align: center;
-    text-transform: uppercase;
-  }
-
-  .hub__target {
-    display: block;
-    width: 100%;
-    min-height: 2.75rem;
-    margin-top: var(--fm-space-2);
-    padding: var(--fm-space-2) var(--fm-space-4) 0;
-    border: 0;
-    border-top: 1px solid var(--fm-screen-rule);
-    background: none;
-    color: var(--fm-screen-ink);
-    font: inherit;
-    font-size: var(--fm-text-sm);
-    text-align: left;
-    cursor: pointer;
-  }
-
-  .hub__target::after {
-    content: ' ›';
-    color: var(--fm-accent-ink);
   }
 }

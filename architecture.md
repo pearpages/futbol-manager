@@ -40,22 +40,30 @@ flowchart LR
 | `docs/`                   | Roadmap, stack, model specs and `adr/`.                                                                                                                                                                                                                                                                                                                                                                      |
 | `assets/`                 | Local PC Fútbol reference screenshots. Gitignored except its README.                                                                                                                                                                                                                                                                                                                                         |
 
-## Layouts: desk and phone
+## Layouts: one game at every width
 
-The desk shell is a frame the height of the window: a bar, the stage, the footer, and a hub
-you return to; each screen scrolls inside its own panel. A phone gets its own shell around
-the same screens (ADR 0019): `App` asks `usePhone()` and renders `phone/PhoneShell` instead.
-It has a one-line bar with a ⋯ menu (save, saves, language, quit), an action bar on every
-screen (the clock, the match, the season), and five tabs derived from `screen` by
-`phone/tabs.ts`, each tab's screens shown as segments. The page scrolls as one document
-(ADR 0018). Everything else phone-specific is CSS behind `@media (width < 40rem)`, or
-`pointer: coarse` for touch targets, so the desk never changes; `breakpoints.test.ts` keeps
-the set of queries closed. Every screen has a story (`packages/app/src/stories`), and every design-system foundation,
-primitive and component has one beside it (ADR 0021); Storybook renders them at 390, 768 and
-1280, and Vitest renders them in CI.
+Mobile first (ADR 0022): one shell, `app/src/shell/Shell.tsx`, at every width.
 
-On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen;
-the phone bar's news button opens the whole feed from any screen. `usePhone` and
+- **The bar:** the place's name, the transfer-window chip (a link to the market), the news
+  button with its unread count, and the game menu (save, saves, language, quit). The menu is
+  folded behind ⋯ on a phone and inline on the desk.
+- **The places:** five, from `shell/tabs.ts`: Avui, Equip, Mercat, Lliga, Club. They form a
+  `TabBar` along the bottom on a phone and a rail on the left on the desk. A place's screens
+  are `Segments` carrying the tile icons.
+- **The day's action:** `DayAction` (advance, skip to the matchday, play, start the season,
+  leave when sacked), with the match result in a sheet. It sits above the tabs on a phone
+  and under the stage on the desk.
+
+Avui is the home screen at every width. On a phone the page scrolls as one document; on the
+desk the shell is a frame and each screen scrolls inside the stage. `usePhone()` decides only
+where something sits; everything else is CSS behind `@media (width < 40rem)`, or
+`pointer: coarse` for touch targets, and `breakpoints.test.ts` keeps the set of queries
+closed. `shell/parity.test.tsx` checks that every screen offers the same controls at both
+widths. Every screen has a story (`packages/app/src/stories`), and every design-system
+foundation, primitive and component has one beside it (ADR 0021); Storybook renders them at
+390, 768 and 1280, and Vitest renders them in CI.
+
+On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen. `usePhone` and
 `PHONE_QUERY` live in the design system, which needs them for that close button.
 
 Actions that cannot be undone ask first through `Confirm`; a formation press offers undo
