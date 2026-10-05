@@ -74,8 +74,9 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
   players. A failed release is fixed forward with the next patch, never by moving a tag.
 - `pnpm --filter @fm/design-system tokens:build`: regenerate `tokens.css` from `tokens.json`.
   Edit the JSON, never the CSS; a test fails if they disagree.
-- `pnpm storybook`: every screen of the game in Storybook, at phone, tablet and desk width
-  and in three languages (ADR 0017). The phone layout is reviewed there.
+- `pnpm storybook`: the design system in levels (foundations, primitives, components) and
+  every screen of the game, at phone, tablet and desk width (ADR 0017, 0021). Screens also
+  switch language. Layout and contrast are reviewed there.
 - `pnpm dev`: the app on a Vite dev server, on localhost only. `pnpm dev:lan` also
   serves it to the local network, to try it on a phone.
 

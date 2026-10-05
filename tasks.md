@@ -24,6 +24,10 @@ at `0f75a23`), and each entry is one Done line below.
 - [ ] **Starting the season and leaving when sacked** were proposed for confirmation and left out: both are the only way forward from where they appear. Revisit if players press them by mistake.
 - [ ] **The Design System artifact is out of date**: it predates the phone shell, `Icon`, `TabBar`, `Segments`, `Confirm` and `Toast`. Republish it.
 
+### Storybook follow-up (ADR 0021)
+
+- [ ] **Render the component previews from the stories.** Each component is described twice, its `preview.html` (for the Claude artifact) and its story, and the two can drift. Build the previews from the stories, or replace them once the artifact can load a Storybook build.
+
 ### Known open items
 
 Small, real, and deferred more than once. They moved here from the roadmap on 2026-10-02.
@@ -147,6 +151,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: Storybook in levels (ADR 0021). Foundations (colour with each ink's contrast, type, space and radius, icons, all read from `tokens.json` and the icon sets), primitives and components join the screens, 55 stories in all, each component on the surface it is drawn for. `tokens:build` also writes the swatch stylesheet the foundations use, guarded by the drift test, and every design-system story renders under Vitest.
 - [x] 2026-10-05: Rows, filters and icons. On a phone tables keep 12px off the panel edge, the market cards are padded and their names no longer squeezed by the buttons, the squad drops its number column and the calendar its round so worth and result stay on screen. The market's filters and order open in sheets from one row (Filtres (n), Ordre), which brings back sorting on a phone. Every recurring verb has a glyph before its word on both layouts (`Button icon`, 10 new glyphs). The calendar's event rows are no longer 10px text. A padding audit (nothing within 8px of a panel edge), the contrast audit and the overflow check are clean at 390.
 - [x] 2026-10-05: Text contrast. An audit of every text element on every screen and dialog at 390, 768 and 1280 found 13 pairs below WCAG AA, now none. Dialog bodies are screen material (their fields, notes and lists were drawn for it and read at 1.6:1 on the panel: the faint news, saves and explanations). `ink-soft` darkened to `#454b41` (4.76:1 on the panel, was 4.22); new `relegation-ink` and `ucl-ink` for red and blue as text on the screen (were 3.45 and 3.75); the Seguiment tiles' green darkened to 4.66:1 (was 3.54); the build stamp lost its fade (was 4.01).
 - [x] 2026-10-05: Phone polish. The club picker's whole row is the button (a stretched pseudo-element missed taps on iOS). The page behind a dialog no longer scrolls, and every dialog renders into `body`, so the saves no longer draw under the action bar. Lists and forms (saves, news, explanations, bid, renew) open full-screen on a phone with a close button; questions stay sheets. Menus close on an outside press or Escape (`useDismiss`), which also fixes the desk language menu. The phone bar has a news button with the unread count, on every screen; Today shows the latest three lines. Partides and Surt have icons. A full-screen dialog's last row of buttons is pinned to the bottom of a phone screen, with the × kept at the top. The phone shell's segments carry their hub tile's icon above the label, and the market's tabs carry theirs. Double-tap zoom is off and fields are 16px on touch screens, so nothing zooms by accident; pinch-zoom stays.

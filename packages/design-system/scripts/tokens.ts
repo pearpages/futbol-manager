@@ -106,3 +106,42 @@ export function renderCss(file: TokenFile): string {
     '',
   ].join('\n')
 }
+
+/**
+ * One class per token for the Storybook foundations (ADR 0021): a swatch's
+ * colour, a spacing bar's width, a radius, a type size. Generated so the
+ * stories show every token without an inline style (P15), and can never list
+ * one the tokens no longer have.
+ */
+export function renderSwatchCss(file: TokenFile): string {
+  const rule = (name: string): string | null => {
+    const v = `var(--fm-${name})`
+    if (/^text-/.test(name)) return `font-size: ${v};`
+    if (/^track-/.test(name)) return `letter-spacing: ${v};`
+    if (/^space-/.test(name)) return `inline-size: ${v};`
+    if (/^radius-/.test(name)) return `border-radius: ${v};`
+    if (/^shadow-/.test(name)) return `box-shadow: ${v};`
+    if (/^font/.test(name)) return `font-family: ${v};`
+    return null
+  }
+  const lines = allTokens(file).map(({ group, token }) => {
+    if (group === 'color') {
+      // A colour is shown both as a surface and as ink on one.
+      return [
+        `[data-token='${token.name}'] {\n  background: var(--fm-${token.name});\n}`,
+        `[data-ink='${token.name}'] {\n  color: var(--fm-${token.name});\n}`,
+      ].join('\n\n')
+    }
+    const declaration = rule(token.name)
+    return declaration === null ? null : `[data-token='${token.name}'] {\n  ${declaration}\n}`
+  })
+  return [
+    '/*',
+    ' * Generated from tokens.json by `pnpm --filter @fm/design-system tokens:build`,',
+    ' * for the Storybook foundations only. Do not edit; tokens.test.ts checks it.',
+    ' */',
+    '',
+    lines.filter((line): line is string => line !== null).join('\n\n'),
+    '',
+  ].join('\n')
+}

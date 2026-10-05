@@ -1,0 +1,368 @@
+/*
+ * Generated from tokens.json by `pnpm --filter @fm/design-system tokens:build`,
+ * for the Storybook foundations only. Do not edit; tokens.test.ts checks it.
+ */
+
+[data-token='panel'] {
+  background: var(--fm-panel);
+}
+
+[data-ink='panel'] {
+  color: var(--fm-panel);
+}
+
+[data-token='panel-raised'] {
+  background: var(--fm-panel-raised);
+}
+
+[data-ink='panel-raised'] {
+  color: var(--fm-panel-raised);
+}
+
+[data-token='bevel-light'] {
+  background: var(--fm-bevel-light);
+}
+
+[data-ink='bevel-light'] {
+  color: var(--fm-bevel-light);
+}
+
+[data-token='bevel-dark'] {
+  background: var(--fm-bevel-dark);
+}
+
+[data-ink='bevel-dark'] {
+  color: var(--fm-bevel-dark);
+}
+
+[data-token='ink'] {
+  background: var(--fm-ink);
+}
+
+[data-ink='ink'] {
+  color: var(--fm-ink);
+}
+
+[data-token='ink-soft'] {
+  background: var(--fm-ink-soft);
+}
+
+[data-ink='ink-soft'] {
+  color: var(--fm-ink-soft);
+}
+
+[data-token='screen'] {
+  background: var(--fm-screen);
+}
+
+[data-ink='screen'] {
+  color: var(--fm-screen);
+}
+
+[data-token='screen-raised'] {
+  background: var(--fm-screen-raised);
+}
+
+[data-ink='screen-raised'] {
+  color: var(--fm-screen-raised);
+}
+
+[data-token='screen-ink'] {
+  background: var(--fm-screen-ink);
+}
+
+[data-ink='screen-ink'] {
+  color: var(--fm-screen-ink);
+}
+
+[data-token='screen-ink-soft'] {
+  background: var(--fm-screen-ink-soft);
+}
+
+[data-ink='screen-ink-soft'] {
+  color: var(--fm-screen-ink-soft);
+}
+
+[data-token='screen-rule'] {
+  background: var(--fm-screen-rule);
+}
+
+[data-ink='screen-rule'] {
+  color: var(--fm-screen-rule);
+}
+
+[data-token='void'] {
+  background: var(--fm-void);
+}
+
+[data-ink='void'] {
+  color: var(--fm-void);
+}
+
+[data-token='champion'] {
+  background: var(--fm-champion);
+}
+
+[data-ink='champion'] {
+  color: var(--fm-champion);
+}
+
+[data-token='ucl'] {
+  background: var(--fm-ucl);
+}
+
+[data-ink='ucl'] {
+  color: var(--fm-ucl);
+}
+
+[data-token='ucl-ink'] {
+  background: var(--fm-ucl-ink);
+}
+
+[data-ink='ucl-ink'] {
+  color: var(--fm-ucl-ink);
+}
+
+[data-token='uel'] {
+  background: var(--fm-uel);
+}
+
+[data-ink='uel'] {
+  color: var(--fm-uel);
+}
+
+[data-token='uecl'] {
+  background: var(--fm-uecl);
+}
+
+[data-ink='uecl'] {
+  color: var(--fm-uecl);
+}
+
+[data-token='relegation'] {
+  background: var(--fm-relegation);
+}
+
+[data-ink='relegation'] {
+  color: var(--fm-relegation);
+}
+
+[data-token='relegation-ink'] {
+  background: var(--fm-relegation-ink);
+}
+
+[data-ink='relegation-ink'] {
+  color: var(--fm-relegation-ink);
+}
+
+[data-token='series-a'] {
+  background: var(--fm-series-a);
+}
+
+[data-ink='series-a'] {
+  color: var(--fm-series-a);
+}
+
+[data-token='series-b'] {
+  background: var(--fm-series-b);
+}
+
+[data-ink='series-b'] {
+  color: var(--fm-series-b);
+}
+
+[data-token='win'] {
+  background: var(--fm-win);
+}
+
+[data-ink='win'] {
+  color: var(--fm-win);
+}
+
+[data-token='draw'] {
+  background: var(--fm-draw);
+}
+
+[data-ink='draw'] {
+  color: var(--fm-draw);
+}
+
+[data-token='loss'] {
+  background: var(--fm-loss);
+}
+
+[data-ink='loss'] {
+  color: var(--fm-loss);
+}
+
+[data-token='accent'] {
+  background: var(--fm-accent);
+}
+
+[data-ink='accent'] {
+  color: var(--fm-accent);
+}
+
+[data-token='accent-ink'] {
+  background: var(--fm-accent-ink);
+}
+
+[data-ink='accent-ink'] {
+  color: var(--fm-accent-ink);
+}
+
+[data-token='accent-hover'] {
+  background: var(--fm-accent-hover);
+}
+
+[data-ink='accent-hover'] {
+  color: var(--fm-accent-hover);
+}
+
+[data-token='accent-wash'] {
+  background: var(--fm-accent-wash);
+}
+
+[data-ink='accent-wash'] {
+  color: var(--fm-accent-wash);
+}
+
+[data-token='highlight'] {
+  background: var(--fm-highlight);
+}
+
+[data-ink='highlight'] {
+  color: var(--fm-highlight);
+}
+
+[data-token='relegation-tint'] {
+  background: var(--fm-relegation-tint);
+}
+
+[data-ink='relegation-tint'] {
+  color: var(--fm-relegation-tint);
+}
+
+[data-token='relegation-hover'] {
+  background: var(--fm-relegation-hover);
+}
+
+[data-ink='relegation-hover'] {
+  color: var(--fm-relegation-hover);
+}
+
+[data-token='chip-fw'] {
+  background: var(--fm-chip-fw);
+}
+
+[data-ink='chip-fw'] {
+  color: var(--fm-chip-fw);
+}
+
+[data-token='overlay-1'] {
+  background: var(--fm-overlay-1);
+}
+
+[data-ink='overlay-1'] {
+  color: var(--fm-overlay-1);
+}
+
+[data-token='overlay-2'] {
+  background: var(--fm-overlay-2);
+}
+
+[data-ink='overlay-2'] {
+  color: var(--fm-overlay-2);
+}
+
+[data-token='overlay-3'] {
+  background: var(--fm-overlay-3);
+}
+
+[data-ink='overlay-3'] {
+  color: var(--fm-overlay-3);
+}
+
+[data-token='scrim'] {
+  background: var(--fm-scrim);
+}
+
+[data-ink='scrim'] {
+  color: var(--fm-scrim);
+}
+
+[data-token='font'] {
+  font-family: var(--fm-font);
+}
+
+[data-token='font-condensed'] {
+  font-family: var(--fm-font-condensed);
+}
+
+[data-token='text-xs'] {
+  font-size: var(--fm-text-xs);
+}
+
+[data-token='text-sm'] {
+  font-size: var(--fm-text-sm);
+}
+
+[data-token='text-md'] {
+  font-size: var(--fm-text-md);
+}
+
+[data-token='text-lg'] {
+  font-size: var(--fm-text-lg);
+}
+
+[data-token='text-xl'] {
+  font-size: var(--fm-text-xl);
+}
+
+[data-token='track-wide'] {
+  letter-spacing: var(--fm-track-wide);
+}
+
+[data-token='track-narrow'] {
+  letter-spacing: var(--fm-track-narrow);
+}
+
+[data-token='space-hair'] {
+  inline-size: var(--fm-space-hair);
+}
+
+[data-token='space-1'] {
+  inline-size: var(--fm-space-1);
+}
+
+[data-token='space-2'] {
+  inline-size: var(--fm-space-2);
+}
+
+[data-token='space-3'] {
+  inline-size: var(--fm-space-3);
+}
+
+[data-token='space-4'] {
+  inline-size: var(--fm-space-4);
+}
+
+[data-token='space-6'] {
+  inline-size: var(--fm-space-6);
+}
+
+[data-token='radius-sm'] {
+  border-radius: var(--fm-radius-sm);
+}
+
+[data-token='radius-round'] {
+  border-radius: var(--fm-radius-round);
+}
+
+[data-token='radius-pill'] {
+  border-radius: var(--fm-radius-pill);
+}
+
+[data-token='shadow-menu'] {
+  box-shadow: var(--fm-shadow-menu);
+}

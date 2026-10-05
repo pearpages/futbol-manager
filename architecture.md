@@ -50,8 +50,9 @@ screen (the clock, the match, the season), and five tabs derived from `screen` b
 `phone/tabs.ts`, each tab's screens shown as segments. The page scrolls as one document
 (ADR 0018). Everything else phone-specific is CSS behind `@media (width < 40rem)`, or
 `pointer: coarse` for touch targets, so the desk never changes; `breakpoints.test.ts` keeps
-the set of queries closed. Every screen has a story (`packages/app/src/stories`), rendered by
-Storybook at 390, 768 and 1280 (ADR 0017) and by Vitest in CI.
+the set of queries closed. Every screen has a story (`packages/app/src/stories`), and every design-system foundation,
+primitive and component has one beside it (ADR 0021); Storybook renders them at 390, 768 and
+1280, and Vitest renders them in CI.
 
 On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen;
 the phone bar's news button opens the whole feed from any screen. `usePhone` and

@@ -24,3 +24,15 @@
   align-items: center;
   gap: var(--fm-space-2);
 }
+
+/* A block on a surface, for a story whose content is a column rather than a row. */
+.preview-block {
+  display: grid;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-3) var(--fm-space-4);
+}
+
+/* The pitch fills its box, so a story gives it one the size the lineup does. */
+.preview-pitch {
+  height: 24rem;
+}

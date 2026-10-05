@@ -28,6 +28,8 @@ const preview: Preview = {
   },
   parameters: {
     layout: 'fullscreen',
+    // The design system bottom-up, then the game (ADR 0021).
+    options: { storySort: { order: ['Foundations', 'Primitives', 'Components', 'Screens'] } },
     viewport: { options: VIEWPORTS },
   },
   initialGlobals: { viewport: { value: 'phone', isRotated: false }, language: 'ca' },
