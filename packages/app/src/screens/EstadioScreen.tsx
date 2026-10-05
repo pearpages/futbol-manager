@@ -183,6 +183,7 @@ export function EstadioScreen() {
               <Hint>{t('estadio.seatsHint')}</Hint>
               <ScreenActions className="estadio-screen__build">
                 <Button
+                  icon="build"
                   primary
                   type="button"
                   onClick={() => {
@@ -195,6 +196,7 @@ export function EstadioScreen() {
                   <Confirm
                     title={t('confirm.expand.title')}
                     confirmLabel={t('estadio.begin')}
+                    confirmIcon="build"
                     cancelLabel={t('action.cancel')}
                     onConfirm={() => {
                       setBuilding(false)

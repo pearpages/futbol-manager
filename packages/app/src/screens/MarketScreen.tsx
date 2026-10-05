@@ -33,6 +33,7 @@ import {
 } from '@fm/domain'
 import { playersById } from '../players.ts'
 import { useGame } from '../store.ts'
+import { usePhone } from '../usePhone.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { useAttempt } from '../attempt.ts'
@@ -41,11 +42,14 @@ import {
   Button,
   Confirm,
   DataTable,
+  Modal,
+  Segments,
   Field,
   FieldLabel,
   NumberInput,
   Pager,
   Screen,
+  ScreenActions,
   ScreenHeading,
   ScreenNote,
   type Sort,
@@ -147,6 +151,7 @@ export function listingsFor(game: GameState): Listing[] {
 }
 
 export type SortKey = 'overall' | 'fee' | 'age' | 'name' | 'club'
+const SORT_KEYS: readonly SortKey[] = ['overall', 'fee', 'age', 'name', 'club']
 
 /** Text columns read left, numbers read right — the `data-table` convention. */
 const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
@@ -262,7 +267,7 @@ export function MarketScreen() {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
   const translator = useT()
-  const { t, money, locale } = translator
+  const { t, plural, money, locale } = translator
 
   const [target, setTarget] = useState<PlayerId | null>(null)
   const { error, attempt, clear: clearError } = useAttempt(game, translator)
@@ -285,6 +290,9 @@ export function MarketScreen() {
    * shrinks underneath a reader who is not touching anything.
    */
   const [page, setPage] = useState(0)
+  const phone = usePhone()
+  /** Which phone sheet is open: the filters or the order. */
+  const [sheet, setSheet] = useState<'filters' | 'sort' | null>(null)
 
   /**
    * Which half of the screen you are on.
@@ -487,6 +495,57 @@ export function MarketScreen() {
     return { player, from: bid.to, fee: bid.counterFee ?? bid.fee }
   })()
 
+  // The same controls on both layouts: a row on the desk, a sheet on a phone.
+  const filterButtons = (
+    <>
+      <span className="market-screen__positions">
+        {POSITIONS.map((position) => (
+          <Button
+            primary={positions.includes(position)}
+            key={position}
+            type="button"
+            className="market-screen__mini"
+            aria-pressed={positions.includes(position)}
+            onClick={changing(() => setPositions(toggle(positions, position)))}
+          >
+            {/* The translated code, not the raw enum. These sit directly
+                above a Pos column that has always been translated, so in
+                Catalan the filters read GK/DF/MF/FW over POR/DEF/MIG/DAV. */}
+            {t(`position.${position}`)}
+          </Button>
+        ))}
+      </span>
+      <Button
+        primary={onlyAffordable}
+        type="button"
+        className="market-screen__mini"
+        aria-pressed={onlyAffordable}
+        onClick={changing(() => setOnlyAffordable(!onlyAffordable))}
+      >
+        {t('market.withinBudget')}
+      </Button>
+      <Button
+        primary={onlyFree}
+        type="button"
+        className="market-screen__mini"
+        aria-pressed={onlyFree}
+        onClick={changing(() => setOnlyFree(!onlyFree))}
+      >
+        {t('market.freeAgents')}
+      </Button>
+      <Button
+        primary={onlyShortlist}
+        type="button"
+        className="market-screen__mini"
+        aria-pressed={onlyShortlist}
+        onClick={changing(() => setOnlyShortlist(!onlyShortlist))}
+      >
+        {t('market.shortlistOnly')}
+      </Button>
+    </>
+  )
+  const activeFilters =
+    positions.length + Number(onlyAffordable) + Number(onlyFree) + Number(onlyShortlist)
   return (
     <div className="market-screen">
       <Screen className="market-screen__main">
@@ -501,6 +560,8 @@ export function MarketScreen() {
               primary={tab === key}
               key={key}
               type="button"
+              // The market's two places: what is for sale, and every club.
+              icon={key === 'forSale' ? 'tag' : 'club'}
               aria-pressed={tab === key}
               onClick={changing(() => {
                 setTab(key)
@@ -530,55 +591,44 @@ export function MarketScreen() {
             `aria-pressed` carrying whether it is active. Labelling one with its
             *current* state instead made the button you press to filter read
             "Whole market", which is backwards. */}
-            <div className="market-screen__filters">
-              <span className="market-screen__positions">
-                {POSITIONS.map((position) => (
-                  <Button
-                    primary={positions.includes(position)}
-                    key={position}
-                    type="button"
-                    className="market-screen__mini"
-                    aria-pressed={positions.includes(position)}
-                    onClick={changing(() => setPositions(toggle(positions, position)))}
-                  >
-                    {/* The translated code, not the raw enum. These sit directly
-                        above a Pos column that has always been translated, so in
-                        Catalan the filters read GK/DF/MF/FW over POR/DEF/MIG/DAV. */}
-                    {t(`position.${position}`)}
-                  </Button>
-                ))}
-              </span>
-              <Button
-                primary={onlyAffordable}
-                type="button"
-                className="market-screen__mini"
-                aria-pressed={onlyAffordable}
-                onClick={changing(() => setOnlyAffordable(!onlyAffordable))}
-              >
-                {t('market.withinBudget')}
-              </Button>
-              <Button
-                primary={onlyFree}
-                type="button"
-                className="market-screen__mini"
-                aria-pressed={onlyFree}
-                onClick={changing(() => setOnlyFree(!onlyFree))}
-              >
-                {t('market.freeAgents')}
-              </Button>
-              <Button
-                primary={onlyShortlist}
-                type="button"
-                className="market-screen__mini"
-                aria-pressed={onlyShortlist}
-                onClick={changing(() => setOnlyShortlist(!onlyShortlist))}
-              >
-                {t('market.shortlistOnly')}
-              </Button>
-              <span className="market-screen__count">
-                {t('market.showing', { shown: listings.length, total: all.length })}
-              </span>
-            </div>
+            {phone ? (
+              // Phone: one row — the filters and the order each open a sheet, and
+              // the list starts straight under it (ADR 0019).
+              <div className="market-screen__filters">
+                <Button
+                  type="button"
+                  icon="filter"
+                  className="market-screen__mini"
+                  onClick={() => {
+                    setSheet('filters')
+                  }}
+                >
+                  {activeFilters === 0
+                    ? t('market.filters')
+                    : t('market.filtersCount', { count: activeFilters })}
+                </Button>
+                <Button
+                  type="button"
+                  icon="sort"
+                  className="market-screen__mini"
+                  onClick={() => {
+                    setSheet('sort')
+                  }}
+                >
+                  {t('market.sortBy', { key: t(`market.sort.${sort?.key ?? 'market'}`) })}
+                </Button>
+                <span className="market-screen__count">
+                  {t('market.showing', { shown: listings.length, total: all.length })}
+                </span>
+              </div>
+            ) : (
+              <div className="market-screen__filters">
+                {filterButtons}
+                <span className="market-screen__count">
+                  {t('market.showing', { shown: listings.length, total: all.length })}
+                </span>
+              </div>
+            )}
 
             {listings.length === 0 ? (
               <ScreenNote>{t('market.noMatches')}</ScreenNote>
@@ -633,6 +683,7 @@ export function MarketScreen() {
                         <td>{listing.fee === 0 ? t('market.free') : money(listing.fee)}</td>
                         <td className="is-text market-screen__actions">
                           <Button
+                            icon={shortlisted.has(player.id) ? 'star-filled' : 'star'}
                             type="button"
                             className="market-screen__mini"
                             aria-pressed={shortlisted.has(player.id)}
@@ -647,6 +698,7 @@ export function MarketScreen() {
                             {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
                           </Button>
                           <Button
+                            icon="cash"
                             primary
                             type="button"
                             className="market-screen__mini"
@@ -757,6 +809,7 @@ export function MarketScreen() {
                   </span>
                   <span className="offer-list__actions">
                     <Button
+                      icon="close"
                       type="button"
                       className="market-screen__mini"
                       onClick={() =>
@@ -794,6 +847,7 @@ export function MarketScreen() {
                   </span>
                   <span className="offer-list__actions">
                     <Button
+                      icon="check"
                       primary
                       type="button"
                       className="market-screen__mini"
@@ -804,6 +858,7 @@ export function MarketScreen() {
                       {t('market.accept')}
                     </Button>
                     <Button
+                      icon="close"
                       type="button"
                       className="market-screen__mini"
                       onClick={() =>
@@ -821,6 +876,89 @@ export function MarketScreen() {
           )}
         </Screen>
 
+        {sheet === 'filters' && (
+          <Modal
+            title={t('market.filterTitle')}
+            onClose={() => {
+              setSheet(null)
+            }}
+          >
+            <div className="market-screen__sheet-filters">{filterButtons}</div>
+            <ScreenActions>
+              <Button
+                type="button"
+                icon="close"
+                disabled={activeFilters === 0}
+                onClick={changing(() => {
+                  setPositions([])
+                  setOnlyAffordable(false)
+                  setOnlyFree(false)
+                  setOnlyShortlist(false)
+                })}
+              >
+                {t('market.clearFilters')}
+              </Button>
+              <Button
+                primary
+                type="button"
+                onClick={() => {
+                  setSheet(null)
+                }}
+              >
+                {plural('market.showN', listings.length)}
+              </Button>
+            </ScreenActions>
+          </Modal>
+        )}
+
+        {sheet === 'sort' && (
+          <Modal
+            title={t('market.sortTitle')}
+            onClose={() => {
+              setSheet(null)
+            }}
+          >
+            <Segments
+              className="market-screen__order-keys"
+              label={t('market.sortTitle')}
+              options={(['market', ...SORT_KEYS] as const).map((key) => ({
+                value: key,
+                label: t(`market.sort.${key}`),
+              }))}
+              value={sort?.key ?? 'market'}
+              onChange={(key) => {
+                setPage(0)
+                setSort(key === 'market' ? null : { key, desc: sort?.desc ?? true })
+              }}
+            />
+            {sort !== null && (
+              <Segments
+                label={t('market.sortTitle')}
+                options={[
+                  { value: 'desc', label: t('market.sort.desc') },
+                  { value: 'asc', label: t('market.sort.asc') },
+                ]}
+                value={sort.desc ? 'desc' : 'asc'}
+                onChange={(direction) => {
+                  setPage(0)
+                  setSort({ key: sort.key, desc: direction === 'desc' })
+                }}
+              />
+            )}
+            <ScreenActions>
+              <Button
+                primary
+                type="button"
+                onClick={() => {
+                  setSheet(null)
+                }}
+              >
+                {plural('market.showN', listings.length)}
+              </Button>
+            </ScreenActions>
+          </Modal>
+        )}
+
         {selling !== null &&
           (() => {
             const name = byId.get(selling.playerId)?.name ?? '???'
@@ -828,6 +966,7 @@ export function MarketScreen() {
               <Confirm
                 title={t('confirm.sell.title', { name })}
                 confirmLabel={t('market.accept')}
+                confirmIcon="check"
                 cancelLabel={t('action.cancel')}
                 onConfirm={() => {
                   setSelling(null)
@@ -867,6 +1006,7 @@ export function MarketScreen() {
                   </span>
                   <span className="offer-list__actions">
                     <Button
+                      icon="chevron"
                       type="button"
                       className="market-screen__mini"
                       onClick={() => {
@@ -877,6 +1017,7 @@ export function MarketScreen() {
                       {t('market.openNegotiation')}
                     </Button>
                     <Button
+                      icon="undo"
                       type="button"
                       className="market-screen__mini"
                       onClick={() =>
@@ -1075,7 +1216,7 @@ function ClubBrowser({
             a Volver at the foot of its rail, and a second button with that name
             makes `testing.ts`'s `back()` ambiguous — which would break tests that
             have nothing to do with this screen. */}
-        <Button type="button" onClick={() => onPick(null)}>
+        <Button icon="back" type="button" onClick={() => onPick(null)}>
           {t('market.allClubs')}
         </Button>
         <ClubBadge club={club} size="sm" />
@@ -1158,6 +1299,7 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               />
             </Field>
             <Button
+              icon="cash"
               primary
               type="button"
               disabled={!open}
@@ -1217,6 +1359,7 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               />
             </Field>
             <Button
+              icon="sign"
               primary
               type="button"
               disabled={!open}
@@ -1233,6 +1376,7 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
                   <Confirm
                     title={t('confirm.sign.title', { name: player.name })}
                     confirmLabel={t(listing.from === null ? 'market.signHim' : 'market.offerTerms')}
+                    confirmIcon="sign"
                     cancelLabel={t('action.cancel')}
                     onConfirm={() => {
                       setSigning(false)
@@ -1263,7 +1407,7 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
           </>
         )}
 
-        <Button type="button" onClick={onClose}>
+        <Button icon="close" type="button" onClick={onClose}>
           {t('action.close')}
         </Button>
       </div>

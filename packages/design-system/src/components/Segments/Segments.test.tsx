@@ -25,4 +25,24 @@ describe('Segments', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Results' }))
     expect(onChange).toHaveBeenCalledWith('results')
   })
+
+  it("shows a place's picture without changing its name", () => {
+    render(
+      <Segments
+        label="League"
+        options={[
+          { value: 'table', label: 'Table', icon: <svg data-testid="pic" /> },
+          { value: 'results', label: 'Results' },
+        ]}
+        value="table"
+        onChange={() => {}}
+      />,
+    )
+    const table = screen.getByRole('button', { name: 'Table' })
+    expect(table.classList.contains('has-icon')).toBe(true)
+    expect(table.querySelector('[aria-hidden="true"] [data-testid="pic"]')).not.toBeNull()
+    expect(screen.getByRole('button', { name: 'Results' }).classList.contains('has-icon')).toBe(
+      false,
+    )
+  })
 })

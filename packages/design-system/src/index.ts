@@ -32,6 +32,8 @@ export { nextSort, type Sort, sortedBy } from './components/SortHeader/sorting.t
 export { type TabItem, TabBar } from './components/TabBar/TabBar.tsx'
 export { ICON_KEYS, type IconKey, TileIcon } from './components/TileIcon/TileIcon.tsx'
 export { Toast } from './components/Toast/Toast.tsx'
+export { useDismiss } from './useDismiss.ts'
+export { PHONE_QUERY, usePhone } from './usePhone.ts'
 export { TrophyIcon } from './components/TrophyIcon/TrophyIcon.tsx'
 
 export { Explain } from './components/Explain/Explain.tsx'

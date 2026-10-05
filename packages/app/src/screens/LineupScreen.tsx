@@ -176,6 +176,7 @@ export function LineupScreen() {
                       `tabIndex` is the one part of this screen no test can prove
                       behaves in a real browser. */}
                     <Button
+                      icon="transfer"
                       type="button"
                       className="lineup-row__pick"
                       aria-pressed={player.id === selectedPlayer?.id}

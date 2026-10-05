@@ -40,8 +40,14 @@ All tokens are in [`src/tokens.json`](src/tokens.json), with a `usage` line each
   once, which is why the roles have names of their own: `win`, `draw`, `loss` for a form
   guide and `series-a`, `series-b` for a comparison. They share colours with the bands but
   not names.
-- **Money below zero** and refusals use `relegation`, or `relegation-tint` as text on a
-  screen.
+- **Money below zero** and refusals use `relegation` for marks (borders, swatches), and
+  `relegation-ink` or `relegation-tint` as text on a screen. `relegation` itself is 3.45:1
+  there, too dark to read. The DF chip's text is `ucl-ink` for the same reason.
+- **Ink follows the surface.** `ink` and `ink-soft` on the panel, `screen-ink` and
+  `screen-ink-soft` on the screen. Never mix them: screen ink on the panel is 1.6:1. A
+  dialog's body is a screen, so fields, notes and lists read as they do everywhere else.
+- **Every pair passes WCAG AA** (4.5:1, 3:1 for large text). Check a new colour against the
+  surfaces it will sit on before adding it.
 - **White is rare.** `highlight` is for the few marks that must outshine `screen-ink`: your
   club's row, an unread count, the play button.
 - Over a screen, `overlay-1/2/3` (white at 3, 4 and 7%) mark a stripe, a selection and a
@@ -136,11 +142,27 @@ There is no router.
   between the screens a place holds. An action bar above the tabs carries the day's action on
   every screen; save, saves, language and quit sit in the bar's ⋯ menu.
 - A **dialog** (`Modal`) is for a question or a table that belongs on top of what you were
-  doing; anything bigger is a screen. On a phone it rises from the bottom edge.
+  doing; anything bigger is a screen. On a phone a short one (a question, a choice) rises
+  from the bottom as a sheet, and a list or a form (`full`) takes the whole screen with a
+  close button. The page behind never scrolls.
+- **Menus close on a press outside them or Escape** (`useDismiss`).
+- **Nothing disables zoom.** Double-tap zoom is off (`touch-action: manipulation`) and
+  fields are 16px on touch screens so iOS does not zoom into them; pinch still works.
 - **What cannot be undone asks first** (`Confirm`), saying what it costs and what is left.
   **What can be undone is done at once and offered back** (`Toast` with an action).
 
 ## Icons and art
+
+- **A verb that recurs gets a glyph before its word** (`Button icon`): save, the saves,
+  leave, advance a day, play, bid (`cash`), terms and renewals (`sign`), for sale (`tag`),
+  follow (`star`), accept (`check`), close, delete (`trash`), build. The word always stays;
+  an icon alone is a guess. Only universal glyphs stand alone, and then with an accessible
+  name: ×, ‹, ⋯, ⏭ and the news button. Cancel has no glyph, so the safe choice never looks
+  like the action.
+- **A place gets its place's picture, the same one everywhere.** On a phone the shell's
+  segments carry the icon of the hub tile that opens that screen on the desk (`Segments`
+  `icon`, stacked above the label), and the market's two tabs carry `tag` and `club`.
+  Filters, settings and the results' inner views take no picture.
 
 - **Drawn in code, coloured by CSS.** Tile icons (`TileIcon`, 24-unit grid, `currentColor`),
   badges, the radar and the pitch are geometry in TypeScript and colour in CSS. No colour

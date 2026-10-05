@@ -49,6 +49,10 @@ describe('the phone shell', () => {
     ).toBe('page')
 
     const segments = within(screen.getByRole('group', { name: t('tab.league') }))
+    // Each carries its hub tile's picture, hidden from the name.
+    expect(
+      segments.getAllByRole('button').every((b) => b.querySelector('.segments__icon svg') !== null),
+    ).toBe(true)
     fireEvent.click(segments.getByRole('button', { name: t('nav.results') }))
     expect(useGame.getState().screen).toBe('results')
 
@@ -115,5 +119,65 @@ describe('the phone shell', () => {
     ).toBe('page')
     fireEvent.click(screen.getByRole('button', { name: t('action.back') }))
     expect(useGame.getState().screen).toBe('squad')
+  })
+
+  it('closes the menu on a press outside it', () => {
+    render(<App />)
+    fireEvent.click(screen.getByRole('button', { name: t('action.menu') }))
+    expect(screen.getByRole('group', { name: t('action.menu') })).toBeDefined()
+    fireEvent.pointerDown(document.querySelector('.shell__stage') as HTMLElement)
+    expect(screen.queryByRole('group', { name: t('action.menu') })).toBeNull()
+  })
+
+  it('opens the news from any screen, and opening it reads it', () => {
+    useGame.getState().go('market')
+    useGame.setState({ unread: 3 })
+    render(<App />)
+    const news = screen.getByRole('button', {
+      name: `${t('hub.news')} 3 ${t('action.unread.other', { count: 3 }).replace('3 ', '')}`,
+    })
+    fireEvent.click(news)
+    expect(screen.getByRole('dialog', { name: t('hub.news') })).toBeDefined()
+    expect(useGame.getState().unread).toBe(0)
+    expect(screen.getByRole('button', { name: t('hub.news') })).toBeDefined()
+  })
+
+  it('filters the market from a sheet, and says how many filters are on', () => {
+    useGame.getState().go('market')
+    render(<App />)
+    const rows = () => document.querySelectorAll('.market-screen__listings tbody tr').length
+    const count = () => document.querySelector('.market-screen__count')?.textContent
+    const before = count()
+
+    fireEvent.click(screen.getByRole('button', { name: t('market.filters') }))
+    const sheet = within(screen.getByRole('dialog', { name: t('market.filterTitle') }))
+    fireEvent.click(sheet.getByRole('button', { name: t('position.GK') }))
+    expect(count()).not.toBe(before)
+    expect(rows()).toBeGreaterThan(0)
+    fireEvent.click(sheet.getByRole('button', { name: /^Show/ }))
+
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(
+      screen.getByRole('button', { name: t('market.filtersCount', { count: 1 }) }),
+    ).toBeDefined()
+    const chips = [...document.querySelectorAll('.market-screen__listings tbody tr .chip')]
+    expect(chips.every((c) => c.textContent === t('position.GK'))).toBe(true)
+  })
+
+  it('sorts the market from a sheet', () => {
+    useGame.getState().go('market')
+    render(<App />)
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: t('market.sortBy', { key: t('market.sort.market') }),
+      }),
+    )
+    const sheet = within(screen.getByRole('dialog', { name: t('market.sortTitle') }))
+    fireEvent.click(sheet.getByRole('button', { name: t('market.sort.age') }))
+    const ages = [
+      ...document.querySelectorAll('.market-screen__listings tbody tr td:nth-child(4)'),
+    ].map((td) => Number(td.textContent))
+    expect(ages.length).toBeGreaterThan(1)
+    expect(ages).toEqual([...ages].sort((a, b) => b - a))
   })
 })

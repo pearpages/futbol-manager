@@ -5,6 +5,12 @@ import './Segments.css'
 export interface SegmentOption<T extends string> {
   readonly value: T
   readonly label: string
+  /**
+   * The place's picture, when the option is a place: the same one it has
+   * everywhere else (a hub tile's icon, say). Hidden from assistive technology,
+   * so the option's name stays its label.
+   */
+  readonly icon?: React.ReactNode
 }
 
 /**
@@ -36,12 +42,17 @@ export function Segments<T extends string>({
           primary={option.value === value}
           key={option.value}
           type="button"
-          className="segments__option"
+          className={cx('segments__option', option.icon !== undefined && 'has-icon')}
           aria-pressed={option.value === value}
           onClick={() => {
             onChange(option.value)
           }}
         >
+          {option.icon !== undefined && (
+            <span className="segments__icon" aria-hidden="true">
+              {option.icon}
+            </span>
+          )}
           {option.label}
         </Button>
       ))}

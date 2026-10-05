@@ -50,7 +50,7 @@
 }
 
 .is-out {
-  color: var(--fm-relegation);
+  color: var(--fm-relegation-ink);
 }
 
 @media (width < 60rem) {

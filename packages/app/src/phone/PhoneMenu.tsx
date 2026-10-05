@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Button, Confirm, Icon, Panel, Segments, Toast } from '@fm/design-system'
+import { useRef, useState } from 'react'
+import { Button, Confirm, Icon, Panel, Segments, Toast, useDismiss } from '@fm/design-system'
 import { LANGUAGE_NAMES, LANGUAGES } from '../i18n/index.ts'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
@@ -22,6 +22,10 @@ export function PhoneMenu(): React.JSX.Element {
   const { t, date } = useT()
 
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useDismiss(ref, open, () => {
+    setOpen(false)
+  })
   const [savesOpen, setSavesOpen] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const { quickSave, saving, savedOn } = useQuickSave(() => {
@@ -29,7 +33,7 @@ export function PhoneMenu(): React.JSX.Element {
   })
 
   return (
-    <span className="phone-menu">
+    <span className="phone-menu" ref={ref}>
       <Button
         type="button"
         className="phone-bar__icon-button"
@@ -64,6 +68,7 @@ export function PhoneMenu(): React.JSX.Element {
               setSavesOpen(true)
             }}
           >
+            <Icon name="saves" />
             {t('action.saves')}
           </Button>
           <p className="phone-menu__label">{t('action.language')}</p>
@@ -81,6 +86,7 @@ export function PhoneMenu(): React.JSX.Element {
               setLeaving(true)
             }}
           >
+            <Icon name="exit" />
             {t('action.quit')}
           </Button>
           <ShellCredit />
@@ -108,6 +114,7 @@ export function PhoneMenu(): React.JSX.Element {
         <Confirm
           title={t('action.quit')}
           confirmLabel={t('action.quit')}
+          confirmIcon="exit"
           cancelLabel={t('action.cancel')}
           onConfirm={quitToLanding}
           onCancel={() => {

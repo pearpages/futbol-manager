@@ -6,13 +6,13 @@ import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
 import { type Screen as ScreenKey, useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
+import { NewsDialog } from './NewsDialog.tsx'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import {
   Button,
   HubFigure,
   NotificationList,
   type IconKey,
-  Modal,
   Screen,
   ScreenActions,
   ScreenHeading,
@@ -377,15 +377,16 @@ export function HubScreen() {
             {game.board.sacked ? (
               // The end of the job, and the end of the career. There is no path
               // on from here — the only button left is a new one somewhere else.
-              <Button primary type="button" onClick={quitToLanding}>
+              <Button icon="exit" primary type="button" onClick={quitToLanding}>
                 {t('action.quit')}
               </Button>
             ) : finished ? (
-              <Button primary type="button" onClick={() => startNewSeason()}>
+              <Button icon="play" primary type="button" onClick={() => startNewSeason()}>
                 {t('hub.startSeason', { season: season(game.season.startYear + 1) })}
               </Button>
             ) : matchday !== null && matchday.due ? (
               <Button
+                icon="play"
                 primary
                 type="button"
                 className="hub__play"
@@ -395,7 +396,7 @@ export function HubScreen() {
               </Button>
             ) : (
               matchday !== null && (
-                <Button type="button" onClick={advanceToMatchday}>
+                <Button icon="skip" type="button" onClick={advanceToMatchday}>
                   {t('hub.toMatchday')}
                 </Button>
               )
@@ -418,6 +419,7 @@ export function HubScreen() {
           <div className="hub__news-head">
             <ScreenHeading className="hub__news-title">{t('hub.news')}</ScreenHeading>
             <Button
+              icon="news"
               type="button"
               className="hub__news-open"
               onClick={() => {
@@ -448,26 +450,11 @@ export function HubScreen() {
       </aside>
 
       {newsOpen && (
-        <Modal
-          title={t('hub.news')}
+        <NewsDialog
           onClose={() => {
             setNewsOpen(false)
           }}
-        >
-          {/* The whole feed. The panel behind it shows the latest twelve, which is
-              what makes this worth opening rather than a second copy of it. */}
-          <NotificationList notices={noticesFrom(feed, game, translator)} empty={t('hub.noNews')} />
-          <ScreenActions>
-            <Button
-              type="button"
-              onClick={() => {
-                setNewsOpen(false)
-              }}
-            >
-              {t('action.close')}
-            </Button>
-          </ScreenActions>
-        </Modal>
+        />
       )}
     </div>
   )

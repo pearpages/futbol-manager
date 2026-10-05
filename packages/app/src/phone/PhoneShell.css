@@ -54,6 +54,26 @@
   padding: 0;
 }
 
+.phone-bar__news {
+  position: relative;
+}
+
+/* The unread count on the icon's shoulder, as the market tab carries its own. */
+.phone-bar__badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  min-width: 1.1rem;
+  padding: 0 var(--fm-space-1);
+  border-radius: var(--fm-radius-pill);
+  background: var(--fm-relegation);
+  color: var(--fm-highlight);
+  font-size: var(--fm-text-xs);
+  line-height: 1.1rem;
+  letter-spacing: 0;
+  text-align: center;
+}
+
 .phone-bar__window {
   display: inline-flex;
   align-items: center;

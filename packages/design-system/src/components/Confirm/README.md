@@ -14,6 +14,7 @@ import { Confirm } from '@fm/design-system'
 | `title`        | `string`     | The question, naming the thing.             |
 | `children`     | `ReactNode`  | What happens: fee, what is left, and so on. |
 | `confirmLabel` | `string`     | The verb.                                   |
+| `confirmIcon`  | `IconName`   | The glyph of the button that opened it.     |
 | `cancelLabel`  | `string`     | The way out.                                |
 | `onConfirm`    | `() => void` |                                             |
 | `onCancel`     | `() => void` | Also Escape and a click on the backdrop.    |

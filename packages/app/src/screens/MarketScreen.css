@@ -298,13 +298,15 @@
 
   .market-screen__listings tbody tr {
     display: grid;
+    /* Four columns so the two buttons do not share a column with the rating:
+       when they did, their width squeezed the name to "Timothy Chandla…". */
     grid-template-areas:
-      'pos name ovr'
-      'club price actions';
-    grid-template-columns: auto minmax(0, 1fr) auto;
+      'pos name name ovr'
+      'club price actions actions';
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
     align-items: center;
     gap: var(--fm-space-1) var(--fm-space-2);
-    padding: var(--fm-space-2) var(--fm-space-1);
+    padding: var(--fm-space-2) var(--fm-space-3);
   }
 
   .market-screen__listings td {
@@ -352,5 +354,38 @@
 
   .market-screen__listings td:nth-child(7) {
     grid-area: actions;
+    justify-self: end;
   }
+}
+
+/* The phone's filter and sort sheets (ADR 0019). The same toggles as the desk
+   row, given room to be pressed: wrapped, and a full row each for the three
+   long ones. The sort keys stack, one place per line. */
+.market-screen__sheet-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fm-space-2);
+}
+
+.market-screen__sheet-filters .market-screen__positions {
+  display: flex;
+  flex: 1 0 100%;
+  gap: var(--fm-space-2);
+}
+
+.market-screen__sheet-filters .market-screen__positions .button {
+  flex: 1;
+}
+
+.market-screen__sheet-filters > .button {
+  flex: 1 0 100%;
+  min-height: 2.75rem;
+}
+
+.market-screen__order-keys {
+  flex-direction: column;
+}
+
+.market-screen__order-keys .segments__option {
+  min-height: 2.75rem;
 }

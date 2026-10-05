@@ -3,7 +3,7 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { SettingsMenu } from './SettingsMenu.tsx'
-import { Button, Confirm, Screen, ScreenActions, ScreenNote } from '@fm/design-system'
+import { Button, Confirm, Icon, Screen, ScreenActions, ScreenNote } from '@fm/design-system'
 import './LandingScreen.css'
 
 /**
@@ -88,22 +88,23 @@ export function LandingScreen(): React.JSX.Element {
 
         <ScreenActions className="landing__actions">
           {canContinue && (
-            <Button primary type="button" onClick={continueCareer}>
+            <Button icon="play" primary type="button" onClick={continueCareer}>
               {t('landing.continue')}
             </Button>
           )}
           {/* Primary only when Continue is not there to be it. */}
           <button
             type="button"
-            className={canContinue ? 'button' : 'button is-primary'}
+            className={canContinue ? 'button has-icon' : 'button is-primary has-icon'}
             onClick={() => {
               if (wouldLose) setRestarting(true)
               else startNewCareer()
             }}
           >
+            <Icon name="plus" />
             {t('action.newCareer')}
           </button>
-          <Button type="button" onClick={() => setSavesOpen(true)}>
+          <Button icon="saves" type="button" onClick={() => setSavesOpen(true)}>
             {t('landing.load')}
           </Button>
         </ScreenActions>
@@ -113,6 +114,7 @@ export function LandingScreen(): React.JSX.Element {
         <Confirm
           title={t('confirm.newCareer.title')}
           confirmLabel={t('action.newCareer')}
+          confirmIcon="plus"
           cancelLabel={t('action.cancel')}
           onConfirm={() => {
             setRestarting(false)

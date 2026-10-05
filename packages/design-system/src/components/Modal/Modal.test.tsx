@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { Modal } from './Modal.tsx'
@@ -39,8 +41,9 @@ describe('Modal', () => {
   })
 
   it('closes on a click outside the box', () => {
-    const { onClose, container } = open()
-    fireEvent.click(container.querySelector('.modal') as Element)
+    // In `document.body`, not the render container: the dialog is portalled.
+    const { onClose } = open()
+    fireEvent.click(document.querySelector('.modal') as Element)
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -88,5 +91,62 @@ describe('Modal', () => {
 
     fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Last' }))
+  })
+
+  it('holds the page still while open, and lets go once the last dialog closes', () => {
+    const root = document.documentElement
+    const outer = render(
+      <Modal title="Outer" onClose={() => {}}>
+        x
+      </Modal>,
+    )
+    const inner = render(
+      <Modal title="Inner" onClose={() => {}}>
+        y
+      </Modal>,
+    )
+    expect(root.classList.contains('has-modal')).toBe(true)
+    inner.unmount()
+    expect(root.classList.contains('has-modal')).toBe(true)
+    outer.unmount()
+    expect(root.classList.contains('has-modal')).toBe(false)
+  })
+
+  it('offers a close button full-screen on a phone, given its name, and only then', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: query === '(width < 40rem)',
+      addEventListener() {},
+      removeEventListener() {},
+    }))
+    const onClose = vi.fn()
+    const { rerender } = render(
+      <Modal title="Saves" onClose={onClose} full>
+        x
+      </Modal>,
+    )
+    expect(screen.queryByRole('button', { name: 'Close' })).toBeNull()
+    rerender(
+      <Modal title="Saves" onClose={onClose} full closeLabel="Close">
+        x
+      </Modal>,
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalledOnce()
+    vi.unstubAllGlobals()
+  })
+
+  it("pins a full-screen dialog's last row of buttons on a phone", () => {
+    // jsdom does no layout, so this reads the rule: the row a thumb needs must
+    // stick to the bottom and sink below short content (ADR 0019).
+    const css = readFileSync(
+      resolve(process.cwd(), 'packages/design-system/src/components/Modal/Modal.css'),
+      'utf8',
+    ).replace(/\/\*[\s\S]*?\*\//g, '')
+    const phone = css.slice(css.indexOf('@media (width < 40rem)'))
+    const rule = phone.slice(phone.indexOf('.modal__body > .screen-actions:last-child'))
+    const body = rule.slice(rule.indexOf('{'), rule.indexOf('}'))
+    expect(body).toMatch(/position:\s*sticky/)
+    expect(body).toMatch(/bottom:/)
+    expect(body).toMatch(/margin-top:\s*auto/)
   })
 })

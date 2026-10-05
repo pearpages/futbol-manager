@@ -71,6 +71,8 @@ export function Explain({ label, title, paragraphs, closeLabel }: ExplainProps):
             onClose={() => {
               setOpen(false)
             }}
+            full
+            closeLabel={closeLabel}
           >
             {paragraphs.map((paragraph, index) => (
               <ScreenNote key={index}>{paragraph}</ScreenNote>
@@ -82,6 +84,7 @@ export function Explain({ label, title, paragraphs, closeLabel }: ExplainProps):
             <ScreenActions className="explain__actions">
               <Button
                 primary
+                icon="close"
                 type="button"
                 onClick={() => {
                   setOpen(false)

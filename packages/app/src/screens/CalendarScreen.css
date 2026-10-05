@@ -126,7 +126,7 @@
 }
 
 .calendar-screen__score.is-loss {
-  color: var(--fm-loss);
+  color: var(--fm-relegation-ink);
 }
 
 /*
@@ -139,6 +139,19 @@
   }
 
   .calendar-screen__event td {
-    font-size: 0.625rem;
+    font-size: var(--fm-text-xs);
+  }
+}
+
+/* Phone: the round goes, so the result stays on screen. The rows are in date
+   order and the date is beside each one, so the round number is the column a
+   phone can spare (ADR 0019). */
+@media (width < 40rem) {
+  .calendar-screen__table :is(th, td):first-child {
+    display: none;
+  }
+
+  .calendar-screen__table :is(th, td):nth-child(2) {
+    padding-left: var(--fm-space-3);
   }
 }

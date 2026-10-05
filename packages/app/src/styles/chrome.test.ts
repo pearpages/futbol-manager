@@ -172,7 +172,9 @@ describe('the explainer button', () => {
     const rule = ruleFor('.explain__actions')
     expect(rule, '.explain__actions has no rule').not.toBeNull()
     expect(rule).toMatch(/position:\s*sticky/)
-    expect(rule).toMatch(/background:\s*var\(--fm-panel\)/)
+    // Opaque, and the colour of the dialog body it sits on (screen material), so
+    // text scrolling under it neither shows through nor sits on a light strip.
+    expect(rule).toMatch(/background:\s*var\(--fm-screen\)/)
   })
 })
 

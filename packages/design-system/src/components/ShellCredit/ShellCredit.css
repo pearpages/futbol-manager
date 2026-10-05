@@ -67,7 +67,6 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.08em;
   color: var(--fm-screen-ink-soft);
-  opacity: 0.75;
 }
 
 /* Phone or touch: the link keeps its place in the sentence but gets a 24px target. */

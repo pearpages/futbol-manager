@@ -53,6 +53,10 @@ screen (the clock, the match, the season), and five tabs derived from `screen` b
 the set of queries closed. Every screen has a story (`packages/app/src/stories`), rendered by
 Storybook at 390, 768 and 1280 (ADR 0017) and by Vitest in CI.
 
+On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen;
+the phone bar's news button opens the whole feed from any screen. `usePhone` and
+`PHONE_QUERY` live in the design system, which needs them for that close button.
+
 Actions that cannot be undone ask first through `Confirm`; a formation press offers undo
 through `Toast`. Commands that must land together go through the store's `dispatchAll`,
 which commits all of them or none and puts the rng back on a refusal.

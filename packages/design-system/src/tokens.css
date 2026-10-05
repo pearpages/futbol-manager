@@ -10,7 +10,7 @@
   --fm-bevel-light: #dfe4d4;
   --fm-bevel-dark: #7f8676;
   --fm-ink: #171c14;
-  --fm-ink-soft: #4c5348;
+  --fm-ink-soft: #454b41;
   --fm-screen: #0e1f16;
   --fm-screen-raised: #16301f;
   --fm-screen-ink: #d3e6d6;
@@ -19,9 +19,11 @@
   --fm-void: #0a120c;
   --fm-champion: #e8b33a;
   --fm-ucl: #4a86c8;
+  --fm-ucl-ink: #5c9ad8;
   --fm-uel: #d97a2b;
   --fm-uecl: #4fa88a;
   --fm-relegation: #c0483a;
+  --fm-relegation-ink: #e3705f;
   --fm-series-a: #e8b33a;
   --fm-series-b: #4a86c8;
   --fm-win: #4fa88a;

@@ -310,7 +310,7 @@
 }
 
 .results-grid__cell.is-away-win {
-  color: var(--fm-loss);
+  color: var(--fm-relegation-ink);
 }
 
 .results-grid__cell.is-draw {

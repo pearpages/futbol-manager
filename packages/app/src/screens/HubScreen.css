@@ -43,7 +43,7 @@
 }
 
 .hub__quadrant[data-quadrant='seguimiento'] {
-  --quad-face: #5d8f3c;
+  --quad-face: #4d7a31; /* white on it is 4.66:1; #5d8f3c was 3.54:1 */
   --quad-ink: #f3f7ec;
 }
 
@@ -230,7 +230,7 @@
 }
 
 .hub__position.is-relegation {
-  color: var(--fm-relegation);
+  color: var(--fm-relegation-ink);
 }
 
 .hub__next-body {
@@ -490,6 +490,11 @@
     display: none;
   }
 
+  /* Three lines, the latest; the bar's news button and "see all" open the rest. */
+  .hub__news li:nth-child(n + 4) {
+    display: none;
+  }
+
   .hub__round {
     display: block;
     margin: 0;
@@ -507,7 +512,7 @@
     width: 100%;
     min-height: 2.75rem;
     margin-top: var(--fm-space-2);
-    padding: var(--fm-space-2) 0 0;
+    padding: var(--fm-space-2) var(--fm-space-4) 0;
     border: 0;
     border-top: 1px solid var(--fm-screen-rule);
     background: none;

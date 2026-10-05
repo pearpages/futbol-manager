@@ -1,3 +1,4 @@
+import { render, screen } from '@testing-library/react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { Button } from './Button.tsx'
@@ -17,5 +18,25 @@ describe('Button', () => {
 
   it('sets no type of its own', () => {
     expect(renderToStaticMarkup(<Button />)).not.toContain('type=')
+  })
+
+  it('puts a hidden glyph before the label, and keeps the name the label', () => {
+    render(
+      <Button type="button" icon="save">
+        Save
+      </Button>,
+    )
+    const button = screen.getByRole('button', { name: 'Save' })
+    expect(button.classList.contains('has-icon')).toBe(true)
+    const svg = button.firstElementChild
+    expect(svg?.tagName.toLowerCase()).toBe('svg')
+    expect(svg?.getAttribute('aria-hidden')).toBe('true')
+  })
+
+  it('renders no glyph and no extra class without one', () => {
+    render(<Button type="button">Plain</Button>)
+    const button = screen.getByRole('button', { name: 'Plain' })
+    expect(button.querySelector('svg')).toBeNull()
+    expect(button.className).toBe('button')
   })
 })

@@ -128,7 +128,8 @@
   position: sticky;
   bottom: 0;
   padding-top: var(--fm-space-3);
-  background: var(--fm-panel);
+  /* The body it sticks to is screen material (`Modal`), so it is too. */
+  background: var(--fm-screen);
 }
 
 /* ── Data tables ─────────────────────────────────────────────────────────── */
@@ -355,7 +356,7 @@
 }
 .chip.is-df {
   border-color: var(--fm-ucl);
-  color: var(--fm-ucl);
+  color: var(--fm-ucl-ink);
 }
 .chip.is-mf {
   border-color: var(--fm-uecl);
@@ -510,7 +511,7 @@
 }
 
 .attr__delta.is-down {
-  color: var(--fm-relegation);
+  color: var(--fm-relegation-ink);
 }
 
 /* ── Controls ────────────────────────────────────────────────────────────── */
@@ -529,6 +530,20 @@
   letter-spacing: var(--fm-track-wide);
   text-transform: uppercase;
   cursor: pointer;
+}
+
+/* A button with a glyph before its label (`Button icon`). Centred, so a
+   full-width button keeps its label in the middle with the glyph beside it. */
+.button.has-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-2);
+}
+
+.button.has-icon > .icon {
+  width: 1.15em;
+  height: 1.15em;
 }
 
 .button:hover {
@@ -747,6 +762,18 @@
   gap: var(--fm-space-2);
 }
 
+/* Phone: a table's outer cells keep off the panel's edge, which at 390 was a
+   matter of a few pixels (ADR 0019). */
+@media (width < 40rem) {
+  .data-table :is(th, td):first-child {
+    padding-left: var(--fm-space-3);
+  }
+
+  .data-table :is(th, td):last-child {
+    padding-right: var(--fm-space-3);
+  }
+}
+
 /*
  * ── Phone: every control is at least 24px to press (WCAG 2.2, 2.5.8; ADR 0018).
  *
@@ -769,5 +796,16 @@
   .explain {
     inline-size: 1.5rem;
     block-size: 1.5rem;
+  }
+
+  /* iOS zooms into any field set under 16px the moment it takes focus, and
+     leaves the page zoomed after. At 16px it does not. The two classes are
+     named because each sets its own size, which a bare element rule loses to. */
+  input,
+  select,
+  textarea,
+  .number-input,
+  .select {
+    font-size: 1rem;
   }
 }

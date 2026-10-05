@@ -44,10 +44,11 @@ export function ShellFoot(): React.JSX.Element {
 
   const gameButtons = (
     <>
-      <Button type="button" disabled={saving} onClick={quickSave}>
+      <Button icon="save" type="button" disabled={saving} onClick={quickSave}>
         {saving ? t('action.saving') : t('action.save')}
       </Button>
       <Button
+        icon="saves"
         type="button"
         onClick={() => {
           setSavesOpen(true)
@@ -58,6 +59,7 @@ export function ShellFoot(): React.JSX.Element {
       {/* Furthest from the quick save on purpose: one is a press you make
                 every few minutes and the other ends the career. */}
       <Button
+        icon="exit"
         type="button"
         onClick={() => {
           setLeaving(true)
@@ -78,6 +80,7 @@ export function ShellFoot(): React.JSX.Element {
               now fixed. */}
           {!onHub && (
             <Button
+              icon="back"
               type="button"
               onClick={() => {
                 if (screen === 'player') inspect(null)
@@ -111,7 +114,12 @@ export function ShellFoot(): React.JSX.Element {
               is the way on. `Fins la jornada` stays there for the same reason —
               skipping several days at once is a decision about the fixture. */}
           {!overForNow && matchday !== null && !matchday.due && (
-            <Button primary type="button" onClick={() => dispatch({ type: 'AdvanceDay' })}>
+            <Button
+              icon="step"
+              primary
+              type="button"
+              onClick={() => dispatch({ type: 'AdvanceDay' })}
+            >
               {t('hub.advanceDay')}
             </Button>
           )}
@@ -143,7 +151,7 @@ export function ShellFoot(): React.JSX.Element {
             >
               {t('action.cancel')}
             </Button>
-            <Button primary type="button" onClick={quitToLanding}>
+            <Button icon="exit" primary type="button" onClick={quitToLanding}>
               {t('action.quit')}
             </Button>
           </ScreenActions>
