@@ -156,6 +156,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: The README's What's new is v0.8.0.
 - [x] 2026-10-05: Club ratings re-ranked from the league's results (ADR 0025): the same twenty rating pairs handed out by goal difference per match over 2025–26 and 2026–27, so Barcelona leads (89/87) and Madrid follows (87/88). Newcomers who were already in the foreign league take that row's value, so Rodri arrives at Barcelona as its third midfielder. `TEST_CLUBS` stays frozen at the August league.
 - [x] 2026-10-05: The hub's art is back. Each place wears its old section's colour (Lliga green, Equip blue, Mercat brick, Club amber) on its rail marker and lit segment, at AA; on the desk the place's member of staff stands at the foot of the rail and all four line the foot of Avui's standing panel.
 - [x] 2026-10-05: The squads refreshed after the summer window (ADR 0024), from Wikipedia (CC BY-SA): 56 newcomers with altered surnames, 7 moves between the game's clubs carried with their rows, departures and loans out dropped. The formation harness measures a frozen snapshot of the August rosters instead of the shipped ones.

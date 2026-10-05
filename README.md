@@ -19,10 +19,10 @@ leaves your device.
 
 ## What's new
 
-**v0.7.0 — one game, at any size of screen.** The phone and the desk are now the same game:
-the same places (in a rail on the desk, along the bottom on a phone), the day's action and
-the match on every screen, news in the top bar, and every text readable. Every release, with
-its notes, is on the [releases page](https://github.com/pearpages/futbol-manager/releases).
+**v0.8.0 — this season's squads.** Every club's squad is as it stands in October 2026, the
+ratings follow the league's results (Barcelona first, Madrid second), and the staff are
+back beside the places they run. Every release, with its notes, is on the
+[releases page](https://github.com/pearpages/futbol-manager/releases).
 
 What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
 injuries, form and training (M6).
