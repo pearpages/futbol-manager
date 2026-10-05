@@ -54,7 +54,12 @@ function openAnother(player: Player) {
  */
 function openListedFicha() {
   render(<App />)
-  const listing = listingsFor(useGame.getState().game).find((l) => l.from !== null)
+  // A seller in the league: which club comes first in the market moves with the
+  // squads, and a club abroad is not in `game.clubs`.
+  const { game } = useGame.getState()
+  const listing = listingsFor(game).find(
+    (l) => l.from !== null && game.clubs.some((c) => c.id === l.from),
+  )
   if (listing === undefined) throw new Error('nothing listed by another club')
   openScreen('nav.market')
   fireEvent.click(screen.getByRole('button', { name: listing.player.name }))

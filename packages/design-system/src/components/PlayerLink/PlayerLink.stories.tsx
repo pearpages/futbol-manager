@@ -12,7 +12,7 @@ export const InASentence: Story = {
   render: () => (
     <OnScreen>
       <ScreenNote>
-        El porter titular és <PlayerLink label="Thibaut Courtois" onClick={() => {}} />.
+        El porter titular és <PlayerLink label="Thibaut Courtuis" onClick={() => {}} />.
       </ScreenNote>
     </OnScreen>
   ),

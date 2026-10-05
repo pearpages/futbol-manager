@@ -8,8 +8,10 @@ import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { NewsDialog } from './NewsDialog.tsx'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
+import { artSrc, FIGURE_KEYS } from './art.ts'
 import {
   Button,
+  HubFigure,
   NotificationList,
   Screen,
   ScreenHeading,
@@ -156,6 +158,13 @@ export function HubScreen() {
           >
             {t('hub.boardTarget', { target: game.board.target })}
           </button>
+          {/* The staff, back from the PC Fútbol hub: decoration where the desk has
+              room for it, gone below that (ADR 0022). */}
+          <div className="hub__staff">
+            {FIGURE_KEYS.map((figure) => (
+              <HubFigure key={figure} figure={figure} src={artSrc(figure)} />
+            ))}
+          </div>
         </Screen>
 
         <Screen className="hub__next">

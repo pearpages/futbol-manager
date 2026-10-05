@@ -1,4 +1,5 @@
 import type { IconName } from '@fm/design-system'
+import type { FigureKey } from '../screens/art.ts'
 import type { Screen } from '../store.ts'
 
 /**
@@ -16,12 +17,35 @@ export const TABS: readonly {
   readonly label: string
   readonly icon: IconName
   readonly screens: readonly Screen[]
+  /**
+   * The PC Fútbol hub's section this place took over, and the member of staff
+   * who stood in it: the colour and the figure come back with the place.
+   */
+  readonly figure: FigureKey | null
 }[] = [
-  { tab: 'today', label: 'tab.today', icon: 'home', screens: ['hub'] },
-  { tab: 'team', label: 'tab.team', icon: 'shirt', screens: ['lineup', 'squad'] },
-  { tab: 'market', label: 'tab.market', icon: 'transfer', screens: ['market'] },
-  { tab: 'league', label: 'tab.league', icon: 'league', screens: ['table', 'results', 'calendar'] },
-  { tab: 'club', label: 'tab.club', icon: 'club', screens: ['caja', 'decisiones', 'estadio'] },
+  { tab: 'today', label: 'tab.today', icon: 'home', screens: ['hub'], figure: null },
+  {
+    tab: 'team',
+    label: 'tab.team',
+    icon: 'shirt',
+    screens: ['lineup', 'squad'],
+    figure: 'trainer',
+  },
+  { tab: 'market', label: 'tab.market', icon: 'transfer', screens: ['market'], figure: 'agent' },
+  {
+    tab: 'league',
+    label: 'tab.league',
+    icon: 'league',
+    screens: ['table', 'results', 'calendar'],
+    figure: 'assistant',
+  },
+  {
+    tab: 'club',
+    label: 'tab.club',
+    icon: 'club',
+    screens: ['caja', 'decisiones', 'estadio'],
+    figure: 'director',
+  },
 ]
 
 /**

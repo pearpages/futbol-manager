@@ -3,6 +3,7 @@ import { transferWindowDaysLeft } from '@fm/domain'
 import {
   BadgeDefs,
   Button,
+  HubFigure,
   Icon,
   type IconKey,
   Panel,
@@ -15,6 +16,7 @@ import { useT } from '../i18n/useT.ts'
 import { NewsDialog } from '../screens/NewsDialog.tsx'
 import { useGame } from '../store.ts'
 import { ShellCredit } from '../screens/ShellCredit.tsx'
+import { artSrc } from '../screens/art.ts'
 import { usePhone } from '../usePhone.ts'
 import { DayAction } from './DayAction.tsx'
 import { GameMenu } from './GameMenu.tsx'
@@ -77,7 +79,7 @@ export function Shell({ children }: { readonly children: React.ReactNode }) {
   const offers = game.bids.filter((b) => b.to === game.managedClubId && b.status === 'pending')
 
   return (
-    <div className="shell shell--app">
+    <div className="shell shell--app" data-place={tab}>
       <BadgeDefs />
       <Panel as="header" className="shell-bar">
         {screen === 'player' && (
@@ -160,6 +162,14 @@ export function Shell({ children }: { readonly children: React.ReactNode }) {
       )}
 
       <div className="shell-dock">
+        {/* The place's member of staff at the foot of the rail, where PC Fútbol
+            stood them at the foot of their section. Decoration, and desk only:
+            a phone has no room under its tabs. */}
+        {!phone && entry?.figure != null && (
+          <div className="shell-figure">
+            <HubFigure figure={entry.figure} src={artSrc(entry.figure)} />
+          </div>
+        )}
         <DayAction />
         <TabBar
           label={t('tab.nav')}

@@ -704,10 +704,12 @@ describe('the club browser', () => {
     browse(clubId)
     const squad = game().squads[clubId] ?? []
     const spare = new Set(surplus(squad).map((p) => p.id))
-    // The cheapest starter, so the bid is inside even a rich club's overdraft.
+    // The cheapest outfield starter, so the bid is inside even a rich club's
+    // overdraft. Not a keeper: a club's last spare-less keeper is refused outright
+    // (`refuseUnsellable`), and whether the cheapest starter is one moves with the squads.
     const date = game().season.currentDate
     const starter = squad
-      .filter((p) => !spare.has(p.id))
+      .filter((p) => !spare.has(p.id) && p.position !== 'GK')
       .sort((a, b) => scoutedPrice(squad, a, date) - scoutedPrice(squad, b, date))[0]
     if (starter === undefined) throw new Error('no starter')
 

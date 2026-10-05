@@ -314,7 +314,7 @@
 }
 
 .results-grid__cell.is-draw {
-  color: var(--fm-draw);
+  color: var(--fm-ucl-ink); /* the draw blue as text; --fm-draw itself is 4.18:1 here */
 }
 
 /* Pushed well back, so the field reads as empty and the scores as the content.

@@ -49,6 +49,58 @@
   border-left-color: var(--fm-bevel-light);
 }
 
+/*
+ * Each place wears the colour of the hub section it took over (ADR 0022 kept
+ * the places; this brings back their identity): Lliga green, Equip blue,
+ * Mercat brick, Club amber, Avui the brass accent. A face and an ink, chosen so
+ * the ink reads on the face at AA. The colour marks the current place and lights
+ * its segment; it is never text or an icon on the panel, where the green would
+ * fall to 2.7:1.
+ */
+.shell.shell--app {
+  --place-face: var(--fm-accent);
+  --place-ink: var(--fm-accent-ink);
+}
+
+.shell.shell--app[data-place='league'] {
+  --place-face: #4d7a31;
+  --place-ink: #f3f7ec;
+}
+
+.shell.shell--app[data-place='team'] {
+  --place-face: #35659e;
+  --place-ink: #f3f7ec;
+}
+
+.shell.shell--app[data-place='market'] {
+  --place-face: #9c3b34;
+  --place-ink: #f3f7ec;
+}
+
+.shell.shell--app[data-place='club'] {
+  --place-face: #c08a2a;
+  --place-ink: #201704;
+}
+
+.shell-segments .segments__option.is-primary {
+  background: var(--place-face);
+  color: var(--place-ink);
+}
+
+/* The member of staff, standing at the foot of the rail. */
+.shell-figure {
+  grid-area: rail;
+  align-self: end;
+  justify-self: center;
+  z-index: 1;
+  padding-bottom: var(--fm-space-2);
+  pointer-events: none;
+}
+
+.shell-figure .hub-figure {
+  height: 10rem;
+}
+
 /* In the rail the current place is marked on its left edge, not its top. */
 .shell-dock .tab-bar__item {
   border-top: 0;
@@ -56,7 +108,7 @@
 }
 
 .shell-dock .tab-bar__item.is-current {
-  border-left-color: var(--fm-accent);
+  border-left-color: var(--place-face);
 }
 
 .shell-dock .day-action {
@@ -254,7 +306,7 @@
   }
 
   .shell-dock .tab-bar__item.is-current {
-    border-top-color: var(--fm-accent);
+    border-top-color: var(--place-face);
   }
 
   .shell-dock .tab-bar {

@@ -10,7 +10,7 @@ import {
 } from '@fm/domain'
 import { DEFAULT_CLUBS } from './clubs.ts'
 import { PLAYER_NAMES } from './names.ts'
-import { DEFAULT_ROSTERS } from './rosters.ts'
+import { HARNESS_ROSTERS } from './harness-rosters.ts'
 
 /**
  * The formation sweep — the gap `docs/roadmap.md` named as a known open item:
@@ -28,6 +28,13 @@ import { DEFAULT_ROSTERS } from './rosters.ts'
  * `@fm/data` (ground rule 1, and the import direction), so measuring the shipped
  * league means the harness moves to the package that owns it and hands `rosters`
  * down through `simulateSeasons`.
+ *
+ * **Real rosters, but frozen ones** (`harness-rosters.ts`, the August 2026
+ * squads). These effects are small and depend on who is in a squad, so measuring
+ * the shipped rosters made every refresh of real squads read as a model
+ * regression: the October 2026 refresh flipped two of them with the model
+ * untouched. The model is calibrated against the snapshot; what the shipped
+ * rosters must always satisfy is in `rosters.test.ts`.
  *
  * The other statistical harnesses still run on `TEST_CLUBS`. That is correct for
  * distribution bands, which describe the shape of a league rather than this one —
@@ -104,7 +111,7 @@ function points(clubId: string, arm: Arm): number {
   return mean(
     simulateSeasons(clubs, SEASONS, SEED, {
       names: PLAYER_NAMES,
-      rosters: DEFAULT_ROSTERS,
+      rosters: HARNESS_ROSTERS,
       adjust: (state: GameState): GameState => {
         const squad =
           arm.trim === undefined

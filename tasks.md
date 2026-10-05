@@ -28,9 +28,10 @@ at `0f75a23`), and each entry is one Done line below.
 
 - [ ] **Render the component previews from the stories.** Each component is described twice, its `preview.html` (for the Claude artifact) and its story, and the two can drift. Build the previews from the stories, or replace them once the artifact can load a Storybook build.
 
-### After the one shell (ADR 0022)
+### Real data (ADR 0024, 0025)
 
-- [ ] **Decide: bring back the hub's art on Avui.** The four staff figures and the quadrant colours retired with the PC Fútbol hub. They could return as decoration on the desk's Avui; nothing depends on them.
+- [ ] **Refresh the foreign league.** Its 32 rosters are the August 2026 snapshot: some players it holds have since moved, nine of them into the league, where they now appear under new names while their foreign copies remain.
+- [ ] **A value for newcomers from unmodelled clubs.** About 45 arrivals hold their club's median value for their position, so a star signing from outside the game starts mid-pack. Options: estimate from Wikipedia's caps, age and previous club; or set the notable signings by hand.
 
 ### Known open items
 
@@ -155,6 +156,9 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: Club ratings re-ranked from the league's results (ADR 0025): the same twenty rating pairs handed out by goal difference per match over 2025–26 and 2026–27, so Barcelona leads (89/87) and Madrid follows (87/88). Newcomers who were already in the foreign league take that row's value, so Rodri arrives at Barcelona as its third midfielder. `TEST_CLUBS` stays frozen at the August league.
+- [x] 2026-10-05: The hub's art is back. Each place wears its old section's colour (Lliga green, Equip blue, Mercat brick, Club amber) on its rail marker and lit segment, at AA; on the desk the place's member of staff stands at the foot of the rail and all four line the foot of Avui's standing panel.
+- [x] 2026-10-05: The squads refreshed after the summer window (ADR 0024), from Wikipedia (CC BY-SA): 56 newcomers with altered surnames, 7 moves between the game's clubs carried with their rows, departures and loans out dropped. The formation harness measures a frozen snapshot of the August rosters instead of the shipped ones.
 - [x] 2026-10-05: Checks in a real browser (ADR 0023). Playwright runs every story at 390, 768 and 1280 for sideways scroll, contrast, edge padding and touch targets; screenshots the design system's stories against references made on Linux in CI; and smoke-tests the built game from a new career to a reload. A `browser` CI job runs them and releases wait for it. The first run found two desk bugs, both fixed: the player's status line against its panel's edge, and squad columns off the edge at tablet width.
 - [x] 2026-10-05: One game at every width (ADR 0022, P20 rewritten). The phone's shell is the only shell: the desk gets the same bar (place, window chip, news, the game menu inline), the same five places as a rail, the same segments and the same day's action with the result sheet. Avui is home on both, and the quadrant hub retires. Listing a player from his card and clearing the market's filters work at every width. The results' grid tab is "Quadre", no longer a second "Resultats". `parity.test.tsx` requires the same controls on every screen at both widths.
 - [x] 2026-10-05: Storybook in levels (ADR 0021). Foundations (colour with each ink's contrast, type, space and radius, icons, all read from `tokens.json` and the icon sets), primitives and components join the screens, 55 stories in all, each component on the surface it is drawn for. `tokens:build` also writes the swatch stylesheet the foundations use, guarded by the drift test, and every design-system story renders under Vitest.

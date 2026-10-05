@@ -217,7 +217,9 @@ describe('the squad screen', () => {
     fireEvent.click(screen.getByText(first.name))
 
     expect(screen.getByRole('heading', { name: first.name })).toBeDefined()
-    expect(screen.getByText(String(overall(first)))).toBeDefined()
+    // Among the card's figures: the same number can also be his age, or a bar.
+    const vitals = document.querySelector('.ficha__vitals') as HTMLElement
+    expect(within(vitals).getAllByText(String(overall(first))).length).toBeGreaterThan(0)
   })
 
   it('renders one bar per attribute on the ficha', () => {
