@@ -4,7 +4,7 @@ import { computeTable } from '@fm/domain'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance, advanceUntil, openScreen } from '../testing.ts'
+import { advance, openScreen } from '../testing.ts'
 
 /**
  * The results grid and the palmarés.
@@ -86,11 +86,20 @@ const managed = () => {
   return { game, clubId: game.managedClubId }
 }
 
-/** Plays a whole season and rolls into the next, so there is one archived year. */
+/**
+ * Plays a whole season and rolls into the next, so there is one archived year.
+ *
+ * Through the store, before anything is rendered. Clicking "advance" three
+ * hundred times with the app mounted re-rendered a screen every day: 3s here and
+ * past the 15s timeout on CI under load. These tests are about the archive the
+ * season leaves, not about the button that ran the clock.
+ */
 function playASeason() {
-  advanceUntil(() => useGame.getState().game.season.fixtures.every((f) => f.result !== null), 500)
-  // The season-over press is `Start <season>`, which `advance` resolves.
-  advance()
+  const played = () => useGame.getState().game.season.fixtures.every((f) => f.result !== null)
+  for (let day = 0; day < 400 && !played(); day++) {
+    useGame.getState().dispatch({ type: 'AdvanceDay' })
+  }
+  useGame.getState().startNewSeason()
 }
 
 describe('the tile no longer lands on the classification', () => {
@@ -379,8 +388,8 @@ describe('the palmarés', () => {
   })
 
   it('records the champion once a season has been played out', () => {
-    render(<App />)
     playASeason()
+    render(<App />)
     openScreen('nav.results')
     openPalmares()
 
@@ -409,8 +418,8 @@ describe('what only looking at it caught', () => {
     // `.swatch` in `chrome.css`, so the class on a `.data-table__num` was
     // silently inert — measured in the browser at a transparent background with
     // the muted ink. A class that looks right and does nothing.
-    render(<App />)
     playASeason()
+    render(<App />)
     openScreen('nav.results')
     openPalmares()
 
@@ -422,8 +431,8 @@ describe('what only looking at it caught', () => {
   })
 
   it('keeps the season picker off the palmarés, where it would do nothing', () => {
-    render(<App />)
     playASeason()
+    render(<App />)
     openScreen('nav.results')
 
     // On the grid it is the control that chooses which season to show…
@@ -441,8 +450,8 @@ describe('the season picker', () => {
   })
 
   it('offers a finished season, and shows its results', () => {
-    render(<App />)
     playASeason()
+    render(<App />)
     openScreen('nav.results')
     fireEvent.click(screen.getByRole('button', { name: t('results.tab.grid') }))
 
