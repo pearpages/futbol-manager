@@ -1,11 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { commitHash } from './commit.ts'
+import { buildStamp } from './commit.ts'
 
 export default defineConfig({
   plugins: [react()],
   /*
-   * The build stamps its own commit, which the footer shows.
+   * The build stamps its own release tag, or else its commit, which the footer
+   * shows (ADR 0020).
    *
    * Defined on `import.meta.env` rather than as a bare `__COMMIT__` global, and
    * that is not a style choice. The root `vitest.config.ts` declares the app
@@ -16,6 +17,6 @@ export default defineConfig({
    * absorbs, so the same code is correct in a build, in `pnpm dev` and in a test.
    */
   define: {
-    'import.meta.env.VITE_COMMIT': JSON.stringify(commitHash()),
+    'import.meta.env.VITE_COMMIT': JSON.stringify(buildStamp()),
   },
 })

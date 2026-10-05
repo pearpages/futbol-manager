@@ -27,3 +27,16 @@ export function commitHash(): string {
     return 'dev'
   }
 }
+
+/** A release tag as the release workflow sets it: `v` and three numbers. */
+const RELEASE_TAG = /^v\d+\.\d+\.\d+$/
+
+/**
+ * What the footer says this build is: the release's tag when a release is being
+ * built (ADR 0020), so a player can quote `v0.6.0` in a bug report, and the
+ * commit otherwise — a local build or a pull request's.
+ */
+export function buildStamp(env: NodeJS.ProcessEnv = process.env): string {
+  const tag = env['RELEASE_TAG']
+  return tag !== undefined && RELEASE_TAG.test(tag) ? tag : commitHash()
+}

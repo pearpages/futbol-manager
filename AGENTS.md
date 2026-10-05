@@ -4,8 +4,8 @@ A football management game in the style of Dinamic's PC Fútbol, played in the b
 is no real-time match engine: results are worked out statistically from team ratings. The
 first delivery targets PC Fútbol 5.0 (1996/97): one league, squads, tactics, transfers and an
 economy. The depth of the later games is where it is heading, not what v1 covers (see
-[ADR 0008](docs/adr/0008-target-pc-futbol-5.md)). It is a static React app published from
-`main` to <https://futbol.pearpages.com> through GitHub Pages. Saves stay in the player's
+[ADR 0008](docs/adr/0008-target-pc-futbol-5.md)). It is a static React app released from
+`v*` tags to <https://futbol.pearpages.com> through GitHub Pages. Saves stay in the player's
 browser.
 
 ## Project documents — read before working
@@ -52,7 +52,8 @@ Domain references. Read the one that covers the area you are changing:
    game's model goes in the reference doc it belongs to (`attribute-model.md`,
    `market-model.md`, `stack.md`). A trap goes under Pitfalls below. This file keeps only how
    to work and pointers, never a session log.
-8. Confirm before anything outward-facing. A push to `main` **deploys the public site**.
+8. Confirm before anything outward-facing. Merging to `main` only checks; **publishing a
+   release deploys the public site** (ADR 0020), so a release is always asked for.
 
 ## Development commands
 
@@ -68,6 +69,9 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 - `pnpm typecheck` · `pnpm lint` · `pnpm format` (`pnpm format:check` in CI)
 - `pnpm build`: `pnpm -r build` — the design system's artifact bundle into
   `packages/design-system/dist`, then the game into `packages/app/dist`.
+- **Releasing** (ADR 0020): `gh release create vX.Y.Z --target main --title … --notes-file …`
+  creates the tag and the release, and the workflow checks and deploys it. Notes are for
+  players. A failed release is fixed forward with the next patch, never by moving a tag.
 - `pnpm --filter @fm/design-system tokens:build`: regenerate `tokens.css` from `tokens.json`.
   Edit the JSON, never the CSS; a test fails if they disagree.
 - `pnpm storybook`: every screen of the game in Storybook, at phone, tablet and desk width

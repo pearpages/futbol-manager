@@ -162,10 +162,10 @@ There is no `404.html` and none is needed: the app has **no router**, so `/` is 
 |             |                                                                                                                        |
 | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
 | Source      | GitHub Actions (`build_type: workflow`) — no `gh-pages` branch, nothing published by commit                            |
-| Trigger     | push to `main`, or `workflow_dispatch` for a redeploy with no commit                                                   |
+| Trigger     | a published GitHub release (`v*` tag, ADR 0020), or `workflow_dispatch` from a release tag to redeploy it              |
 | Gate        | the `deploy` job `needs: check`, so nothing that fails lint, typecheck, the suite or format can reach a public address |
 | Artifact    | `packages/app/dist`, about 6 MB, most of it the stadium ladder                                                         |
-| Environment | `github-pages`, restricted to the `main` branch                                                                        |
+| Environment | `github-pages`, restricted to `main` and `v*` tags                                                                     |
 
 ### The share card
 

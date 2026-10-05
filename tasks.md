@@ -15,7 +15,7 @@ at `0f75a23`), and each entry is one Done line below.
 
 ### Advertising readiness
 
-- [ ] **C16 The README's "What's new" stops at August 2026.** A visitor reads it as the latest news, and it misses the October work: the game on a phone, the design system and Storybook. Add a dated October entry to `README.md` once the phone shell ships; GitHub has no releases, so this section is the only changelog.
+- [ ] **A `release` skill** (ADR 0020). Capture what releasing `v0.6.0` took: find the player-facing changes since the last tag, write the notes for players, pick the version, `gh release create`, and update the README's What's new. Also say how many player-facing changes are waiting unreleased.
 
 ### Phone follow-ups (ADR 0019)
 
@@ -152,6 +152,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: Releases are tagged, and only releases deploy (ADR 0020). Merging to `main` runs `check` only; publishing a GitHub release (`v*` tag) checks and deploys it, and the footer shows the version. The README's What's new is now the latest release plus a link to the releases page, which closes the stale-changelog gap (C16) from the maturity check.
 - [x] 2026-10-05: Maturity assessment — verdict Ready to advertise, 1 gap added to Open.
 - [x] 2026-10-05: The phone shell (ADR 0019). A one-line bar with a ⋯ menu, an action bar with the day's action on every screen (play the match from anywhere, with the result in a sheet), and five tabs with icons and words. The phone hub (Today) leads with the next match, the round and the board's target. The table keeps points on screen; the market shows cards with what needs you first; the squad's sale and renew move to the player page, whose actions now come straight after the header; the bench opens as a sheet from the pitch, whose discs grow past 24px; the club picker is tappable rows. Signing, accepting an offer, stadium works, taking a club and a new career over a live one now ask first, with the numbers; a formation press offers undo; "bid again" can no longer lose the old bid (`dispatchAll`). New design-system parts: `Icon`, `TabBar`, `Segments`, `Confirm`, `Toast`; every dialog rises from the bottom on a phone. The desk is byte-identical at 1280 in the full-game screenshot comparison.
 - [x] 2026-10-05: The language control is a button that reads the language in use (CA ▾) instead of a cog that rendered as an unreadable blob at 18px; the menu is unchanged. Its accessible name is the code and "Language", and the bar keeps its height: the full-game screenshots differ from `main` only in the bar's row on the desk and in the button on the phone.

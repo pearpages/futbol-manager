@@ -30,11 +30,12 @@ Small by construction. This is a static single-page app on GitHub Pages:
   is no `ErrorBoundary`).
 - **CI/CD.** The workflow declares `contents: read` at the top, so the `check` job, which
   runs pull-request code, holds a read-only token whatever the repository default says. The
-  deploy job alone adds `pages: write` and `id-token: write`, only on `main`, and only after
-  `check` passes.
+  deploy job alone adds `pages: write` and `id-token: write`, only for a published release
+  (or a manual run from its `v*` tag), and only after `check` passes (ADR 0020). The
+  `github-pages` environment accepts `main` and `v*` tags and nothing else.
 - **`main` is protected** by the "Protect main" ruleset: no force-push, no deletion, and the
   `check` status is required. Repository admins may bypass it, which keeps a direct push
-  possible; it still deploys only if `check` passes.
+  possible, but a push to `main` no longer deploys anything.
 - **The dev server.** `pnpm dev` binds to localhost. `pnpm dev:lan` exposes it to the local
   network, which is opt-in, for trying the game on a phone.
 

@@ -31,6 +31,7 @@ record same-day partial reversals in place, which predates this rule.)
 | [0017](docs/adr/0017-storybook.md)                   | Storybook for the screens                                                          | Accepted                                        | 2026-10-04 |
 | [0018](docs/adr/0018-mobile-layout.md)               | The game on a phone                                                                | Accepted; points 3–4 superseded by 0019         | 2026-10-04 |
 | [0019](docs/adr/0019-phone-shell.md)                 | The phone shell: tabs and an action bar                                            | Accepted                                        | 2026-10-05 |
+| [0020](docs/adr/0020-tag-driven-releases.md)         | Releases are tagged, and only releases deploy                                      | Accepted                                        | 2026-10-05 |
 
 ## Format
 

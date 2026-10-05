@@ -19,17 +19,11 @@ leaves your device.
 
 ## What's new
 
-- **August 2026.** The game is live at futbol.pearpages.com. It has a new cover and landing page, a
-  market abroad with 32 foreign clubs to buy from, contract renewals, and named save slots.
-- **The polish phase.** Every screen is in Catalan, Spanish and English. Club badges are drawn
-  from kit colours. The hub has news, form and the league position. Line-up and tactics share
-  one screen with a pitch on it, and every table can be sorted.
-- **M5: money and the board.** Gate, TV and sponsorship income, wages and debt. Ticket
-  pricing and stadium expansion. A board that judges you by your league position.
-- **M4: the transfer market.** Bids, contract terms, free agents, the transfer list, offers
-  for your players, and an AI market that runs on its own.
-- **M1–M3: the league.** Twenty clubs and a 38-round season with results worked out from team
-  ratings. Squads, formations and tactics, and saves that survive updates.
+**v0.6.0 — the game on a phone.** On a phone the game now has its own layout: five tabs
+at the bottom, and the day's action (advance, or play the match) on every screen. Signing a
+player, accepting an offer, stadium works and starting a career now ask first and show what
+it costs; a formation change can be undone. Every release, with its notes, is on the
+[releases page](https://github.com/pearpages/futbol-manager/releases).
 
 What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
 injuries, form and training (M6).

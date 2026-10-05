@@ -93,8 +93,10 @@ Everything in steps 2–3 is pure and reproducible from `(seed, commands)`, whic
   IndexedDB and English pinned (15 s timeout). Layout is checked in a real browser, not the suite.
 - **Lint/format:** ESLint 10 (boundary and determinism rules) and Prettier.
 - **CI** (`.github/workflows/ci.yml`): on push to `main`, on PRs, or on manual dispatch, the
-  `check` job runs lint → typecheck → test → format:check → build. On `main` only, a `deploy`
-  job uploads `packages/app/dist` and publishes it with `actions/deploy-pages`.
+  `check` job runs lint → typecheck → test → format:check → build → build-storybook.
+  Merging to `main` deploys nothing. A published GitHub release (a `v*` tag, ADR 0020) runs
+  `check` on its commit and then a `deploy` job, which builds with the tag as the footer's
+  stamp, uploads `packages/app/dist` and publishes it with `actions/deploy-pages`.
 - **Hosting:** GitHub Pages (Actions source), custom domain `futbol.pearpages.com`, kept by
   `packages/app/public/CNAME`. Because the site is served from a domain root, Vite's `base` is
   `/` and root-absolute asset paths work. The build embeds the short commit hash as

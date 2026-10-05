@@ -1,11 +1,17 @@
 name: CI
 
+# Merging checks; releasing deploys (ADR 0020). A push to `main` runs `check`
+# and nothing else, because docs and tests merge there too and none of them is a
+# reason to republish the game. Publishing a GitHub release, which creates its
+# `v*` tag, checks that commit again and deploys it.
 on:
   push:
     branches: [main]
   pull_request:
-  # A redeploy without a commit — the site is a build of `main`, and sometimes you
-  # want that build again without inventing a change to make it happen.
+  release:
+    types: [published]
+  # A redeploy of a release, run from its tag ("Use workflow from: v0.6.0") —
+  # after a Pages outage, say. Run from a branch it only checks.
   workflow_dispatch:
 
 # Read-only unless a job says otherwise. The repository default is already
@@ -46,9 +52,10 @@ jobs:
 
   # ── The live site ───────────────────────────────────────────────────────────
   #
-  # https://futbol.pearpages.com, deployed from `main` only, and only once `check`
-  # is green: the whole point of gating is that nothing which fails the suite can
-  # reach a public address.
+  # https://futbol.pearpages.com, deployed from a release tag only, and only once
+  # `check` is green on that commit: the whole point of gating is that nothing
+  # which fails the suite can reach a public address. The `github-pages`
+  # environment must allow `v*` tags as well as `main`, or the deploy is refused.
   #
   # Pages is configured with `build_type: workflow`, so this job *is* the
   # publication — there is no gh-pages branch and nothing is committed. The custom
@@ -56,8 +63,11 @@ jobs:
   # no `base` and the app's root-absolute asset paths are correct as they stand.
   deploy:
     needs: check
-    # `check` also runs on pull requests, where the ref is `refs/pull/N/merge`.
-    if: github.ref == 'refs/heads/main'
+    # A release, or a manual run from a release's tag. Never a branch: `check`
+    # runs on `main` and on pull requests too, and neither publishes.
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
 
     # Job-level permissions *replace* the workflow-level ones rather than adding
@@ -88,10 +98,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The default depth-1 checkout still answers `git rev-parse --short HEAD`,
-      # so `commit.ts` stamps the real commit and the live footer says which build
-      # you are looking at.
+      # The footer shows the release's tag (`commit.ts`), so a player can say
+      # which version they are on. `ref_name` is the tag for both triggers.
       - run: pnpm build
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
 
       - uses: actions/upload-pages-artifact@v3
         with:
