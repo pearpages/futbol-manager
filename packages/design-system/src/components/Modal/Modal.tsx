@@ -1,4 +1,7 @@
 import { useEffect, useId, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { usePhone } from '../../usePhone.ts'
+import { Icon } from '../Icon/Icon.tsx'
 import './Modal.css'
 
 /**
@@ -12,9 +15,11 @@ import './Modal.css'
  *
  * Not a native `<dialog>`. `showModal()` and the top layer are unevenly
  * implemented across the environments this is tested in, and the whole point of a
- * primitive is that its behaviour is the same everywhere. A fixed overlay needs no
- * portal either, because `.shell` is a single column with nothing transformed
- * above it.
+ * primitive is that its behaviour is the same everywhere.
+ *
+ * **Rendered into `document.body`.** A fixed overlay escapes its parent's box but
+ * not its stacking context: opened from the phone bar's menu, which is sticky
+ * with a z-index, the save picker drew under the action bar and the tabs.
  */
 
 /**
@@ -39,12 +44,44 @@ interface ModalProps {
    * case turns up.
    */
   readonly wide?: boolean
+  /**
+   * On a phone, the whole screen rather than a sheet from the bottom: for lists
+   * and forms (the saves, all the news, an explanation), which a sheet would
+   * show a few lines of. The desk is unchanged. Needs `closeLabel`, because a
+   * full-screen dialog leaves no backdrop to tap.
+   */
+  readonly full?: boolean
+  /** Shows a close (×) button in the heading, named by this. */
+  readonly closeLabel?: string
   readonly children: React.ReactNode
 }
 
-export function Modal({ title, onClose, wide = false, children }: ModalProps): React.JSX.Element {
+/** How many dialogs are open, so nested ones release the page only once. */
+let openCount = 0
+
+export function Modal({
+  title,
+  onClose,
+  wide = false,
+  full = false,
+  closeLabel,
+  children,
+}: ModalProps): React.JSX.Element {
   const box = useRef<HTMLDivElement>(null)
   const headingId = useId()
+  const phone = usePhone()
+
+  // The page behind does not scroll while a dialog is up: on a phone a swipe
+  // inside a sheet otherwise scrolled the screen under the scrim.
+  useEffect(() => {
+    const root = document.documentElement
+    if (openCount === 0) root.classList.add('has-modal')
+    openCount += 1
+    return () => {
+      openCount -= 1
+      if (openCount === 0) root.classList.remove('has-modal')
+    }
+  }, [])
 
   // Focus goes into the box on open and back to whatever opened it on close.
   // Without the second half, dismissing a dialog drops focus onto `<body>` and a
@@ -65,7 +102,11 @@ export function Modal({ title, onClose, wide = false, children }: ModalProps): R
       }
       if (event.key !== 'Tab' || box.current === null) return
 
-      const focusable = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)]
+      // Visible ones only: the close button is in the markup on a desk but not
+      // shown there, and focusing it would drop focus out of sight.
+      const focusable = [...box.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+        (el) => el.checkVisibility?.() ?? true,
+      )
       const first = focusable[0]
       const last = focusable.at(-1)
       if (first === undefined || last === undefined) return
@@ -89,29 +130,44 @@ export function Modal({ title, onClose, wide = false, children }: ModalProps): R
     }
   }, [onClose])
 
-  return (
+  return createPortal(
     // Dismissing by clicking away is a click on the backdrop itself — the test is
     // the target, not a class, so a click anywhere inside the box never closes it
     // however deeply nested the thing pressed was.
     <div
-      className="modal"
+      className={`modal${full ? ' is-full' : ''}`}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
     >
       <div
-        className={`panel modal__box${wide ? ' is-wide' : ''}`}
+        className={`panel modal__box${wide ? ' is-wide' : ''}${full ? ' is-full' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={headingId}
         ref={box}
         tabIndex={-1}
       >
-        <h2 className="modal__heading" id={headingId}>
-          {title}
-        </h2>
+        <div className="modal__head">
+          <h2 className="modal__heading" id={headingId}>
+            {title}
+          </h2>
+          {/* Phone only: on a desk the backdrop and Escape close it, and the
+              dialog's own buttons are a press away. */}
+          {phone && full && closeLabel !== undefined && (
+            <button
+              type="button"
+              className="button modal__close"
+              aria-label={closeLabel}
+              onClick={onClose}
+            >
+              <Icon name="close" />
+            </button>
+          )}
+        </div>
         <div className="modal__body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

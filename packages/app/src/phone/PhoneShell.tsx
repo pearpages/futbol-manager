@@ -1,6 +1,18 @@
+import { useState } from 'react'
 import { transferWindowDaysLeft } from '@fm/domain'
-import { BadgeDefs, Button, Icon, Panel, Segments, TabBar, VisuallyHidden } from '@fm/design-system'
+import {
+  BadgeDefs,
+  Button,
+  Icon,
+  type IconKey,
+  Panel,
+  Segments,
+  TabBar,
+  TileIcon,
+  VisuallyHidden,
+} from '@fm/design-system'
 import { useT } from '../i18n/useT.ts'
+import { NewsDialog } from '../screens/NewsDialog.tsx'
 import { useGame } from '../store.ts'
 import { PhoneAction } from './PhoneAction.tsx'
 import { PhoneMenu } from './PhoneMenu.tsx'
@@ -20,6 +32,21 @@ const SEGMENT_TITLES: Readonly<Record<string, string>> = {
 }
 
 /**
+ * Each segment's picture: the one its hub tile carries on the desk, so a place
+ * looks the same on both layouts.
+ */
+const SEGMENT_ICONS: Readonly<Record<string, IconKey>> = {
+  lineup: 'pitch',
+  squad: 'roster',
+  table: 'table',
+  results: 'results',
+  calendar: 'calendar',
+  caja: 'safe',
+  decisiones: 'scales',
+  estadio: 'stadium',
+}
+
+/**
  * The game on a phone (ADR 0019): one line at the top, the screen, then the
  * next thing to do and the five places, both under the thumb.
  *
@@ -35,6 +62,9 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
   const go = useGame((s) => s.go)
   const inspect = useGame((s) => s.inspect)
   const { t, plural } = useT()
+  const unread = useGame((s) => s.unread)
+  const markRead = useGame((s) => s.markRead)
+  const [newsOpen, setNewsOpen] = useState(false)
 
   const tab = tabOf(screen, inspectedFrom)
   const entry = TABS.find((e) => e.tab === tab) ?? TABS[0]
@@ -74,6 +104,27 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
             <VisuallyHidden>{plural('shell.windowOpen', windowDaysLeft)}</VisuallyHidden>
           </Button>
         )}
+        {/* News lands wherever you are, so its door is in the bar on every
+            screen. Opening it is what marks it read, as on the hub. */}
+        <Button
+          type="button"
+          className="phone-bar__icon-button phone-bar__news"
+          onClick={() => {
+            setNewsOpen(true)
+            markRead()
+          }}
+        >
+          <Icon name="news" />
+          <VisuallyHidden>{t('hub.news')}</VisuallyHidden>
+          {unread > 0 && (
+            <>
+              <span className="phone-bar__badge" aria-hidden="true">
+                {unread}
+              </span>{' '}
+              <VisuallyHidden>{plural('action.unread', unread)}</VisuallyHidden>
+            </>
+          )}
+        </Button>
         <PhoneMenu />
       </Panel>
 
@@ -82,13 +133,28 @@ export function PhoneShell({ children }: { readonly children: React.ReactNode })
           <Segments
             className="phone-segments"
             label={title}
-            options={segments.map((s) => ({ value: s, label: t(SEGMENT_TITLES[s] ?? s) }))}
+            options={segments.map((s) => {
+              const icon = SEGMENT_ICONS[s]
+              return {
+                value: s,
+                label: t(SEGMENT_TITLES[s] ?? s),
+                ...(icon === undefined ? {} : { icon: <TileIcon icon={icon} /> }),
+              }
+            })}
             value={screen}
             onChange={go}
           />
         )}
         {children}
       </main>
+
+      {newsOpen && (
+        <NewsDialog
+          onClose={() => {
+            setNewsOpen(false)
+          }}
+        />
+      )}
 
       <div className="phone-dock">
         <PhoneAction />

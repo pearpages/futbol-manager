@@ -8,11 +8,12 @@ import { Button } from '@fm/design-system'
 
 ## Props
 
-| Prop      | Type                   |                                                            |
-| --------- | ---------------------- | ---------------------------------------------------------- |
-| `primary` | `boolean`              | The brass accent: the one action the screen is asking for. |
-| `type`    | `'button' \| 'submit'` | Always pass it: the wrapper does not guess.                |
-| `…`       | `button props`         | Passed through.                                            |
+| Prop      | Type                   |                                                                    |
+| --------- | ---------------------- | ------------------------------------------------------------------ |
+| `primary` | `boolean`              | The brass accent: the one action the screen is asking for.         |
+| `icon`    | `IconName`             | A glyph before the label, for a verb that recurs. The label stays. |
+| `type`    | `'button' \| 'submit'` | Always pass it: the wrapper does not guess.                        |
+| `…`       | `button props`         | Passed through.                                                    |
 
 ## Variants
 

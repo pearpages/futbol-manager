@@ -152,7 +152,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
   }
 
   return (
-    <Modal title={t('saves.title')} onClose={onClose} wide>
+    <Modal title={t('saves.title')} onClose={onClose} wide full closeLabel={t('action.close')}>
       <Field className="save-manager__name">
         <FieldLabel htmlFor="save-name">{t('saves.nameLabel')}</FieldLabel>
         <div className="save-manager__row">
@@ -167,6 +167,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
             }}
           />
           <Button
+            icon="save"
             primary
             type="button"
             // An empty name has nowhere to go, and the field being empty says so
@@ -221,6 +222,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
                   <td className="is-text save-manager__career">{describe(save)}</td>
                   <td className="save-manager__actions">
                     <Button
+                      icon="saves"
                       type="button"
                       onClick={() => {
                         setPending({ kind: 'load', slot: save.slot, name: save.name })
@@ -229,6 +231,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
                       {t('saves.load')}
                     </Button>
                     <Button
+                      icon="trash"
                       type="button"
                       onClick={() => {
                         setPending({ kind: 'delete', slot: save.slot, name: save.name })
@@ -245,7 +248,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
       </Screen>
 
       <ScreenActions>
-        <Button type="button" onClick={onClose}>
+        <Button icon="close" type="button" onClick={onClose}>
           {t('action.close')}
         </Button>
       </ScreenActions>

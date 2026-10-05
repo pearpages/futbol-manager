@@ -65,7 +65,12 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
   const outlay = signingOutlay(Number(fee) || 0)
 
   return (
-    <Modal title={t('bid.title', { player: player.name })} onClose={onClose}>
+    <Modal
+      title={t('bid.title', { player: player.name })}
+      onClose={onClose}
+      full
+      closeLabel={t('action.close')}
+    >
       <div className="bid">
         {/* The mechanism, never the multiple. Naming the number would turn the
             squad screen into a lookup, which is exactly why the "Improves" column
@@ -108,6 +113,7 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
             {t('action.cancel')}
           </Button>
           <Button
+            icon="cash"
             primary
             type="button"
             onClick={() => {

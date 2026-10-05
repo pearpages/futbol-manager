@@ -3,10 +3,42 @@
   gap: var(--fm-space-1);
 }
 
+/* A place with its picture: the icon beside the label, as on any button. */
+.segments__option.has-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-2);
+}
+
+.segments__icon {
+  display: inline-flex;
+}
+
+.segments__icon > svg {
+  width: 1.15em;
+  height: 1.15em;
+}
+
 /* Equal shares on a phone, so the row reads as one control across the width. */
 @media (width < 40rem) {
   .segments__option {
     flex: 1;
     padding-inline: var(--fm-space-1);
+  }
+
+  /* Stacked on a phone, like the tab bar below but smaller: three labels and
+     their icons side by side do not fit 390. */
+  .segments__option.has-icon {
+    flex-direction: column;
+    gap: var(--fm-space-hair);
+    padding-block: var(--fm-space-1);
+    font-size: var(--fm-text-xs);
+    letter-spacing: var(--fm-track-narrow);
+  }
+
+  .segments__option.has-icon .segments__icon > svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 }

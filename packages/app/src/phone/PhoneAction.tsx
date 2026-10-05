@@ -38,13 +38,25 @@ export function PhoneAction(): React.JSX.Element | null {
   let action: React.JSX.Element | null
   if (game.board.sacked) {
     action = (
-      <Button primary type="button" className="phone-action__main" onClick={quitToLanding}>
+      <Button
+        icon="exit"
+        primary
+        type="button"
+        className="phone-action__main"
+        onClick={quitToLanding}
+      >
         {t('action.quit')}
       </Button>
     )
   } else if (isSeasonComplete(game)) {
     action = (
-      <Button primary type="button" className="phone-action__main" onClick={startNewSeason}>
+      <Button
+        icon="play"
+        primary
+        type="button"
+        className="phone-action__main"
+        onClick={startNewSeason}
+      >
         {t('hub.startSeason', { season: season(game.season.startYear + 1) })}
       </Button>
     )
@@ -61,6 +73,7 @@ export function PhoneAction(): React.JSX.Element | null {
     action = (
       <>
         <Button
+          icon="step"
           primary
           type="button"
           className="phone-action__main"

@@ -36,7 +36,7 @@
 
 .match-result__position {
   margin: 0;
-  color: var(--fm-ink-soft);
+  color: var(--fm-screen-ink-soft);
   font-size: var(--fm-text-sm);
   text-align: center;
 }

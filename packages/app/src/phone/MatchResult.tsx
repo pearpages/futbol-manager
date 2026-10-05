@@ -59,7 +59,7 @@ export function MatchResult({
         {t('result.position', { position: standing.position })}
       </p>
       <ScreenActions>
-        <Button primary type="button" onClick={onClose}>
+        <Button icon="play" primary type="button" onClick={onClose}>
           {t('result.continue')}
         </Button>
       </ScreenActions>

@@ -10,6 +10,13 @@ body,
   height: 100%;
 }
 
+/* No double-tap zoom: two quick presses on a button are two presses, not a zoom
+   that throws the layout sideways. Pinch-zoom still works, as it must (WCAG
+   1.4.4); this only removes the accidental one. */
+html {
+  touch-action: manipulation;
+}
+
 body {
   margin: 0;
   background: var(--fm-void);

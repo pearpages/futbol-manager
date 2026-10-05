@@ -48,13 +48,39 @@
 }
 
 /* The box is capped at the viewport, so the body is what scrolls when a save list
-   grows. `min-height: 0` is what lets a flex child shrink below its content. */
+   grows. `min-height: 0` is what lets a flex child shrink below its content.
+
+   **A recessed screen in the panel**, like every readout in the game: the title
+   is on the hardware, the content on the display. Fields, notes and inputs are
+   all drawn for the screen material, and on the panel's face they read at
+   1.6:1 — the faint text in the news, the saves and every explanation. */
 .modal__body {
   display: flex;
   flex-direction: column;
   gap: var(--fm-space-3);
+  padding: var(--fm-space-3);
+  background: var(--fm-screen);
+  color: var(--fm-screen-ink);
+  border-top: 1px solid var(--fm-bevel-dark);
+  border-left: 1px solid var(--fm-bevel-dark);
+  border-right: 1px solid var(--fm-bevel-light);
+  border-bottom: 1px solid var(--fm-bevel-light);
   min-height: 0;
   overflow: auto;
+  /* A long body's scroll stops at its own edge rather than carrying on into
+     the page behind. */
+  overscroll-behavior: contain;
+}
+
+/* The page under an open dialog stays put (set by `Modal`, on both layouts). */
+html.has-modal {
+  overflow: hidden;
+}
+
+/* On a desk the heading is the box's first row, as it always was; the wrapper
+   only takes a shape on a phone, where a full-screen dialog adds its close. */
+.modal__head {
+  display: contents;
 }
 
 /* On a phone a dialog rises from the bottom edge, full width — where the thumb
@@ -69,5 +95,73 @@
   .modal__box.is-wide {
     width: 100%;
     padding-bottom: calc(var(--fm-space-4) + env(safe-area-inset-bottom));
+  }
+
+  /* Lists and forms take the whole screen (ADR 0019): a sheet would show a few
+     lines of a save list. Nothing is left to tap around it, so it has a close. */
+  .modal.is-full {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .modal__box.is-full {
+    height: 100%;
+    max-height: none;
+    padding-top: calc(var(--fm-space-2) + env(safe-area-inset-top));
+  }
+
+  /* The screen fills what the heading leaves, rather than stopping under a
+     short list and leaving bare panel below it. */
+  .modal__box.is-full .modal__body {
+    flex: 1;
+  }
+
+  /*
+   * The dialog's last row of buttons is pinned to the bottom of the screen,
+   * where the thumb is: pushed down when the content is short, held in view
+   * when it scrolls. The × at the top stays too, where people look for a way
+   * out and where a screen reader meets it first. The row is either the body's
+   * last child (news, saves, an explanation) or the last child of a form that
+   * is (a bid, a renewal), which then takes the height so the row can sink.
+   */
+  .modal__box.is-full .modal__body > :last-child:has(> .screen-actions:last-child) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .modal__box.is-full .modal__body > .screen-actions:last-child,
+  .modal__box.is-full .modal__body > :last-child > .screen-actions:last-child {
+    position: sticky;
+    bottom: calc(-1 * var(--fm-space-3));
+    z-index: 1;
+    margin-top: auto;
+    margin-bottom: calc(-1 * var(--fm-space-3));
+    padding-block: var(--fm-space-3);
+    border-top: 1px solid var(--fm-screen-rule);
+    background: var(--fm-screen);
+  }
+
+  .modal__box.is-full .modal__head {
+    display: flex;
+    align-items: center;
+    gap: var(--fm-space-2);
+    border-bottom: 1px solid var(--fm-bevel-dark);
+  }
+
+  .modal__box.is-full .modal__heading {
+    flex: 1;
+    min-width: 0;
+    border-bottom: 0;
+  }
+
+  .modal__box.is-full .modal__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    margin-bottom: var(--fm-space-2);
+    padding: 0;
   }
 }

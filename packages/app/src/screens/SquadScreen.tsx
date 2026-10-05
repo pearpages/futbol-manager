@@ -202,6 +202,7 @@ export function SquadScreen() {
                 </td>
                 <td className="is-text squad-screen__sale">
                   <Button
+                    icon="tag"
                     primary={onSale}
                     type="button"
                     className="squad-screen__list"
@@ -223,6 +224,7 @@ export function SquadScreen() {
                       and the reducer refuses the one case that would be a slip —
                       an offer shorter than the contract he is already on. */}
                   <Button
+                    icon="sign"
                     type="button"
                     className="squad-screen__list"
                     onClick={() => setRenewing(player.id)}

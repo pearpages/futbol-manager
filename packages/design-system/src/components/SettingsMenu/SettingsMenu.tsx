@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useDismiss } from '../../useDismiss.ts'
 import { Button } from '../Button/Button.tsx'
 import { Panel } from '../Panel/Panel.tsx'
 import { VisuallyHidden } from '../VisuallyHidden/VisuallyHidden.tsx'
@@ -39,9 +40,13 @@ export function SettingsMenu({
   readonly onChange: (value: string) => void
 }) {
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLSpanElement>(null)
+  useDismiss(ref, open, () => {
+    setOpen(false)
+  })
 
   return (
-    <span className="settings">
+    <span className="settings" ref={ref}>
       <Button
         type="button"
         className="settings__toggle"

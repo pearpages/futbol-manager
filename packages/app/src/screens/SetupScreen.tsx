@@ -157,6 +157,7 @@ export function SetupScreen() {
                   </td>
                   <td>
                     <Button
+                      icon="chevron"
                       primary
                       type="button"
                       onClick={() => {
@@ -177,6 +178,7 @@ export function SetupScreen() {
         <Confirm
           title={choosing.name}
           confirmLabel={t('setup.takeCharge')}
+          confirmIcon="play"
           cancelLabel={t('action.cancel')}
           onConfirm={() => {
             newGame(choosing.id)

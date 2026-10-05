@@ -22,7 +22,7 @@
    Folding a fourth, differently-meaning use into it would muddy a class doing a
    different job; graduating that pair into `chrome.css` is its own cleanup. */
 .squad-screen__expiry.is-expiring {
-  color: var(--fm-relegation);
+  color: var(--fm-relegation-ink);
 }
 
 .squad-screen__selected {
@@ -34,11 +34,24 @@
   text-transform: uppercase;
 }
 
-/* Phone: number, position, name, age, rating and worth. Wage, contract, the
-   XI flag and the two buttons (columns 7 to 11) go; the buttons live on the
-   player's page there (ADR 0019). */
+/* Phone: position, name, age, rating and worth. The number, wage, contract, the
+   XI flag and the two buttons go; the buttons live on the player's page there
+   (ADR 0019). */
 @media (width < 40rem) {
+  .squad-screen .data-table :is(th, td):nth-child(1),
   .squad-screen .data-table :is(th, td):nth-child(n + 7) {
     display: none;
+  }
+
+  .squad-screen .data-table :is(th, td):nth-child(2) {
+    padding-left: var(--fm-space-3);
+  }
+
+  /* A long name gives way, never the worth column beside it. */
+  .squad-screen .data-table td:nth-child(3) {
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

@@ -66,7 +66,12 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
   const { error, attempt } = useAttempt(game, translator)
 
   return (
-    <Modal title={t('renew.title', { player: player.name })} onClose={onClose}>
+    <Modal
+      title={t('renew.title', { player: player.name })}
+      onClose={onClose}
+      full
+      closeLabel={t('action.close')}
+    >
       <div className="renew">
         <ScreenNote>
           {/* The year is written bare, never through `count`. A year is an
@@ -119,6 +124,7 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             {t('action.cancel')}
           </Button>
           <Button
+            icon="sign"
             primary
             type="button"
             onClick={() => {

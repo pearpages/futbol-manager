@@ -20,7 +20,6 @@ at `0f75a23`), and each entry is one Done line below.
 ### Phone follow-ups (ADR 0019)
 
 - [ ] **First-visit tips** on Today, Team and Market: one dismissible sentence each, remembered per browser. Proposed in the phone audit and not built yet.
-- [ ] **Market sorting on a phone.** The listing cards hide the table head, so the sort headers are gone below 40rem. A sort control (or a sheet with sort and filters) would bring it back.
 - [ ] **The negotiation panel on a phone** is still the side rail's panel, shown above the list. A bottom sheet would keep the list in place.
 - [ ] **Starting the season and leaving when sacked** were proposed for confirmation and left out: both are the only way forward from where they appear. Revisit if players press them by mistake.
 - [ ] **The Design System artifact is out of date**: it predates the phone shell, `Icon`, `TabBar`, `Segments`, `Confirm` and `Toast`. Republish it.
@@ -55,7 +54,6 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 
 - [ ] **Decide: merge the near-duplicate colours.** `chip-fw` (`#e08a7e`) and `relegation-tint` (`#e8a79c`) are close but not equal, and screen headings use 0.02em tracking and a few labels 0.04em beside the two tracking tokens. Merging is a visual change.
 - [ ] **Commit the artifact staging script.** The Claude Design System artifact (https://claude.ai/artifact/AdUCGn6WHkjuxjMZtL2sa9) was published from a script that reshapes the package into the artifact's format; it lives outside the repo. Commit it as a package script so republishing is one command.
-- [ ] **Explain dialogs are faint on the panel.** Their paragraphs use `ScreenNote` (screen ink) on the dialog's panel face, on the desk and on a phone. Use panel ink in dialogs; a visual change on the desk.
 - [ ] **The lineup's pitch discs are just under 24px to press** on a phone (they scale with the SVG). Give each slot a larger invisible hit circle.
 
 ### Audit 2026-10-03
@@ -72,11 +70,8 @@ Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.m
 
 **UI and accessibility**
 
-- [ ] **The settings menu can't be closed with Escape or an outside click.** `SettingsMenu.tsx:39-56`. Fix: close on both and return focus to the cog, as `Modal.tsx` does.
-- [ ] **Text contrast fails in three places.** `--fm-ink-soft` on `--fm-panel` is 4.22:1 (title-bar matchday and date, footer, settings; `chrome.css:32,548`, `App.css:50,58,96`). `--fm-relegation` as text on `--fm-screen` is 3.45:1 (negative money on Caja, expiring contracts on Squad, losses on Calendar and Results). White on the Seguiment hub tiles is 3.54:1. The DEF chip is 3.75:1. Fix: darken `--fm-ink-soft` to about `#454b41`, add a lighter text-only red (about `#e06a5c`), and darken the Seguiment green or use dark ink.
 - [ ] **The focus ring disappears on light panels.** The global `:focus-visible` outline is brass (`chrome.css:643`), 1.02:1 against `--fm-panel`, so the footer buttons, the cog and the landing buttons show focus only by hue. Fix: an ink outline inside `.panel`, or a double ring.
 - [ ] **Accessible names lack context or read badly.** Market, Lineup and Squad row buttons are all just "Segueix"/"Ofereix", "Canvia" or "Renova" (`MarketScreen.tsx:628-637`, `LineupScreen.tsx:154-160`, `SquadScreen.tsx:220`); add the player's name. Sort buttons read as "J", "G", "E", "P" (`SortHeader.tsx:33-40`); add full-word labels in all three dictionaries. The hub crest reads "Madrid MADRID" (`HubScreen.tsx:248-251`). Explain buttons inside headings add "Explica: …" to the heading's name; move them out of the `<h2>`. Language choices have no `lang` (`SettingsMenu.tsx:43-54`).
-- [ ] **The calendar's event rows are 10px text** at narrow widths (`CalendarScreen.css:142`). Use `--fm-text-xs` as the floor.
 
 **Code health**
 
@@ -152,6 +147,9 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-05: Rows, filters and icons. On a phone tables keep 12px off the panel edge, the market cards are padded and their names no longer squeezed by the buttons, the squad drops its number column and the calendar its round so worth and result stay on screen. The market's filters and order open in sheets from one row (Filtres (n), Ordre), which brings back sorting on a phone. Every recurring verb has a glyph before its word on both layouts (`Button icon`, 10 new glyphs). The calendar's event rows are no longer 10px text. A padding audit (nothing within 8px of a panel edge), the contrast audit and the overflow check are clean at 390.
+- [x] 2026-10-05: Text contrast. An audit of every text element on every screen and dialog at 390, 768 and 1280 found 13 pairs below WCAG AA, now none. Dialog bodies are screen material (their fields, notes and lists were drawn for it and read at 1.6:1 on the panel: the faint news, saves and explanations). `ink-soft` darkened to `#454b41` (4.76:1 on the panel, was 4.22); new `relegation-ink` and `ucl-ink` for red and blue as text on the screen (were 3.45 and 3.75); the Seguiment tiles' green darkened to 4.66:1 (was 3.54); the build stamp lost its fade (was 4.01).
+- [x] 2026-10-05: Phone polish. The club picker's whole row is the button (a stretched pseudo-element missed taps on iOS). The page behind a dialog no longer scrolls, and every dialog renders into `body`, so the saves no longer draw under the action bar. Lists and forms (saves, news, explanations, bid, renew) open full-screen on a phone with a close button; questions stay sheets. Menus close on an outside press or Escape (`useDismiss`), which also fixes the desk language menu. The phone bar has a news button with the unread count, on every screen; Today shows the latest three lines. Partides and Surt have icons. A full-screen dialog's last row of buttons is pinned to the bottom of a phone screen, with the × kept at the top. The phone shell's segments carry their hub tile's icon above the label, and the market's tabs carry theirs. Double-tap zoom is off and fields are 16px on touch screens, so nothing zooms by accident; pinch-zoom stays.
 - [x] 2026-10-05: Releases are tagged, and only releases deploy (ADR 0020). Merging to `main` runs `check` only; publishing a GitHub release (`v*` tag) checks and deploys it, and the footer shows the version. The README's What's new is now the latest release plus a link to the releases page, which closes the stale-changelog gap (C16) from the maturity check.
 - [x] 2026-10-05: Maturity assessment — verdict Ready to advertise, 1 gap added to Open.
 - [x] 2026-10-05: The phone shell (ADR 0019). A one-line bar with a ⋯ menu, an action bar with the day's action on every screen (play the match from anywhere, with the result in a sheet), and five tabs with icons and words. The phone hub (Today) leads with the next match, the round and the board's target. The table keeps points on screen; the market shows cards with what needs you first; the squad's sale and renew move to the player page, whose actions now come straight after the header; the bench opens as a sheet from the pitch, whose discs grow past 24px; the club picker is tappable rows. Signing, accepting an offer, stadium works, taking a club and a new career over a live one now ask first, with the numbers; a formation press offers undo; "bid again" can no longer lose the old bid (`dispatchAll`). New design-system parts: `Icon`, `TabBar`, `Segments`, `Confirm`, `Toast`; every dialog rises from the bottom on a phone. The desk is byte-identical at 1280 in the full-game screenshot comparison.

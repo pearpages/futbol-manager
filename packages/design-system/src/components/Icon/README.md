@@ -18,7 +18,8 @@ import { Icon } from '@fm/design-system'
 
 ## Glyphs
 
-`home` `shirt` `transfer` `league` `club` `more` `back` `play` `skip` `save` `filter`
+`home` `shirt` `transfer` `league` `club` `more` `back` `play` `step` `skip` `save` `saves`
+`exit` `news` `plus` `star` `star-filled` `cash` `sign` `tag` `trash` `build` `sort` `filter`
 `search` `close` `undo` `check` `chevron`. Geometry lives in `icons.ts`, one path on a
 24-unit grid; colour is `currentColor` (P17).
 

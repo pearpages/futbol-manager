@@ -1,4 +1,5 @@
 import { Button } from '../Button/Button.tsx'
+import type { IconName } from '../Icon/icons.ts'
 import { Modal } from '../Modal/Modal.tsx'
 import { ScreenActions } from '../ScreenActions/ScreenActions.tsx'
 import './Confirm.css'
@@ -15,6 +16,7 @@ export function Confirm({
   title,
   children,
   confirmLabel,
+  confirmIcon,
   cancelLabel,
   onConfirm,
   onCancel,
@@ -22,6 +24,8 @@ export function Confirm({
   readonly title: string
   readonly children: React.ReactNode
   readonly confirmLabel: string
+  /** The glyph of the button that opened it, so the action reads the same. */
+  readonly confirmIcon?: IconName
   readonly cancelLabel: string
   readonly onConfirm: () => void
   readonly onCancel: () => void
@@ -33,7 +37,7 @@ export function Confirm({
         <Button type="button" onClick={onCancel}>
           {cancelLabel}
         </Button>
-        <Button primary type="button" onClick={onConfirm}>
+        <Button primary type="button" icon={confirmIcon} onClick={onConfirm}>
           {confirmLabel}
         </Button>
       </ScreenActions>

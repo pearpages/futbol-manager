@@ -425,6 +425,7 @@ export function PlayerScreen() {
         <ScreenActions className="ficha__actions">
           {phone && (
             <Button
+              icon="tag"
               primary={onSale}
               type="button"
               aria-pressed={onSale}
@@ -434,7 +435,7 @@ export function PlayerScreen() {
               {onSale ? t('squad.listed') : t('squad.list')}
             </Button>
           )}
-          <Button type="button" onClick={() => setRenewing(true)}>
+          <Button icon="sign" type="button" onClick={() => setRenewing(true)}>
             {t('squad.renew')}
           </Button>
         </ScreenActions>
@@ -446,6 +447,7 @@ export function PlayerScreen() {
               disappearing would read as "you cannot buy this man" rather than
               "not today". */}
           <Button
+            icon="cash"
             type="button"
             disabled={!isTransferWindowOpen(game.season.currentDate)}
             onClick={() => setBidding(true)}
