@@ -56,3 +56,18 @@
   min-height: 0;
   overflow: auto;
 }
+
+/* On a phone a dialog rises from the bottom edge, full width — where the thumb
+   already is — rather than floating mid-screen with its buttons out of reach. */
+@media (width < 40rem) {
+  .modal {
+    align-items: flex-end;
+    padding: var(--fm-space-6) 0 0;
+  }
+
+  .modal__box,
+  .modal__box.is-wide {
+    width: 100%;
+    padding-bottom: calc(var(--fm-space-4) + env(safe-area-inset-bottom));
+  }
+}

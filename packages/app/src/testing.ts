@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, within } from '@testing-library/react'
 import { translatorFor } from './i18n/useT.ts'
 import { useGame } from './store.ts'
 
@@ -111,3 +111,12 @@ export function labelStem(text: string): RegExp {
  * by `selector` or `within`.
  */
 export const IGNORE_TOOLTIP = { ignore: 'script, style, title' } as const
+
+/**
+ * Says yes to the confirmation that is open: its last button, because a
+ * `Confirm` puts cancel first and the action last.
+ */
+export const confirm = () => {
+  const buttons = within(screen.getByRole('dialog')).getAllByRole('button')
+  fireEvent.click(buttons.at(-1) as HTMLElement)
+}

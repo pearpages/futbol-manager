@@ -12,8 +12,10 @@ import {
   teamRating,
 } from '@fm/domain'
 import { useState } from 'react'
+import type { Lineup } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
+import { usePhone } from '../usePhone.ts'
 import { Explain } from './Explain.tsx'
 import { PlayerLink } from './PlayerLink.tsx'
 import { positionChip } from './SquadScreen.tsx'
@@ -22,6 +24,8 @@ import {
   Field,
   FieldLabel,
   Hint,
+  Modal,
+  Toast,
   PitchView,
   Screen,
   ScreenHeading,
@@ -39,6 +43,13 @@ export function LineupScreen() {
   const dispatch = useGame((s) => s.dispatch)
   const { t, plural } = useT()
   const [selected, setSelected] = useState<PlayerId | null>(null)
+  const phone = usePhone()
+  // The XI a formation press replaced, for one undo. Kept with its day: once the
+  // clock moves on the squad may have changed under it, and the offer lapses.
+  const [replaced, setReplaced] = useState<{
+    readonly lineup: Lineup
+    readonly day: number
+  } | null>(null)
 
   const clubId = game.managedClubId
   const squad = game.squads[clubId] ?? []
@@ -93,6 +104,7 @@ export function LineupScreen() {
 
   const setFormation = (formation: Formation) => {
     dispatch({ type: 'SetLineup', clubId, lineup: bestXI(squad, formation) })
+    setReplaced({ lineup, day: game.season.currentDate })
     setSelected(null)
   }
 
@@ -308,6 +320,54 @@ export function LineupScreen() {
           />
         </Screen>
       </div>
+
+      {/* A formation press picks a whole new XI, hand-picked swaps and all.
+          Rather than ask first, it says what it did and offers it back. */}
+      {replaced !== null && replaced.day === game.season.currentDate && (
+        <Toast
+          className={phone ? 'phone-toast' : 'lineup-screen__toast'}
+          message={t('lineup.formationChanged', { formation: lineup.formation })}
+          actionLabel={t('action.undo')}
+          onAction={() => {
+            dispatch({ type: 'SetLineup', clubId, lineup: replaced.lineup })
+          }}
+          onDismiss={() => {
+            setReplaced(null)
+          }}
+        />
+      )}
+
+      {/* Phone: the bench comes to the pitch instead of the other way round.
+          A tapped disc opens his possible replacements as a sheet, where on
+          the desk they are listed beside him (ADR 0019). */}
+      {phone && selectedPlayer !== null && (
+        <Modal
+          title={t('lineup.replacing', { name: selectedPlayer.name })}
+          onClose={() => {
+            setSelected(null)
+          }}
+        >
+          {substitutes.length === 0 ? (
+            <Hint>{t('lineup.noSubs')}</Hint>
+          ) : (
+            <ul className="lineup-screen__swap-list">
+              {substitutes.map((sub) => (
+                <li key={sub.id}>
+                  <Button
+                    type="button"
+                    className="lineup-screen__sub"
+                    onClick={() => swap(selectedPlayer.id, sub.id)}
+                  >
+                    {positionChip(sub.position, t(`position.${sub.position}`))}
+                    <span className="lineup-row__name">{sub.name}</span>
+                    <span className="lineup-row__ovr">{overall(sub)}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Modal>
+      )}
     </div>
   )
 }

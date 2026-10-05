@@ -22,7 +22,7 @@ import {
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
-import { ADVANCE, advance, advanceUntil, back, openScreen } from '../testing.ts'
+import { ADVANCE, advance, advanceUntil, back, openScreen, confirm } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { listingsFor, listingValue, marketSeed, scoutedPrice } from './MarketScreen.tsx'
 
@@ -236,6 +236,7 @@ describe('the market screen', () => {
     openScreen('nav.market')
     fireEvent.click(screen.getByRole('button', { name: 'Open' }))
     fireEvent.click(screen.getByRole('button', { name: 'Offer terms' }))
+    confirm()
 
     const squad = game().squads[game().managedClubId] ?? []
     expect(squad.some((p) => p.id === target.player.id)).toBe(true)
@@ -802,6 +803,7 @@ describe('the club browser', () => {
     expect(screen.getByRole('heading', { name: player.name })).toBeDefined()
 
     fireEvent.click(screen.getByRole('button', { name: t('market.offerTerms') }))
+    confirm()
 
     expect((game().squads[RICH] ?? []).some((p) => p.id === player.id)).toBe(true)
     // And he has actually left, rather than turning up in two squads at once.
@@ -1015,6 +1017,7 @@ describe('reopening a deal', () => {
 
     fireEvent.change(wageField(), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Offer terms' }))
+    confirm()
 
     expect(screen.getByRole('alert').textContent).toContain(first.player.name)
     // A refusal is an outcome, not a mistake: the bid stays live so the terms can

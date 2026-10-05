@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TabBar · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { TabBar } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(TabBar, {
+          label: 'Seccions',
+          items: [
+            { value: 'today', label: 'Avui', icon: 'home' },
+            { value: 'team', label: 'Equip', icon: 'shirt' },
+            { value: 'market', label: 'Mercat', icon: 'transfer', badge: 2, badgeLabel: 'noves' },
+            { value: 'league', label: 'Lliga', icon: 'league' },
+            { value: 'club', label: 'Club', icon: 'club' },
+          ],
+          value: 'today',
+          onChange() {},
+        }),
+      )
+    </script>
+  </body>
+</html>

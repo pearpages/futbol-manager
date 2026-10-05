@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { isSeasonComplete } from '@fm/domain'
 import { useT } from '../i18n/useT.ts'
 import { matchdayFor } from '../matchday.ts'
 import { useGame } from '../store.ts'
 import { Button, Modal, Panel, ScreenActions } from '@fm/design-system'
-import { usePhone } from '../usePhone.ts'
+import { useQuickSave } from '../useQuickSave.ts'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import '../styles/shell-foot.css'
 
@@ -22,61 +22,25 @@ import '../styles/shell-foot.css'
  * Three groups, always in the same order: leave · the game · the clock.
  */
 
-/** How long the quick-save confirmation stays up. */
-const CONFIRM_MS = 4000
-
 export function ShellFoot(): React.JSX.Element {
   const screen = useGame((s) => s.screen)
   const go = useGame((s) => s.go)
   const inspect = useGame((s) => s.inspect)
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
-  const save = useGame((s) => s.save)
-  const saving = useGame((s) => s.saving)
-  const currentSlot = useGame((s) => s.currentSlot)
   const quitToLanding = useGame((s) => s.quitToLanding)
 
   const { t, date } = useT()
 
-  const phone = usePhone()
-  const [moreOpen, setMoreOpen] = useState(false)
   const [savesOpen, setSavesOpen] = useState(false)
   const [leaving, setLeaving] = useState(false)
-  // The `n` is what makes two saves on the same day retrigger the timer; the
-  // date alone would be an unchanged value and the effect would not re-run.
-  const [saved, setSaved] = useState<{ readonly date: number; readonly n: number } | null>(null)
-
-  useEffect(() => {
-    if (saved === null) return
-    const id = setTimeout(() => {
-      setSaved(null)
-    }, CONFIRM_MS)
-    return () => {
-      clearTimeout(id)
-    }
-  }, [saved])
+  const { quickSave, saving, savedOn } = useQuickSave(() => {
+    setSavesOpen(true)
+  })
 
   const onHub = screen === 'hub'
   const matchday = matchdayFor(game)
   const overForNow = game.board.sacked || isSeasonComplete(game)
-
-  /**
-   * One click, not two — but only once there is a save to write back to.
-   *
-   * A brand-new career has no slot, and writing one without a name would put it
-   * where the picker cannot show it. That is the exact dead end this feature
-   * shipped with the first time, so the first save goes through the dialog and
-   * every one after it is a single press.
-   */
-  const quickSave = () => {
-    if (currentSlot === null) {
-      setSavesOpen(true)
-      return
-    }
-    void save().then(() => {
-      setSaved((previous) => ({ date: game.season.currentDate, n: (previous?.n ?? 0) + 1 }))
-    })
-  }
 
   const gameButtons = (
     <>
@@ -126,41 +90,13 @@ export function ShellFoot(): React.JSX.Element {
         </div>
 
         <div className="shell__foot-group">
-          {/* On a phone the three go behind one button, so the footer stays one
-              row (ADR 0018). Same buttons, same order, opening upwards. */}
-          {phone ? (
-            <span className="shell__more">
-              <Button
-                type="button"
-                aria-expanded={moreOpen}
-                onClick={() => {
-                  setMoreOpen(!moreOpen)
-                }}
-              >
-                {t('action.more')}
-              </Button>
-              {moreOpen && (
-                <Panel
-                  className="shell__more-menu"
-                  role="group"
-                  aria-label={t('action.more')}
-                  onClick={() => {
-                    setMoreOpen(false)
-                  }}
-                >
-                  {gameButtons}
-                </Panel>
-              )}
-            </span>
-          ) : (
-            gameButtons
-          )}
+          {gameButtons}
           {/* Says it worked. The label flicking to "Desant…" is over too fast to
               read, and a save with no visible result is indistinguishable from a
               broken button — which is how this feature was first reported. */}
-          {saved !== null && (
+          {savedOn !== null && (
             <span className="shell__saved" role="status">
-              {t('action.saved', { date: date(saved.date) })}
+              {t('action.saved', { date: date(savedOn) })}
             </span>
           )}
         </div>

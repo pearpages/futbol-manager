@@ -1,0 +1,12 @@
+.segments {
+  display: flex;
+  gap: var(--fm-space-1);
+}
+
+/* Equal shares on a phone, so the row reads as one control across the width. */
+@media (width < 40rem) {
+  .segments__option {
+    flex: 1;
+    padding-inline: var(--fm-space-1);
+  }
+}

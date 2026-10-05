@@ -21,6 +21,8 @@ import { SetupScreen } from './screens/SetupScreen.tsx'
 import { CajaScreen } from './screens/CajaScreen.tsx'
 import { DecisionesScreen } from './screens/DecisionesScreen.tsx'
 import { EstadioScreen } from './screens/EstadioScreen.tsx'
+import { PhoneShell } from './phone/PhoneShell.tsx'
+import { usePhone } from './usePhone.ts'
 import './App.css'
 
 /**
@@ -75,6 +77,7 @@ export function App() {
   const entry = useGame((s) => s.entry)
   const translator = useT()
   const { t, plural, season, language } = translator
+  const phone = usePhone()
 
   // Pick up an existing career on load. A missing save is a normal state, so
   // failing to find one silently starts the fresh season already in the store.
@@ -133,6 +136,15 @@ export function App() {
         </main>
         <ShellCredit />
       </div>
+    )
+  }
+
+  // A phone gets its own shell around the same screens (ADR 0019).
+  if (phone) {
+    return (
+      <PhoneShell>
+        <Current />
+      </PhoneShell>
     )
   }
 

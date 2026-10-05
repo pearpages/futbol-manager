@@ -16,6 +16,7 @@ import { StadiumView } from './StadiumView.tsx'
 import {
   AttrBar,
   Button,
+  Confirm,
   Field,
   FieldLabel,
   Hint,
@@ -55,6 +56,8 @@ export function EstadioScreen() {
   const { t, plural, money, ticket, count, season } = translator
 
   const [seats, setSeats] = useState(4000)
+  // Works are paid the day they start, so starting them asks first.
+  const [building, setBuilding] = useState(false)
   // The screen never decides anything: it dispatches and reports the refusal.
   const { error, attempt } = useAttempt(game, translator)
 
@@ -182,14 +185,36 @@ export function EstadioScreen() {
                 <Button
                   primary
                   type="button"
-                  onClick={() =>
-                    attempt(() => {
-                      dispatch({ type: 'StartExpansion', seats })
-                    })
-                  }
+                  onClick={() => {
+                    setBuilding(true)
+                  }}
                 >
                   {t('estadio.begin')}
                 </Button>
+                {building && (
+                  <Confirm
+                    title={t('confirm.expand.title')}
+                    confirmLabel={t('estadio.begin')}
+                    cancelLabel={t('action.cancel')}
+                    onConfirm={() => {
+                      setBuilding(false)
+                      attempt(() => {
+                        dispatch({ type: 'StartExpansion', seats })
+                      })
+                    }}
+                    onCancel={() => {
+                      setBuilding(false)
+                    }}
+                  >
+                    <p>
+                      {t('confirm.expand.body', {
+                        cost: money(cost),
+                        left: money(club.budget - cost),
+                      })}
+                    </p>
+                    <p>{t('confirm.irreversible')}</p>
+                  </Confirm>
+                )}
               </ScreenActions>
             </div>
           )}

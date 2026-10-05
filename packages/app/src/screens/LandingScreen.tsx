@@ -3,7 +3,7 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { SaveManagerModal } from './SaveManagerModal.tsx'
 import { SettingsMenu } from './SettingsMenu.tsx'
-import { Button, Screen, ScreenActions, ScreenNote } from '@fm/design-system'
+import { Button, Confirm, Screen, ScreenActions, ScreenNote } from '@fm/design-system'
 import './LandingScreen.css'
 
 /**
@@ -28,6 +28,7 @@ export function LandingScreen(): React.JSX.Element {
   const continueCareer = useGame((s) => s.continueCareer)
   const startNewCareer = useGame((s) => s.startNewCareer)
   const [savesOpen, setSavesOpen] = useState(false)
+  const [restarting, setRestarting] = useState(false)
 
   /*
    * Offered synchronously, which is why it asks `currentSlot` first.
@@ -45,6 +46,9 @@ export function LandingScreen(): React.JSX.Element {
    * the one door that promised otherwise.
    */
   const canContinue = (currentSlot !== null || !needsSetup) && !sacked
+  // A career in memory is lost by starting another, unless it was saved. Saves on
+  // disk are never touched, so with no career in memory there is nothing to ask.
+  const wouldLose = !needsSetup && !sacked
 
   return (
     <div className="landing">
@@ -92,7 +96,10 @@ export function LandingScreen(): React.JSX.Element {
           <button
             type="button"
             className={canContinue ? 'button' : 'button is-primary'}
-            onClick={startNewCareer}
+            onClick={() => {
+              if (wouldLose) setRestarting(true)
+              else startNewCareer()
+            }}
           >
             {t('action.newCareer')}
           </button>
@@ -101,6 +108,23 @@ export function LandingScreen(): React.JSX.Element {
           </Button>
         </ScreenActions>
       </Screen>
+
+      {restarting && (
+        <Confirm
+          title={t('confirm.newCareer.title')}
+          confirmLabel={t('action.newCareer')}
+          cancelLabel={t('action.cancel')}
+          onConfirm={() => {
+            setRestarting(false)
+            startNewCareer()
+          }}
+          onCancel={() => {
+            setRestarting(false)
+          }}
+        >
+          <p>{t('confirm.newCareer.body')}</p>
+        </Confirm>
+      )}
 
       {/* The picker's second call site — `ShellFoot` is the first. It needs no
           knowledge of the landing: `load()` sets `entry` itself, so a successful

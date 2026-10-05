@@ -39,6 +39,7 @@ import { useAttempt } from '../attempt.ts'
 import { type Translator, useT } from '../i18n/useT.ts'
 import {
   Button,
+  Confirm,
   DataTable,
   Field,
   FieldLabel,
@@ -265,6 +266,8 @@ export function MarketScreen() {
 
   const [target, setTarget] = useState<PlayerId | null>(null)
   const { error, attempt, clear: clearError } = useAttempt(game, translator)
+  // An offer you are about to accept: a sale cannot be taken back, so it asks.
+  const [selling, setSelling] = useState<Bid | null>(null)
   const [onlyShortlist, setOnlyShortlist] = useState(false)
   const [onlyAffordable, setOnlyAffordable] = useState(false)
   const [onlyFree, setOnlyFree] = useState(false)
@@ -580,7 +583,7 @@ export function MarketScreen() {
             {listings.length === 0 ? (
               <ScreenNote>{t('market.noMatches')}</ScreenNote>
             ) : (
-              <DataTable>
+              <DataTable className="market-screen__listings">
                 <thead className="data-table__head">
                   <tr>
                     <th className="is-text">{t('market.column.position')}</th>
@@ -735,7 +738,7 @@ export function MarketScreen() {
           />
         )}
 
-        <Screen className="market-screen__panel">
+        <Screen className={`market-screen__panel${onSale.length === 0 ? ' is-empty' : ''}`}>
           <ScreenHeading>{t('market.upForSale')}</ScreenHeading>
           {onSale.length === 0 ? (
             <ScreenNote>{t('market.nobodyListed')}</ScreenNote>
@@ -771,7 +774,9 @@ export function MarketScreen() {
           )}
         </Screen>
 
-        <Screen className="market-screen__panel market-screen__inbox">
+        <Screen
+          className={`market-screen__panel market-screen__inbox${incoming.length === 0 ? ' is-empty' : ''}`}
+        >
           <ScreenHeading>{t('market.offersForYours')}</ScreenHeading>
           {incoming.length === 0 ? (
             <ScreenNote>{t('market.noOffers')}</ScreenNote>
@@ -792,11 +797,9 @@ export function MarketScreen() {
                       primary
                       type="button"
                       className="market-screen__mini"
-                      onClick={() =>
-                        attempt(() =>
-                          dispatch({ type: 'RespondToOffer', bidId: bid.id, accept: true }),
-                        )
-                      }
+                      onClick={() => {
+                        setSelling(bid)
+                      }}
                     >
                       {t('market.accept')}
                     </Button>
@@ -818,7 +821,33 @@ export function MarketScreen() {
           )}
         </Screen>
 
-        <Screen className="market-screen__panel market-screen__outbox">
+        {selling !== null &&
+          (() => {
+            const name = byId.get(selling.playerId)?.name ?? '???'
+            return (
+              <Confirm
+                title={t('confirm.sell.title', { name })}
+                confirmLabel={t('market.accept')}
+                cancelLabel={t('action.cancel')}
+                onConfirm={() => {
+                  setSelling(null)
+                  attempt(() =>
+                    dispatch({ type: 'RespondToOffer', bidId: selling.id, accept: true }),
+                  )
+                }}
+                onCancel={() => {
+                  setSelling(null)
+                }}
+              >
+                <p>{t('confirm.sell.body', { fee: money(selling.fee), name })}</p>
+                <p>{t('confirm.irreversible')}</p>
+              </Confirm>
+            )
+          })()}
+
+        <Screen
+          className={`market-screen__panel market-screen__outbox${outgoing.length === 0 ? ' is-empty' : ''}`}
+        >
           <ScreenHeading>{t('market.yourBids')}</ScreenHeading>
           {outgoing.length === 0 ? (
             <ScreenNote>{t('market.noBids')}</ScreenNote>
@@ -1088,7 +1117,11 @@ function ClubBrowser({
 
 function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }: NegotiationProps) {
   const dispatch = useGame((s) => s.dispatch)
-  const { t, money, percent } = useT()
+  const dispatchAll = useGame((s) => s.dispatchAll)
+  const budget = useGame((s) => s.game.clubs.find((c) => c.id === s.game.managedClubId)?.budget)
+  const { t, plural, money, percent } = useT()
+  // Signing spends the fee and commits the wage for years: it asks first.
+  const [signing, setSigning] = useState(false)
   const { player } = listing
   const wanted = suggestedTerms(player, date)
 
@@ -1129,9 +1162,14 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               type="button"
               disabled={!open}
               onClick={() =>
+                // As one: a refused new bid leaves the old one standing.
                 onAttempt(() => {
-                  if (bid !== undefined) dispatch({ type: 'WithdrawBid', bidId: bid.id })
-                  dispatch({ type: 'MakeBid', playerId: player.id, fee: Number(fee) })
+                  const make = { type: 'MakeBid', playerId: player.id, fee: Number(fee) } as const
+                  dispatchAll(
+                    bid === undefined
+                      ? [make]
+                      : [{ type: 'WithdrawBid', bidId: bid.id } as const, make],
+                  )
                 })
               }
             >
@@ -1182,19 +1220,45 @@ function NegotiationPanel({ listing, bid, date, open, ref, onAttempt, onClose }:
               primary
               type="button"
               disabled={!open}
-              onClick={() =>
-                onAttempt(() =>
-                  dispatch({
-                    type: 'OfferContract',
-                    playerId: player.id,
-                    wage: Number(wage),
-                    years: Number(years),
-                  }),
-                )
-              }
+              onClick={() => {
+                setSigning(true)
+              }}
             >
               {t(listing.from === null ? 'market.signHim' : 'market.offerTerms')}
             </Button>
+            {signing &&
+              (() => {
+                const outlay = bid === undefined ? 0 : signingOutlay(bid.fee)
+                return (
+                  <Confirm
+                    title={t('confirm.sign.title', { name: player.name })}
+                    confirmLabel={t(listing.from === null ? 'market.signHim' : 'market.offerTerms')}
+                    cancelLabel={t('action.cancel')}
+                    onConfirm={() => {
+                      setSigning(false)
+                      onAttempt(() =>
+                        dispatch({
+                          type: 'OfferContract',
+                          playerId: player.id,
+                          wage: Number(wage),
+                          years: Number(years),
+                        }),
+                      )
+                    }}
+                    onCancel={() => {
+                      setSigning(false)
+                    }}
+                  >
+                    <p>
+                      {plural('confirm.sign.terms', Number(years), { wage: money(Number(wage)) })}
+                    </p>
+                    {outlay > 0 && <p>{t('confirm.sign.fee', { total: money(outlay) })}</p>}
+                    {budget !== undefined && (
+                      <p>{t('confirm.sign.left', { left: money(budget - outlay) })}</p>
+                    )}
+                  </Confirm>
+                )
+              })()}
             <ScreenNote className="market-screen__hint">{t('market.termsHint')}</ScreenNote>
           </>
         )}

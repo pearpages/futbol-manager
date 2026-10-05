@@ -6,7 +6,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance } from '../testing.ts'
+import { advance, confirm } from '../testing.ts'
 
 /**
  * The front door.
@@ -128,11 +128,14 @@ describe('the front door', () => {
     expect(screen.queryByRole('heading', { name: t('setup.heading') })).toBeNull()
 
     fireEvent.click(screen.getByRole('button', { name: t('action.newCareer') }))
+    // A career is in memory, so starting another asks first.
+    confirm()
     expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
 
     fireEvent.click(
       screen.getAllByRole('button', { name: t('setup.takeCharge') })[0] as HTMLElement,
     )
+    confirm()
     expect(screen.getByRole('heading', { name: t('nav.hub') })).toBeDefined()
     expect(cover()).toBeNull()
   })

@@ -1,0 +1,17 @@
+.toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fm-space-3);
+  padding: var(--fm-space-2) var(--fm-space-3);
+  box-shadow: var(--fm-shadow-menu);
+  font-size: var(--fm-text-sm);
+}
+
+.toast__message {
+  min-width: 0;
+}
+
+.toast__action {
+  flex: none;
+}

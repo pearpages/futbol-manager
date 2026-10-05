@@ -454,11 +454,26 @@
   }
 }
 
-/* ── Phone: one column, who you are first, then the four sections (ADR 0018). */
+/* Phone only (below). */
+.hub__round,
+.hub__target {
+  display: none;
+}
+
+/*
+ * ── Phone: "Avui" (ADR 0019). The four sections are the tab bar's job on a
+ * phone, so they go, and what is left is read in order of use: the next match,
+ * where you stand, then the news. The hub's controls go too — the action bar
+ * above the tabs carries the same four states on every screen.
+ */
 @media (width < 40rem) {
   .hub {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
+  }
+
+  .hub__quadrant[data-quadrant] {
+    display: none;
   }
 
   .hub__centre {
@@ -467,8 +482,44 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .hub__quadrant[data-quadrant] {
-    grid-column: 1;
-    grid-row: auto;
+  .hub__next {
+    order: -1;
+  }
+
+  .hub__controls {
+    display: none;
+  }
+
+  .hub__round {
+    display: block;
+    margin: 0;
+    color: var(--fm-screen-ink-soft);
+    font-family: var(--fm-font-condensed);
+    font-size: var(--fm-text-xs);
+    font-weight: 700;
+    letter-spacing: var(--fm-track-wide);
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .hub__target {
+    display: block;
+    width: 100%;
+    min-height: 2.75rem;
+    margin-top: var(--fm-space-2);
+    padding: var(--fm-space-2) 0 0;
+    border: 0;
+    border-top: 1px solid var(--fm-screen-rule);
+    background: none;
+    color: var(--fm-screen-ink);
+    font: inherit;
+    font-size: var(--fm-text-sm);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .hub__target::after {
+    content: ' ›';
+    color: var(--fm-accent-ink);
   }
 }

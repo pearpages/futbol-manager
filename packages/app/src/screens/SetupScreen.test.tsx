@@ -6,7 +6,7 @@ import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 
 const { t } = translatorFor('en')
-import { ADVANCE, IGNORE_TOOLTIP } from '../testing.ts'
+import { ADVANCE, IGNORE_TOOLTIP, confirm } from '../testing.ts'
 
 /**
  * Until M3c every career started at Almería, because `newSeason` defaulted to the
@@ -52,6 +52,7 @@ describe('choosing a club', () => {
     const row = screen.getByText(madrid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    confirm()
 
     expect(useGame.getState().game.managedClubId).toBe(madrid.id)
     expect(useGame.getState().needsSetup).toBe(false)
@@ -66,6 +67,7 @@ describe('choosing a club', () => {
     const row = screen.getByText(mid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    confirm()
 
     expect(useGame.getState().game.managedClubId).not.toBe(DEFAULT_CLUBS.at(-1)?.id)
   })
@@ -78,6 +80,7 @@ describe('choosing a club', () => {
     const row = screen.getByText(club.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    confirm()
 
     const { game } = useGame.getState()
     expect(game.squads[game.managedClubId]?.length).toBeGreaterThan(20)
@@ -155,6 +158,7 @@ describe('sorting the club picker', () => {
     const row = screen.getByText(first, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
     fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    confirm()
 
     const chosen = DEFAULT_CLUBS.find((c) => c.name === first)
     expect(useGame.getState().game.managedClubId).toBe(chosen?.id)

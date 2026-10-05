@@ -153,3 +153,37 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Phone: what you can do with him comes straight after who he is, not two
+   screens down after the radar and every bar (ADR 0019). */
+@media (width < 40rem) {
+  .ficha {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ficha__head {
+    order: -3;
+  }
+
+  .ficha__vitals {
+    order: -2;
+  }
+
+  .ficha__status,
+  .ficha__actions {
+    order: -1;
+  }
+
+  .ficha__status {
+    padding: var(--fm-space-2) var(--fm-space-4) 0;
+  }
+
+  .ficha__actions {
+    padding: var(--fm-space-2) var(--fm-space-4) var(--fm-space-3);
+  }
+
+  .ficha__actions > .button {
+    flex: 1;
+  }
+}

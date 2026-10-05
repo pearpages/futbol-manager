@@ -85,4 +85,35 @@
     grid-row: 1 / 3;
     grid-column: 2;
   }
+
+  /*
+   * The whole row is the control (ADR 0019). Twenty brass buttons drowned the
+   * names they were for; here the button keeps its accessible name, draws only a
+   * chevron, and stretches its hit area over the row it sits in. Pressing it
+   * opens what you are taking on, before anything starts.
+   */
+  .setup .data-table__row {
+    position: relative;
+  }
+
+  .setup .data-table__row td:nth-child(5) .button {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--fm-accent);
+    font-size: 0;
+  }
+
+  .setup .data-table__row td:nth-child(5) .button::after {
+    content: '›';
+    font-size: var(--fm-text-xl);
+  }
+
+  .setup .data-table__row td:nth-child(5) .button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
 }

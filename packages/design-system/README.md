@@ -97,18 +97,18 @@ The game is one shell, a single-column grid:
           made by pearpages · build           credit
 ```
 
-On a phone (below `40rem`) the same shell changes shape:
+On a phone (below `40rem`) the game has its own shell around the same screens (ADR 0019):
 
 ```
 ┌──────────────────────────┐
-│ SCREEN TITLE          CA │  bar, two lines
-│ where · jornada   window │
+│ ‹  TITLE       ⇄ 7 d   ⋯ │  bar: back, place, window, menu
 ├──────────────────────────┤
+│ [Segment] [Segment]      │  the tab's screens
 │ panels, one under the    │  the page scrolls,
 │ next, at full height     │  not each panel
-│ …                        │
 ├──────────────────────────┤
-│ Torna   Més   Avança dia │  footer: one row, stuck to the bottom
+│ [ ▶ Play the match ]  ⏭  │  action bar: the next thing
+│  ⌂    👕    ⇄    ▮▮   ⛉   │  TabBar: five places
 └──────────────────────────┘
 ```
 
@@ -119,24 +119,26 @@ On a phone (below `40rem`) the same shell changes shape:
   (`pointer: coarse`): `Button`, `PlayerLink`, sort headers and sliders grow their height,
   the Explain "i" its size.
 - **Tables scroll sideways inside their `Screen`** when wider than the phone; the page never
-  does. On a phone a list may become two-line rows instead (the club picker).
+  does. Better still, drop the columns nobody acts on, or make each row a two-line card
+  (the club picker, the market).
 - Screens lay out their own blocks in CSS grid, with one container query on the landing
   cover.
 
 ## Navigation
 
-There is no router and no menu bar.
+There is no router.
 
-- The **hub** (Menú Mànager) is the centre: four quadrants (Seguiment, Entrenador, Mercat,
-  Finances), each a list of tiles that open a screen. A tile whose feature is not built yet
-  is disabled and names its milestone.
-- **One way back**: the footer's Torna returns to the hub, or from a player's ficha to the
-  screen you came from.
-- The footer also holds save, saves, quit and the day's action (advance a day, or play the
-  match). On a phone save, saves and quit sit behind one "More" button, so the footer stays
-  one row.
+- **On a desk** the hub (Menú Mànager) is the centre: four quadrants (Seguiment, Entrenador,
+  Mercat, Finances), each a list of tiles that open a screen. A tile whose feature is not
+  built yet is disabled and names its milestone. The footer's Torna is the one way back, and
+  the footer also holds save, saves, quit and advancing the day.
+- **On a phone** a `TabBar` of five places replaces the hub tiles, and `Segments` switch
+  between the screens a place holds. An action bar above the tabs carries the day's action on
+  every screen; save, saves, language and quit sit in the bar's ⋯ menu.
 - A **dialog** (`Modal`) is for a question or a table that belongs on top of what you were
-  doing; anything bigger is a screen.
+  doing; anything bigger is a screen. On a phone it rises from the bottom edge.
+- **What cannot be undone asks first** (`Confirm`), saying what it costs and what is left.
+  **What can be undone is done at once and offered back** (`Toast` with an action).
 
 ## Icons and art
 
