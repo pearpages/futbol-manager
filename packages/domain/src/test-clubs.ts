@@ -22,8 +22,10 @@ import { EMPTY_LEDGER, FINANCE } from './finance.ts'
  * `inLeague`; the five it leaves out are second-tier and are not represented here,
  * because nothing generates a season from them.
  *
- * **The seat counts are the real grounds, copied verbatim, and they must stay in
- * step with the ones in `@fm/data` — change one list and change the other.** Every
+ * **The seat counts are the real grounds, copied verbatim, as the league shipped in
+ * August 2026.** The shipped list in `@fm/data` was re-ranked in October from the
+ * league's results (ADR 0025); this copy stays frozen so the harness measures the
+ * model, not each refresh of real data. The twenty rating pairs are the same. Every
  * harness band runs on this copy, including M5a's economy criterion, which asks
  * whether any club goes bankrupt or banks an unspendable fortune; gate receipts are
  * `capacity × occupancy × price`, so a league whose grounds are the wrong size is a

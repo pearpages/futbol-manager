@@ -28,7 +28,12 @@ const squadOf = () => game().squads[game().managedClubId] ?? []
 /** Drops the managed club to `keep` players at one position. */
 function trimForwards(keep: number): void {
   const squad = squadOf()
-  const forwards = squad.filter((p) => p.position === 'FW')
+  // Starters first, so the trim never leaves the lineup naming a man who is gone
+  // (which club sits at this index, and so who starts, moves with the data).
+  const starters = new Set(game().lineups[game().managedClubId]?.starters ?? [])
+  const forwards = squad
+    .filter((p) => p.position === 'FW')
+    .sort((a, b) => Number(starters.has(b.id)) - Number(starters.has(a.id)))
   const dropped = new Set(forwards.slice(keep).map((p) => p.id))
   useGame.setState({
     game: {

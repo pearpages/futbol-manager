@@ -82,42 +82,46 @@ import { type Club, type ClubId, EMPTY_LEDGER, FINANCE } from '@fm/domain'
  * **Ordering is descending by rating and that is load-bearing twice over**: ids seed
  * fixture generation, and `TEST_CLUBS` in `@fm/domain` documents index 0 as the
  * strongest, which several tests rely on. Filtering by `inLeague` preserves the
- * descending order. `TEST_CLUBS` mirrors the **in-league rows** index for index so
- * the harness measures the league the game actually ships. **Change one and change
- * the other.**
+ * descending order. `TEST_CLUBS` holds the **in-league rows as they shipped in August
+ * 2026**, frozen since the October re-ranking (ADR 0025): the domain's harness
+ * measures the model against that league, and a refresh of real data no longer
+ * reads as a model regression. The same twenty rating pairs are in both; only which
+ * club holds which, and so which ground goes with which rating, differs.
  *
  * Values verified 2026-08-15 against Transfermarkt's ES1/ES2 market-value tables;
- * capacities against the Wikipedia season page.
+ * capacities against the Wikipedia season page. **Re-ranked 2026-10-05 from the
+ * league's own results** (ADR 0025): the same twenty rating pairs, handed out in
+ * order of goal difference per match across 2025–26 and 2026–27 so far.
  */
 const CLUBS: readonly (readonly [string, string, string, number, number, number, boolean])[] = [
   // Contenders
-  ['madrid', 'Madrid', 'MAD', 89, 87, 83_186, true],
-  ['barcelona', 'Barcelona', 'BAR', 87, 88, 105_000, true],
+  ['barcelona', 'Barcelona', 'BAR', 89, 87, 105_000, true],
+  ['madrid', 'Madrid', 'MAD', 87, 88, 83_186, true],
   ['manzanares', 'Manzanares', 'MZN', 85, 84, 70_692, true], // Madrid's second club
   // European places
   ['villarreal', 'Villarreal', 'VLL', 80, 81, 23_500, true],
-  ['san-sebastian', 'San Sebastián', 'SSB', 80, 79, 40_000, true],
-  ['bilbao', 'Bilbao', 'BIL', 79, 80, 53_331, true],
-  ['heliopolis', 'Heliópolis', 'HEL', 79, 79, 60_270, true], // Sevilla's second club
+  ['heliopolis', 'Heliópolis', 'HEL', 80, 79, 60_270, true], // Sevilla's second club
+  ['vigo', 'Vigo', 'VIG', 79, 80, 24_870, true],
+  ['vitoria', 'Vitoria', 'VIT', 79, 79, 19_840, true],
   // The broad middle — a few points apart, so finishing order here is mostly form
-  ['vigo', 'Vigo', 'VIG', 76, 78, 24_870, true],
-  ['sevilla', 'Sevilla', 'SEV', 75, 77, 43_864, true],
-  ['valencia', 'Valencia', 'VAL', 76, 75, 49_430, true],
-  ['sarria', 'Sarrià', 'SAR', 75, 76, 38_529, true], // Barcelona's second club
+  ['san-sebastian', 'San Sebastián', 'SSB', 76, 78, 40_000, true],
+  ['vallecas', 'Vallecas', 'VAS', 75, 77, 14_708, true], // Madrid's third club
+  ['a-coruna', 'A Coruña', 'COR', 76, 75, 32_490, true],
+  ['getafe', 'Getafe', 'GET', 75, 76, 17_393, true],
   ['girona', 'Girona', 'GIR', 75, 75, 14_624, false],
-  ['getafe', 'Getafe', 'GET', 75, 73, 17_393, true],
-  ['benicalap', 'Benicalap', 'BEN', 75, 73, 26_354, true], // Valencia's second club
-  ['a-coruna', 'A Coruña', 'COR', 74, 74, 32_490, true],
-  ['santander', 'Santander', 'SAN', 74, 74, 22_514, true],
+  ['sarria', 'Sarrià', 'SAR', 75, 73, 38_529, true], // Barcelona's second club
+  ['sevilla', 'Sevilla', 'SEV', 75, 73, 43_864, true],
+  ['pamplona', 'Pamplona', 'PAM', 74, 74, 23_576, true],
+  ['elche', 'Elche', 'ELC', 74, 74, 33_732, true],
   // Strugglers
-  ['elche', 'Elche', 'ELC', 73, 74, 33_732, true],
-  ['vallecas', 'Vallecas', 'VAS', 73, 74, 14_708, true], // Madrid's third club
-  ['pamplona', 'Pamplona', 'PAM', 72, 74, 23_576, true],
-  ['vitoria', 'Vitoria', 'VIT', 73, 73, 19_840, true],
+  ['bilbao', 'Bilbao', 'BIL', 73, 74, 53_331, true],
+  ['benicalap', 'Benicalap', 'BEN', 73, 74, 26_354, true], // Valencia's second club
+  ['valencia', 'Valencia', 'VAL', 73, 73, 49_430, true],
+  ['malaga', 'Málaga', 'MAL', 72, 74, 30_778, true],
   ['almeria', 'Almería', 'ALM', 71, 71, 21_350, false],
+  ['santander', 'Santander', 'SAN', 71, 69, 22_514, true],
   ['palma', 'Palma', 'PAL', 70, 70, 25_736, false],
   // The tail
-  ['malaga', 'Málaga', 'MAL', 71, 69, 30_778, true],
   ['cadiz', 'Cádiz', 'CAD', 67, 67, 25_033, false],
   ['granada', 'Granada', 'GRA', 65, 65, 21_600, false],
 ]

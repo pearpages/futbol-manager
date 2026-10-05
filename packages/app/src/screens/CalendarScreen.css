@@ -122,7 +122,7 @@
 }
 
 .calendar-screen__score.is-draw {
-  color: var(--fm-draw);
+  color: var(--fm-ucl-ink); /* the draw blue as text; --fm-draw itself is 4.18:1 here */
 }
 
 .calendar-screen__score.is-loss {

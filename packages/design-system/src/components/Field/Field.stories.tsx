@@ -23,7 +23,7 @@ export const Controls: Story = {
         <FieldLabel htmlFor="compare">Compara amb</FieldLabel>
         <Select id="compare">
           <option>Ningú</option>
-          <option>Courtois</option>
+          <option>Courtuis</option>
         </Select>
       </Field>
       <Field>
