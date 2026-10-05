@@ -19,11 +19,10 @@ leaves your device.
 
 ## What's new
 
-**v0.6.0 — the game on a phone.** On a phone the game now has its own layout: five tabs
-at the bottom, and the day's action (advance, or play the match) on every screen. Signing a
-player, accepting an offer, stadium works and starting a career now ask first and show what
-it costs; a formation change can be undone. Every release, with its notes, is on the
-[releases page](https://github.com/pearpages/futbol-manager/releases).
+**v0.7.0 — one game, at any size of screen.** The phone and the desk are now the same game:
+the same places (in a rail on the desk, along the bottom on a phone), the day's action and
+the match on every screen, news in the top bar, and every text readable. Every release, with
+its notes, is on the [releases page](https://github.com/pearpages/futbol-manager/releases).
 
 What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
 injuries, form and training (M6).
