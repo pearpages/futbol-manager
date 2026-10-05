@@ -77,9 +77,9 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 
 ## Pitfalls that have bitten before
 
-- **jsdom has no `matchMedia`**, so tests always see the desk layout. The phone footer is only
-  tested where `matchMedia` is stubbed (`ShellFoot.test.tsx`); look at anything else phone-only
-  in Storybook at 390.
+- **jsdom has no `matchMedia`**, so tests always see the desk layout. The phone shell is only
+  tested where `matchMedia` is stubbed (`phone/PhoneShell.test.tsx`); look at anything else
+  phone-only in Storybook at 390.
 
 - **Green suite, broken screen.** The app project runs with `css: false` and jsdom does no
   layout, so clipping, overflow, wrapping, colour and stacking are invisible to every test.

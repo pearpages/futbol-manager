@@ -13,11 +13,13 @@ import {
   playerDefence,
   POSITION_WEIGHTS,
   positionShare,
+  saleBlock,
   type TeamRating,
   toCivil,
 } from '@fm/domain'
 import { useState } from 'react'
 import { useGame } from '../store.ts'
+import { usePhone } from '../usePhone.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
 import {
   AttrBar,
@@ -168,6 +170,7 @@ function ModelGroup({
 
 export function PlayerScreen() {
   const game = useGame((s) => s.game)
+  const dispatch = useGame((s) => s.dispatch)
   const playerId = useGame((s) => s.inspectedPlayerId)
   const comparedId = useGame((s) => s.comparedPlayerId)
   const compare = useGame((s) => s.compare)
@@ -225,6 +228,11 @@ export function PlayerScreen() {
   const isYours = squad.some((p) => p.id === player.id)
   const isStarting = lineup?.starters.includes(player.id) ?? false
   const formation: Formation = lineup?.formation ?? '4-4-2'
+  // On a phone the squad table drops its sale and renew columns, so this card is
+  // where you list one of yours (ADR 0019). The desk keeps them in the table.
+  const phone = usePhone()
+  const onSale = game.transferList.includes(player.id)
+  const block = isYours ? saleBlock(squad, lineup, player) : null
 
   // Only ever one of yours, and never the man whose card this is. A squad that
   // changes under the comparison — he was sold — simply drops it.
@@ -414,7 +422,18 @@ export function PlayerScreen() {
           owner and costs no fee — he goes through `OfferContract` on the market
           screen instead, which is why the bid button needs `owner`. */}
       {isYours && (
-        <ScreenActions>
+        <ScreenActions className="ficha__actions">
+          {phone && (
+            <Button
+              primary={onSale}
+              type="button"
+              aria-pressed={onSale}
+              disabled={block !== null && !onSale}
+              onClick={() => dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })}
+            >
+              {onSale ? t('squad.listed') : t('squad.list')}
+            </Button>
+          )}
           <Button type="button" onClick={() => setRenewing(true)}>
             {t('squad.renew')}
           </Button>
@@ -422,7 +441,7 @@ export function PlayerScreen() {
       )}
 
       {!isYours && owner !== undefined && (
-        <ScreenActions>
+        <ScreenActions className="ficha__actions">
           {/* Disabled rather than hidden while the window is shut: the button
               disappearing would read as "you cannot buy this man" rather than
               "not today". */}

@@ -134,7 +134,7 @@ _Check:_ review; `rosters.test.ts` (no two shipped players share a name).
 page scroll, every control at least 24px to press, one phone breakpoint (`width < 40rem`).
 Phone rules live behind that breakpoint or `pointer: coarse`, never in the desk's rules.
 _Why:_ people open a shared link on their phone, and the desk layout is already right.
-[ADR 0018](docs/adr/0018-mobile-layout.md).
+[ADR 0018](docs/adr/0018-mobile-layout.md), [ADR 0019](docs/adr/0019-phone-shell.md).
 _Check:_ `breakpoints.test.ts`; the screen stories at 390 and 768 in Storybook; the
 full-game screenshot comparison at 1280.
 

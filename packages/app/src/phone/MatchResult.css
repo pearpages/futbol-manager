@@ -1,0 +1,42 @@
+.match-result__score {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--fm-space-3);
+  margin: 0;
+  font-family: var(--fm-font-condensed);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+}
+
+.match-result__side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fm-space-1);
+}
+
+.match-result__goals {
+  font-size: var(--fm-text-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.match-result__line {
+  margin: 0;
+  text-align: center;
+}
+
+.match-result__line.is-good {
+  color: var(--fm-win);
+}
+
+.match-result__line.is-bad {
+  color: var(--fm-relegation-tint);
+}
+
+.match-result__position {
+  margin: 0;
+  color: var(--fm-ink-soft);
+  font-size: var(--fm-text-sm);
+  text-align: center;
+}

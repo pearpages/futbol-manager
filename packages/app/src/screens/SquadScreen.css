@@ -33,3 +33,12 @@
   letter-spacing: var(--fm-track-wide);
   text-transform: uppercase;
 }
+
+/* Phone: number, position, name, age, rating and worth. Wage, contract, the
+   XI flag and the two buttons (columns 7 to 11) go; the buttons live on the
+   player's page there (ADR 0019). */
+@media (width < 40rem) {
+  .squad-screen .data-table :is(th, td):nth-child(n + 7) {
+    display: none;
+  }
+}

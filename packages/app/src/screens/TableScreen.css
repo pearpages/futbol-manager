@@ -128,3 +128,12 @@
     grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
   }
 }
+
+/* Phone: played, goal difference and points — the columns a table is read by.
+   Won, drawn, lost and the two goal totals (columns 5 to 9) go, which is what
+   lets points stay on screen instead of behind a sideways scroll (ADR 0019). */
+@media (width < 40rem) {
+  .table-screen__main .data-table :is(th, td):nth-child(n + 5):nth-child(-n + 9) {
+    display: none;
+  }
+}

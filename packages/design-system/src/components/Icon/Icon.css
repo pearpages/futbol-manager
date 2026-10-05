@@ -1,0 +1,7 @@
+/* In `em`, like the tile icons, so a glyph tracks the type of whatever holds it. */
+.icon {
+  flex: none;
+  width: 1.25em;
+  height: 1.25em;
+  fill: currentcolor;
+}

@@ -1,0 +1,69 @@
+/*
+ * Hardware, like the footer it replaces on a phone: the raised panel face, with
+ * the current place lit in brass and marked by a bar along its top edge — the
+ * shape a lit key on a console takes.
+ */
+.tab-bar {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  background: var(--fm-panel);
+  border-top: 1px solid var(--fm-bevel-light);
+}
+
+.tab-bar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--fm-space-hair);
+  min-height: 3.25rem;
+  padding: var(--fm-space-2) var(--fm-space-1) var(--fm-space-1);
+  border: 0;
+  border-top: 3px solid transparent;
+  background: transparent;
+  color: var(--fm-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-narrow);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.tab-bar__item.is-current {
+  border-top-color: var(--fm-accent);
+  color: var(--fm-ink);
+}
+
+.tab-bar__item.is-current .tab-bar__icon {
+  color: var(--fm-accent-ink);
+}
+
+.tab-bar__icon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+.tab-bar__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The count sits on the icon's shoulder, where a glance at the bar finds it. */
+.tab-bar__badge {
+  position: absolute;
+  top: var(--fm-space-1);
+  left: calc(50% + 0.5rem);
+  min-width: 1.1rem;
+  padding: 0 var(--fm-space-1);
+  border-radius: var(--fm-radius-pill);
+  background: var(--fm-relegation);
+  color: var(--fm-highlight);
+  font-size: var(--fm-text-xs);
+  line-height: 1.1rem;
+  letter-spacing: 0;
+  text-align: center;
+}

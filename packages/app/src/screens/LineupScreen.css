@@ -278,3 +278,29 @@ button.lineup-screen__sub {
     grid-area: bench;
   }
 }
+
+/* Phone: a taller pitch row, so the pitch takes the width and its discs grow
+   past the 24px a thumb needs (they were 23px at 18rem). */
+@media (width < 40rem) {
+  .lineup-screen {
+    grid-template-rows: max-content 27rem max-content max-content max-content;
+  }
+}
+
+.lineup-screen__swap-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The undo note after a formation press, in the corner nearest the footer. */
+.lineup-screen__toast {
+  position: fixed;
+  right: var(--fm-space-4);
+  bottom: 5.5rem;
+  z-index: 15;
+  max-width: 28rem;
+}

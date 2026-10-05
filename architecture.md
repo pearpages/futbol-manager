@@ -42,14 +42,20 @@ flowchart LR
 
 ## Layouts: desk and phone
 
-One shell serves both (ADR 0018). On a desk it is a frame the height of the window and each
-screen scrolls inside its own panel. Below 40rem it becomes a document: the page scrolls, the
-bar takes two lines, and the footer is one sticky row whose save, saves and quit sit behind
-a More button (`ShellFoot` asks `usePhone`, the only phone logic in code). Every other phone
-rule is CSS behind `@media (width < 40rem)`, or `pointer: coarse` for touch targets, so the
-desk never changes; `breakpoints.test.ts` keeps the set of queries closed. Every screen has a
-story (`packages/app/src/stories`), rendered by Storybook at 390, 768 and 1280 (ADR 0017)
-and by Vitest in CI.
+The desk shell is a frame the height of the window: a bar, the stage, the footer, and a hub
+you return to; each screen scrolls inside its own panel. A phone gets its own shell around
+the same screens (ADR 0019): `App` asks `usePhone()` and renders `phone/PhoneShell` instead.
+It has a one-line bar with a ⋯ menu (save, saves, language, quit), an action bar on every
+screen (the clock, the match, the season), and five tabs derived from `screen` by
+`phone/tabs.ts`, each tab's screens shown as segments. The page scrolls as one document
+(ADR 0018). Everything else phone-specific is CSS behind `@media (width < 40rem)`, or
+`pointer: coarse` for touch targets, so the desk never changes; `breakpoints.test.ts` keeps
+the set of queries closed. Every screen has a story (`packages/app/src/stories`), rendered by
+Storybook at 390, 768 and 1280 (ADR 0017) and by Vitest in CI.
+
+Actions that cannot be undone ask first through `Confirm`; a formation press offers undo
+through `Toast`. Commands that must land together go through the store's `dispatchAll`,
+which commits all of them or none and puts the rng back on a refusal.
 
 ## Data flow
 

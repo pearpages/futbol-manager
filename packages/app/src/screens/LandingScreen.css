@@ -232,3 +232,16 @@
     order: 3;
   }
 }
+
+/* Phone: the three ways in as full-width buttons, one under the other, where a
+   thumb lands without aiming (ADR 0019). */
+@media (width < 40rem) {
+  .landing__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing__actions > .button {
+    min-height: 2.75rem;
+  }
+}

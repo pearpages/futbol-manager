@@ -1,0 +1,15 @@
+.confirm__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+  font-size: var(--fm-text-sm);
+  line-height: 1.4;
+}
+
+/* On a phone the two buttons share the width, so neither is a small target at the
+   edge of the screen. */
+@media (width < 40rem) {
+  .confirm__actions > .button {
+    flex: 1;
+  }
+}

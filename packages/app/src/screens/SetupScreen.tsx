@@ -5,6 +5,7 @@ import { useT } from '../i18n/useT.ts'
 import {
   Button,
   ClubCell,
+  Confirm,
   DataTable,
   Screen,
   ScreenHeading,
@@ -75,10 +76,12 @@ const SORT_ALIGN: Readonly<Record<SortKey, string>> = {
 export function SetupScreen() {
   const newGame = useGame((s) => s.newGame)
   const storageBlocked = useGame((s) => s.storageBlocked)
-  const { t, locale } = useT()
+  const { t, money, locale } = useT()
 
   /** `null` is the order `DEFAULT_CLUBS` is authored in — strongest first. */
   const [sort, setSort] = useState<Sort<SortKey> | null>(null)
+  // A career is a season with one club: say what you are taking on first.
+  const [choosing, setChoosing] = useState<Club | null>(null)
 
   // `sortedBy` copies, which matters here more than anywhere: `DEFAULT_CLUBS` is a
   // module constant shared with the rest of the app, and sorting it in place would
@@ -153,7 +156,13 @@ export function SetupScreen() {
                     <strong>{t(tier.label)}</strong> <span>{t(tier.note)}</span>
                   </td>
                   <td>
-                    <Button primary type="button" onClick={() => newGame(club.id)}>
+                    <Button
+                      primary
+                      type="button"
+                      onClick={() => {
+                        setChoosing(club)
+                      }}
+                    >
                       {t('setup.takeCharge')}
                     </Button>
                   </td>
@@ -163,6 +172,25 @@ export function SetupScreen() {
           </tbody>
         </DataTable>
       </Screen>
+
+      {choosing !== null && (
+        <Confirm
+          title={choosing.name}
+          confirmLabel={t('setup.takeCharge')}
+          cancelLabel={t('action.cancel')}
+          onConfirm={() => {
+            newGame(choosing.id)
+          }}
+          onCancel={() => {
+            setChoosing(null)
+          }}
+        >
+          <p>
+            <strong>{t(tierFor(choosing).label)}</strong> {t(tierFor(choosing).note)}
+          </p>
+          <p>{t('confirm.club.budget', { budget: money(choosing.budget) })}</p>
+        </Confirm>
+      )}
     </div>
   )
 }

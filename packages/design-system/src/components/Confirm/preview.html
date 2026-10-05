@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ca">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirm · Futbol Manager design system</title>
+    <link rel="stylesheet" href="../../../dist/bundle.css" />
+    <link rel="stylesheet" href="../../preview.css" />
+  </head>
+  <body>
+    <main id="root" class="preview"></main>
+    <script src="../../../dist/bundle.js"></script>
+    <script>
+      const DS = window.FutbolDesignSystem
+      const { React, createRoot } = DS
+      const { Confirm } = DS
+      const h = React.createElement
+      createRoot(document.getElementById('root')).render(
+        h(
+          Confirm,
+          {
+            title: 'Fitxar Denzel Domfries?',
+            confirmLabel: 'Fitxa',
+            cancelLabel: 'Cancel·la',
+            onConfirm() {},
+            onCancel() {},
+          },
+          h('p', null, 'Traspàs 3,1 M€ i prima 0,3 M€. Et quedaran 18,6 M€.'),
+        ),
+      )
+    </script>
+  </body>
+</html>

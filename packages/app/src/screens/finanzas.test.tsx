@@ -15,7 +15,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advanceUntil, back, labelStem, openScreen } from '../testing.ts'
+import { advanceUntil, back, labelStem, openScreen, confirm } from '../testing.ts'
 import { LINES, PROJECTED, signed } from './CajaScreen.tsx'
 import { fillFor } from './EstadioScreen.tsx'
 import { seatsKey, STADIUM_ART, stadiumArtFor } from './stadium.ts'
@@ -261,6 +261,7 @@ describe('Estadio', () => {
       target: { value: String(seats) },
     })
     fireEvent.click(screen.getByRole('button', { name: t('estadio.begin') }))
+    confirm()
 
     expect(club()?.budget).toBe(before.budget - expansionCost(seats))
     expect(club()?.capacity).toBe(before.capacity)
@@ -279,6 +280,7 @@ describe('Estadio', () => {
       target: { value: '999999' },
     })
     fireEvent.click(screen.getByRole('button', { name: t('estadio.begin') }))
+    confirm()
 
     expect(screen.getByRole('alert').textContent).toMatch(/runs from/)
     expect(club()?.expansion).toBeNull()

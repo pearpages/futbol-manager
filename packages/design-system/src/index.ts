@@ -20,12 +20,18 @@ export {
   COLOUR_KEYS,
   needsNameplate,
 } from './components/Badge/badges.ts'
+export { Confirm } from './components/Confirm/Confirm.tsx'
 export { HubFigure } from './components/HubFigure/HubFigure.tsx'
+export { Icon } from './components/Icon/Icon.tsx'
+export { ICON_NAMES, ICON_PATHS, type IconName } from './components/Icon/icons.ts'
 export { Modal } from './components/Modal/Modal.tsx'
 export { Pager } from './components/Pager/Pager.tsx'
+export { type SegmentOption, Segments } from './components/Segments/Segments.tsx'
 export { SortHeader } from './components/SortHeader/SortHeader.tsx'
 export { nextSort, type Sort, sortedBy } from './components/SortHeader/sorting.ts'
+export { type TabItem, TabBar } from './components/TabBar/TabBar.tsx'
 export { ICON_KEYS, type IconKey, TileIcon } from './components/TileIcon/TileIcon.tsx'
+export { Toast } from './components/Toast/Toast.tsx'
 export { TrophyIcon } from './components/TrophyIcon/TrophyIcon.tsx'
 
 export { Explain } from './components/Explain/Explain.tsx'

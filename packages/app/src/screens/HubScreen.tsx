@@ -292,6 +292,17 @@ export function HubScreen() {
               from the fixtures rather than the news feed: the feed is session-only
               and capped, so a strip built on it would blank after a reload. */}
           <FormStrip results={form} names={clubName} translator={translator} />
+          {/* Phone only: the hub sections are gone there, and what the board wants
+              is the one number that ends a career. */}
+          <button
+            type="button"
+            className="hub__target"
+            onClick={() => {
+              go('decisiones')
+            }}
+          >
+            {t('hub.boardTarget', { target: game.board.target })}
+          </button>
         </Screen>
 
         <Screen className="hub__next">
@@ -335,6 +346,8 @@ export function HubScreen() {
                   unknown={t('fixture.unknownClub')}
                 />
               </p>
+              {/* Phone only: the round left the bar there (ADR 0019). */}
+              <p className="hub__round">{t('shell.matchday', { round: matchday.fixture.round })}</p>
               <p className={`hub__when${matchday.due ? ' is-due' : ''}`}>
                 {matchday.due ? t('hub.today') : plural('hub.inDays', matchday.daysAway)}
               </p>

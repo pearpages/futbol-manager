@@ -184,6 +184,12 @@ interface Store {
    * panel does not — it is not on the screen where the press happened.
    */
   dispatch(command: Command): readonly Event[]
+  /**
+   * Several commands as one: all of them land, or none does. "Bid again" is a
+   * withdrawal and a new bid, and as two dispatches a refused new bid left the
+   * old one already withdrawn.
+   */
+  dispatchAll(commands: readonly Command[]): readonly Event[]
   go(screen: Screen): void
   setLanguage(language: Language): void
   /**
@@ -364,7 +370,25 @@ export const useGame = create<Store>((set, get) => ({
   storageBlocked: false,
 
   dispatch(command) {
-    const { state, events } = reduce(get().game, command, rng)
+    return get().dispatchAll([command])
+  },
+
+  dispatchAll(commands) {
+    // The rng is a live object outside the state, so a refusal partway through
+    // has to put it back too, or the main stream shifts for nothing (P7).
+    const before = rng.state()
+    let state = get().game
+    const events: Event[] = []
+    try {
+      for (const command of commands) {
+        const result = reduce(state, command, rng)
+        state = result.state
+        events.push(...result.events)
+      }
+    } catch (error) {
+      rng = createRng(before)
+      throw error
+    }
     set({
       game: state,
       feed: [...events, ...get().feed].slice(0, 60),

@@ -7,7 +7,7 @@ import { DEFAULT_LANGUAGE, LANGUAGE_NAMES, translate } from './i18n/index.ts'
 import { translatorFor } from './i18n/useT.ts'
 import { describeOpponent } from './matchday.ts'
 import { useGame } from './store.ts'
-import { labelStem } from './testing.ts'
+import { labelStem, confirm } from './testing.ts'
 import type { DayNumber } from '@fm/domain'
 
 /**
@@ -166,6 +166,7 @@ describe('refusals are translated too', () => {
     const seats = screen.getByLabelText(labelStem(t('estadio.seats', { cost: '' })))
     fireEvent.change(seats, { target: { value: '999999' } })
     fireEvent.click(screen.getByRole('button', { name: t('estadio.begin') }))
+    confirm()
 
     const alert = screen.getByRole('alert')
     expect(alert.textContent).toBe(t('error.expansion.range', { min: 1000, max: 15_000 }))

@@ -29,7 +29,8 @@ record same-day partial reversals in place, which predates this rule.)
 | [0015](docs/adr/0015-design-system-library-build.md) | How the design-system package is built                                             | Accepted                                        | 2026-10-04 |
 | [0016](docs/adr/0016-design-system-iife-bundle.md)   | The design system ships one self-contained script for the artifact                 | Accepted                                        | 2026-10-04 |
 | [0017](docs/adr/0017-storybook.md)                   | Storybook for the screens                                                          | Accepted                                        | 2026-10-04 |
-| [0018](docs/adr/0018-mobile-layout.md)               | The game on a phone                                                                | Accepted                                        | 2026-10-04 |
+| [0018](docs/adr/0018-mobile-layout.md)               | The game on a phone                                                                | Accepted; points 3–4 superseded by 0019         | 2026-10-04 |
+| [0019](docs/adr/0019-phone-shell.md)                 | The phone shell: tabs and an action bar                                            | Accepted                                        | 2026-10-05 |
 
 ## Format
 
