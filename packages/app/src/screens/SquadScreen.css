@@ -35,10 +35,12 @@
 }
 
 /* Between phone and desk the rail takes its width, so the eleven columns no
-   longer fit: the number and the XI flag go (the flag is on each player's card),
-   and the wage, the contract and both buttons stay. */
+   longer fit: the number, the wage and the XI flag go (both are on each player's
+   card), and the contract and both buttons stay. Measured on Linux's fonts in
+   CI, which run wider than a Mac's condensed Helvetica. */
 @media (width < 60rem) {
   .squad-screen .data-table :is(th, td):nth-child(1),
+  .squad-screen .data-table :is(th, td):nth-child(7),
   .squad-screen .data-table :is(th, td):nth-child(9) {
     display: none;
   }
