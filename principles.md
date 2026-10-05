@@ -46,7 +46,7 @@ _Check:_ review.
 
 **P6. Leave the game playable at the end of every milestone.** Boring is fine. Broken is not.
 _Why:_ a milestone that leaves the game unplayable has not finished.
-_Check:_ CI on `main` builds and deploys the playable app.
+_Check:_ CI builds the playable app on every push to `main`, and each release deploys it.
 
 ## Determinism and balance
 
