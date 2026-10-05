@@ -5,14 +5,13 @@ import { useGame } from '../store.ts'
 
 const OPTIONS = LANGUAGES.map((value) => ({ value, name: LANGUAGE_NAMES[value] }))
 
-/** The cog: the design system's menu, offering the game's three languages. */
+/** The language button: the design system's menu, offering the game's three languages. */
 export function SettingsMenu() {
   const { t, language } = useT()
   const setLanguage = useGame((s) => s.setLanguage)
 
   return (
     <SettingsMenuView
-      label={t('action.settings')}
       languageLabel={t('action.language')}
       languages={OPTIONS}
       current={language}

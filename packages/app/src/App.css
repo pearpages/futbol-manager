@@ -69,9 +69,13 @@
   text-transform: uppercase;
 }
 
+/* Bottom-aligned rather than on the baseline: the window and date are one size,
+   so their baselines still meet, and the language button stands on the same
+   line instead of hanging its code's descender room below it, which made the
+   bar 6px taller on every screen. */
 .shell__club {
   display: flex;
-  align-items: baseline;
+  align-items: flex-end;
   gap: var(--fm-space-4);
   font-family: var(--fm-font-condensed);
   font-size: var(--fm-text-sm);
@@ -110,7 +114,7 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-/* The front door: no bar at all, because the cover carries the name and the cog
+/* The front door: no bar at all, because the cover carries the name and the language button
    floats on the screen itself. Stage · credit. */
 .shell--landing {
   grid-template-rows: minmax(0, 1fr) auto;
@@ -136,7 +140,7 @@
  * their content. A panel still scrolls sideways when a table is wider than the
  * phone.
  *
- * The bar becomes two lines: what you are looking at and the cog, then where
+ * The bar becomes two lines: what you are looking at and the language button, then where
  * you are and the window.
  */
 @media (width < 40rem) {

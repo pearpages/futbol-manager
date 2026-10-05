@@ -77,7 +77,7 @@ uppercase. Never type capitals into a string; the style uppercases.
 - A block is padded `space-3` vertically and `space-4` horizontally.
 - **Hardware is square.** Panels, screens and buttons have no radius. `radius-sm` (3px),
   `radius-round` (50%) and `radius-pill` (999px) are for three small marks only.
-- Stacking order: 1–3 inside a screen's grid, 5 the landing's floating cog, 10 a menu, 20 a
+- Stacking order: 1–3 inside a screen's grid, 5 the landing's floating language button, 10 a menu, 20 a
   dialog. Nothing animates; the only motion rule is a reduced-motion guard.
 
 ## Layout
@@ -86,7 +86,7 @@ The game is one shell, a single-column grid:
 
 ```
 ┌──────────────────────────────────────────┐
-│ Panel: where · screen title · window, cog │  shell bar
+│ Panel: where · title · window · language │  shell bar
 ├──────────────────────────────────────────┤
 │                                          │
 │ stage: one screen, scrolling inside it   │
@@ -101,7 +101,7 @@ On a phone (below `40rem`) the same shell changes shape:
 
 ```
 ┌──────────────────────────┐
-│ SCREEN TITLE         cog │  bar, two lines
+│ SCREEN TITLE          CA │  bar, two lines
 │ where · jornada   window │
 ├──────────────────────────┤
 │ panels, one under the    │  the page scrolls,

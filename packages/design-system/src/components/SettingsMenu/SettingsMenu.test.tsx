@@ -8,18 +8,19 @@ const languages = [
 ]
 
 describe('SettingsMenu', () => {
-  it('opens from the cog, marks the current language and picks another', () => {
+  it('shows the code, opens, marks the current language and picks another', () => {
     const onChange = vi.fn()
     render(
       <SettingsMenu
-        label="Settings"
         languageLabel="Language"
         languages={languages}
         current="ca"
         onChange={onChange}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Settings' }))
+    const toggle = screen.getByRole('button', { name: 'CA Language' })
+    expect(toggle.textContent).toBe('CA Language')
+    fireEvent.click(toggle)
     expect(screen.getByRole('button', { name: 'Català' }).getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
     expect(onChange).toHaveBeenCalledWith('en')

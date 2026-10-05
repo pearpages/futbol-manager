@@ -34,7 +34,6 @@ export const es: Dictionary = {
   'action.newCareer': 'Nueva carrera',
   'action.cancel': 'Cancelar',
   'action.close': 'Cerrar',
-  'action.settings': 'Configuración',
   'action.language': 'Idioma',
 
   // ── El marco ─────────────────────────────────────────────────────────────
