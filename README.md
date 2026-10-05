@@ -21,7 +21,8 @@ leaves your device.
 
 **v0.8.0 — this season's squads.** Every club's squad is as it stands in October 2026, the
 ratings follow the league's results (Barcelona first, Madrid second), and the staff are
-back beside the places they run. Every release, with its notes, is on the [releases page](https://github.com/pearpages/futbol-manager/releases).
+back beside the places they run. Every release, with its notes, is on the
+[releases page](https://github.com/pearpages/futbol-manager/releases).
 
 What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
 injuries, form and training (M6).
