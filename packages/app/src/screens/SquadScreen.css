@@ -34,6 +34,20 @@
   text-transform: uppercase;
 }
 
+/* Between phone and desk the rail takes its width, so the eleven columns no
+   longer fit: the number and the XI flag go (the flag is on each player's card),
+   and the wage, the contract and both buttons stay. */
+@media (width < 60rem) {
+  .squad-screen .data-table :is(th, td):nth-child(1),
+  .squad-screen .data-table :is(th, td):nth-child(9) {
+    display: none;
+  }
+
+  .squad-screen .data-table :is(th, td):nth-child(2) {
+    padding-left: var(--fm-space-3);
+  }
+}
+
 /* Phone: position, name, age, rating and worth. The number, wage, contract, the
    XI flag and the two buttons go; the buttons live on the player's page there
    (ADR 0019). */

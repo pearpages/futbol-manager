@@ -77,6 +77,11 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 - `pnpm storybook`: the design system in levels (foundations, primitives, components) and
   every screen of the game, at phone, tablet and desk width (ADR 0017, 0021). Screens also
   switch language. Layout and contrast are reviewed there.
+- `pnpm e2e`: the browser checks (ADR 0023) against built output, so run `pnpm build` and
+  `pnpm --filter @fm/app build-storybook` first. Layout on every story at three widths,
+  the smoke test, and on Linux the design system's screenshots. New reference screenshots
+  are made in CI: run the workflow by hand with `update_visual`, then commit its artifact
+  into `e2e/__screenshots__`.
 - `pnpm dev`: the app on a Vite dev server, on localhost only. `pnpm dev:lan` also
   serves it to the local network, to try it on a phone.
 
