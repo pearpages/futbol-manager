@@ -8,7 +8,6 @@ import { useGame } from '../store.ts'
 import { advance, advanceUntil, back, openScreen } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
-import { QUADRANTS } from './HubScreen.tsx'
 
 /**
  * The hub, the news feed and matchday — the three things a player could not see.
@@ -25,86 +24,28 @@ beforeEach(() => {
 
 const { t } = translatorFor('en')
 const game = () => useGame.getState().game
-const quadrant = (title: string) =>
-  screen.getByRole('heading', { name: title }).closest('section') as HTMLElement
 
-describe('the hub', () => {
-  it('is where the app opens', () => {
+describe('Avui', () => {
+  it('is where the app opens: the next match, where you stand, the news', () => {
     render(<App />)
-    for (const { title } of QUADRANTS) {
-      expect(screen.getByRole('heading', { name: t(title) })).toBeDefined()
-    }
+    expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('hub.nextMatch') })).toBeDefined()
+    expect(screen.getByRole('heading', { name: t('hub.news') })).toBeDefined()
   })
 
-  it('navigates from a live tile', () => {
+  it('says what the board wants, and opens its page', () => {
     render(<App />)
-    fireEvent.click(
-      within(quadrant(t('quadrant.mercado'))).getByRole('button', { name: t('nav.market') }),
-    )
-    expect(screen.getByRole('heading', { name: t('market.heading') })).toBeDefined()
-  })
-
-  it('shows what is not built yet, disabled and dated', () => {
-    // An empty quadrant reads as broken; a labelled one reads as "not yet" and
-    // doubles as a roadmap you can see.
-    //
-    // This used to point at Caja, which M5b built. Cantera is the remaining
-    // example — and having to move it is the test doing its job: a tile going
-    // live should not be able to pass silently as one that has not.
-    render(<App />)
-    const cantera = within(quadrant(t('quadrant.mercado'))).getByRole('button', {
-      name: `${t('nav.youth')}M7`,
+    const target = screen.getByRole('button', {
+      name: t('hub.boardTarget', { target: game().board.target }),
     })
-
-    expect(cantera.hasAttribute('disabled')).toBe(true)
-    expect(cantera.getAttribute('title')).toMatch(/M7/)
+    fireEvent.click(target)
+    expect(useGame.getState().screen).toBe('decisiones')
   })
 
-  it('opens the three finance screens M5b built', () => {
+  it('holds no menu of tiles: the places are the tabs (ADR 0022)', () => {
     render(<App />)
-    for (const tile of ['nav.caja', 'nav.decisiones', 'nav.estadio'] as const) {
-      const button = within(quadrant(t('quadrant.finanzas'))).getByRole('button', { name: t(tile) })
-      expect(button.hasAttribute('disabled'), tile).toBe(false)
-    }
-  })
-
-  /*
-   * This used to be "promises nothing for what has no milestone", pointed at
-   * Calendari — the only tile that had no milestone — and asserting it was
-   * disabled with a bare "not built yet". Building the screen made it the second
-   * tile to break this way, after Caja, and the second time is what turned the
-   * escape hatch into a rule: **a disabled tile now has to name a milestone**, the
-   * `Tile` union enforces it, and `hub.notBuilt` is gone from all three
-   * dictionaries rather than left as an orphan key.
-   *
-   * So what is worth asserting is no longer the fallback but its absence: every
-   * unbuilt tile is dated, and there is nothing left that merely says "later".
-   */
-  it('dates every promise it makes', () => {
-    render(<App />)
-    const unbuilt = QUADRANTS.flatMap((q) => q.tiles).filter((tile) => tile.to === null)
-    expect(unbuilt.length).toBeGreaterThan(0)
-
-    for (const tile of unbuilt) {
-      const button = screen.getByRole('button', { name: `${t(tile.key)}${tile.milestone}` })
-      expect(button.hasAttribute('disabled'), tile.key).toBe(true)
-      expect(button.getAttribute('title'), tile.key).toBe(
-        t('hub.arrivesAt', { milestone: tile.milestone }),
-      )
-    }
-  })
-
-  it('opens the calendar Seguiment had been promising', () => {
-    // The third Seguiment tile was disabled from the hub's first day, which makes
-    // this the first quadrant where every tile leads somewhere.
-    render(<App />)
-    const calendar = within(quadrant(t('quadrant.seguimiento'))).getByRole('button', {
-      name: t('nav.calendar'),
-    })
-
-    expect(calendar.hasAttribute('disabled')).toBe(false)
-    fireEvent.click(calendar)
-    expect(screen.getByRole('heading', { name: /Calendar ·/i })).toBeDefined()
+    expect(document.querySelector('.hub__tile')).toBeNull()
+    expect(screen.queryByRole('button', { name: t('nav.training') })).toBeNull()
   })
 })
 

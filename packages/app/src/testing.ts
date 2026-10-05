@@ -1,6 +1,9 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { translatorFor } from './i18n/useT.ts'
+import { TABS } from './shell/tabs.ts'
 import { useGame } from './store.ts'
+
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /**
  * Helpers shared across the screen tests.
@@ -38,42 +41,52 @@ export const ADVANCE = () => {
 }
 
 /**
- * Opens a screen the way a player does — from a hub tile.
+ * Opens a screen the way a player does: its place in the tab bar (the rail on
+ * the desk), then its segment if the place holds more than one (ADR 0022).
  *
- * Takes the tile's **dictionary key**, not its label. Thirty-five call sites used
- * to spell out `'Fichar'`, which stopped working the moment the app had three
- * languages and a Catalan default. Resolving through the same dictionary the UI
- * renders from means a test never has to know which language it is in.
- *
- * There is no nav rail: the hub is the only branching point, so every test that
- * wants a screen has to start from the hub and come `back()` afterwards.
+ * Takes the screen's **dictionary key** (`nav.market`), not a label, so a test
+ * never has to know which language it is in.
  */
-export function openScreen(tileKey: string): void {
+export function openScreen(screenKey: string): void {
   const { t } = translatorFor(useGame.getState().language)
-  fireEvent.click(screen.getByRole('button', { name: t(tileKey) }))
+  const target = screenKey.replace(/^nav\./, '')
+  const place = TABS.find((entry) => entry.screens.some((s) => s === target))
+  if (place === undefined) throw new Error(`no place holds ${screenKey}`)
+  const tabs = within(screen.getByRole('navigation', { name: t('tab.nav') }))
+  // Starts with the label: the market's tab also names its waiting offers.
+  fireEvent.click(tabs.getByRole('button', { name: new RegExp(`^${escape(t(place.label))}`) }))
+  if (place.screens[0] !== target) {
+    const segments = within(screen.getByRole('group', { name: t(place.label) }))
+    fireEvent.click(segments.getByRole('button', { name: t(screenKey) }))
+  }
 }
 
-/** Volver — back to the hub, or on a ficha, back to wherever it was opened from. */
+/** Back from a player page to where it was opened; anywhere else, to Avui. */
 export function back(): void {
   const { t } = translatorFor(useGame.getState().language)
-  fireEvent.click(screen.getByRole('button', { name: t('action.back') }))
+  const backButton = screen.queryByRole('button', { name: t('action.back') })
+  if (backButton !== null) {
+    fireEvent.click(backButton)
+    return
+  }
+  const tabs = within(screen.getByRole('navigation', { name: t('tab.nav') }))
+  fireEvent.click(tabs.getByRole('button', { name: new RegExp(`^${escape(t('tab.today'))}`) }))
 }
 
-/**
- * Presses whatever the primary button currently says, `times` times.
- *
- * **Works on any screen now.** The day controls used to live on the hub and
- * nowhere else; `ShellFoot` carries Advance day and To matchday everywhere else,
- * so this no longer needs a `back()` first.
- *
- * One asymmetry worth knowing: **playing a match is still hub-only.** Off the
- * hub, on a day your fixture is due, the footer's button navigates to the hub
- * rather than kicking off — so that press costs an iteration and the next one
- * plays. `advanceUntil` absorbs it; a test counting exact presses would not.
- */
+/** Closes the result sheet a played match opens, so the next press reaches the bar. */
+export function dismissResult(): void {
+  const { t } = translatorFor(useGame.getState().language)
+  const sheet = screen.queryByRole('dialog', { name: t('result.title') })
+  if (sheet !== null) {
+    fireEvent.click(within(sheet).getByRole('button', { name: t('result.continue') }))
+  }
+}
+
+/** Presses whatever the day's action currently says, `times` times. */
 export function advance(times = 1): void {
   for (let i = 0; i < times; i++) {
     fireEvent.click(screen.getByRole('button', { name: ADVANCE() }))
+    dismissResult()
   }
 }
 
@@ -82,6 +95,7 @@ export function advanceUntil(done: () => boolean, limit = 400): number {
   for (let i = 0; i < limit; i++) {
     if (done()) return i
     fireEvent.click(screen.getByRole('button', { name: ADVANCE() }))
+    dismissResult()
   }
   throw new Error(`still not done after ${limit} presses`)
 }

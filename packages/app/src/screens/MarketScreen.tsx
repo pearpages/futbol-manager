@@ -624,6 +624,21 @@ export function MarketScreen() {
             ) : (
               <div className="market-screen__filters">
                 {filterButtons}
+                {activeFilters > 0 && (
+                  <Button
+                    type="button"
+                    icon="close"
+                    className="market-screen__mini"
+                    onClick={changing(() => {
+                      setPositions([])
+                      setOnlyAffordable(false)
+                      setOnlyFree(false)
+                      setOnlyShortlist(false)
+                    })}
+                  >
+                    {t('market.clearFilters')}
+                  </Button>
+                )}
                 <span className="market-screen__count">
                   {t('market.showing', { shown: listings.length, total: all.length })}
                 </span>

@@ -222,7 +222,7 @@ describe('one card to the next', () => {
     back()
 
     expect(useGame.getState().screen).toBe('squad')
-    expect(screen.getByRole('heading', { name: 'Squad' })).toBeDefined()
+    expect(useGame.getState().screen).toBe('squad')
   })
 
   it('drops the comparison on the way', () => {

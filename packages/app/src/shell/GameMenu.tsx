@@ -5,17 +5,18 @@ import { useT } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { useQuickSave } from '../useQuickSave.ts'
 import { SaveManagerModal } from '../screens/SaveManagerModal.tsx'
+import { SettingsMenu } from '../screens/SettingsMenu.tsx'
 import { ShellCredit } from '../screens/ShellCredit.tsx'
 
 const LANGUAGE_OPTIONS = LANGUAGES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))
 
 /**
- * Everything you do to the game rather than in it, behind one button in the
- * bar's corner: save, the saves, the language and leaving. On the desk these
- * are the footer's middle group and the language button; on a phone none of
- * them is pressed often enough to hold the bottom of the screen.
+ * Everything you do to the game rather than in it: save, the saves, the
+ * language and leaving. The same four, with the same icons, at every width
+ * (ADR 0022). On a phone they wait behind one button in the bar's corner;
+ * on the desk there is room, so they sit in the bar itself.
  */
-export function PhoneMenu(): React.JSX.Element {
+export function GameMenu({ inline = false }: { readonly inline?: boolean }): React.JSX.Element {
   const language = useGame((s) => s.language)
   const setLanguage = useGame((s) => s.setLanguage)
   const quitToLanding = useGame((s) => s.quitToLanding)
@@ -32,11 +33,71 @@ export function PhoneMenu(): React.JSX.Element {
     setSavesOpen(true)
   })
 
+  if (inline) {
+    return (
+      <span className="game-menu game-menu--inline">
+        <Button type="button" icon="save" disabled={saving} onClick={quickSave}>
+          {saving ? t('action.saving') : t('action.save')}
+        </Button>
+        <Button
+          type="button"
+          icon="saves"
+          onClick={() => {
+            setSavesOpen(true)
+          }}
+        >
+          {t('action.saves')}
+        </Button>
+        <Button
+          type="button"
+          icon="exit"
+          onClick={() => {
+            setLeaving(true)
+          }}
+        >
+          {t('action.quit')}
+        </Button>
+        <SettingsMenu />
+        {savedOn !== null && (
+          <Toast
+            className="shell-toast"
+            message={t('action.saved', { date: date(savedOn) })}
+            onDismiss={() => {}}
+            duration={4000}
+          />
+        )}
+
+        {savesOpen && (
+          <SaveManagerModal
+            onClose={() => {
+              setSavesOpen(false)
+            }}
+          />
+        )}
+
+        {leaving && (
+          <Confirm
+            title={t('action.quit')}
+            confirmLabel={t('action.quit')}
+            confirmIcon="exit"
+            cancelLabel={t('action.cancel')}
+            onConfirm={quitToLanding}
+            onCancel={() => {
+              setLeaving(false)
+            }}
+          >
+            <p>{t('hub.confirmQuit')}</p>
+          </Confirm>
+        )}
+      </span>
+    )
+  }
+
   return (
-    <span className="phone-menu" ref={ref}>
+    <span className="game-menu" ref={ref}>
       <Button
         type="button"
-        className="phone-bar__icon-button"
+        className="shell-bar__icon-button"
         aria-label={t('action.menu')}
         aria-expanded={open}
         onClick={() => {
@@ -47,10 +108,10 @@ export function PhoneMenu(): React.JSX.Element {
       </Button>
 
       {open && (
-        <Panel className="phone-menu__panel" role="group" aria-label={t('action.menu')}>
+        <Panel className="game-menu__panel" role="group" aria-label={t('action.menu')}>
           <Button
             type="button"
-            className="phone-menu__item"
+            className="game-menu__item"
             disabled={saving}
             onClick={() => {
               setOpen(false)
@@ -62,7 +123,7 @@ export function PhoneMenu(): React.JSX.Element {
           </Button>
           <Button
             type="button"
-            className="phone-menu__item"
+            className="game-menu__item"
             onClick={() => {
               setOpen(false)
               setSavesOpen(true)
@@ -71,7 +132,7 @@ export function PhoneMenu(): React.JSX.Element {
             <Icon name="saves" />
             {t('action.saves')}
           </Button>
-          <p className="phone-menu__label">{t('action.language')}</p>
+          <p className="game-menu__label">{t('action.language')}</p>
           <Segments
             label={t('action.language')}
             options={LANGUAGE_OPTIONS}
@@ -80,7 +141,7 @@ export function PhoneMenu(): React.JSX.Element {
           />
           <Button
             type="button"
-            className="phone-menu__item"
+            className="game-menu__item"
             onClick={() => {
               setOpen(false)
               setLeaving(true)
@@ -95,7 +156,7 @@ export function PhoneMenu(): React.JSX.Element {
 
       {savedOn !== null && (
         <Toast
-          className="phone-toast"
+          className="shell-toast"
           message={t('action.saved', { date: date(savedOn) })}
           onDismiss={() => {}}
           duration={4000}

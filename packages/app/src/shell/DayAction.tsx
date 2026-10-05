@@ -14,7 +14,7 @@ import { MatchResult } from './MatchResult.tsx'
  * matchday the desk sends you back to the hub to kick off; here you play from
  * wherever you are — the lineup screen, usually, straight after picking the XI.
  */
-export function PhoneAction(): React.JSX.Element | null {
+export function DayAction(): React.JSX.Element | null {
   const game = useGame((s) => s.game)
   const dispatch = useGame((s) => s.dispatch)
   const advanceToMatchday = useGame((s) => s.advanceToMatchday)
@@ -42,7 +42,7 @@ export function PhoneAction(): React.JSX.Element | null {
         icon="exit"
         primary
         type="button"
-        className="phone-action__main"
+        className="day-action__main"
         onClick={quitToLanding}
       >
         {t('action.quit')}
@@ -54,7 +54,7 @@ export function PhoneAction(): React.JSX.Element | null {
         icon="play"
         primary
         type="button"
-        className="phone-action__main"
+        className="day-action__main"
         onClick={startNewSeason}
       >
         {t('hub.startSeason', { season: season(game.season.startYear + 1) })}
@@ -64,7 +64,7 @@ export function PhoneAction(): React.JSX.Element | null {
     action = null
   } else if (matchday.due) {
     action = (
-      <Button primary type="button" className="phone-action__main" onClick={play}>
+      <Button primary type="button" className="day-action__main" onClick={play}>
         <Icon name="play" />
         {t('hub.playMatch', { opponent: describeOpponent(translator, matchday) })}
       </Button>
@@ -76,14 +76,14 @@ export function PhoneAction(): React.JSX.Element | null {
           icon="step"
           primary
           type="button"
-          className="phone-action__main"
+          className="day-action__main"
           onClick={() => dispatch({ type: 'AdvanceDay' })}
         >
           {t('hub.advanceDay')}
         </Button>
         <Button
           type="button"
-          className="phone-action__skip"
+          className="day-action__skip"
           aria-label={t('hub.toMatchday')}
           onClick={advanceToMatchday}
         >
@@ -95,7 +95,7 @@ export function PhoneAction(): React.JSX.Element | null {
 
   return (
     <>
-      {action !== null && <div className="phone-action">{action}</div>}
+      {action !== null && <div className="day-action">{action}</div>}
       {result !== null && (
         <MatchResult
           event={result}

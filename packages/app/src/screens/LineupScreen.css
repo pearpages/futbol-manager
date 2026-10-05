@@ -295,12 +295,3 @@ button.lineup-screen__sub {
   padding: 0;
   list-style: none;
 }
-
-/* The undo note after a formation press, in the corner nearest the footer. */
-.lineup-screen__toast {
-  position: fixed;
-  right: var(--fm-space-4);
-  bottom: 5.5rem;
-  z-index: 15;
-  max-width: 28rem;
-}

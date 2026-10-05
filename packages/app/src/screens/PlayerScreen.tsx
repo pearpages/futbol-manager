@@ -19,7 +19,6 @@ import {
 } from '@fm/domain'
 import { useState } from 'react'
 import { useGame } from '../store.ts'
-import { usePhone } from '../usePhone.ts'
 import { useT, type Translator } from '../i18n/useT.ts'
 import {
   AttrBar,
@@ -228,9 +227,8 @@ export function PlayerScreen() {
   const isYours = squad.some((p) => p.id === player.id)
   const isStarting = lineup?.starters.includes(player.id) ?? false
   const formation: Formation = lineup?.formation ?? '4-4-2'
-  // On a phone the squad table drops its sale and renew columns, so this card is
-  // where you list one of yours (ADR 0019). The desk keeps them in the table.
-  const phone = usePhone()
+  // Listing one of yours is on his card at every width (ADR 0022); the desk's
+  // squad table carries the same button as well, because it has the room.
   const onSale = game.transferList.includes(player.id)
   const block = isYours ? saleBlock(squad, lineup, player) : null
 
@@ -423,18 +421,16 @@ export function PlayerScreen() {
           screen instead, which is why the bid button needs `owner`. */}
       {isYours && (
         <ScreenActions className="ficha__actions">
-          {phone && (
-            <Button
-              icon="tag"
-              primary={onSale}
-              type="button"
-              aria-pressed={onSale}
-              disabled={block !== null && !onSale}
-              onClick={() => dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })}
-            >
-              {onSale ? t('squad.listed') : t('squad.list')}
-            </Button>
-          )}
+          <Button
+            icon="tag"
+            primary={onSale}
+            type="button"
+            aria-pressed={onSale}
+            disabled={block !== null && !onSale}
+            onClick={() => dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })}
+          >
+            {onSale ? t('squad.listed') : t('squad.list')}
+          </Button>
           <Button icon="sign" type="button" onClick={() => setRenewing(true)}>
             {t('squad.renew')}
           </Button>

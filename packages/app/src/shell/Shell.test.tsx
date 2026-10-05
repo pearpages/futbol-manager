@@ -33,7 +33,7 @@ afterEach(() => {
 describe('the phone shell', () => {
   it('replaces the desk bar and footer', () => {
     render(<App />)
-    expect(document.querySelector('.shell--phone')).not.toBeNull()
+    expect(document.querySelector('.shell--app')).not.toBeNull()
     expect(document.querySelector('.shell__foot')).toBeNull()
     expect(document.querySelector('.shell__bar')).toBeNull()
   })

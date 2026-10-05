@@ -162,7 +162,7 @@ export const es: Dictionary = {
   'results.roundLabel': 'Jornada {round}',
   'results.prevRound': 'Jornada anterior',
   'results.nextRound': 'Jornada siguiente',
-  'results.tab.grid': 'Resultados',
+  'results.tab.grid': 'Cuadro',
   'results.tab.palmares': 'Palmarés',
   'results.season': 'Temporada',
   'results.gridHeading': 'Todos los resultados · {season}',

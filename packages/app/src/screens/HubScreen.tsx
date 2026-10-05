@@ -1,29 +1,24 @@
 import { useMemo, useState } from 'react'
-import { type ClubId, computeTable, isSeasonComplete, recentResultsFor } from '@fm/domain'
+import { type ClubId, computeTable, recentResultsFor } from '@fm/domain'
 import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { describeOpponent, matchdayFor, weakLineup } from '../matchday.ts'
 import { noticesFrom } from '../notifications.ts'
-import { type Screen as ScreenKey, useGame } from '../store.ts'
+import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
 import { NewsDialog } from './NewsDialog.tsx'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 import {
   Button,
-  HubFigure,
   NotificationList,
-  type IconKey,
   Screen,
-  ScreenActions,
   ScreenHeading,
   ScreenNote,
   Stat,
   StatLabel,
   StatValue,
-  TileIcon,
   VisuallyHidden,
 } from '@fm/design-system'
-import { artSrc, type FigureKey } from './art.ts'
 import './HubScreen.css'
 
 /**
@@ -42,118 +37,6 @@ import './HubScreen.css'
  * finished game out loud and turns the hub into a roadmap you can see. That is now
  * enforced by the `Tile` type rather than left to care — see below.
  */
-
-/**
- * Names the destination for the dictionary *and* for the tests.
- *
- * It was a Spanish literal, typed again in `App.tsx`'s title map — so the two
- * could drift, and every test clicked a tile by a word that only exists in one
- * language. The key is the stable thing; the label is a rendering of it.
- */
-interface TileBase {
-  readonly key: string
-  readonly icon: IconKey
-}
-
-/**
- * A tile is either built or promised, and **a promise names its milestone.**
- *
- * That used to be a `milestone?: string` on one shape, with a `t('hub.notBuilt')`
- * fallback for a tile nobody had scheduled. Calendari was the only tile using it,
- * and building it left the branch unreachable and the key an orphan — the fifth
- * this project would have shipped, all four earlier ones found by hand because
- * `dictionaries.test.ts` enforces parity across languages and cannot see a key
- * nobody calls.
- *
- * So the doc comment above ("a disabled tile is a promise with a date on it")
- * became the type instead of a convention: an unbuilt tile with no milestone is now
- * a compile error rather than a silent "not built yet". If a section ever needs
- * naming before the roadmap budgets it, that is three dictionary lines and a
- * deliberate decision, which is the right price.
- */
-type Tile =
-  | (TileBase & { readonly to: ScreenKey })
-  | (TileBase & { readonly to: null; readonly milestone: string })
-
-/**
- * Names the section for the CSS, which uses it for **both** the colour and the
- * grid placement. Placement used to key on `:nth-of-type`, which tied a
- * quadrant's position to its position in this array — reorder the list and the
- * screen silently rearranged.
- */
-export type QuadrantKey = 'seguimiento' | 'entrenador' | 'mercado' | 'finanzas'
-
-interface Quadrant {
-  readonly key: QuadrantKey
-  /** Dictionary key, not a word. */
-  readonly title: string
-  readonly tiles: readonly Tile[]
-  /**
-   * The person who stands at the foot of the section.
-   *
-   * Decoration, and the reference's other half: PC Fútbol drew every quadrant as
-   * an illustrated vignette, and two of its four carried human figures. Named
-   * here rather than derived from `key` so a section and its figure stay
-   * separable — the same reason a tile names its icon.
-   */
-  readonly figure: FigureKey
-}
-
-/**
- * Seguimiento's two tiles landing on one screen is deliberate and matches the
- * reference: "where am I in the league" and "what happened at the weekend" are
- * different questions, even though one screen currently answers both.
- *
- * **Entrenador used to do the same with Alineació and Tàctiques, and no longer
- * does.** That pair never grew into two screens, because the tactical lever set
- * is closed at two by ground rule 5 (`lineup.ts` — "one slider rather than
- * five"), so the second screen would have been eight buttons and a slider. The
- * reference agrees: `squad-alineacion-formacion.png` is a single screen holding
- * the squad table *and* the shape. One tile now, and the freed slot went to
- * Entrenaments, which M6 assigns and the hub had never named.
- */
-export const QUADRANTS: readonly Quadrant[] = [
-  {
-    key: 'seguimiento',
-    title: 'quadrant.seguimiento',
-    tiles: [
-      { key: 'nav.table', to: 'table', icon: 'table' },
-      { key: 'nav.results', to: 'results', icon: 'results' },
-      { key: 'nav.calendar', to: 'calendar', icon: 'calendar' },
-    ],
-    figure: 'assistant',
-  },
-  {
-    key: 'entrenador',
-    title: 'quadrant.entrenador',
-    tiles: [
-      { key: 'nav.lineup', to: 'lineup', icon: 'pitch' },
-      { key: 'nav.training', to: null, milestone: 'M6', icon: 'training' },
-      { key: 'nav.scout', to: null, milestone: 'M7', icon: 'scout' },
-    ],
-    figure: 'trainer',
-  },
-  {
-    key: 'mercado',
-    title: 'quadrant.mercado',
-    tiles: [
-      { key: 'nav.market', to: 'market', icon: 'contract' },
-      { key: 'nav.squad', to: 'squad', icon: 'roster' },
-      { key: 'nav.youth', to: null, milestone: 'M7', icon: 'youth' },
-    ],
-    figure: 'agent',
-  },
-  {
-    key: 'finanzas',
-    title: 'quadrant.finanzas',
-    tiles: [
-      { key: 'nav.caja', to: 'caja', icon: 'safe' },
-      { key: 'nav.decisiones', to: 'decisiones', icon: 'scales' },
-      { key: 'nav.estadio', to: 'estadio', icon: 'stadium' },
-    ],
-    figure: 'director',
-  },
-]
 
 /**
  * One half of the fixture line: a crest with the club's name under it.
@@ -191,12 +74,8 @@ export function HubScreen() {
   const unread = useGame((s) => s.unread)
   const markRead = useGame((s) => s.markRead)
   const go = useGame((s) => s.go)
-  const dispatch = useGame((s) => s.dispatch)
-  const advanceToMatchday = useGame((s) => s.advanceToMatchday)
-  const startNewSeason = useGame((s) => s.startNewSeason)
-  const quitToLanding = useGame((s) => s.quitToLanding)
   const translator = useT()
-  const { t, plural, date, money, season } = translator
+  const { t, plural, date, money } = translator
 
   const club = game.clubs.find((c) => c.id === game.managedClubId)
   const matchday = matchdayFor(game)
@@ -221,7 +100,6 @@ export function HubScreen() {
   }, [game])
   const band = bandFor(standing.position, standing.total)
   const weak = weakLineup(game)
-  const finished = isSeasonComplete(game)
   const [newsOpen, setNewsOpen] = useState(false)
   const notices = noticesFrom(feed, game, translator).slice(0, 12)
 
@@ -231,31 +109,6 @@ export function HubScreen() {
           for the colour and for where the panel sits. The element stays a
           `<section>` with the title as its heading: that pair is how the tests —
           and a screen reader — find a quadrant. */}
-      {QUADRANTS.map((quadrant) => (
-        <Screen key={quadrant.key} className="hub__quadrant" data-quadrant={quadrant.key}>
-          <ScreenHeading>{t(quadrant.title)}</ScreenHeading>
-          <div className="hub__tiles">
-            {quadrant.tiles.map((tile) => (
-              <Button
-                key={tile.key}
-                type="button"
-                className="hub__tile"
-                disabled={tile.to === null}
-                title={
-                  tile.to === null ? t('hub.arrivesAt', { milestone: tile.milestone }) : undefined
-                }
-                onClick={() => tile.to !== null && go(tile.to)}
-              >
-                <TileIcon icon={tile.icon} />
-                <span className="hub__tile-label">{t(tile.key)}</span>
-                {tile.to === null && <span className="hub__tile-milestone">{tile.milestone}</span>}
-              </Button>
-            ))}
-          </div>
-          <HubFigure figure={quadrant.figure} src={artSrc(quadrant.figure)} />
-        </Screen>
-      ))}
-
       <aside className="hub__centre">
         <Screen className="hub__identity">
           <ScreenHeading className="hub__crest">
@@ -358,50 +211,6 @@ export function HubScreen() {
               )}
             </div>
           )}
-
-          {/*
-            The clock, beside the fixture it is about. Four states in priority
-            order — the sack ends the career, the season ending is the door to the
-            summer, a fixture being due makes kicking off a deliberate press
-            rather than a side effect of advancing a day; otherwise it just runs.
-
-            **Advancing a day is not here.** It is the footer's, on every screen
-            including this one, so the press that runs the clock is always in the
-            same corner. What stays is what belongs *beside the fixture*: kicking
-            off, which is the one irreversible press and wants to be made where
-            you can see who you are playing; skipping ahead to the match; and the
-            two season boundaries. The four states below are still mutually
-            exclusive with the footer's one, so no label is ever on screen twice.
-          */}
-          <ScreenActions className="hub__controls">
-            {game.board.sacked ? (
-              // The end of the job, and the end of the career. There is no path
-              // on from here — the only button left is a new one somewhere else.
-              <Button icon="exit" primary type="button" onClick={quitToLanding}>
-                {t('action.quit')}
-              </Button>
-            ) : finished ? (
-              <Button icon="play" primary type="button" onClick={() => startNewSeason()}>
-                {t('hub.startSeason', { season: season(game.season.startYear + 1) })}
-              </Button>
-            ) : matchday !== null && matchday.due ? (
-              <Button
-                icon="play"
-                primary
-                type="button"
-                className="hub__play"
-                onClick={() => dispatch({ type: 'AdvanceDay' })}
-              >
-                {t('hub.playMatch', { opponent: describeOpponent(translator, matchday) })}
-              </Button>
-            ) : (
-              matchday !== null && (
-                <Button icon="skip" type="button" onClick={advanceToMatchday}>
-                  {t('hub.toMatchday')}
-                </Button>
-              )
-            )}
-          </ScreenActions>
         </Screen>
 
         <Screen className="hub__news">

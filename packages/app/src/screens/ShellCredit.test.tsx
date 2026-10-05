@@ -5,7 +5,7 @@ import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 import { back, openScreen } from '../testing.ts'
-import { QUADRANTS } from './HubScreen.tsx'
+import { TABS } from '../shell/tabs.ts'
 
 /**
  * The credit that says this page belongs with the others.
@@ -24,8 +24,10 @@ if (MID === undefined) throw new Error('no clubs')
 const { t } = translatorFor('en')
 const credit = () => document.querySelector('.shell__credit') as HTMLElement | null
 
-/** Every screen a hub tile can reach, by the key the tile is named with. */
-const TILES = QUADRANTS.flatMap((q) => q.tiles.filter((tile) => tile.to !== null).map((t) => t.key))
+/** Every screen a place holds, by its dictionary key. */
+const TILES = TABS.flatMap((place) => place.screens)
+  .filter((s) => s !== 'hub')
+  .map((s) => `nav.${s}`)
 
 beforeEach(() => {
   useGame.getState().newGame(MID)

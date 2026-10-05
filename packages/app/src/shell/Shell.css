@@ -1,0 +1,284 @@
+/*
+ * The game's one shell (ADR 0022). The same parts at every width: a bar, the
+ * places (`TabBar`), the screens of a place (`Segments`), the stage, and the
+ * day's action. The desk is the phone with more room: the tabs become a rail
+ * on the left, the menu's items sit in the bar, and each screen scrolls in its
+ * own frame. On a phone the page scrolls as one document, with the bar stuck
+ * to the top and the action and tabs to the bottom.
+ */
+.shell.shell--app {
+  grid-template-areas:
+    'bar bar'
+    'rail stage'
+    'rail action'
+    'credit credit';
+  /* A fixed rail: an `auto` one took the overflow of the bar and the credit,
+     which span both columns, and grew to 400px. */
+  grid-template-columns: 6.5rem minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+}
+
+.shell.shell--app .shell__stage {
+  grid-area: stage;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+  min-height: 0;
+  /* A screen taller than the frame scrolls inside it rather than spilling
+     under the day's action. */
+  overflow-y: auto;
+}
+
+/* The screen under the segments takes what is left and scrolls in it. */
+.shell.shell--app .shell__stage > :not(.shell-segments) {
+  flex: 1;
+  min-height: 0;
+}
+
+.shell-dock {
+  display: contents;
+}
+
+.shell-dock .tab-bar {
+  grid-area: rail;
+  grid-auto-flow: row;
+  grid-auto-rows: max-content;
+  align-content: start;
+  border: 1px solid var(--fm-bevel-dark);
+  border-top-color: var(--fm-bevel-light);
+  border-left-color: var(--fm-bevel-light);
+}
+
+/* In the rail the current place is marked on its left edge, not its top. */
+.shell-dock .tab-bar__item {
+  border-top: 0;
+  border-left: 3px solid transparent;
+}
+
+.shell-dock .tab-bar__item.is-current {
+  border-left-color: var(--fm-accent);
+}
+
+.shell-dock .day-action {
+  grid-area: action;
+  justify-content: flex-end;
+}
+
+.shell.shell--app > .shell__credit {
+  grid-area: credit;
+}
+
+.shell-bar {
+  grid-area: bar;
+  display: flex;
+  /* The bar's own items wrap to a second line before they squeeze the title. */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fm-space-2);
+  min-height: 3rem;
+  padding: var(--fm-space-1) var(--fm-space-2);
+}
+
+.shell-bar__title {
+  flex: 1 0 8rem;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-md);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Square, and big enough for a thumb: these are icons, so the box is the target. */
+.shell-bar__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  padding: 0;
+}
+
+.shell-bar__news {
+  position: relative;
+}
+
+/* The unread count on the icon's shoulder, as the market tab carries its own. */
+.shell-bar__badge {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.15rem;
+  min-width: 1.1rem;
+  padding: 0 var(--fm-space-1);
+  border-radius: var(--fm-radius-pill);
+  background: var(--fm-relegation);
+  color: var(--fm-highlight);
+  font-size: var(--fm-text-xs);
+  line-height: 1.1rem;
+  letter-spacing: 0;
+  text-align: center;
+}
+
+.shell-bar__window {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fm-space-1);
+  min-height: 2.5rem;
+  padding: 0 var(--fm-space-2);
+  color: var(--fm-accent-ink);
+}
+
+/* ── The menu ─────────────────────────────────────────────────────────── */
+
+.game-menu {
+  position: relative;
+}
+
+.game-menu__panel {
+  position: absolute;
+  top: calc(100% + var(--fm-space-1));
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fm-space-2);
+  width: min(18rem, calc(100vw - 2 * var(--fm-space-2)));
+  padding: var(--fm-space-3);
+  box-shadow: var(--fm-shadow-menu);
+}
+
+.game-menu__item {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+  min-height: 2.75rem;
+  text-align: left;
+}
+
+.game-menu__label {
+  margin: var(--fm-space-1) 0 0;
+  color: var(--fm-ink-soft);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  letter-spacing: var(--fm-track-wide);
+  text-transform: uppercase;
+}
+
+.game-menu__panel .shell__credit {
+  justify-content: center;
+}
+
+/* ── The day's action ──────────────────────────────────────────────────── */
+
+.day-action {
+  display: flex;
+  gap: var(--fm-space-2);
+}
+
+.day-action__main {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fm-space-2);
+  min-height: 2.75rem;
+  min-width: 14rem;
+}
+
+.day-action__skip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  padding: 0;
+}
+
+/* The menu's items in the bar, on the desk. */
+.game-menu--inline {
+  display: flex;
+  align-items: center;
+  gap: var(--fm-space-2);
+}
+
+.shell-segments {
+  flex: none;
+}
+
+/* A note that something happened: bottom right on the desk, above the dock on
+   a phone. */
+.shell-toast {
+  position: fixed;
+  right: var(--fm-space-4);
+  bottom: 5rem;
+  z-index: 15;
+  max-width: 28rem;
+}
+
+/* ── Phone (ADR 0022): the page scrolls; bar, action and tabs stay in reach ── */
+@media (width < 40rem) {
+  .shell.shell--app {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-height: 100dvh;
+    padding: 0;
+  }
+
+  .shell.shell--app .shell__stage {
+    flex: 1;
+    padding: var(--fm-space-2) var(--fm-space-1);
+  }
+
+  .shell-bar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  .shell-dock {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: block;
+    background: var(--fm-panel);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .shell-dock .tab-bar__item {
+    border-top: 3px solid transparent;
+    border-left: 0;
+  }
+
+  .shell-dock .tab-bar__item.is-current {
+    border-top-color: var(--fm-accent);
+  }
+
+  .shell-dock .tab-bar {
+    grid-auto-flow: column;
+    inline-size: auto;
+    border: 0;
+    border-top: 1px solid var(--fm-bevel-light);
+  }
+
+  .shell-dock .day-action {
+    padding: var(--fm-space-2);
+    border-top: 1px solid var(--fm-bevel-light);
+  }
+
+  .day-action__main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Above the dock, which is about 7.5rem tall with its action row. */
+  .shell-toast {
+    right: var(--fm-space-2);
+    bottom: calc(8rem + env(safe-area-inset-bottom));
+    left: var(--fm-space-2);
+    max-width: none;
+  }
+}
