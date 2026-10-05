@@ -3,8 +3,8 @@
   // reach these, so without this they would go unchecked.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2023"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"]
   },
-  "include": ["scripts", "vitest.config.ts", "tests"]
+  "include": ["scripts", "vitest.config.ts", "tests", "e2e", "playwright.config.ts"]
 }

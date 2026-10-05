@@ -11,8 +11,14 @@ on:
   release:
     types: [published]
   # A redeploy of a release, run from its tag ("Use workflow from: v0.6.0") —
-  # after a Pages outage, say. Run from a branch it only checks.
+  # after a Pages outage, say. Run from a branch it only checks — or, with
+  # `update_visual`, makes the reference screenshots (ADR 0023).
   workflow_dispatch:
+    inputs:
+      update_visual:
+        description: 'Make new reference screenshots and upload them as an artifact'
+        type: boolean
+        default: false
 
 # Read-only unless a job says otherwise. The repository default is already
 # read-only, but a default can be changed in Settings without touching this file;
@@ -50,6 +56,52 @@ jobs:
       # Storybook build would.
       - run: pnpm --filter @fm/app build-storybook
 
+  # ── In a browser (ADR 0023) ─────────────────────────────────────────────
+  #
+  # The checks jsdom cannot make: every story at 390, 768 and 1280 for sideways
+  # scroll, contrast, edge padding and touch targets; the design system's stories
+  # against reference screenshots; and the built game from a new career to a
+  # reload. In Playwright's own image, pinned to the same version as the runner,
+  # so Chromium and the Linux fonts the references were made with are the same.
+  browser:
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - run: pnpm --filter @fm/app build-storybook
+
+      - name: Make reference screenshots
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual
+        run: pnpm e2e:update
+
+      - name: Upload reference screenshots
+        if: github.event_name == 'workflow_dispatch' && inputs.update_visual
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-references
+          path: e2e/__screenshots__
+
+      - name: Check in the browser
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_visual) }}
+        run: pnpm e2e
+        env:
+          CI: 'true'
+
+      - name: Upload the report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+
   # ── The live site ───────────────────────────────────────────────────────────
   #
   # https://futbol.pearpages.com, deployed from a release tag only, and only once
@@ -62,7 +114,7 @@ jobs:
   # domain means the site serves from a root, which is why `vite.config.ts` needs
   # no `base` and the app's root-absolute asset paths are correct as they stand.
   deploy:
-    needs: check
+    needs: [check, browser]
     # A release, or a manual run from a release's tag. Never a branch: `check`
     # runs on `main` and on pull requests too, and neither publishes.
     if: >-

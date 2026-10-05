@@ -34,6 +34,7 @@ record same-day partial reversals in place, which predates this rule.)
 | [0020](docs/adr/0020-tag-driven-releases.md)         | Releases are tagged, and only releases deploy                                      | Accepted                                        | 2026-10-05 |
 | [0021](docs/adr/0021-storybook-levels.md)            | Storybook covers the design system, in levels                                      | Accepted                                        | 2026-10-05 |
 | [0022](docs/adr/0022-one-shell.md)                   | One game at every width: the desk is the phone with more room                      | Accepted                                        | 2026-10-05 |
+| [0023](docs/adr/0023-browser-checks.md)              | Checks in a real browser: layout, screenshots, one smoke test                      | Accepted                                        | 2026-10-05 |
 
 ## Format
 

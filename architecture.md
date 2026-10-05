@@ -103,12 +103,16 @@ Everything in steps 2–3 is pure and reproducible from `(seed, commands)`, whic
   [docs/stack.md](docs/stack.md).
 - **Tests:** Vitest 4 with one project per package. `domain` runs unit tests plus multi-season
   harnesses (30 s timeout). `app` runs Testing Library on jsdom with `css: false`, fake
-  IndexedDB and English pinned (15 s timeout). Layout is checked in a real browser, not the suite.
+  IndexedDB and English pinned (15 s timeout). Layout is checked in a real browser, not the suite:
+  Playwright (`e2e/`, ADR 0023) runs every story at 390, 768 and 1280 for sideways scroll,
+  contrast, edge padding and touch targets, screenshots the design system's stories against
+  references made on Linux, and smoke-tests the built game from a new career to a reload.
 - **Lint/format:** ESLint 10 (boundary and determinism rules) and Prettier.
 - **CI** (`.github/workflows/ci.yml`): on push to `main`, on PRs, or on manual dispatch, the
   `check` job runs lint → typecheck → test → format:check → build → build-storybook.
+  A `browser` job runs the Playwright checks in Playwright's container image.
   Merging to `main` deploys nothing. A published GitHub release (a `v*` tag, ADR 0020) runs
-  `check` on its commit and then a `deploy` job, which builds with the tag as the footer's
+  `check` and `browser` on its commit and then a `deploy` job, which builds with the tag as the footer's
   stamp, uploads `packages/app/dist` and publishes it with `actions/deploy-pages`.
 - **Hosting:** GitHub Pages (Actions source), custom domain `futbol.pearpages.com`, kept by
   `packages/app/public/CNAME`. Because the site is served from a domain root, Vite's `base` is

@@ -175,10 +175,6 @@
     order: -1;
   }
 
-  .ficha__status {
-    padding: var(--fm-space-2) var(--fm-space-4) 0;
-  }
-
   .ficha__actions {
     padding: var(--fm-space-2) var(--fm-space-4) var(--fm-space-3);
   }
@@ -186,4 +182,10 @@
   .ficha__actions > .button {
     flex: 1;
   }
+}
+
+/* The status line keeps off the panel's edge at every width; the layout check
+   found it 1px from the edge on the desk, where only the phone had padding. */
+.ficha__status {
+  padding: var(--fm-space-2) var(--fm-space-4) 0;
 }

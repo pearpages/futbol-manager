@@ -1,7 +1,7 @@
 {
   "name": "futbol-manager",
   "version": "0.0.0",
-  "description": "A football management game for the browser, in the style of Dinamic's PC F\u00fatbol 5.0.",
+  "description": "A football management game for the browser, in the style of Dinamic's PC Fútbol 5.0.",
   "keywords": [
     "football",
     "soccer",
@@ -38,10 +38,13 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r --parallel exec tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "e2e": "playwright test",
+    "e2e:update": "playwright test --project visual --update-snapshots"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@playwright/test": "1.63.0",
     "@types/node": "26.2.0",
     "@vitejs/plugin-react": "6.0.5",
     "@vitest/coverage-v8": "4.1.11",
