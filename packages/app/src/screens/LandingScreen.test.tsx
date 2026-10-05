@@ -115,12 +115,12 @@ describe('the front door', () => {
     expect(css).toContain('text-transform: uppercase')
   })
 
-  it('carries the credit and the language cog, which are the two things it shares', () => {
+  it('carries the credit and the language button, which are the two things it shares', () => {
     // Both have a "before a career exists" arm already, because that is the one
     // most easily left out. This is a third branch of the shell and the same trap.
     render(<App />)
     expect(document.querySelector('.shell__credit')).not.toBeNull()
-    expect(screen.getByRole('button', { name: t('action.settings') })).toBeDefined()
+    expect(screen.getByRole('button', { name: `EN ${t('action.language')}` })).toBeDefined()
   })
 
   it('goes New career → club picker → hub', () => {

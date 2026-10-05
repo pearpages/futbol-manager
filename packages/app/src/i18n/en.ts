@@ -43,7 +43,6 @@ export const en: Dictionary = {
   'action.newCareer': 'New career',
   'action.cancel': 'Cancel',
   'action.close': 'Close',
-  'action.settings': 'Settings',
   'action.language': 'Language',
 
   // ── The shell ────────────────────────────────────────────────────────────

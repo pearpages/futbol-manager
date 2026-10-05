@@ -17,7 +17,7 @@
   min-height: 0;
 }
 
-/* The cog, floating rather than in a bar. This branch has no title bar, because
+/* The language button, floating rather than in a bar. This branch has no title bar, because
    the cover already carries the name and a second copy is furniture. */
 .landing__settings {
   position: absolute;
@@ -169,9 +169,9 @@
   }
 
   /*
-   * The cog moves to the left corner. It is placed against `.landing` and the
+   * The language button moves to the left corner. It is placed against `.landing` and the
    * wordmark against the cover, and once stacked the cover fills the width, so
-   * on the right they share a corner: at 820-900px the cog sat on the
+   * on the right they share a corner: at 820-900px the button sat on the
    * wordmark's last letter. The left corner is floodlight with no lettering.
    * A row of its own was tried and rejected: its 40px pushed both buttons
    * below the fold at 820 x 600, which the reorder below exists to prevent.

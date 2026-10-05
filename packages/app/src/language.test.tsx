@@ -11,7 +11,7 @@ import { labelStem } from './testing.ts'
 import type { DayNumber } from '@fm/domain'
 
 /**
- * Three languages, switched from the cog.
+ * Three languages, switched from the language button.
  *
  * The rest of the suite runs pinned to English — see `test-setup.ts` — so this
  * is the one file that deliberately moves the language around.
@@ -25,11 +25,14 @@ beforeEach(() => {
 })
 
 const open = () => {
-  const { t } = translatorFor(useGame.getState().language)
-  fireEvent.click(screen.getByRole('button', { name: t('action.settings') }))
+  const { language } = useGame.getState()
+  const { t } = translatorFor(language)
+  fireEvent.click(
+    screen.getByRole('button', { name: `${language.toUpperCase()} ${t('action.language')}` }),
+  )
 }
 
-describe('the cog', () => {
+describe('the language button', () => {
   it('sits where the news button used to, and offers all three', () => {
     render(<App />)
     open()

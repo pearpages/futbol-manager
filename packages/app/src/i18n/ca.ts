@@ -34,7 +34,6 @@ export const ca: Dictionary = {
   'action.newCareer': 'Nova carrera',
   'action.cancel': 'Cancel·la',
   'action.close': 'Tanca',
-  'action.settings': 'Configuració',
   'action.language': 'Idioma',
 
   // ── El marc ──────────────────────────────────────────────────────────────
