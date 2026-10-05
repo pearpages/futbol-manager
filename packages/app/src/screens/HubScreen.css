@@ -261,10 +261,32 @@
   color: var(--fm-accent);
 }
 
+/* The four staff at the foot of the standing, on the desk. */
+.hub__identity {
+  display: flex;
+  flex-direction: column;
+}
+
+.hub__staff {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  margin-top: auto;
+  padding: var(--fm-space-3) var(--fm-space-4) 0;
+}
+
+.hub__staff .hub-figure {
+  height: 9rem;
+}
+
 /* One column once the two no longer fit side by side, and on a phone the page
    scrolls rather than each panel. Three lines of news there; the bar's news
    button holds the rest. */
 @media (width < 52rem) {
+  .hub__staff {
+    display: none;
+  }
+
   .hub {
     grid-template-areas:
       'next'
