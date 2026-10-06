@@ -1015,6 +1015,25 @@ function respondToOffer(state: GameState, command: RespondToOffer): ReduceResult
     throw new GameError('error.offer.cannotSpare', 'You can no longer spare him')
   }
 
+  // Nothing is bought or sold outside a window. The tick lapses offers at the
+  // close, and this refuses the one a stale screen still shows.
+  if (!isTransferWindowOpen(state.season.currentDate))
+    throw new GameError('error.window.closed', 'The transfer window is closed')
+
+  // The buyer, re-checked for the same reason as the player: up to seven days
+  // have passed, and its money and squad have moved with the market since.
+  const buyer = [...state.clubs, ...state.foreign.clubs].find((c) => c.id === bid.from)
+  if (
+    buyer === undefined ||
+    !paysOutright(buyer, bid.fee) ||
+    squadOfAnyClub(state, bid.from).length >= MAX_SQUAD
+  ) {
+    throw new GameError(
+      'error.offer.buyerCannot',
+      'The buying club can no longer complete the deal',
+    )
+  }
+
   const moved = applyTransfers(state, [
     { playerId: bid.playerId, from: state.managedClubId, to: bid.from, fee: bid.fee },
   ])
@@ -1187,7 +1206,8 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
   }
 
   // 3. Offers to us that were never answered lapse, rather than piling up for a
-  //    decade in a headless run where nobody is reading them.
+  //    decade in a headless run where nobody is reading them. The window
+  //    closing lapses them too, in `advanceDay`, where the date has moved.
   const lapsed = bids.filter(
     (bid) =>
       bid.to === state.managedClubId &&
@@ -1200,6 +1220,16 @@ function tickMarket(state: GameState, today: DayNumber): { state: GameState; eve
   }
 
   return { state: bids === state.bids ? state : { ...state, bids }, events }
+}
+
+/** Every offer to the managed club still waiting on an answer, rejected. */
+function lapseOffersToUs(state: GameState): GameState {
+  const waiting = (bid: Bid) => bid.to === state.managedClubId && bid.status === 'pending'
+  if (!state.bids.some(waiting)) return state
+  return {
+    ...state,
+    bids: state.bids.map((bid) => (waiting(bid) ? { ...bid, status: 'rejected' as const } : bid)),
+  }
 }
 
 /**
@@ -1244,13 +1274,13 @@ function bestOfferFor(state: GameState): { playerId: PlayerId; from: ClubId; fee
   // about it. Same score, same threshold, same fee.
   for (const club of [...state.clubs, ...state.foreign.clubs]) {
     if (club.id === state.managedClubId) continue
-    if (club.budget < floor) continue
+    if (!paysOutright(club, floor)) continue
     const squad = squadOfAnyClub(state, club.id)
     if (squad.length >= MAX_SQUAD) continue
 
     for (const player of spare) {
       const fee = askingPrice(player, date)
-      if (club.budget < fee) continue
+      if (!paysOutright(club, fee)) continue
       const need = needFor(squad, player)
       // A listed player has been advertised, so a club will enquire about him on
       // far less interest than it would take to approach you out of the blue.
@@ -1368,6 +1398,17 @@ function startExpansion(state: GameState, command: StartExpansion): ReduceResult
  * Home games per club is `ROUNDS_PER_HALF` — nineteen in a twenty-club league —
  * which is what sizes the overdraft against a season's gate.
  */
+/**
+ * Whether an AI club can pay a fee and its signing bonus from the bank.
+ *
+ * **The AI never borrows to buy** (market-model.md), the same rule
+ * `runTransferWindow` applies. The manager's test is `affordable`, which lets
+ * him spend into the overdraft.
+ */
+function paysOutright(club: { readonly budget: number }, fee: number): boolean {
+  return club.budget >= signingOutlay(fee)
+}
+
 function affordable(state: GameState, club: Club, fee: number): boolean {
   return canAfford(club, signingOutlay(fee), state.competition.clubIds.length, ROUNDS_PER_HALF)
 }
@@ -1514,6 +1555,9 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   if (window !== null) {
     events.push({ type: 'TransferWindowChanged', open: window, date: next.season.currentDate })
   }
+  // An offer made on 31 August is not one you can accept on 1 September, so the
+  // close lapses every offer still waiting on you, whatever its age.
+  const closed = window === false ? lapseOffersToUs(next) : next
 
   // Exact equality is what makes this fire once. The tick moves a single day, so the
   // count passes through the threshold exactly once per window — a `<=` would report
@@ -1539,12 +1583,12 @@ function advanceDay(state: GameState, rng: Rng): ReduceResult {
   }
 
   // Emitted once: the guard at the top refuses every day after this one.
-  if (isSeasonComplete(next)) {
-    events.push({ type: 'SeasonEnded', startYear: next.season.startYear })
-    return { state: closeWithBoard(next, events), events }
+  if (isSeasonComplete(closed)) {
+    events.push({ type: 'SeasonEnded', startYear: closed.season.startYear })
+    return { state: closeWithBoard(closed, events), events }
   }
 
-  return { state: next, events }
+  return { state: closed, events }
 }
 
 /**

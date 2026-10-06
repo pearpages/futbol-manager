@@ -87,11 +87,27 @@ export function wrapSave<T>(
  * `noticesFrom` in the app, which skips anything that is not a real notice.
  */
 export function readSave(envelope: SaveEnvelope<unknown>): SaveEnvelope<unknown> {
+  // A save is data from outside: IndexedDB can be edited by hand, and an
+  // imported file by anyone (security.md). Whatever is wrong is refused here,
+  // before it reaches a screen that would crash rendering it.
+  if (typeof envelope !== 'object' || envelope === null) throw new Error('This is not a save')
+  if (!isRngState(envelope.rngState)) {
+    throw new Error('The save’s random generator state is not four 32-bit integers')
+  }
   return {
     schemaVersion: SCHEMA_VERSION,
     rngState: envelope.rngState,
     payload: migratePayload(envelope.payload, envelope.schemaVersion),
-    feed: envelope.feed ?? [],
-    unread: envelope.unread ?? 0,
+    feed: Array.isArray(envelope.feed) ? envelope.feed : [],
+    unread:
+      Number.isInteger(envelope.unread) && (envelope.unread ?? 0) >= 0 ? (envelope.unread ?? 0) : 0,
   }
+}
+
+function isRngState(value: unknown): value is RngState {
+  return (
+    Array.isArray(value) &&
+    value.length === 4 &&
+    value.every((n) => Number.isInteger(n) && n >= 0 && n < 2 ** 32)
+  )
 }

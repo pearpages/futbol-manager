@@ -1,0 +1,13 @@
+.crash-screen {
+  max-width: 32rem;
+  margin: var(--fm-space-6) auto;
+  padding: var(--fm-space-4);
+}
+
+.crash-screen__title {
+  margin: 0 0 var(--fm-space-3);
+}
+
+.crash-screen__text {
+  margin: 0 0 var(--fm-space-4);
+}

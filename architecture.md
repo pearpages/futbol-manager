@@ -74,17 +74,22 @@ which commits all of them or none and puts the rng back on a refusal.
 
 1. **Start.** The landing screen offers Continue, Load or New career. The store's `entry` and
    `needsSetup` fields track where the player is. `restore()` follows `fm.lastSlot` from
-   `localStorage` and loads that save through the migration chain.
+   `localStorage` and loads that save through the migration chain. A save is checked on the
+   way in: `readSave` refuses a version that is not a whole number and a generator state that
+   is not four uint32s, and the store refuses a payload that fails `isGameState`. Anything that
+   still throws while rendering lands on `CrashBoundary` (`shell/CrashScreen.tsx`), which offers
+   a reload or deleting the save.
 2. **Commands.** A screen dispatches a command. The store calls `reduce(state, command, rng)`,
    which validates it (throwing a coded `GameError` on a refusal), returns the new
    `GameState` plus a list of `Event`s, and advances the serialised PRNG state. Lineups and
    tactics are accepted only for the managed club, and only in a listed formation.
    A signing re-checks that the seller can still spare the player when the contract is agreed,
-   not only when the bid was made.
+   not only when the bid was made. Accepting an AI offer re-checks the window, your squad and
+   the buyer's money and squad size.
 3. **The tick.** `AdvanceDay` is the pipeline, and it is refused once the last matchday is
    played (so is `StartNewSeason` for a sacked manager): it plays fixtures that are due, settles money
-   on the 1st of each month, resolves bids, generates AI offers weekly while a window is open,
-   and emits window, contract and board events. `StartNewSeason` runs `rolloverSeason`
+   on the 1st of each month, resolves bids, generates AI offers weekly while a window is open
+   (lapsing any still unanswered when it closes), and emits window, contract and board events. `StartNewSeason` runs `rolloverSeason`
    (prize money, ageing, retirement, contract expiry, youth top-up, a fresh fixture list
    seeded from the year, `history` archive) and then the AI summer window.
 4. **Rendering.** Screens read `GameState` for facts. `notifications.ts` turns events into

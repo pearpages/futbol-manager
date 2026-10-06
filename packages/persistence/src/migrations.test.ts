@@ -44,6 +44,14 @@ describe('the migration chain', () => {
   it('rejects a nonsense version', () => {
     expect(() => migratePayload({}, 0)).toThrow(/Invalid save version/)
   })
+
+  it('rejects a version that is missing or not a whole number', () => {
+    // Each of these once compared false against both bounds, skipped every
+    // migration and was stamped current: a v1 save loaded as if it were v10.
+    for (const version of [Number.NaN, undefined, '3', 2.5, null]) {
+      expect(() => migratePayload({}, version as unknown as number)).toThrow(/Invalid save version/)
+    }
+  })
 })
 
 describe('the v1 fixture save', () => {

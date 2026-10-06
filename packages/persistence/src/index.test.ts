@@ -13,7 +13,7 @@ import {
   simulateSeason,
 } from '@fm/domain'
 import { PLAYER_NAMES } from '@fm/data'
-import { SCHEMA_VERSION, type SaveEnvelope, wrapSave } from './index.ts'
+import { readSave, SCHEMA_VERSION, type SaveEnvelope, wrapSave } from './index.ts'
 
 const clubs: Club[] = Array.from({ length: 20 }, (_, i) => ({
   id: `c${String(i + 1).padStart(2, '0')}` as ClubId,
@@ -111,5 +111,41 @@ describe('mid-season save and restore', () => {
     expect(revived.payload).toEqual(state)
     expect(revived.payload.season.currentDate).toBe(state.season.currentDate)
     expect(revived.rngState).toEqual(envelope.rngState satisfies RngState)
+  })
+})
+
+describe('reading a save that is not what it claims', () => {
+  const good = () => wrapSave({}, createRng(1).state(), { feed: [], unread: 2 })
+  const tampered = (patch: Record<string, unknown>) =>
+    ({ ...good(), ...patch }) as unknown as SaveEnvelope<unknown>
+
+  it('reads a sound envelope unchanged', () => {
+    expect(readSave(good())).toEqual(good())
+  })
+
+  it('refuses a generator state that cannot resume the stream', () => {
+    for (const rngState of [
+      undefined,
+      [1, 2, 3],
+      [1, 2, 3, -1],
+      [1, 2, 3, 2 ** 32],
+      [1, 2, 3, 'x'],
+    ]) {
+      expect(() => readSave(tampered({ rngState }))).toThrow(/random generator/)
+    }
+  })
+
+  it('refuses an envelope that is not an object', () => {
+    for (const envelope of [null, 'save', 42]) {
+      expect(() => readSave(envelope as unknown as SaveEnvelope<unknown>)).toThrow(/not a save/)
+    }
+  })
+
+  it('drops a news log it cannot read rather than refusing the career', () => {
+    // The feed is presentation: losing it costs a news panel, refusing the save
+    // would cost the career.
+    const read = readSave(tampered({ feed: 'nonsense', unread: -3 }))
+    expect(read.feed).toEqual([])
+    expect(read.unread).toBe(0)
   })
 })

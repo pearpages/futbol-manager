@@ -135,6 +135,14 @@ export const ca: Dictionary = {
   'saves.confirmLoad':
     'Vols carregar «{name}»? Tot el que no hagis desat d’aquesta carrera es perdrà.',
   'saves.confirmDelete': 'Vols esborrar «{name}»? No hi ha manera de recuperar-la.',
+  'saves.unreadable': 'No s’ha pogut llegir «{name}». Pot estar malmesa; la pots esborrar.',
+  'crash.title': 'Alguna cosa ha fallat',
+  'crash.body':
+    'El joc ha trobat un error del qual no s’ha pogut refer. Normalment es resol tornant a carregar. Si passa cada vegada que obres el joc, potser la partida que carrega està malmesa.',
+  'crash.reload': 'Torna a carregar',
+  'crash.deleteSave': 'Esborra aquesta partida',
+  'crash.confirmDelete':
+    'Vols esborrar la partida que jugaves i tornar a començar? No hi ha manera de recuperar-la.',
 
   // ── Classificació ────────────────────────────────────────────────────────
   'table.band.champion': 'Campió',
@@ -629,6 +637,7 @@ export const ca: Dictionary = {
   'error.offer.notYours': 'Aquesta oferta no et toca respondre-la',
   'error.offer.settled': 'Aquesta oferta ja està resolta',
   'error.offer.cannotSpare': 'Ja no te’n pots desprendre',
+  'error.offer.buyerCannot': 'El club comprador ja no pot tancar l’operació',
   'error.list.notYours': 'Només pots posar en venda els teus jugadors',
   'error.list.firstTeam': '{player} és a l’onze titular — treu-lo de l’equip primer',
   'error.list.coverKeeper': 'Vendre {player} et deixaria amb un sol porter',

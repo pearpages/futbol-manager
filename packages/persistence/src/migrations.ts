@@ -340,9 +340,13 @@ export const SCHEMA_VERSION = MIGRATIONS.length === 0 ? 1 : (MIGRATIONS.at(-1)?.
  * Walks a payload from `fromVersion` up to {@link SCHEMA_VERSION}.
  *
  * Throws rather than guessing on a version from the future — that means a save
- * written by a newer build, and silently loading it would corrupt a career.
+ * written by a newer build, and silently loading it would corrupt a career — and
+ * on one that is not a whole number at all.
  */
 export function migratePayload(payload: unknown, fromVersion: number): unknown {
+  // First, because `NaN`, `undefined` and `'3'` all compare false against both
+  // bounds below, skip every step and would come back stamped current.
+  if (!Number.isInteger(fromVersion)) throw new Error(`Invalid save version: ${fromVersion}`)
   if (fromVersion > SCHEMA_VERSION) {
     throw new Error(
       `Save is version ${fromVersion}, but this build only understands up to ${SCHEMA_VERSION}. Update the game.`,

@@ -259,6 +259,7 @@ export {
   currentDate,
   fixtures,
   type GameState,
+  isGameState,
   isSeasonComplete,
   squadOf,
 } from './state.ts'

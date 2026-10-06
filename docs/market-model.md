@@ -171,7 +171,7 @@ The season runs from 15 August to May, and `StartNewSeason` jumps straight to th
 
 - The **AI window** runs once, inside `StartNewSeason`, after the rollover.
 - **Your bids** are answered `ANSWER_DAYS` (2) after they are made.
-- **Offers for your players** are generated on Mondays while a window is open, and lapse after `OFFER_LIFETIME_DAYS` (7) if you ignore them.
+- **Offers for your players** are generated on Mondays while a window is open, and lapse after `OFFER_LIFETIME_DAYS` (7) if you ignore them, or when the window closes, whichever is first. Only a club that can pay the fee and the signing bonus from its balance makes one, and accepting re-checks that, the window, and the buyer's squad size.
 
 **The whole bid subsystem draws no randomness**, and that is a requirement rather than a style: it runs inside `AdvanceDay`, which is the path every calibrated distribution band in the project is measured through. One `rng.next()` there moves every band. See the note at the top of [`bids.ts`](../packages/domain/src/bids.ts).
 
