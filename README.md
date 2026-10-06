@@ -19,7 +19,7 @@ leaves your device.
 
 ## What's new
 
-**v0.8.1 — fixes.** Offers for your players end when the transfer window closes and come
+**v0.8.2 — fixes.** Offers for your players end when the transfer window closes and come
 only from clubs that can pay. A damaged save no longer breaks the game: it is refused, or the
 game offers to delete it. The table's matchday now matches the one on Avui. Every release, with its notes, is on the
 [releases page](https://github.com/pearpages/futbol-manager/releases).

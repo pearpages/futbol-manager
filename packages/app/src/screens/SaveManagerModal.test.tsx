@@ -148,8 +148,12 @@ describe('the save picker', () => {
     await waitFor(() => {
       expect(game().season.currentDate).toBe(savedDate)
     })
-    // Loading a career is a whole new state, so the picker has done its job.
-    expect(screen.queryByRole('dialog')).toBeNull()
+    // Loading a career is a whole new state, so the picker has done its job. It
+    // closes a microtask after the store holds the game (when `load` resolves),
+    // so this waits too: asserted at once, it failed on a slow CI runner.
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
   })
 
   it('asks before writing over a name that is taken, and keeps only one row', async () => {
