@@ -33,6 +33,10 @@ at `0f75a23`), and each entry is one Done line below.
 - [ ] **Refresh the foreign league.** Its 32 rosters are the August 2026 snapshot: some players it holds have since moved, nine of them into the league, where they now appear under new names while their foreign copies remain.
 - [ ] **A value for newcomers from unmodelled clubs.** About 45 arrivals hold their club's median value for their position, so a star signing from outside the game starts mid-pack. Options: estimate from Wikipedia's caps, age and previous club; or set the notable signings by hand.
 
+### Accessibility (ADR 0027)
+
+- [ ] **Decide ADR 0027**, the accessibility conventions (focus after a screen change, the shell's live region, toasts that wait for their undo, row names, one-label toggles, nothing focusable in a heading, the two-tone ring, `forced-colors`). Proposed 2026-10-06; accepting it flips its status here and in `decisions.md`.
+
 ### Known open items
 
 Small, real, and deferred more than once. They moved here from the roadmap on 2026-10-02.
