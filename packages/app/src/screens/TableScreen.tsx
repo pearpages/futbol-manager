@@ -80,11 +80,12 @@ export function TableScreen() {
   )
 
   /** The shared header, bound to this screen's sort state. */
-  function column(key: SortKey, label: string) {
+  function column(key: SortKey, label: string, fullLabel?: string) {
     return (
       <SortHeader
         column={key}
         label={label}
+        {...(fullLabel === undefined ? {} : { fullLabel })}
         sort={sort}
         onSort={setSort}
         align={SORT_ALIGN[key] ?? ''}
@@ -109,19 +110,32 @@ export function TableScreen() {
         <DataTable>
           <thead className="data-table__head">
             <tr>
-              <th aria-label={t('table.qualification')} />
+              <th>
+                <VisuallyHidden>{t('table.qualification')}</VisuallyHidden>
+              </th>
               {/* Not sortable, deliberately: the unsorted order *is* position order,
                   so the control's ascending state would be its own home state. */}
-              <th>{t('table.column.position')}</th>
+              <th>
+                <span aria-hidden="true">{t('table.column.position')}</span>
+                <VisuallyHidden>{t('column.full.position')}</VisuallyHidden>
+              </th>
               {column('club', t('table.column.club'))}
-              {column('played', t('table.column.played'))}
-              {column('won', t('table.column.won'))}
-              {column('drawn', t('table.column.drawn'))}
-              {column('lost', t('table.column.lost'))}
-              {column('goalsFor', t('table.column.goalsFor'))}
-              {column('goalsAgainst', t('table.column.goalsAgainst'))}
-              {column('goalDifference', t('table.column.goalDifference'))}
-              {column('points', t('table.column.points'))}
+              {column('played', t('table.column.played'), t('column.full.played'))}
+              {column('won', t('table.column.won'), t('column.full.won'))}
+              {column('drawn', t('table.column.drawn'), t('column.full.drawn'))}
+              {column('lost', t('table.column.lost'), t('column.full.lost'))}
+              {column('goalsFor', t('table.column.goalsFor'), t('column.full.goalsFor'))}
+              {column(
+                'goalsAgainst',
+                t('table.column.goalsAgainst'),
+                t('column.full.goalsAgainst'),
+              )}
+              {column(
+                'goalDifference',
+                t('table.column.goalDifference'),
+                t('column.full.goalDifference'),
+              )}
+              {column('points', t('table.column.points'), t('column.full.points'))}
             </tr>
           </thead>
           <tbody>

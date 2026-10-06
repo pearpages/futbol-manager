@@ -112,6 +112,48 @@ describe('Modal', () => {
     expect(root.classList.contains('has-modal')).toBe(false)
   })
 
+  it('makes the page behind inert, and only the top dialog of a stack', () => {
+    const page = render(<button type="button">Behind</button>)
+    const behind = page.container
+    const outer = render(
+      <Modal title="Outer" onClose={() => {}}>
+        x
+      </Modal>,
+    )
+    const outerOverlay = screen.getByRole('dialog', { name: 'Outer' }).parentElement!
+    expect(behind.hasAttribute('inert')).toBe(true)
+    expect(outerOverlay.hasAttribute('inert')).toBe(false)
+    const inner = render(
+      <Modal title="Inner" onClose={() => {}}>
+        y
+      </Modal>,
+    )
+    expect(outerOverlay.hasAttribute('inert')).toBe(true)
+    inner.unmount()
+    expect(outerOverlay.hasAttribute('inert')).toBe(false)
+    expect(behind.hasAttribute('inert')).toBe(true)
+    outer.unmount()
+    expect(behind.hasAttribute('inert')).toBe(false)
+  })
+
+  it('closes only the top dialog of a stack on Escape', () => {
+    const outerClose = vi.fn()
+    const innerClose = vi.fn()
+    render(
+      <Modal title="Outer" onClose={outerClose}>
+        x
+      </Modal>,
+    )
+    render(
+      <Modal title="Inner" onClose={innerClose}>
+        y
+      </Modal>,
+    )
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(innerClose).toHaveBeenCalledOnce()
+    expect(outerClose).not.toHaveBeenCalled()
+  })
+
   it('offers a close button full-screen on a phone, given its name, and only then', () => {
     vi.stubGlobal('matchMedia', (query: string) => ({
       matches: query === '(width < 40rem)',

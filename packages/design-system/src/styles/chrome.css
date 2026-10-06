@@ -56,6 +56,21 @@
   border-bottom: 1px solid var(--fm-screen-rule);
 }
 
+/* A heading with a control beside it: the row takes the heading's padding and
+   rule, so the two look as one heading did, and the control stays out of the
+   heading's accessible name. */
+.screen__heading-row {
+  display: flex;
+  align-items: center;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+.screen__heading-row > .screen__heading {
+  padding: 0;
+  border: 0;
+}
+
 .screen__note {
   padding: var(--fm-space-3) var(--fm-space-4);
   color: var(--fm-screen-ink-soft);
@@ -656,8 +671,12 @@
 /* ── Accessibility floor ─────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--fm-accent);
-  outline-offset: 1px;
+  /* Two tones, because the game has two materials. Brass alone was 1.02:1 on the
+     panel and ink alone vanishes on the screen; brass inside an ink ring reads on
+     both (WCAG 2.4.7). The ring is the outline, so High Contrast mode keeps it. */
+  outline: 2px solid var(--fm-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--fm-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {

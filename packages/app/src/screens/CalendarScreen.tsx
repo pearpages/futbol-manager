@@ -126,9 +126,8 @@ export function CalendarScreen() {
 
   return (
     <Screen className="calendar-screen">
-      <ScreenHeading>
+      <ScreenHeading aside={<Explain topic="calendar" />}>
         {t('calendar.heading', { season: season(game.season.startYear) })}
-        <Explain topic="calendar" />
       </ScreenHeading>
 
       {/* Its own scroll container, because `.screen` carries `overflow: auto` and

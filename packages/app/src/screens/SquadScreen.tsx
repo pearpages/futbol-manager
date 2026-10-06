@@ -129,17 +129,23 @@ export function SquadScreen() {
   }
 
   /** The shared header, bound to this screen's sort state. */
-  function column(key: SortKey, label: string) {
+  function column(key: SortKey, label: string, fullLabel?: string) {
     return (
-      <SortHeader column={key} label={label} sort={sort} onSort={setSort} align={SORT_ALIGN[key]} />
+      <SortHeader
+        column={key}
+        label={label}
+        {...(fullLabel === undefined ? {} : { fullLabel })}
+        sort={sort}
+        onSort={setSort}
+        align={SORT_ALIGN[key]}
+      />
     )
   }
 
   return (
     <Screen className="squad-screen">
-      <ScreenHeading>
+      <ScreenHeading aside={<Explain topic="squadTable" />}>
         {t('squad.heading', { club: club?.name ?? '' })}
-        <Explain topic="squadTable" />
       </ScreenHeading>
       <DataTable>
         <thead className="data-table__head">
@@ -148,11 +154,14 @@ export function SquadScreen() {
                 you cannot buy at MAX_SQUAD and cannot sell at MIN_SQUAD — so the
                 last row tells you where you sit between 18 and 30. It counts the
                 rows as rendered, so it renumbers under a sort rather than sorting. */}
-            <th>{t('squad.column.number')}</th>
-            {column('position', t('squad.column.position'))}
+            <th>
+              <span aria-hidden="true">{t('squad.column.number')}</span>
+              <VisuallyHidden>{t('column.full.number')}</VisuallyHidden>
+            </th>
+            {column('position', t('squad.column.position'), t('column.full.position'))}
             {column('name', t('squad.column.player'))}
             {column('age', t('squad.column.age'))}
-            {column('overall', t('squad.column.overall'))}
+            {column('overall', t('squad.column.overall'), t('column.full.overall'))}
             {column('worth', t('squad.column.worth'))}
             {/* What he costs you, and until when. The wage bill is a single figure
                 on the Caja screen and was attributable to nobody; these two columns

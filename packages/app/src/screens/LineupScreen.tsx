@@ -127,10 +127,7 @@ export function LineupScreen() {
             under them is the `title`: still said, but not costing three rows of
             the eleven below. */}
         <Screen className="lineup-screen__vitals" title={t('lineup.ratingHint')}>
-          <ScreenHeading>
-            {t('lineup.thisXI')}
-            <Explain topic="teamRating" />
-          </ScreenHeading>
+          <ScreenHeading aside={<Explain topic="teamRating" />}>{t('lineup.thisXI')}</ScreenHeading>
           <div className="lineup-screen__ratings">
             <Stat>
               <StatLabel>{t('lineup.attack')}</StatLabel>
@@ -329,6 +326,7 @@ export function LineupScreen() {
           className="shell-toast"
           message={t('lineup.formationChanged', { formation: lineup.formation })}
           actionLabel={t('action.undo')}
+          closeLabel={t('action.close')}
           onAction={() => {
             dispatch({ type: 'SetLineup', clubId, lineup: replaced.lineup })
           }}

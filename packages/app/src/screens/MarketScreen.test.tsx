@@ -829,7 +829,7 @@ describe('sorting the market', () => {
 
   it('starts unsorted — market order is the shuffle', () => {
     openMarket()
-    for (const label of ['Player', 'Club', 'Age', 'Ovr', 'Asking']) {
+    for (const label of ['Player', 'Club', 'Age', 'Overall', 'Asking']) {
       expect(header(label)?.getAttribute('aria-sort')).toBe('none')
     }
   })
@@ -854,20 +854,20 @@ describe('sorting the market', () => {
     openMarket()
     const shuffled = rowNames()
 
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
     expect(rowNames()).not.toEqual(shuffled)
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
 
-    expect(header('Ovr')?.getAttribute('aria-sort')).toBe('none')
+    expect(header('Overall')?.getAttribute('aria-sort')).toBe('none')
     expect(rowNames()).toEqual(shuffled)
   })
 
   it('moves the marker to whichever column is active', () => {
     openMarket()
     fireEvent.click(screen.getByRole('button', { name: /^Age/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
-    expect(header('Ovr')?.getAttribute('aria-sort')).toBe('descending')
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
+    expect(header('Overall')?.getAttribute('aria-sort')).toBe('descending')
     expect(header('Age')?.getAttribute('aria-sort')).toBe('none')
   })
 })

@@ -58,6 +58,7 @@ import {
   Stat,
   StatLabel,
   StatValue,
+  VisuallyHidden,
 } from '@fm/design-system'
 import { POSITION_ORDER, positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
@@ -445,11 +446,12 @@ export function MarketScreen() {
   }
 
   /** The shared header, bound to this screen's sort state. */
-  function column(key: SortKey, label: string) {
+  function column(key: SortKey, label: string, fullLabel?: string) {
     return (
       <SortHeader
         column={key}
         label={label}
+        {...(fullLabel === undefined ? {} : { fullLabel })}
         sort={sort}
         onSort={(next) => {
           setPage(0)
@@ -651,13 +653,19 @@ export function MarketScreen() {
               <DataTable className="market-screen__listings">
                 <thead className="data-table__head">
                   <tr>
-                    <th className="is-text">{t('market.column.position')}</th>
+                    <th className="is-text">
+                      <span aria-hidden="true">{t('market.column.position')}</span>
+                      <VisuallyHidden>{t('column.full.position')}</VisuallyHidden>
+                    </th>
                     {column('name', t('market.column.player'))}
                     {column('club', t('market.column.club'))}
                     {column('age', t('market.column.age'))}
-                    {column('overall', t('market.column.overall'))}
+                    {column('overall', t('market.column.overall'), t('column.full.overall'))}
                     {column('fee', t('market.column.asking'))}
-                    <th className="is-text">{t('market.column.action')}</th>
+                    <th className="is-text">
+                      <span aria-hidden="true">{t('market.column.action')}</span>
+                      <VisuallyHidden>{t('column.full.action')}</VisuallyHidden>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1165,10 +1173,11 @@ function ClubBrowser({
     locale,
   )
 
-  const column = (key: SquadSortKey, label: string) => (
+  const column = (key: SquadSortKey, label: string, fullLabel?: string) => (
     <SortHeader
       column={key}
       label={label}
+      {...(fullLabel === undefined ? {} : { fullLabel })}
       sort={sort}
       onSort={onSort}
       align={SQUAD_SORT_ALIGN[key]}
@@ -1244,10 +1253,10 @@ function ClubBrowser({
       <DataTable>
         <thead className="data-table__head">
           <tr>
-            {column('position', t('market.column.position'))}
+            {column('position', t('market.column.position'), t('column.full.position'))}
             {column('name', t('market.column.player'))}
             {column('age', t('market.column.age'))}
-            {column('overall', t('market.column.overall'))}
+            {column('overall', t('market.column.overall'), t('column.full.overall'))}
             {column('wants', t('market.column.wants'))}
           </tr>
         </thead>

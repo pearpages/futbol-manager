@@ -98,6 +98,7 @@ export function PitchView({ starters, selected, onPick, title }: PitchViewProps)
                 a `<title>` on a `<g>` is not reliably what `getByRole` computes. */}
             <title>{player.name}</title>
             <circle className="pitch__disc" cx={slot.x} cy={slot.y} r={SLOT_RADIUS} />
+            <circle className="pitch__focus" cx={slot.x} cy={slot.y} r={SLOT_RADIUS + 2} />
             <text className="pitch__ovr" x={slot.x} y={slot.y}>
               {player.rating}
             </text>

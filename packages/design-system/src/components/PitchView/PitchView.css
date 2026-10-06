@@ -97,7 +97,25 @@
   outline: none;
 }
 
-.pitch__slot:focus-visible .pitch__disc {
-  stroke: var(--fm-accent);
-  stroke-width: 2.5;
+/* Focus is its own ring outside the disc, so a focused slot never looks like a
+   picked one: the stroke is selection, the ring is where the keyboard is. */
+.pitch__focus {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.pitch__slot:focus-visible .pitch__focus {
+  stroke: var(--fm-highlight);
+}
+
+@media (forced-colors: active) {
+  .pitch__slot.is-selected .pitch__disc {
+    stroke: Highlight;
+  }
+
+  .pitch__slot:focus-visible .pitch__focus {
+    stroke: CanvasText;
+  }
 }

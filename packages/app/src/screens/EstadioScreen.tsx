@@ -155,10 +155,7 @@ export function EstadioScreen() {
 
       <aside className="estadio-screen__side">
         <Screen className="estadio-screen__panel">
-          <ScreenHeading>
-            {t('estadio.works')}
-            <Explain topic="expansion" />
-          </ScreenHeading>
+          <ScreenHeading aside={<Explain topic="expansion" />}>{t('estadio.works')}</ScreenHeading>
           {club.expansion !== null ? (
             <ScreenNote>
               {plural('estadio.underWay', club.expansion.seats, {

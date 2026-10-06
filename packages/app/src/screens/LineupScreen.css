@@ -136,7 +136,8 @@ button.lineup-screen__sub {
   padding: var(--fm-space-2) var(--fm-space-4);
 }
 
-.lineup-screen__vitals .screen__heading {
+.lineup-screen__vitals .screen__heading,
+.lineup-screen__vitals .screen__heading-row {
   padding: 0;
   border: 0;
 }

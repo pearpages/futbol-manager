@@ -8,7 +8,11 @@ import { SaveManagerModal } from '../screens/SaveManagerModal.tsx'
 import { SettingsMenu } from '../screens/SettingsMenu.tsx'
 import { ShellCredit } from '../screens/ShellCredit.tsx'
 
-const LANGUAGE_OPTIONS = LANGUAGES.map((value) => ({ value, label: LANGUAGE_NAMES[value] }))
+const LANGUAGE_OPTIONS = LANGUAGES.map((value) => ({
+  value,
+  label: LANGUAGE_NAMES[value],
+  lang: value,
+}))
 
 /**
  * Everything you do to the game rather than in it: save, the saves, the

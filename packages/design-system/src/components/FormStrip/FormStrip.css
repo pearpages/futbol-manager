@@ -12,8 +12,10 @@
 }
 
 .form-strip__pip {
-  width: 14px;
-  height: 14px;
+  display: grid;
+  place-items: center;
+  width: 1.1rem;
+  height: 1.1rem;
   border: 1px solid var(--fm-screen-rule);
   /* The unplayed state, and the base every result paints over. */
   background: var(--fm-screen-raised);
@@ -29,4 +31,24 @@
 
 .form-strip__pip.is-loss {
   background: var(--fm-loss);
+}
+
+/* The letter: ink on the two light fills, white on the loss red, each over 4.5:1. */
+.form-strip__mark {
+  color: var(--fm-void);
+  font-family: var(--fm-font-condensed);
+  font-size: var(--fm-text-xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.form-strip__pip.is-loss .form-strip__mark {
+  color: var(--fm-highlight);
+}
+
+@media (forced-colors: active) {
+  .form-strip__mark,
+  .form-strip__pip.is-loss .form-strip__mark {
+    color: CanvasText;
+  }
 }

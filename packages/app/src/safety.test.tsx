@@ -136,9 +136,7 @@ describe('a formation press', () => {
     fireEvent.click(other)
     expect(game().lineups[MID]?.formation).not.toBe(before.formation)
 
-    fireEvent.click(
-      within(screen.getByRole('status')).getByRole('button', { name: t('action.undo') }),
-    )
+    fireEvent.click(screen.getByRole('button', { name: t('action.undo') }))
     expect(game().lineups[MID]).toEqual(before)
     expect(screen.queryByRole('button', { name: t('action.undo') })).toBeNull()
   })

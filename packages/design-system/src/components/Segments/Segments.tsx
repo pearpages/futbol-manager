@@ -11,6 +11,8 @@ export interface SegmentOption<T extends string> {
    * so the option's name stays its label.
    */
   readonly icon?: React.ReactNode
+  /** The label's language, when it is not the page's: a language named in itself. */
+  readonly lang?: string
 }
 
 /**
@@ -44,6 +46,7 @@ export function Segments<T extends string>({
           type="button"
           className={cx('segments__option', option.icon !== undefined && 'has-icon')}
           aria-pressed={option.value === value}
+          lang={option.lang}
           onClick={() => {
             onChange(option.value)
           }}
