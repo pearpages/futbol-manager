@@ -35,6 +35,7 @@
     "test": "vitest",
     "season": "node scripts/season.ts",
     "fixture": "node scripts/fixture.ts",
+    "look": "node scripts/look.ts",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit -p tsconfig.json && pnpm -r --parallel exec tsc --noEmit",
     "format": "prettier --write .",
