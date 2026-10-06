@@ -141,7 +141,7 @@ describe('sorting the classification', () => {
     const leader = rows()[0]
     expect(leader?.position).toBe(1)
 
-    fireEvent.click(header(t('table.column.lost')))
+    fireEvent.click(header(t('column.full.lost')))
     const sorted = rows()
 
     // Genuinely reordered, and sorted by the column asked for.
@@ -173,7 +173,7 @@ describe('sorting the classification', () => {
     openPlayedTable()
     const original = rows().map((r) => r.club)
 
-    const points = () => header(t('table.column.points'))
+    const points = () => header(t('column.full.points'))
     fireEvent.click(points())
     fireEvent.click(points())
     fireEvent.click(points())

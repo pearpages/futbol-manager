@@ -27,6 +27,8 @@ describe('the explainer button', () => {
     // across the suite resolve a control by its exact accessible name, and
     // `openScreen()` matches whole strings — a stray "i" folded into a heading
     // renames it and takes a whole suite down with it.
+    // This holds in jsdom only: Chrome reads the button's label into the
+    // heading's name, so screens put it beside one (`ScreenHeading aside`).
     render(
       <h2>
         Occupancy

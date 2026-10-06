@@ -6,7 +6,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance, confirm } from '../testing.ts'
+import { advance, confirm, labelStem } from '../testing.ts'
 
 /**
  * The front door.
@@ -133,7 +133,7 @@ describe('the front door', () => {
     expect(screen.getByRole('heading', { name: t('setup.heading') })).toBeDefined()
 
     fireEvent.click(
-      screen.getAllByRole('button', { name: t('setup.takeCharge') })[0] as HTMLElement,
+      screen.getAllByRole('button', { name: labelStem(t('setup.takeCharge')) })[0] as HTMLElement,
     )
     confirm()
     expect(screen.getByRole('heading', { level: 1, name: t('tab.today') })).toBeDefined()
@@ -214,7 +214,7 @@ describe('the front door', () => {
     const dialog = screen.getByRole('dialog')
     await settled()
     fireEvent.click(
-      within(dialog).getAllByRole('button', { name: t('saves.load') })[0] as HTMLElement,
+      within(dialog).getAllByRole('button', { name: labelStem(t('saves.load')) })[0] as HTMLElement,
     )
     // The confirm replaces the body rather than stacking a second overlay.
     fireEvent.click(

@@ -8,14 +8,16 @@ import { ScreenHeading } from '@fm/design-system'
 
 ## Props
 
-| Prop        | Type       |                 |
-| ----------- | ---------- | --------------- |
-| `className` | `string`   | Extra classes.  |
-| `…`         | `h2 props` | Passed through. |
+| Prop        | Type       |                                                                  |
+| ----------- | ---------- | ---------------------------------------------------------------- |
+| `className` | `string`   | Extra classes.                                                   |
+| `aside`     | `node`     | A control beside the heading (an Explain), kept out of its name. |
+| `…`         | `h2 props` | Passed through.                                                  |
 
 ## Do
 
 - One per screen block, first child.
+- Put an Explain in `aside`, never among the children: Chrome reads a button inside a heading into the heading's name.
 
 ## Don't
 

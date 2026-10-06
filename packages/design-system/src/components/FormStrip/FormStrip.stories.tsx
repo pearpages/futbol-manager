@@ -16,6 +16,7 @@ export const Form: Story = {
           key: String(i),
           outcome,
           text: outcome ?? 'Sense jugar',
+          ...(outcome === null ? {} : { mark: { win: 'G', draw: 'E', loss: 'P' }[outcome] }),
         }))}
       />
     </OnScreen>

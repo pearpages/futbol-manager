@@ -7,6 +7,8 @@ export interface FormPip {
   readonly outcome: 'win' | 'draw' | 'loss' | null
   /** The whole sentence, for the tooltip and for screen readers. */
   readonly text: string
+  /** The letter drawn on a played square (W, D, L in English), so colour is not the only signal. */
+  readonly mark?: string
 }
 
 /**
@@ -18,8 +20,9 @@ export interface FormPip {
  * league table uses.
  *
  * Colour is never the only signal — the house rule stated in `chrome.css` beside the
- * notice tones. Each played square carries the same sentence the news feed writes for
- * that match, as a `title` and for assistive technology.
+ * notice tones. Each played square carries its letter, for whoever cannot tell the
+ * three fills apart, and the same sentence the news feed writes for that match, as a
+ * `title` and for assistive technology.
  */
 export function FormStrip({
   label,
@@ -38,6 +41,11 @@ export function FormStrip({
           className={pip.outcome === null ? 'form-strip__pip' : `form-strip__pip is-${pip.outcome}`}
           title={pip.text}
         >
+          {pip.mark !== undefined && (
+            <span className="form-strip__mark" aria-hidden="true">
+              {pip.mark}
+            </span>
+          )}
           <VisuallyHidden>{pip.text}</VisuallyHidden>
         </li>
       ))}

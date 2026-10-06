@@ -64,6 +64,8 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
   const [years, setYears] = useState(String(wanted.years))
 
   const { error, attempt } = useAttempt(game, translator)
+  // The hint, and the refusal once there is one, read out with each field.
+  const described = error === null ? 'renew-hint' : 'renew-hint renew-error'
 
   return (
     <Modal
@@ -94,6 +96,7 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             min={0}
             step={50}
             value={wage}
+            aria-describedby={described}
             onChange={(event) => setWage(event.target.value)}
           />
         </Field>
@@ -107,14 +110,15 @@ export function RenewPanel({ player, onClose }: RenewPanelProps): React.JSX.Elem
             max={MAX_CONTRACT_YEARS}
             step={1}
             value={years}
+            aria-describedby={described}
             onChange={(event) => setYears(event.target.value)}
           />
         </Field>
 
-        <Hint>{t('renew.hint')}</Hint>
+        <Hint id="renew-hint">{t('renew.hint')}</Hint>
 
         {error !== null && (
-          <ScreenNote className="is-out" role="alert">
+          <ScreenNote className="is-out" role="alert" id="renew-error">
             {error}
           </ScreenNote>
         )}

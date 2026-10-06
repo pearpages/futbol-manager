@@ -56,6 +56,21 @@
   border-bottom: 1px solid var(--fm-screen-rule);
 }
 
+/* A heading with a control beside it: the row takes the heading's padding and
+   rule, so the two look as one heading did, and the control stays out of the
+   heading's accessible name. */
+.screen__heading-row {
+  display: flex;
+  align-items: center;
+  padding: var(--fm-space-3) var(--fm-space-4);
+  border-bottom: 1px solid var(--fm-screen-rule);
+}
+
+.screen__heading-row > .screen__heading {
+  padding: 0;
+  border: 0;
+}
+
 .screen__note {
   padding: var(--fm-space-3) var(--fm-space-4);
   color: var(--fm-screen-ink-soft);
@@ -162,16 +177,22 @@
   text-align: left;
 }
 
-.data-table__row td {
+.data-table__row :is(td, th) {
   padding: var(--fm-space-1) var(--fm-space-2);
   border-top: 1px solid var(--fm-screen-rule);
   text-align: right;
   white-space: nowrap;
 }
 
-.data-table__row td:first-child,
-.data-table__row td.is-text {
+.data-table__row :is(td, th):first-child,
+.data-table__row :is(td, th).is-text {
   text-align: left;
+}
+
+/* A row's own header (`<th scope="row">`) names the row for a screen reader and
+   looks like any other cell. */
+.data-table__row th {
+  font-weight: inherit;
 }
 
 .data-table__row:nth-child(even) {
@@ -182,7 +203,7 @@
   background: var(--fm-accent-wash);
 }
 
-.data-table__row.is-you td {
+.data-table__row.is-you :is(td, th) {
   color: var(--fm-highlight);
   font-weight: 700;
 }
@@ -191,8 +212,8 @@
   cursor: pointer;
 }
 
-.data-table__row.is-clickable:hover td,
-.data-table__row.is-clickable:focus-visible td {
+.data-table__row.is-clickable:hover :is(td, th),
+.data-table__row.is-clickable:focus-visible :is(td, th) {
   background: var(--fm-overlay-3);
 }
 
@@ -656,8 +677,26 @@
 /* ── Accessibility floor ─────────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid var(--fm-accent);
-  outline-offset: 1px;
+  /* Two tones, because the game has two materials. Brass alone was 1.02:1 on the
+     panel and ink alone vanishes on the screen; brass inside an ink ring reads on
+     both (WCAG 2.4.7). The ring is the outline, so High Contrast mode keeps it. */
+  outline: 2px solid var(--fm-ink);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--fm-accent);
+}
+
+/* High Contrast mode drops background fills, and with them every state drawn
+   only as one: the lit segment, the current language, a listed player. A
+   pressed control keeps a system-coloured border instead. */
+@media (forced-colors: active) {
+  [aria-pressed='true'],
+  [aria-current='page'] {
+    border: 2px solid Highlight;
+  }
+
+  .data-table__row.is-clickable:focus-visible {
+    outline: 2px solid Highlight;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { useState } from 'react'
 import { OnScreen } from '../../stories/Stage.tsx'
 import { SortHeader } from '../SortHeader/SortHeader.tsx'
+import { VisuallyHidden } from '../VisuallyHidden/VisuallyHidden.tsx'
 import type { Sort } from '../SortHeader/sorting.ts'
 import { DataTable } from './DataTable.tsx'
 
@@ -16,7 +17,9 @@ function Table() {
     <DataTable>
       <thead className="data-table__head">
         <tr>
-          <th aria-label="Classificació" />
+          <th>
+            <VisuallyHidden>Zona de la classificació</VisuallyHidden>
+          </th>
           <SortHeader column="club" label="Club" sort={sort} onSort={setSort} align="is-text" />
           <th>PJ</th>
           <SortHeader column="points" label="Pts" sort={sort} onSort={setSort} />

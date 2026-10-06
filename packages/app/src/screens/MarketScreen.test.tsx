@@ -189,7 +189,7 @@ describe('the market screen', () => {
     openMarket()
     const { target, row } = firstListingRow()
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Bid\b/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
 
     const bid = game().bids.find((b) => b.playerId === target.player.id)
@@ -201,7 +201,7 @@ describe('the market screen', () => {
   it('shows a refusal instead of crashing', () => {
     openMarket()
     const { row } = firstListingRow()
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Bid\b/ }))
 
     const fee = screen.getByLabelText(/^Fee/)
     fireEvent.change(fee, { target: { value: '99999999' } })
@@ -215,7 +215,7 @@ describe('the market screen', () => {
     openMarket()
     const { target, row } = firstListingRow()
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Bid\b/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
 
     // Wait somewhere other than the market, which is what a manager does and
@@ -253,7 +253,7 @@ describe('the market screen', () => {
     openMarket()
     const { target, row } = firstListingRow()
 
-    fireEvent.click(within(row).getByRole('button', { name: 'Watch' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Watch\b/ }))
     expect(game().shortlist).toEqual([target.player.id])
 
     back()
@@ -288,7 +288,7 @@ describe('the market screen', () => {
     openScreen('nav.squad')
     const row = screen.getByText(spare.name).closest('tr')
     if (row === null) throw new Error('no squad row')
-    fireEvent.click(within(row).getByRole('button', { name: 'List' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^List\b/ }))
     back()
     openScreen('nav.market')
 
@@ -829,7 +829,7 @@ describe('sorting the market', () => {
 
   it('starts unsorted — market order is the shuffle', () => {
     openMarket()
-    for (const label of ['Player', 'Club', 'Age', 'Ovr', 'Asking']) {
+    for (const label of ['Player', 'Club', 'Age', 'Overall', 'Asking']) {
       expect(header(label)?.getAttribute('aria-sort')).toBe('none')
     }
   })
@@ -854,20 +854,20 @@ describe('sorting the market', () => {
     openMarket()
     const shuffled = rowNames()
 
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
     expect(rowNames()).not.toEqual(shuffled)
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
 
-    expect(header('Ovr')?.getAttribute('aria-sort')).toBe('none')
+    expect(header('Overall')?.getAttribute('aria-sort')).toBe('none')
     expect(rowNames()).toEqual(shuffled)
   })
 
   it('moves the marker to whichever column is active', () => {
     openMarket()
     fireEvent.click(screen.getByRole('button', { name: /^Age/ }))
-    fireEvent.click(screen.getByRole('button', { name: /^Ovr/ }))
-    expect(header('Ovr')?.getAttribute('aria-sort')).toBe('descending')
+    fireEvent.click(screen.getByRole('button', { name: /^Overall/ }))
+    expect(header('Overall')?.getAttribute('aria-sort')).toBe('descending')
     expect(header('Age')?.getAttribute('aria-sort')).toBe('none')
   })
 })
@@ -911,7 +911,7 @@ describe('reopening a deal', () => {
     // These are the two *cheapest* listings, which in market order sit wherever the
     // shuffle put them — page one is not a safe assumption once the table pages.
     const row = goToRow(name)
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Bid\b/ }))
     fireEvent.click(screen.getByRole('button', { name: 'Make bid' }))
     fireEvent.click(screen.getByRole('button', { name: 'Close' }))
   }
@@ -1100,7 +1100,7 @@ describe('the window', () => {
     openScreen('nav.market')
 
     expect(screen.getByText(/The window is shut/)).toBeDefined()
-    for (const button of screen.getAllByRole('button', { name: 'Bid' })) {
+    for (const button of screen.getAllByRole('button', { name: /^Bid\b/ })) {
       expect(button.hasAttribute('disabled')).toBe(true)
     }
   })
@@ -1137,7 +1137,7 @@ describe('what a bid really costs', () => {
   it('states the bonus and the total before you commit', () => {
     openMarket()
     const { target, row } = firstListingRow()
-    fireEvent.click(within(row).getByRole('button', { name: 'Bid' }))
+    fireEvent.click(within(row).getByRole('button', { name: /^Bid\b/ }))
 
     const { t, money, percent } = translatorFor('en')
     expect(

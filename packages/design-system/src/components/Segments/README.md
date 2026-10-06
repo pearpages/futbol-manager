@@ -8,12 +8,12 @@ import { Segments } from '@fm/design-system'
 
 ## Props
 
-| Prop       | Type                 |                              |
-| ---------- | -------------------- | ---------------------------- |
-| `label`    | `string`             | The group's accessible name. |
-| `options`  | `{ value, label }[]` | In reading order.            |
-| `value`    | `string`             | The current one.             |
-| `onChange` | `(value) => void`    |                              |
+| Prop       | Type                               |                                                               |
+| ---------- | ---------------------------------- | ------------------------------------------------------------- |
+| `label`    | `string`                           | The group's accessible name.                                  |
+| `options`  | `{ value, label, icon?, lang? }[]` | In reading order. `lang` when a label is in another language. |
+| `value`    | `string`                           | The current one.                                              |
+| `onChange` | `(value) => void`                  |                                                               |
 
 ## Do
 

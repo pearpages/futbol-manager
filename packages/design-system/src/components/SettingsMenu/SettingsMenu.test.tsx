@@ -22,6 +22,8 @@ describe('SettingsMenu', () => {
     expect(toggle.textContent).toBe('CA Language')
     fireEvent.click(toggle)
     expect(screen.getByRole('button', { name: 'Català' }).getAttribute('aria-pressed')).toBe('true')
+    // Each language is spoken in its own voice.
+    expect(screen.getByRole('button', { name: 'English' }).getAttribute('lang')).toBe('en')
     fireEvent.click(screen.getByRole('button', { name: 'English' }))
     expect(onChange).toHaveBeenCalledWith('en')
     expect(screen.queryByRole('group', { name: 'Language' })).toBeNull()

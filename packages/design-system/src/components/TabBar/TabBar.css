@@ -32,8 +32,16 @@
 }
 
 .tab-bar__item.is-current {
-  border-top-color: var(--fm-accent);
+  /* The bar is ink: brass on the panel face was 1.02:1 and marked nothing. */
+  border-top-color: var(--fm-ink);
+  background: var(--fm-panel-raised);
   color: var(--fm-ink);
+}
+
+@media (forced-colors: active) {
+  .tab-bar__item.is-current {
+    border-top-color: Highlight;
+  }
 }
 
 .tab-bar__item.is-current .tab-bar__icon {

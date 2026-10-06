@@ -5,7 +5,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
-import { advance, advanceUntil, back, openScreen } from '../testing.ts'
+import { advance, advanceUntil, back, openScreen, labelStem } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
 import { FORM_MATCHES, FormStrip } from './FormStrip.tsx'
 
@@ -238,7 +238,7 @@ describe('the news feed', () => {
     // Bid at the asking price, then wait somewhere else — which is exactly the
     // situation where an answer used to arrive silently.
     const row = document.querySelector('.market-screen__main tbody tr') as HTMLElement
-    fireEvent.click(within(row).getByRole('button', { name: t('market.bid') }))
+    fireEvent.click(within(row).getByRole('button', { name: labelStem(t('market.bid')) }))
     fireEvent.click(screen.getByRole('button', { name: t('market.makeBid') }))
 
     back()

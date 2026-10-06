@@ -72,6 +72,9 @@
 }
 
 .market-screen__mini {
+  /* 24px tall at every width, not only on a phone: a mouse misses a small
+     target too (WCAG 2.5.8). */
+  min-height: 1.5rem;
   padding: var(--fm-space-hair) var(--fm-space-2);
   font-size: var(--fm-text-xs);
 }

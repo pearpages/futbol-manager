@@ -24,7 +24,8 @@ export interface LanguageOption {
  *
  * Each language is named in its own language. That is the convention every
  * language menu follows, and the reason is practical: someone who has landed in
- * a language they cannot read needs to recognise the way out.
+ * a language they cannot read needs to recognise the way out. Each choice
+ * carries its own `lang`, so a screen reader says "Català" in a Catalan voice.
  */
 export function SettingsMenu({
   languageLabel,
@@ -69,6 +70,7 @@ export function SettingsMenu({
               type="button"
               className="settings__choice"
               aria-pressed={option === current}
+              lang={option}
               onClick={() => {
                 onChange(option)
                 setOpen(false)

@@ -429,11 +429,17 @@ export function PlayerScreen() {
             disabled={block !== null && !onSale}
             onClick={() => dispatch({ type: 'ListPlayer', playerId: player.id, on: !onSale })}
           >
-            {onSale ? t('squad.listed') : t('squad.list')}
+            {t('squad.list')}
           </Button>
           <Button icon="sign" type="button" onClick={() => setRenewing(true)}>
             {t('squad.renew')}
           </Button>
+          {/* Why a button is off, in words anyone can see: a disabled button takes
+              no focus and a phone has no hover, so a title reached mouse users only.
+              Inside the row, so it moves with the buttons on a phone. */}
+          {block !== null && !onSale && (
+            <Hint className="ficha__why">{t(`squad.cannotList.${block}`)}</Hint>
+          )}
         </ScreenActions>
       )}
 
@@ -450,6 +456,9 @@ export function PlayerScreen() {
           >
             {t('player.bid')}
           </Button>
+          {!isTransferWindowOpen(game.season.currentDate) && (
+            <Hint className="ficha__why">{t('error.window.closed')}</Hint>
+          )}
         </ScreenActions>
       )}
 

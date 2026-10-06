@@ -25,6 +25,7 @@
               key: String(i),
               outcome,
               text: outcome ?? 'Sense jugar',
+              mark: outcome === null ? undefined : { win: 'G', draw: 'E', loss: 'P' }[outcome],
             })),
           }),
         ),

@@ -26,4 +26,19 @@ describe('SortHeader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Age' }))
     expect(onSort).toHaveBeenCalledWith({ key: 'age', desc: true })
   })
+
+  it('names an abbreviated column in full, and keeps the letters on screen', () => {
+    render(
+      <table>
+        <thead>
+          <tr>
+            <SortHeader column="won" label="W" fullLabel="Won" sort={null} onSort={() => {}} />
+          </tr>
+        </thead>
+      </table>,
+    )
+    const button = screen.getByRole('button', { name: 'Won' })
+    expect(button.querySelector('[aria-hidden="true"]')?.textContent).toBe('W')
+    expect(screen.getByRole('columnheader', { name: 'Won' })).toBeDefined()
+  })
 })

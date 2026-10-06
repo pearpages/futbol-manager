@@ -6,7 +6,7 @@ import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
 
 const { t } = translatorFor('en')
-import { ADVANCE, IGNORE_TOOLTIP, confirm } from '../testing.ts'
+import { ADVANCE, IGNORE_TOOLTIP, confirm, labelStem } from '../testing.ts'
 
 /**
  * Until M3c every career started at Almería, because `newSeason` defaulted to the
@@ -31,7 +31,9 @@ describe('choosing a club', () => {
     for (const club of DEFAULT_CLUBS) {
       expect(screen.getByText(club.name, IGNORE_TOOLTIP)).toBeDefined()
     }
-    expect(screen.getAllByRole('button', { name: t('setup.takeCharge') })).toHaveLength(20)
+    expect(screen.getAllByRole('button', { name: labelStem(t('setup.takeCharge')) })).toHaveLength(
+      20,
+    )
   })
 
   it('says what you are taking on, so the choice is informed', () => {
@@ -51,7 +53,7 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(madrid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    fireEvent.click(within(row).getByRole('button', { name: labelStem(t('setup.takeCharge')) }))
     confirm()
 
     expect(useGame.getState().game.managedClubId).toBe(madrid.id)
@@ -66,7 +68,7 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(mid.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    fireEvent.click(within(row).getByRole('button', { name: labelStem(t('setup.takeCharge')) }))
     confirm()
 
     expect(useGame.getState().game.managedClubId).not.toBe(DEFAULT_CLUBS.at(-1)?.id)
@@ -79,7 +81,7 @@ describe('choosing a club', () => {
 
     const row = screen.getByText(club.name, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    fireEvent.click(within(row).getByRole('button', { name: labelStem(t('setup.takeCharge')) }))
     confirm()
 
     const { game } = useGame.getState()
@@ -157,7 +159,7 @@ describe('sorting the club picker', () => {
     const first = rendered()[0] ?? ''
     const row = screen.getByText(first, IGNORE_TOOLTIP).closest('tr')
     if (row === null) throw new Error('no row')
-    fireEvent.click(within(row).getByRole('button', { name: t('setup.takeCharge') }))
+    fireEvent.click(within(row).getByRole('button', { name: labelStem(t('setup.takeCharge')) }))
     confirm()
 
     const chosen = DEFAULT_CLUBS.find((c) => c.name === first)

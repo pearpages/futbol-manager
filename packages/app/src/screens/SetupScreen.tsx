@@ -13,6 +13,7 @@ import {
   type Sort,
   sortedBy,
   SortHeader,
+  VisuallyHidden,
 } from '@fm/design-system'
 import { useGame } from '../store.ts'
 import { ClubBadge } from './ClubBadge.tsx'
@@ -107,9 +108,16 @@ export function SetupScreen() {
   )
 
   /** The shared header, bound to this screen's sort state. */
-  function column(key: SortKey, label: string) {
+  function column(key: SortKey, label: string, fullLabel?: string) {
     return (
-      <SortHeader column={key} label={label} sort={sort} onSort={setSort} align={SORT_ALIGN[key]} />
+      <SortHeader
+        column={key}
+        label={label}
+        {...(fullLabel === undefined ? {} : { fullLabel })}
+        sort={sort}
+        onSort={setSort}
+        align={SORT_ALIGN[key]}
+      />
     )
   }
 
@@ -132,11 +140,13 @@ export function SetupScreen() {
           <thead className="data-table__head">
             <tr>
               {column('club', t('setup.column.club'))}
-              {column('attack', t('setup.column.attack'))}
-              {column('defence', t('setup.column.defence'))}
+              {column('attack', t('setup.column.attack'), t('column.full.attack'))}
+              {column('defence', t('setup.column.defence'), t('column.full.defence'))}
               {column('prospects', t('setup.column.prospects'))}
               {/* A column of buttons — nothing to sort on. */}
-              <th />
+              <th>
+                <VisuallyHidden>{t('column.full.action')}</VisuallyHidden>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -160,6 +170,7 @@ export function SetupScreen() {
                       icon="chevron"
                       primary
                       type="button"
+                      aria-label={t('setup.takeChargeOf', { club: club.name })}
                       onClick={() => {
                         setChoosing(club)
                       }}

@@ -33,6 +33,14 @@ export function FormStrip({
     ...results.map((result) => ({
       key: result.fixtureId,
       outcome: result.outcome,
+      // The table's own column letters, so the strip and the table agree.
+      mark: t(
+        result.outcome === 'win'
+          ? 'table.column.won'
+          : result.outcome === 'loss'
+            ? 'table.column.lost'
+            : 'table.column.drawn',
+      ),
       // The feed's own wording, so one fact is worded once. `news.won` and friends
       // already exist in all three dictionaries with exactly these parameters.
       text: t(

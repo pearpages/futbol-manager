@@ -58,6 +58,7 @@ import {
   Stat,
   StatLabel,
   StatValue,
+  VisuallyHidden,
 } from '@fm/design-system'
 import { POSITION_ORDER, positionChip } from './SquadScreen.tsx'
 import './MarketScreen.css'
@@ -445,11 +446,12 @@ export function MarketScreen() {
   }
 
   /** The shared header, bound to this screen's sort state. */
-  function column(key: SortKey, label: string) {
+  function column(key: SortKey, label: string, fullLabel?: string) {
     return (
       <SortHeader
         column={key}
         label={label}
+        {...(fullLabel === undefined ? {} : { fullLabel })}
         sort={sort}
         onSort={(next) => {
           setPage(0)
@@ -617,7 +619,7 @@ export function MarketScreen() {
                 >
                   {t('market.sortBy', { key: t(`market.sort.${sort?.key ?? 'market'}`) })}
                 </Button>
-                <span className="market-screen__count">
+                <span className="market-screen__count" role="status">
                   {t('market.showing', { shown: listings.length, total: all.length })}
                 </span>
               </div>
@@ -639,7 +641,7 @@ export function MarketScreen() {
                     {t('market.clearFilters')}
                   </Button>
                 )}
-                <span className="market-screen__count">
+                <span className="market-screen__count" role="status">
                   {t('market.showing', { shown: listings.length, total: all.length })}
                 </span>
               </div>
@@ -651,13 +653,19 @@ export function MarketScreen() {
               <DataTable className="market-screen__listings">
                 <thead className="data-table__head">
                   <tr>
-                    <th className="is-text">{t('market.column.position')}</th>
+                    <th className="is-text">
+                      <span aria-hidden="true">{t('market.column.position')}</span>
+                      <VisuallyHidden>{t('column.full.position')}</VisuallyHidden>
+                    </th>
                     {column('name', t('market.column.player'))}
                     {column('club', t('market.column.club'))}
                     {column('age', t('market.column.age'))}
-                    {column('overall', t('market.column.overall'))}
+                    {column('overall', t('market.column.overall'), t('column.full.overall'))}
                     {column('fee', t('market.column.asking'))}
-                    <th className="is-text">{t('market.column.action')}</th>
+                    <th className="is-text">
+                      <span aria-hidden="true">{t('market.column.action')}</span>
+                      <VisuallyHidden>{t('column.full.action')}</VisuallyHidden>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -701,6 +709,7 @@ export function MarketScreen() {
                             icon={shortlisted.has(player.id) ? 'star-filled' : 'star'}
                             type="button"
                             className="market-screen__mini"
+                            aria-label={t('market.watchPlayer', { player: player.name })}
                             aria-pressed={shortlisted.has(player.id)}
                             onClick={() =>
                               dispatch({
@@ -710,13 +719,19 @@ export function MarketScreen() {
                               })
                             }
                           >
-                            {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
+                            {/* One label: the filled star and `aria-pressed` say it is on,
+                                and a name that changed too would say it twice. */}
+                            {t('market.watch')}
                           </Button>
                           <Button
                             icon="cash"
                             primary
                             type="button"
                             className="market-screen__mini"
+                            aria-label={t(
+                              listing.from === null ? 'market.signPlayer' : 'market.bidPlayer',
+                              { player: player.name },
+                            )}
                             disabled={!open}
                             onClick={() => {
                               setTarget(player.id)
@@ -1165,10 +1180,11 @@ function ClubBrowser({
     locale,
   )
 
-  const column = (key: SquadSortKey, label: string) => (
+  const column = (key: SquadSortKey, label: string, fullLabel?: string) => (
     <SortHeader
       column={key}
       label={label}
+      {...(fullLabel === undefined ? {} : { fullLabel })}
       sort={sort}
       onSort={onSort}
       align={SQUAD_SORT_ALIGN[key]}
@@ -1236,7 +1252,7 @@ function ClubBrowser({
         </Button>
         <ClubBadge club={club} size="sm" />
         <span className="club-grid__heading">{club.name}</span>
-        <span className="market-screen__count">
+        <span className="market-screen__count" role="status">
           {t('market.squadSize', { count: squad.length })}
         </span>
       </div>
@@ -1244,10 +1260,10 @@ function ClubBrowser({
       <DataTable>
         <thead className="data-table__head">
           <tr>
-            {column('position', t('market.column.position'))}
+            {column('position', t('market.column.position'), t('column.full.position'))}
             {column('name', t('market.column.player'))}
             {column('age', t('market.column.age'))}
-            {column('overall', t('market.column.overall'))}
+            {column('overall', t('market.column.overall'), t('column.full.overall'))}
             {column('wants', t('market.column.wants'))}
           </tr>
         </thead>

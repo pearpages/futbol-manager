@@ -11,3 +11,9 @@
 .crash-screen__text {
   margin: 0 0 var(--fm-space-4);
 }
+
+/* Focused on arrival so a screen reader starts here; a heading is not a control. */
+.crash-screen__title:focus {
+  outline: none;
+  box-shadow: none;
+}

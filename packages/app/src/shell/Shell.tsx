@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { transferWindowDaysLeft } from '@fm/domain'
 import {
   BadgeDefs,
@@ -65,11 +65,17 @@ export function Shell({ children }: { readonly children: React.ReactNode }) {
   const inspectedFrom = useGame((s) => s.inspectedFrom)
   const go = useGame((s) => s.go)
   const inspect = useGame((s) => s.inspect)
-  const { t, plural } = useT()
+  const { t, plural, date } = useT()
   const unread = useGame((s) => s.unread)
   const markRead = useGame((s) => s.markRead)
   const [newsOpen, setNewsOpen] = useState(false)
   const phone = usePhone()
+  const inspectedPlayerId = useGame((s) => s.inspectedPlayerId)
+  const heading = useRef<HTMLHeadingElement>(null)
+  // What the shell's live region says: the place you moved to, or the new day.
+  // One region that is always there, because one inserted already holding its
+  // words is ignored by many screen readers.
+  const [said, setSaid] = useState('')
 
   const tab = tabOf(screen, inspectedFrom)
   const entry = TABS.find((e) => e.tab === tab) ?? TABS[0]
@@ -78,9 +84,51 @@ export function Shell({ children }: { readonly children: React.ReactNode }) {
   const windowDaysLeft = transferWindowDaysLeft(game.season.currentDate)
   const offers = game.bids.filter((b) => b.to === game.managedClubId && b.status === 'pending')
 
+  // The tab's own title, so history, bookmarks and a screen reader's window
+  // list name the place, and the page's title back once the career is left.
+  useEffect(() => {
+    const before = document.title
+    return () => {
+      document.title = before
+    }
+  }, [])
+  useEffect(() => {
+    document.title = t('shell.documentTitle', { screen: title })
+  }, [t, title])
+
+  // A new screen says where you are (WCAG 2.4.3, 4.1.3). Pressing a link that
+  // leaves the screen takes its button with it and drops focus onto <body>, so
+  // focus goes to the new screen's title; when the control you pressed is still
+  // there, a tab or a segment, focus stays on it and the region names the place.
+  const place = `${screen}:${inspectedPlayerId ?? ''}`
+  const arrived = useRef(false)
+  useEffect(() => {
+    const active = document.activeElement
+    if (active === null || active === document.body) heading.current?.focus()
+    else if (arrived.current) setSaid(title)
+    arrived.current = true
+    // Keyed on `place` alone: `title` follows it, and listing it would announce
+    // a change of language as if it were a move.
+  }, [place])
+
+  // Advancing a day changes the date and brings news with no other sign to a
+  // screen reader: say both.
+  const day = game.season.currentDate
+  const seenDay = useRef(day)
+  const seenUnread = useRef(unread)
+  useEffect(() => {
+    const fresh = unread - seenUnread.current
+    seenUnread.current = unread
+    if (seenDay.current === day) return
+    seenDay.current = day
+    const news = fresh > 0 ? ` ${plural('shell.newsAnnounce', fresh)}` : ''
+    setSaid(`${t('shell.dayAnnounce', { date: date(day) })}${news}`)
+  }, [day, unread, t, plural, date])
+
   return (
     <div className="shell shell--app" data-place={tab}>
       <BadgeDefs />
+      <VisuallyHidden role="status">{said}</VisuallyHidden>
       <Panel as="header" className="shell-bar">
         {screen === 'player' && (
           <Button
@@ -94,7 +142,9 @@ export function Shell({ children }: { readonly children: React.ReactNode }) {
             <Icon name="back" />
           </Button>
         )}
-        <h1 className="shell-bar__title">{title}</h1>
+        <h1 className="shell-bar__title" ref={heading} tabIndex={-1}>
+          {title}
+        </h1>
         {/* The one deadline the game enforces, and a way straight to it. */}
         {windowDaysLeft !== null && (
           <Button

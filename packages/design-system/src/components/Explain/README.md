@@ -17,7 +17,7 @@ import { Explain } from '@fm/design-system'
 
 ## Do
 
-- Put it inside the heading of the block it explains.
+- Put it beside the heading of the block it explains, through `ScreenHeading`'s `aside`. Inside the `<h2>`, Chrome reads its label as part of the heading.
 
 ## Don't
 

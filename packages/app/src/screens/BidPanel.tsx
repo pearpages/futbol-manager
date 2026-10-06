@@ -89,21 +89,24 @@ export function BidPanel({ player, owner, onClose }: BidPanelProps): React.JSX.E
             min={1}
             step={50}
             value={fee}
+            aria-describedby={
+              error === null ? 'bid-outlay bid-hint' : 'bid-outlay bid-hint bid-error'
+            }
             onChange={(event) => setFee(event.target.value)}
           />
         </Field>
 
-        <Hint>
+        <Hint id="bid-outlay">
           {t('market.outlay', {
             bonus: money(outlay - (Number(fee) || 0)),
             total: money(outlay),
             percent: percent(FINANCE.SIGNING_BONUS),
           })}
         </Hint>
-        <Hint>{t('market.bidHint')}</Hint>
+        <Hint id="bid-hint">{t('market.bidHint')}</Hint>
 
         {error !== null && (
-          <ScreenNote className="is-out" role="alert">
+          <ScreenNote className="is-out" role="alert" id="bid-error">
             {error}
           </ScreenNote>
         )}

@@ -59,6 +59,23 @@ interface ModalProps {
 /** How many dialogs are open, so nested ones release the page only once. */
 let openCount = 0
 
+/**
+ * The open dialogs' overlays, oldest first. Only the last one answers Escape, and
+ * everything else in `<body>` is `inert` while it is up: `aria-modal` alone does
+ * not keep VoiceOver on iOS inside the box, and one Escape used to close every
+ * dialog in a stack at once.
+ */
+const stack: HTMLElement[] = []
+
+function shield(): void {
+  const top = stack.at(-1)
+  for (const child of document.body.children) {
+    if (!(child instanceof HTMLElement)) continue
+    if (top === undefined || child === top) child.removeAttribute('inert')
+    else child.setAttribute('inert', '')
+  }
+}
+
 export function Modal({
   title,
   onClose,
@@ -68,6 +85,7 @@ export function Modal({
   children,
 }: ModalProps): React.JSX.Element {
   const box = useRef<HTMLDivElement>(null)
+  const overlay = useRef<HTMLDivElement>(null)
   const headingId = useId()
   const phone = usePhone()
 
@@ -80,6 +98,17 @@ export function Modal({
     return () => {
       openCount -= 1
       if (openCount === 0) root.classList.remove('has-modal')
+    }
+  }, [])
+
+  useEffect(() => {
+    const element = overlay.current
+    if (element === null) return
+    stack.push(element)
+    shield()
+    return () => {
+      stack.splice(stack.indexOf(element), 1)
+      shield()
     }
   }, [])
 
@@ -96,6 +125,8 @@ export function Modal({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // Only the dialog on top: the one under it is not the one being looked at.
+      if (overlay.current !== stack.at(-1)) return
       if (event.key === 'Escape') {
         onClose()
         return
@@ -135,6 +166,7 @@ export function Modal({
     // the target, not a class, so a click anywhere inside the box never closes it
     // however deeply nested the thing pressed was.
     <div
+      ref={overlay}
       className={`modal${full ? ' is-full' : ''}`}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose()
