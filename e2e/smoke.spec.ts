@@ -6,6 +6,12 @@ import { expect, test } from '@playwright/test'
  * together that no story and no jsdom test takes.
  */
 test.describe('a first career', () => {
+  // footfall (ADR 0026) counts real visits; a CI run is not one, and the check must
+  // not depend on a server outside this build.
+  test.beforeEach(async ({ page }) => {
+    await page.route('https://analytics.pearpages.com/**', (route) => route.abort())
+  })
+
   for (const size of [
     { name: 'phone', width: 390, height: 844 },
     { name: 'desk', width: 1280, height: 800 },

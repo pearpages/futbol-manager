@@ -37,6 +37,7 @@ record same-day partial reversals in place, which predates this rule.)
 | [0023](docs/adr/0023-browser-checks.md)              | Checks in a real browser: layout, screenshots, one smoke test                      | Accepted                                        | 2026-10-05 |
 | [0024](docs/adr/0024-refreshing-the-squads.md)       | Refreshing the real squads                                                         | Accepted                                        | 2026-10-05 |
 | [0025](docs/adr/0025-ratings-from-results.md)        | Club ratings follow the league's results                                           | Accepted                                        | 2026-10-05 |
+| [0026](docs/adr/0026-footfall-visit-counting.md)     | Visits are counted by footfall, cookieless and self-hosted                         | Accepted                                        | 2026-10-06 |
 
 ## Format
 

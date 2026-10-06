@@ -14,8 +14,8 @@ transfer windows, set ticket prices, expand the stadium and keep the board happy
 worked out statistically, not animated. The game is fictional by default: clubs are named after
 their cities, and it ships in Catalan, Spanish and English.
 
-**Play it:** <https://futbol.pearpages.com>. Careers are saved in your browser and nothing
-leaves your device.
+**Play it:** <https://futbol.pearpages.com>. Careers are saved in your browser and never
+leave your device. Visits are counted anonymously, without cookies, on our own server.
 
 ## What's new
 

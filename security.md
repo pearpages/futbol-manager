@@ -16,11 +16,15 @@ an unfixed vulnerability.
 
 Small by construction. This is a static single-page app on GitHub Pages:
 
-- **No backend, no accounts, no network calls.** The app does not call `fetch` or open sockets,
-  and it loads no third-party scripts, fonts or analytics. The only thing it requests is its own
-  static assets.
+- **No backend, no accounts.** The game does not call `fetch` or open sockets, and it loads
+  no third-party scripts or fonts. Besides its own static assets, the page loads one script:
+  footfall, the owner's self-hosted, cookieless Umami at `analytics.pearpages.com`
+  ([ADR 0026](docs/adr/0026-footfall-visit-counting.md)). It counts page views (path,
+  referrer, screen size, language), sets no cookie, stores nothing on the device and goes to
+  no third party. A compromised `analytics.pearpages.com` could run script on this page, so
+  it is the one origin outside GitHub Pages the site trusts.
 - **Data stays on the player's device.** Saves live in IndexedDB (`saves` and `slots` stores).
-  The language and the last-used slot live in `localStorage`. Nothing is sent anywhere.
+  The language and the last-used slot live in `localStorage`. No game data is sent anywhere.
 - **No HTML from data.** There is no `dangerouslySetInnerHTML` or `innerHTML`. Everything
   rendered goes through React's escaping, including player and club names.
 - **Untrusted input: saves.** A save in IndexedDB can be edited by hand, and an imported
