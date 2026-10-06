@@ -28,6 +28,13 @@ export function GameMenu({ inline = false }: { readonly inline?: boolean }): Rea
 
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
+  const toggle = useRef<HTMLButtonElement>(null)
+  // Closing the menu takes the pressed item with it. Focus goes back to ⋯ first,
+  // so a dialog opened from the menu hands focus back there, not to <body>.
+  const closeMenu = () => {
+    setOpen(false)
+    toggle.current?.focus()
+  }
   useDismiss(ref, open, () => {
     setOpen(false)
   })
@@ -101,6 +108,7 @@ export function GameMenu({ inline = false }: { readonly inline?: boolean }): Rea
     <span className="game-menu" ref={ref}>
       <Button
         type="button"
+        ref={toggle}
         className="shell-bar__icon-button"
         aria-label={t('action.menu')}
         aria-expanded={open}
@@ -118,7 +126,7 @@ export function GameMenu({ inline = false }: { readonly inline?: boolean }): Rea
             className="game-menu__item"
             disabled={saving}
             onClick={() => {
-              setOpen(false)
+              closeMenu()
               quickSave()
             }}
           >
@@ -129,7 +137,7 @@ export function GameMenu({ inline = false }: { readonly inline?: boolean }): Rea
             type="button"
             className="game-menu__item"
             onClick={() => {
-              setOpen(false)
+              closeMenu()
               setSavesOpen(true)
             }}
           >
@@ -147,7 +155,7 @@ export function GameMenu({ inline = false }: { readonly inline?: boolean }): Rea
             type="button"
             className="game-menu__item"
             onClick={() => {
-              setOpen(false)
+              closeMenu()
               setLeaving(true)
             }}
           >

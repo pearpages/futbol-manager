@@ -91,6 +91,21 @@ describe('the phone shell', () => {
     expect(useGame.getState().language).toBe('ca')
   })
 
+  it('hands focus back to the menu button after a dialog opened from the menu', () => {
+    render(<App />)
+    const toggle = screen.getByRole('button', { name: t('action.menu') })
+    fireEvent.click(toggle)
+    const saves = within(screen.getByRole('group', { name: t('action.menu') })).getByRole(
+      'button',
+      { name: t('action.saves') },
+    )
+    saves.focus()
+    fireEvent.click(saves)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(toggle)
+  })
+
   it('swaps a starter from a sheet opened on the pitch', () => {
     useGame.getState().go('lineup')
     render(<App />)

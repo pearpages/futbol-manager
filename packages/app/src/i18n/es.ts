@@ -81,6 +81,10 @@ export const es: Dictionary = {
 
   // ── El marco ─────────────────────────────────────────────────────────────
   'shell.wordmark': 'Futbol Manager',
+  'shell.documentTitle': '{screen} · Futbol Manager',
+  'shell.dayAnnounce': 'Hoy es {date}.',
+  'shell.newsAnnounce.one': '{count} noticia nueva.',
+  'shell.newsAnnounce.other': '{count} noticias nuevas.',
   'shell.matchday': 'Jornada {round}',
   'shell.windowOpen.one': 'Mercado abierto · {count} día',
   'shell.windowOpen.other': 'Mercado abierto · {count} días',

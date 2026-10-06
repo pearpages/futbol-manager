@@ -81,6 +81,10 @@ export const ca: Dictionary = {
 
   // ── El marc ──────────────────────────────────────────────────────────────
   'shell.wordmark': 'Futbol Manager',
+  'shell.documentTitle': '{screen} · Futbol Manager',
+  'shell.dayAnnounce': 'Avui és {date}.',
+  'shell.newsAnnounce.one': '{count} notícia nova.',
+  'shell.newsAnnounce.other': '{count} notícies noves.',
   'shell.matchday': 'Jornada {round}',
   'shell.windowOpen.one': 'Mercat obert · {count} dia',
   'shell.windowOpen.other': 'Mercat obert · {count} dies',

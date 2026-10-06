@@ -259,7 +259,7 @@ describe('the lineup screen', () => {
     render(<App />)
     openScreen('nav.lineup')
 
-    const panel = screen.getByRole('heading', { name: 'This XI' }).closest('.screen')
+    const panel = screen.getByRole('heading', { name: 'This XI' }).closest<HTMLElement>('.screen')
     if (panel === null) throw new Error('no panel')
     expect(within(panel).getByText('Attack')).toBeDefined()
     expect(within(panel).getByText('Defence')).toBeDefined()

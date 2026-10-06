@@ -131,6 +131,13 @@
   padding: var(--fm-space-1) var(--fm-space-2);
 }
 
+/* Focused by the shell when a screen arrives, never by Tab: a heading is not a
+   control, and a ring around it would read as one. */
+.shell-bar__title:focus {
+  outline: none;
+  box-shadow: none;
+}
+
 .shell-bar__title {
   flex: 1 0 8rem;
   min-width: 0;

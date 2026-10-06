@@ -90,6 +90,10 @@ export const en: Dictionary = {
 
   // ── The shell ────────────────────────────────────────────────────────────
   'shell.wordmark': 'Futbol Manager',
+  'shell.documentTitle': '{screen} · Futbol Manager',
+  'shell.dayAnnounce': 'Today is {date}.',
+  'shell.newsAnnounce.one': '{count} new item in the news.',
+  'shell.newsAnnounce.other': '{count} new items in the news.',
   'shell.matchday': 'Matchday {round}',
   'shell.windowOpen.one': 'Transfer window open · {count} day',
   'shell.windowOpen.other': 'Transfer window open · {count} days',
