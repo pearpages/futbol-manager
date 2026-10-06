@@ -88,7 +88,7 @@ Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.m
 
 **Security and dependencies**
 
-- [ ] **No Content Security Policy.** GitHub Pages can't send headers, but the built `index.html` has no inline script or style, so a strict meta CSP fits: `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'`, plus `<meta name="referrer" content="strict-origin-when-cross-origin">`. Inject it only at build (a Vite `transformIndexHtml` plugin with `apply: 'build'`), because the dev server's HMR breaks under it, and add a test against `dist/index.html`.
+- [ ] **No Content Security Policy.** GitHub Pages can't send headers, but the built `index.html` has no inline script or style, so a strict meta CSP fits: `default-src 'none'; script-src 'self' https://analytics.pearpages.com; style-src 'self'; img-src 'self'; manifest-src 'self'; connect-src https://analytics.pearpages.com; base-uri 'none'; form-action 'none'` (footfall, ADR 0026), plus `<meta name="referrer" content="strict-origin-when-cross-origin">`. Inject it only at build (a Vite `transformIndexHtml` plugin with `apply: 'build'`), because the dev server's HMR breaks under it, and add a test against `dist/index.html`.
 - [ ] **The custom domain may not be verified.** `protected_domain_state` is null. If Pages were turned off while DNS still points at GitHub, another account could claim `futbol.pearpages.com`. Verify `pearpages.com` under account Settings → Pages.
 
 ### Architecture review 2026-10-03
@@ -152,6 +152,8 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-06: footfall counts visits (ADR 0026): the cookieless Umami tag in `packages/app/index.html`, with the README and security.md saying what it sends.
+- [x] 2026-10-06: Maturity assessment (v0.8.2) — verdict Ready to advertise, 0 gaps added to Open; the two first-player issues from the morning's assessment are fixed.
 - [x] 2026-10-06: `pnpm look` and `scripts/look.ts` replace hand-spawned `--remote-debugging-port` Chrome for looking at screens. The browser closes however a run ends, a SIGKILL included, so orphans no longer pile up.
 - [x] 2026-10-06: `SaveManagerModal.test.tsx` waits for the picker to close after a load; the race failed the v0.8.1 release check, so v0.8.2 ships its fixes.
 - [x] 2026-10-06: The README's What's new is v0.8.1.
