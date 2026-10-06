@@ -12,7 +12,7 @@ import {
 import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
-import { back, openScreen } from '../testing.ts'
+import { back, openScreen, labelStem } from '../testing.ts'
 import { translatorFor } from '../i18n/useT.ts'
 
 /**
@@ -83,18 +83,22 @@ describe('the squad screen', () => {
     openSquad()
     const player = aSpare()
 
-    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
+    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: /^List\b/ }))
 
     expect(game().transferList).toEqual([player.id])
-    expect(within(rowFor(player.name)).getByRole('button', { name: 'Listed' })).toBeDefined()
+    expect(
+      within(rowFor(player.name))
+        .getByRole('button', { name: /^List\b/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true')
   })
 
   it('takes him off again', () => {
     openSquad()
     const player = aSpare()
 
-    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
-    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'Listed' }))
+    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: /^List\b/ }))
+    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: /^List\b/ }))
 
     expect(game().transferList).toEqual([])
   })
@@ -103,7 +107,7 @@ describe('the squad screen', () => {
     // The reducer refuses this anyway. The button explaining itself up front is the
     // difference between a rule and an error message.
     openSquad()
-    const button = within(rowFor(aStarter().name)).getByRole('button', { name: 'List' })
+    const button = within(rowFor(aStarter().name)).getByRole('button', { name: /^List\b/ })
 
     expect(button.hasAttribute('disabled')).toBe(true)
     expect(button.getAttribute('title')).toMatch(/starting eleven/)
@@ -131,7 +135,7 @@ describe('the squad screen', () => {
       const row = rowFor(player.name)
       // The two halves of the row that used to disagree.
       expect(within(row).getByText('—')).toBeDefined()
-      const button = within(row).getByRole('button', { name: 'List' })
+      const button = within(row).getByRole('button', { name: /^List\b/ })
       expect(button.hasAttribute('disabled')).toBe(false)
     }
   })
@@ -160,7 +164,7 @@ describe('the squad screen', () => {
     })
 
     openSquad()
-    const button = within(rowFor(reserve.name)).getByRole('button', { name: 'List' })
+    const button = within(rowFor(reserve.name)).getByRole('button', { name: /^List\b/ })
     expect(button.hasAttribute('disabled')).toBe(true)
     expect(button.getAttribute('title')).toMatch(/goalkeeper/)
     expect(button.getAttribute('title')).not.toMatch(/eleven/)
@@ -169,14 +173,18 @@ describe('the squad screen', () => {
   it('survives navigating away and back', () => {
     openSquad()
     const player = aSpare()
-    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
+    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: /^List\b/ }))
 
     back()
     openScreen('nav.table')
     back()
     openScreen('nav.squad')
 
-    expect(within(rowFor(player.name)).getByRole('button', { name: 'Listed' })).toBeDefined()
+    expect(
+      within(rowFor(player.name))
+        .getByRole('button', { name: /^List\b/ })
+        .getAttribute('aria-pressed'),
+    ).toBe('true')
   })
 })
 
@@ -190,7 +198,7 @@ describe('the market screen shows what you have put up', () => {
   it('lists him with an asking price once he is up for sale', () => {
     openSquad()
     const player = aSpare()
-    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: 'List' }))
+    fireEvent.click(within(rowFor(player.name)).getByRole('button', { name: /^List\b/ }))
 
     back()
     openScreen('nav.market')
@@ -257,7 +265,7 @@ describe('sorting the squad', () => {
   function listable() {
     return rendered()
       .filter(({ name }) => {
-        const button = within(rowFor(name)).getByRole('button', { name: /^(List|Listed)$/ })
+        const button = within(rowFor(name)).getByRole('button', { name: /^List\b/ })
         return !(button as HTMLButtonElement).disabled
       })
       .map((r) => r.name)
@@ -397,7 +405,7 @@ describe('renewing from the squad', () => {
   const { t } = translatorFor('en')
 
   const renewButtonIn = (name: string) =>
-    within(rowFor(name)).getByRole('button', { name: t('squad.renew') })
+    within(rowFor(name)).getByRole('button', { name: labelStem(t('squad.renew')) })
 
   it('offers a renewal on every row', () => {
     openSquad()

@@ -39,7 +39,7 @@
 }
 
 /* The result line closes the column, so it is ruled off rather than striped. */
-.caja-screen__total td {
+.caja-screen__total :is(td, th) {
   border-top: 2px solid var(--fm-screen-rule);
 }
 
@@ -66,6 +66,6 @@
   width: 100%;
 }
 
-.caja-screen__projection td {
+.caja-screen__projection :is(td, th) {
   padding: var(--fm-space-1) var(--fm-space-4);
 }

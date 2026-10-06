@@ -6,7 +6,7 @@ import { AUTOSAVE_SLOT, loadGame, saveGame, slotFor } from '@fm/persistence'
 import { App } from '../App.tsx'
 import { translatorFor } from '../i18n/useT.ts'
 import { useGame } from '../store.ts'
-import { advance, advanceUntil, dismissResult } from '../testing.ts'
+import { advance, advanceUntil, dismissResult, labelStem } from '../testing.ts'
 
 /**
  * Naming a save, picking one back up, and throwing one away.
@@ -140,7 +140,9 @@ describe('the save picker', () => {
     expect(game().season.currentDate).toBeGreaterThan(savedDate)
 
     await openPicker()
-    fireEvent.click(within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.load') }))
+    fireEvent.click(
+      within(rows()[0] as HTMLElement).getByRole('button', { name: labelStem(t('saves.load')) }),
+    )
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.load') }),
     )
@@ -190,7 +192,7 @@ describe('the save picker', () => {
     await saveAs('Doomed')
 
     fireEvent.click(
-      within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.delete') }),
+      within(rows()[0] as HTMLElement).getByRole('button', { name: labelStem(t('saves.delete')) }),
     )
     expect(screen.getByText(t('saves.confirmDelete', { name: 'Doomed' }))).toBeDefined()
 
@@ -209,7 +211,7 @@ describe('the save picker', () => {
     await saveAs('Kept')
 
     fireEvent.click(
-      within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.delete') }),
+      within(rows()[0] as HTMLElement).getByRole('button', { name: labelStem(t('saves.delete')) }),
     )
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: t('action.cancel') }),
@@ -356,7 +358,7 @@ describe('saving again', () => {
     expect(useGame.getState().currentSlot).not.toBeNull()
 
     fireEvent.click(
-      within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.delete') }),
+      within(rows()[0] as HTMLElement).getByRole('button', { name: labelStem(t('saves.delete')) }),
     )
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.delete') }),
@@ -428,7 +430,9 @@ describe('the news survives the save', () => {
     expect(useGame.getState().feed.length).toBeGreaterThan(quiet)
 
     await openPicker()
-    fireEvent.click(within(rows()[0] as HTMLElement).getByRole('button', { name: t('saves.load') }))
+    fireEvent.click(
+      within(rows()[0] as HTMLElement).getByRole('button', { name: labelStem(t('saves.load')) }),
+    )
     fireEvent.click(
       within(screen.getByRole('dialog')).getByRole('button', { name: t('saves.load') }),
     )

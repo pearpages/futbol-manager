@@ -66,6 +66,14 @@ foundation, primitive and component has one beside it (ADR 0021); Storybook rend
 On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen. `usePhone` and
 `PHONE_QUERY` live in the design system, which needs them for that close button.
 
+**Moving, said.** The shell titles the page after the place (`{screen} · Futbol Manager`). When
+a screen arrives and focus fell with the control that left (a player link, Back), focus goes
+to the bar's `h1`; when the pressed control is still there (a tab, a segment), focus stays
+and the shell's one live region names the place. The same region says the new date and how
+much news came with it when a day advances. Dialogs make everything else in `<body>` inert,
+and only the top one answers Escape. A toast with an action waits for it or for its close
+button; one without an action goes by itself and holds while hovered or focused.
+
 Actions that cannot be undone ask first through `Confirm`; a formation press offers undo
 through `Toast`. Commands that must land together go through the store's `dispatchAll`,
 which commits all of them or none and puts the rng back on a refusal.

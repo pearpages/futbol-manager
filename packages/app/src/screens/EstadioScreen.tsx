@@ -142,13 +142,15 @@ export function EstadioScreen() {
               max={high}
               step={step}
               value={club.ticketPrice}
+              aria-valuetext={ticket(club.ticketPrice)}
+              aria-describedby="ticket-hint"
               onChange={(event) =>
                 attempt(() => {
                   dispatch({ type: 'SetTicketPrice', price: Number(event.target.value) })
                 })
               }
             />
-            <Hint>{t('estadio.priceHint')}</Hint>
+            <Hint id="ticket-hint">{t('estadio.priceHint')}</Hint>
           </Field>
         </div>
       </Screen>
@@ -174,10 +176,11 @@ export function EstadioScreen() {
                   max={FINANCE.MAX_EXPANSION}
                   step={500}
                   value={seats}
+                  aria-describedby="seats-hint"
                   onChange={(event) => setSeats(Number(event.target.value))}
                 />
               </Field>
-              <Hint>{t('estadio.seatsHint')}</Hint>
+              <Hint id="seats-hint">{t('estadio.seatsHint')}</Hint>
               <ScreenActions className="estadio-screen__build">
                 <Button
                   icon="build"

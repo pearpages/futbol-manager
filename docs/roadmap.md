@@ -336,6 +336,8 @@ The gap it closed is that **the game enforced every one of those dates and displ
 
 **The footer now carries the build's commit hash** — the project's first `define` and the first thing anywhere that reads git state. Defined on `import.meta.env.VITE_COMMIT` rather than as a bare global, because the root `vitest.config.ts` declares the app project inline and does not extend the Vite config: a bare `__COMMIT__` would be undefined under Vitest and every test rendering the footer would throw at import. See [`docs/stack.md`](./stack.md#the-build-stamps-its-own-commit).
 
+**2026-10-06 — an accessibility pass.** An audit (axe in a real browser over every story and the live game, plus two code reviews) found the game silent to a screen reader whenever it moved: a new screen, a new day and a toast said nothing, and focus fell to `<body>` when the pressed control left with the old screen. The shell now titles the page, moves focus to the screen's title when it has to, and announces the place and the day through one live region. The rest was smaller and wider: a focus ring that read on the panel, buttons named for their row, columns of letters named in words, a form strip readable without colour, dialogs that make the page behind inert, and an undo that waits. **The lesson worth keeping:** jsdom leaves a child button's `aria-label` out of a heading's name and Chrome reads it in, so the suite had been asserting the opposite of what a screen reader hears.
+
 The blow-by-blow is in git history (it was `CLAUDE.md`'s session log until 2026-10-02) and in [`tasks.md`](../tasks.md)'s Done list; this section exists so the roadmap is not silent about the work.
 
 ---

@@ -1,4 +1,4 @@
-import { Component, type ErrorInfo, type ReactNode, useState } from 'react'
+import { Component, type ErrorInfo, type ReactNode, useEffect, useRef, useState } from 'react'
 import { AUTOSAVE_SLOT } from '@fm/persistence'
 import { Button, Confirm, Panel, ScreenActions } from '@fm/design-system'
 import { useT } from '../i18n/useT.ts'
@@ -39,12 +39,21 @@ function CrashScreen(): React.JSX.Element {
   const currentSlot = useGame((s) => s.currentSlot)
   const remove = useGame((s) => s.remove)
   const [confirming, setConfirming] = useState(false)
+  // Focus to the title, so a screen reader starts at what happened and Tab
+  // continues to the two ways out. A `role="alert"` around the whole panel read
+  // its buttons out as part of the message instead.
+  const title = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    title.current?.focus()
+  }, [])
 
   return (
     <div className="shell shell--landing">
       <main className="shell__stage">
-        <Panel className="crash-screen" role="alert">
-          <h1 className="crash-screen__title">{t('crash.title')}</h1>
+        <Panel className="crash-screen">
+          <h1 className="crash-screen__title" ref={title} tabIndex={-1}>
+            {t('crash.title')}
+          </h1>
           <p className="crash-screen__text">{t('crash.body')}</p>
           <ScreenActions>
             <Button

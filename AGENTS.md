@@ -121,6 +121,10 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 - **Run-together accessible names.** `visually-hidden` or badge text inside a text-bearing
   element needs its own leading space. Shipped as `CanteraM7`, `20Relegated`,
   `Temporada 1En joc` and `pearpages7f1e3eb`.
+- **jsdom names a heading differently from Chrome.** A button with an `aria-label` inside an
+  `<h2>` is left out of the heading's name in jsdom and read into it by Chrome ("Squad
+  Explain: …"). A name query passes either way; assert structure (no button inside the
+  heading) or measure it in Chrome.
 - **Orphan dictionary keys.** `dictionaries.test.ts` enforces parity across the three
   languages and cannot see a key with no call site. Grep by hand when removing a string.
 - **The clock never enters July.** Seasons start on 15 August and `StartNewSeason` jumps

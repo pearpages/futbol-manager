@@ -108,16 +108,18 @@ export function CajaScreen() {
               const then = signed(club.lastLedger, line)
               return (
                 <tr key={line.key} className="data-table__row">
-                  <td className="is-text">{t(line.label)}</td>
+                  <th scope="row" className="is-text">
+                    {t(line.label)}
+                  </th>
                   <td className={amountClass(now)}>{money(now)}</td>
                   <td className={`data-table__num ${amountClass(then)}`}>{money(then)}</td>
                 </tr>
               )
             })}
             <tr className="data-table__row caja-screen__total">
-              <td className="is-text">
+              <th scope="row" className="is-text">
                 <strong>{t('caja.result')}</strong>
-              </td>
+              </th>
               <td className={amountClass(net)}>
                 <strong>{money(net)}</strong>
               </td>
@@ -164,16 +166,18 @@ export function CajaScreen() {
             <tbody>
               {PROJECTED.map((line) => (
                 <tr key={line.key} className="data-table__row">
-                  <td className="is-text">{t(line.label)}</td>
+                  <th scope="row" className="is-text">
+                    {t(line.label)}
+                  </th>
                   <td className={amountClass(line.out ? -forecast[line.key] : forecast[line.key])}>
                     {money(line.out ? -forecast[line.key] : forecast[line.key])}
                   </td>
                 </tr>
               ))}
               <tr className="data-table__row caja-screen__total">
-                <td className="is-text">
+                <th scope="row" className="is-text">
                   <strong>{t('caja.result')}</strong>
-                </td>
+                </th>
                 <td className={amountClass(forecast.net)}>
                   <strong>{money(forecast.net)}</strong>
                 </td>

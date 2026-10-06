@@ -170,6 +170,7 @@ export function SetupScreen() {
                       icon="chevron"
                       primary
                       type="button"
+                      aria-label={t('setup.takeChargeOf', { club: club.name })}
                       onClick={() => {
                         setChoosing(club)
                       }}

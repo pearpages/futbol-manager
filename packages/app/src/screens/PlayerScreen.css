@@ -189,3 +189,9 @@
 .ficha__status {
   padding: var(--fm-space-2) var(--fm-space-4) 0;
 }
+
+/* The reason a button is off, on its own line under the buttons. */
+.ficha__why {
+  flex-basis: 100%;
+  margin: 0;
+}

@@ -234,6 +234,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
                     <Button
                       icon="saves"
                       type="button"
+                      aria-label={t('saves.loadSave', { name: save.name })}
                       onClick={() => {
                         setPending({ kind: 'load', slot: save.slot, name: save.name })
                       }}
@@ -243,6 +244,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
                     <Button
                       icon="trash"
                       type="button"
+                      aria-label={t('saves.deleteSave', { name: save.name })}
                       onClick={() => {
                         setPending({ kind: 'delete', slot: save.slot, name: save.name })
                       }}

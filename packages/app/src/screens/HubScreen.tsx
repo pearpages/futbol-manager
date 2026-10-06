@@ -114,7 +114,8 @@ export function HubScreen() {
       <aside className="hub__centre">
         <Screen className="hub__identity">
           <ScreenHeading className="hub__crest">
-            {club !== undefined && <ClubBadge club={club} size="lg" labelled />}
+            {/* Unlabelled: the name follows as text, and a labelled badge read it twice. */}
+            {club !== undefined && <ClubBadge club={club} size="lg" />}
             {club?.name ?? '—'}
           </ScreenHeading>
           <div className="hub__vitals">

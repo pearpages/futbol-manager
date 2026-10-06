@@ -5,7 +5,7 @@ import { DEFAULT_CLUBS } from '@fm/data'
 import { App } from './App.tsx'
 import { translatorFor } from './i18n/useT.ts'
 import { useGame } from './store.ts'
-import { confirm, openScreen } from './testing.ts'
+import { confirm, openScreen, labelStem } from './testing.ts'
 
 /**
  * Learning without destructive actions (ADR 0019): what cannot be undone asks
@@ -106,7 +106,7 @@ describe('starting a career', () => {
   it('shows what you are taking on, and no keeps you choosing', () => {
     useGame.getState().startNewCareer()
     render(<App />)
-    const first = screen.getAllByRole('button', { name: t('setup.takeCharge') })[0]
+    const first = screen.getAllByRole('button', { name: labelStem(t('setup.takeCharge')) })[0]
     fireEvent.click(first as HTMLElement)
     cancel()
     expect(useGame.getState().needsSetup).toBe(true)

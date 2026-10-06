@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { computeTable, type MatchPlayed } from '@fm/domain'
-import { Button, Modal, ScreenActions } from '@fm/design-system'
+import { Button, Modal, ScreenActions, VisuallyHidden } from '@fm/design-system'
 import { bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
 import { describe, lookupFor } from '../notifications.ts'
@@ -54,7 +54,20 @@ export function MatchResult({
           {away?.shortName}
         </span>
       </p>
-      {notice !== null && <p className={`match-result__line is-${notice.tone}`}>{notice.text}</p>}
+      {/* The picture above is hidden from screen readers because the news line
+          says the same; when there is no line, the score is said here instead. */}
+      {notice !== null ? (
+        <p className={`match-result__line is-${notice.tone}`}>{notice.text}</p>
+      ) : (
+        <VisuallyHidden>
+          {t('result.scoreLine', {
+            home: home?.name ?? '',
+            homeGoals: event.score.home,
+            away: away?.name ?? '',
+            awayGoals: event.score.away,
+          })}
+        </VisuallyHidden>
+      )}
       <p className={`match-result__position ${band?.className ?? ''}`}>
         {t('result.position', { position: standing.position })}
       </p>

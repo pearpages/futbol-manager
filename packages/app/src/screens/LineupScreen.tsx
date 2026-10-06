@@ -176,6 +176,7 @@ export function LineupScreen() {
                       icon="transfer"
                       type="button"
                       className="lineup-row__pick"
+                      aria-label={t('lineup.pickPlayer', { player: player.name })}
                       aria-pressed={player.id === selectedPlayer?.id}
                       onClick={() => pick(player.id)}
                     >
@@ -209,7 +210,13 @@ export function LineupScreen() {
             {substitutes.length === 0 ? (
               <Hint>{t('lineup.noSubs')}</Hint>
             ) : (
-              <ul className="lineup-screen__subs">
+              <ul
+                className="lineup-screen__subs"
+                // A box that scrolls by itself has to take focus, or a keyboard
+                // cannot scroll it (WCAG 2.1.1).
+                tabIndex={0}
+                aria-label={t('lineup.bench')}
+              >
                 {substitutes.map((sub) => (
                   <li key={sub.id}>
                     {/* A row is only a control once there is somebody to swap
@@ -250,7 +257,11 @@ export function LineupScreen() {
           <div className="lineup-screen__body">
             <Field>
               <FieldLabel as="span">{t('lineup.formation')}</FieldLabel>
-              <div className="lineup-screen__formations">
+              <div
+                className="lineup-screen__formations"
+                role="group"
+                aria-label={t('lineup.formation')}
+              >
                 {FORMATION_NAMES.map((formation) => {
                   // `bestXI` throws on a squad short at any bank, and `setFormation`
                   // calls it before dispatching — so an enabled button here is an
@@ -262,7 +273,9 @@ export function LineupScreen() {
                       key={formation}
                       type="button"
                       disabled={!playable}
-                      {...(playable ? {} : { title: t('lineup.cannotField') })}
+                      {...(playable
+                        ? {}
+                        : { title: t('lineup.cannotField'), 'aria-describedby': 'cannot-field' })}
                       onClick={() => setFormation(formation)}
                     >
                       {formation}
@@ -271,6 +284,11 @@ export function LineupScreen() {
                 })}
               </div>
               <Hint>{t('lineup.formationHint')}</Hint>
+              {/* Said once, in words, when any shape is off: a disabled button's
+                  title reached mouse users and nobody else. */}
+              {FORMATION_NAMES.some((formation) => !canField(squad, formation)) && (
+                <Hint id="cannot-field">{t('lineup.cannotField')}</Hint>
+              )}
             </Field>
 
             <Field>
@@ -284,6 +302,7 @@ export function LineupScreen() {
                 max={100}
                 step={5}
                 value={tactics.attacking}
+                aria-valuetext={t(describeApproach(tactics.attacking))}
                 onChange={(event) =>
                   dispatch({
                     type: 'SetTactics',

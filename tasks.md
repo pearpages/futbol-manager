@@ -37,7 +37,7 @@ at `0f75a23`), and each entry is one Done line below.
 
 Small, real, and deferred more than once. They moved here from the roadmap on 2026-10-02.
 
-- [ ] **Disabled-tile accessible name reads `CanteraM7`.** In `HubScreen.tsx` the label and milestone spans are adjacent with no separator. Fixing it is one attribute (`aria-hidden` on the badge, whose `title` already carries the milestone). A test builds the expected name as `` `${label}${tile.milestone}` ``, so the test changes with the fix.
+- [x] **Disabled-tile accessible name reads `CanteraM7`.** Gone with the hub's tiles (ADR 0022); the orphan `hub.arrivesAt` was removed 2026-10-06.
 - [ ] **The overdraft has no teeth.** `board.ts` judges league position and nothing else. This was a deliberate cost at M5b: a club may run to its limit and nobody mentions it. Debt becomes a consequence once there is something to attach it to.
 - [ ] **The harness is still blind to the tactics slider.** `simulate.harness.test.ts` runs every club on balanced tactics in 4-4-2. The formation sweep (`packages/data/src/formations.harness.test.ts`, re-derived at 50 seasons on 2026-08-18) covers approach by strength, squad shape and formation × slider. The slider alone and the 50-season distribution bands remain balanced-only.
 - [ ] **Five breakpoints with no shared token.** The screen stylesheets use 48, 52, 60, 64 and 68rem, and `App.css` has none. Each was picked where one grid broke, which is defensible per screen and incoherent across ten. A `--fm-break-*` token set would make them one decision.
@@ -61,7 +61,7 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 
 - [ ] **Decide: merge the near-duplicate colours.** `chip-fw` (`#e08a7e`) and `relegation-tint` (`#e8a79c`) are close but not equal, and screen headings use 0.02em tracking and a few labels 0.04em beside the two tracking tokens. Merging is a visual change.
 - [ ] **Commit the artifact staging script.** The Claude Design System artifact (https://claude.ai/artifact/AdUCGn6WHkjuxjMZtL2sa9) was published from a script that reshapes the package into the artifact's format; it lives outside the repo. Commit it as a package script so republishing is one command.
-- [ ] **The lineup's pitch discs are just under 24px to press** on a phone (they scale with the SVG). Give each slot a larger invisible hit circle.
+- [x] **The lineup's pitch discs are just under 24px to press** — about 43px on a phone since the pitch row grew to 27rem; closed 2026-10-06.
 
 ### Audit 2026-10-03
 
@@ -76,8 +76,8 @@ Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.m
 
 **UI and accessibility**
 
-- [ ] **The focus ring disappears on light panels.** The global `:focus-visible` outline is brass (`chrome.css:643`), 1.02:1 against `--fm-panel`, so the footer buttons, the cog and the landing buttons show focus only by hue. Fix: an ink outline inside `.panel`, or a double ring.
-- [ ] **Accessible names lack context or read badly.** Market, Lineup and Squad row buttons are all just "Segueix"/"Ofereix", "Canvia" or "Renova" (`MarketScreen.tsx:628-637`, `LineupScreen.tsx:154-160`, `SquadScreen.tsx:220`); add the player's name. Sort buttons read as "J", "G", "E", "P" (`SortHeader.tsx:33-40`); add full-word labels in all three dictionaries. The hub crest reads "Madrid MADRID" (`HubScreen.tsx:248-251`). Explain buttons inside headings add "Explica: …" to the heading's name; move them out of the `<h2>`. Language choices have no `lang` (`SettingsMenu.tsx:43-54`).
+- [x] **The focus ring disappears on light panels.** The global `:focus-visible` outline is brass (`chrome.css:643`), 1.02:1 against `--fm-panel`, so the footer buttons, the cog and the landing buttons show focus only by hue. Fix: an ink outline inside `.panel`, or a double ring.
+- [x] **Accessible names lack context or read badly.** Market, Lineup and Squad row buttons are all just "Segueix"/"Ofereix", "Canvia" or "Renova" (`MarketScreen.tsx:628-637`, `LineupScreen.tsx:154-160`, `SquadScreen.tsx:220`); add the player's name. Sort buttons read as "J", "G", "E", "P" (`SortHeader.tsx:33-40`); add full-word labels in all three dictionaries. The hub crest reads "Madrid MADRID" (`HubScreen.tsx:248-251`). Explain buttons inside headings add "Explica: …" to the heading's name; move them out of the `<h2>`. Language choices have no `lang` (`SettingsMenu.tsx:43-54`).
 
 **Code health**
 
@@ -152,6 +152,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-06: Accessibility pass (WCAG 2.2 AA), after an audit with axe in Chrome over every story and the live game. The shell titles the page after the screen, moves focus to the title when the pressed control left with the old screen, and announces the place, the new day and fresh news through one live region; the phone menu hands focus back to ⋯. A two-tone focus ring (ink around brass) reads on panel and screen; the pitch draws focus apart from selection; the current tab is marked in ink. Toasts announce through a region that exists first, hold on hover and focus, wait when they carry an undo, and give focus back. Dialogs make the page behind inert and only the top one answers Escape. Row buttons name their player, club or save; toggles keep one label and say their state with `aria-pressed`; abbreviated columns are named in words; Explain buttons sit beside headings; language choices carry `lang`; the form strip shows G/E/P. Hints and refusals are linked to their fields, sliders say their value in words, disabled buttons say why on the player card, lineup and squad, scroll boxes take focus, row headers are `th scope="row"`, the crash screen focuses its title, the match result says the score when there is no news line, the market's count is a status, and High Contrast mode keeps pressed and current states.
 - [x] 2026-10-06: footfall counts visits (ADR 0026): the cookieless Umami tag in `packages/app/index.html`, with the README and security.md saying what it sends.
 - [x] 2026-10-06: Maturity assessment (v0.8.2) — verdict Ready to advertise, 0 gaps added to Open; the two first-player issues from the morning's assessment are fixed.
 - [x] 2026-10-06: `pnpm look` and `scripts/look.ts` replace hand-spawned `--remote-debugging-port` Chrome for looking at screens. The browser closes however a run ends, a SIGKILL included, so orphans no longer pile up.

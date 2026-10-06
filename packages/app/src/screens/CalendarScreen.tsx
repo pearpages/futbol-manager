@@ -135,7 +135,12 @@ export function CalendarScreen() {
           rows — up and out of sight with the fixtures. The screenshot that caught
           this had scrolled 218px to reach November, and the explainer was simply
           gone. `ResultsScreen` had already paid for the same lesson. */}
-      <div className="calendar-screen__scroll">
+      <div
+        className="calendar-screen__scroll"
+        role="region"
+        tabIndex={0}
+        aria-label={t('calendar.heading', { season: season(game.season.startYear) })}
+      >
         <DataTable className="calendar-screen__table">
           <thead className="data-table__head">
             <tr>

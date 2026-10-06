@@ -12,4 +12,14 @@ describe('ScreenHeading', () => {
       '<h2 class="screen__heading extra more" id="x"></h2>',
     )
   })
+
+  it('keeps a control beside the heading out of its name', () => {
+    expect(
+      renderToStaticMarkup(
+        <ScreenHeading aside={<button type="button">i</button>}>Squad</ScreenHeading>,
+      ),
+    ).toBe(
+      '<div class="screen__heading-row"><h2 class="screen__heading">Squad</h2><button type="button">i</button></div>',
+    )
+  })
 })

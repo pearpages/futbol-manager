@@ -619,7 +619,7 @@ export function MarketScreen() {
                 >
                   {t('market.sortBy', { key: t(`market.sort.${sort?.key ?? 'market'}`) })}
                 </Button>
-                <span className="market-screen__count">
+                <span className="market-screen__count" role="status">
                   {t('market.showing', { shown: listings.length, total: all.length })}
                 </span>
               </div>
@@ -641,7 +641,7 @@ export function MarketScreen() {
                     {t('market.clearFilters')}
                   </Button>
                 )}
-                <span className="market-screen__count">
+                <span className="market-screen__count" role="status">
                   {t('market.showing', { shown: listings.length, total: all.length })}
                 </span>
               </div>
@@ -709,6 +709,7 @@ export function MarketScreen() {
                             icon={shortlisted.has(player.id) ? 'star-filled' : 'star'}
                             type="button"
                             className="market-screen__mini"
+                            aria-label={t('market.watchPlayer', { player: player.name })}
                             aria-pressed={shortlisted.has(player.id)}
                             onClick={() =>
                               dispatch({
@@ -718,13 +719,19 @@ export function MarketScreen() {
                               })
                             }
                           >
-                            {shortlisted.has(player.id) ? t('market.watching') : t('market.watch')}
+                            {/* One label: the filled star and `aria-pressed` say it is on,
+                                and a name that changed too would say it twice. */}
+                            {t('market.watch')}
                           </Button>
                           <Button
                             icon="cash"
                             primary
                             type="button"
                             className="market-screen__mini"
+                            aria-label={t(
+                              listing.from === null ? 'market.signPlayer' : 'market.bidPlayer',
+                              { player: player.name },
+                            )}
                             disabled={!open}
                             onClick={() => {
                               setTarget(player.id)
@@ -1245,7 +1252,7 @@ function ClubBrowser({
         </Button>
         <ClubBadge club={club} size="sm" />
         <span className="club-grid__heading">{club.name}</span>
-        <span className="market-screen__count">
+        <span className="market-screen__count" role="status">
           {t('market.squadSize', { count: squad.length })}
         </span>
       </div>

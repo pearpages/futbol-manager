@@ -456,7 +456,7 @@ function ResultGrid({
                   key={homeId}
                   className={`results-grid__row${homeId === managed ? ' is-you' : ''}`}
                 >
-                  <th className="results-grid__side">
+                  <th scope="row" className="results-grid__side">
                     <ClubCell>
                       {club !== undefined && <ClubBadge club={club} />}
                       <span className="results-grid__club">{name(homeId)}</span>
