@@ -1,6 +1,6 @@
 # ADR 0027 — Accessibility conventions: focus, announcements, names and timing
 
-**Status:** proposed · 2026-10-06
+**Status:** accepted · 2026-10-06
 
 ## Context
 
