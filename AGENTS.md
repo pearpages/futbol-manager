@@ -64,6 +64,9 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
   `pnpm test -- --run <name>` does **not** filter; the `--` swallows the name and all files run.
 - `pnpm season [seed]`: a headless season that prints the final table. Byte-identical across
   runs for a seed, which makes it the cheapest determinism check there is.
+- `pnpm look <url> [width] [out.png]`: open a page in headless Chrome, print its scroll
+  width against the viewport and optionally screenshot it. Throwaways import `look` from
+  `scripts/look.ts` to drive a page instead of launching Chrome themselves.
 - `pnpm fixture`: write a save fixture for the **current** schema version. Run it _before_
   adding the next migration, never after.
 - `pnpm typecheck` · `pnpm lint` · `pnpm format` (`pnpm format:check` in CI)
@@ -94,8 +97,14 @@ First-time setup: `mise trust && mise install && pnpm install` (`mise.toml` pins
 
 - **Green suite, broken screen.** The app project runs with `css: false` and jsdom does no
   layout, so clipping, overflow, wrapping, colour and stacking are invisible to every test.
-  Look at it in a real browser. Use the Chrome extension to look, and headless Chrome over CDP
-  against `pnpm build && vite preview` to measure or to drive a `<select>`.
+  Look at it in a real browser. Use the Chrome extension to look, and `pnpm look` (or a
+  throwaway built on `look` from `scripts/look.ts`) against `pnpm build && vite preview` to
+  measure or to drive a `<select>`.
+- **A hand-spawned headless Chrome outlives its script.** A `--remote-debugging-port` Chrome
+  started with `spawn` survives the Node process the moment it throws or a timeout kills it,
+  and copies piled up for two days. Even Playwright's browser survives a SIGKILL or SIGALRM.
+  Go through `look`, which closes it in `finally` and leaves a watchdog for what Node cannot
+  catch. Check with `pgrep -fl remote-debugging` after a session that drove a browser.
 - **Chrome extension returns `[]`.** That means its service worker is asleep, not that the
   install is broken. Bring Chrome to the front with the Claude side panel open, then call it.
 - **Port 4173 serves another app.** A service worker from a different project owns that
