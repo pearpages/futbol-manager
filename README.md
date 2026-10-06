@@ -19,9 +19,10 @@ leave your device. Visits are counted anonymously, without cookies, on our own s
 
 ## What's new
 
-**v0.8.2 — fixes.** Offers for your players end when the transfer window closes and come
-only from clubs that can pay. A damaged save no longer breaks the game: it is refused, or the
-game offers to delete it. The table's matchday now matches the one on Avui. Every release, with its notes, is on the
+**v0.8.4 — easier to use with a keyboard or a screen reader.** The game says where you are
+when the screen or the day changes, keyboard focus is visible everywhere, buttons name the
+player they act on, the form guide shows its letters, and the undo after changing formation
+waits until you use it or close it. Every release, with its notes, is on the
 [releases page](https://github.com/pearpages/futbol-manager/releases).
 
 What comes next is in [docs/roadmap.md](docs/roadmap.md): sponsorship deals (M5c), then
