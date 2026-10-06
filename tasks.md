@@ -152,6 +152,7 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-06: `SaveManagerModal.test.tsx` waits for the picker to close after a load; the race failed the v0.8.1 release check, so v0.8.2 ships its fixes.
 - [x] 2026-10-06: The README's What's new is v0.8.1.
 - [x] 2026-10-06: Offers for your players lapse when the window closes, come only from a club that can pay the fee and bonus without borrowing, and re-check the window and the buyer on acceptance.
 - [x] 2026-10-06: Saves are checked on load (whole-number version, uint32 rng state, `isGameState` payload), the save list says when one cannot be read, and a crash screen offers a reload or deleting the save.
