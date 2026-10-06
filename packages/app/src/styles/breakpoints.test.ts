@@ -22,7 +22,8 @@ const ALLOWED = new Set([
   '(max-width: 40rem)',
   '(prefers-reduced-motion: reduce)',
   // Not a width: Windows High Contrast, where fills are dropped and a state
-  // drawn only as a background has to be redrawn as a border or a system colour.
+  // drawn only as a background has to be redrawn as a border or a system colour
+  // (ADR 0027).
   '(forced-colors: active)',
 ])
 

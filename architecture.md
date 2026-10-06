@@ -66,7 +66,7 @@ foundation, primitive and component has one beside it (ADR 0021); Storybook rend
 On a phone short dialogs are sheets and lists or forms (`Modal full`) take the whole screen. `usePhone` and
 `PHONE_QUERY` live in the design system, which needs them for that close button.
 
-**Moving, said.** The shell titles the page after the place (`{screen} · Futbol Manager`). When
+**Moving, said** (ADR 0027). The shell titles the page after the place (`{screen} · Futbol Manager`). When
 a screen arrives and focus fell with the control that left (a player link, Back), focus goes
 to the bar's `h1`; when the pressed control is still there (a tab, a segment), focus stays
 and the shell's one live region names the place. The same region says the new date and how
