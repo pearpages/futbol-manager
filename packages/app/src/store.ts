@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import {
   type Command,
   createRng,
+  isGameState,
   isSeasonComplete,
   nextFixtureFor,
   type Event,
@@ -12,7 +13,6 @@ import {
   referenceValues,
   reduce,
   type Rng,
-  type RngState,
 } from '@fm/domain'
 import {
   DEFAULT_CLUBS,
@@ -505,6 +505,10 @@ export const useGame = create<Store>((set, get) => ({
         loaded = await loadGame(AUTOSAVE_SLOT)
         fromUnnamed = loaded !== null
       }
+      // A save that does not hold a career would crash the first screen, and
+      // the slot pointer would bring it back on every reload. It stays in the
+      // list, where the player can delete it.
+      if (loaded !== null && !isGameState(loaded.payload)) throw new Error('Unreadable save')
       await get().refreshSaves()
     } catch (reason) {
       // Another tab holding an older version of the database is the one failure
@@ -516,7 +520,7 @@ export const useGame = create<Store>((set, get) => ({
     }
 
     if (loaded === null) return false
-    rng = createRng(loaded.rngState as RngState)
+    rng = createRng(loaded.rngState)
     const game = loaded.payload as GameState
     set({ game, feed: loaded.feed ?? [], unread: loaded.unread ?? 0, needsSetup: false })
 
@@ -593,8 +597,9 @@ export const useGame = create<Store>((set, get) => ({
       await get().refreshSaves()
       return false
     }
+    if (!isGameState(loaded.payload)) return false
 
-    rng = createRng(loaded.rngState as RngState)
+    rng = createRng(loaded.rngState)
     set({
       game: loaded.payload as GameState,
       feed: loaded.feed ?? [],

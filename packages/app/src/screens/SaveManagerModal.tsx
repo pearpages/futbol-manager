@@ -55,6 +55,9 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
   // an act of retyping its name exactly.
   const [name, setName] = useState(() => (currentSlot === null ? '' : (nameFor(currentSlot) ?? '')))
   const [pending, setPending] = useState<Pending | null>(null)
+  // A save that would not load. Named rather than silent, because a Load that
+  // does nothing reads as a button that is broken.
+  const [unreadable, setUnreadable] = useState<string | null>(null)
 
   // The list can be stale — another tab, or a save deleted since this session
   // started. Opening the picker is the moment to find out.
@@ -100,6 +103,7 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
       return
     }
     if (await load(pending.slot)) onClose()
+    else setUnreadable(pending.name)
   }
 
   const question =
@@ -189,6 +193,12 @@ export function SaveManagerModal({ onClose }: SaveManagerModalProps): React.JSX.
           </Button>
         </div>
       </Field>
+
+      {unreadable !== null && saves.some((save) => save.name === unreadable) && (
+        <p className="save-manager__question" role="alert">
+          {t('saves.unreadable', { name: unreadable })}
+        </p>
+      )}
 
       <Screen as="div" className="save-manager__list">
         {ordered.length === 0 ? (

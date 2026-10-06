@@ -3,6 +3,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { fireEvent, render, within } from '@testing-library/react'
 import { computeTable } from '@fm/domain'
+import { matchdayFor } from '../matchday.ts'
 import { BANDS, bandFor } from '../bands.ts'
 import { App } from '../App.tsx'
 import { useGame } from '../store.ts'
@@ -230,5 +231,28 @@ describe('the crests', () => {
     // size without the padding is the regression this catches, and jsdom does no
     // layout, so reading the rule is the only guard available.
     expect(css).toMatch(/\.table-screen \.data-table__row td \{[^}]*padding-block: 0/)
+  })
+})
+
+describe('the matchday', () => {
+  /** The value beside the table's Matchday label. */
+  const shown = () => {
+    const label = within(document.querySelector('.table-screen__meta') as HTMLElement).getByText(
+      t('table.matchday'),
+    )
+    return Number(label.nextElementSibling?.textContent)
+  }
+
+  it('is the round about to be played, the same one the hub names', () => {
+    // It once counted rounds completed, so after six rounds the table said 6
+    // while the hub said 7 — two numbers for one word.
+    useGame.getState().newGame()
+    render(<App />)
+    advance(40)
+    const next = matchdayFor(useGame.getState().game)?.fixture.round
+    expect(next).toBeGreaterThan(1)
+
+    openScreen('nav.table')
+    expect(shown()).toBe(next)
   })
 })

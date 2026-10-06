@@ -23,11 +23,14 @@ Small by construction. This is a static single-page app on GitHub Pages:
   The language and the last-used slot live in `localStorage`. Nothing is sent anywhere.
 - **No HTML from data.** There is no `dangerouslySetInnerHTML` or `innerHTML`. Everything
   rendered goes through React's escaping, including player and club names.
-- **Untrusted input: save import.** `importSave` exists in `@fm/persistence` but is not
-  wired to the UI yet. Once it is, an imported JSON file is untrusted. It must go through the
-  migration chain, which already refuses a save from a future version, and must be validated
-  before it reaches the reducer. A malformed save should fail closed, not crash the app (there
-  is no `ErrorBoundary`).
+- **Untrusted input: saves.** A save in IndexedDB can be edited by hand, and an imported
+  file by anyone. Loading fails closed: `readSave` refuses an envelope that is not an object, a
+  `schemaVersion` that is not a whole number (or is from the future) and an `rngState` that is
+  not four uint32s, and drops a `feed` or `unread` it cannot read. The store then refuses a
+  payload that fails `isGameState`, a shallow shape check of what the first screen reads. A
+  save wrong deeper than that crashes on render into `CrashBoundary`, which offers to delete it,
+  so a bad save never needs the site's data cleared. `importSave` is not wired to the UI yet;
+  when it is, it must go through `readSave` and `isGameState` the same way.
 - **CI/CD.** The workflow declares `contents: read` at the top, so the `check` job, which
   runs pull-request code, holds a read-only token whatever the repository default says. The
   deploy job alone adds `pages: write` and `id-token: write`, only for a published release

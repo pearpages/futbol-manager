@@ -145,6 +145,14 @@ export const en: Dictionary = {
   'saves.confirmOverwrite': 'Write over “{name}”? What it holds now is gone.',
   'saves.confirmLoad': 'Load “{name}”? Anything you have not saved in this career is lost.',
   'saves.confirmDelete': 'Delete “{name}”? There is no way back to it.',
+  'saves.unreadable': '“{name}” could not be read. It may be damaged; you can delete it.',
+  'crash.title': 'Something went wrong',
+  'crash.body':
+    'The game hit an error it could not recover from. Reloading usually fixes it. If it happens every time you open the game, the save it is loading may be damaged.',
+  'crash.reload': 'Reload',
+  'crash.deleteSave': 'Delete this save',
+  'crash.confirmDelete':
+    'Delete the save you were playing and start again? There is no way back to it.',
 
   // ── Classification ───────────────────────────────────────────────────────
   'table.band.champion': 'Champion',
@@ -641,6 +649,7 @@ export const en: Dictionary = {
   'error.offer.notYours': 'That offer is not yours to answer',
   'error.offer.settled': 'That offer has already been settled',
   'error.offer.cannotSpare': 'You can no longer spare him',
+  'error.offer.buyerCannot': 'The buying club can no longer complete the deal',
   'error.list.notYours': 'You can only list your own players',
   'error.list.firstTeam': '{player} is in your first team — take him out of the XI first',
   'error.list.coverKeeper': 'Selling {player} would leave you with one goalkeeper',

@@ -115,3 +115,42 @@ export function squadOf(state: GameState, clubId: ClubId): readonly Player[] {
 export function isSeasonComplete(state: GameState): boolean {
   return state.season.fixtures.every((f) => f.result !== null)
 }
+
+/**
+ * Whether a value from outside — a save off disk, an imported file — has the
+ * shape of a career, deep enough that the first screen can render it.
+ *
+ * Shallow on purpose. It checks every field a screen reads before it reads
+ * anything else, and the managed club that every screen starts from. It does not
+ * walk every player: a save that passes this and is wrong deeper down is caught
+ * by the app's error boundary, which offers to delete it.
+ */
+export function isGameState(value: unknown): value is GameState {
+  if (!isRecord(value)) return false
+  const { season, competition, board, foreign } = value
+  if (!isRecord(season) || !isRecord(competition) || !isRecord(board) || !isRecord(foreign))
+    return false
+  if (!Number.isInteger(season['startYear']) || !Number.isInteger(season['currentDate']))
+    return false
+  if (!Array.isArray(season['fixtures']) || !Array.isArray(competition['clubIds'])) return false
+  if (!Array.isArray(foreign['clubs']) || !isRecord(foreign['squads'])) return false
+  for (const list of ['clubs', 'freeAgents', 'bids', 'shortlist', 'transferList', 'history']) {
+    if (!Array.isArray(value[list])) return false
+  }
+  for (const map of ['squads', 'lineups', 'tactics']) {
+    if (!isRecord(value[map])) return false
+  }
+
+  const managed = value['managedClubId']
+  if (typeof managed !== 'string') return false
+  const clubs = value['clubs'] as readonly unknown[]
+  return (
+    clubs.some((club) => isRecord(club) && club['id'] === managed) &&
+    Array.isArray((value['squads'] as Record<string, unknown>)[managed]) &&
+    isRecord((value['lineups'] as Record<string, unknown>)[managed])
+  )
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}

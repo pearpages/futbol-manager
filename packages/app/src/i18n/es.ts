@@ -134,6 +134,13 @@ export const es: Dictionary = {
   'saves.confirmOverwrite': '¿Escribir encima de «{name}»? Lo que hay ahora se perderá.',
   'saves.confirmLoad': '¿Cargar «{name}»? Todo lo que no hayas grabado de esta carrera se perderá.',
   'saves.confirmDelete': '¿Borrar «{name}»? No hay vuelta atrás.',
+  'saves.unreadable': 'No se ha podido leer «{name}». Puede estar dañada; puedes borrarla.',
+  'crash.title': 'Algo ha fallado',
+  'crash.body':
+    'El juego ha encontrado un error del que no se ha podido recuperar. Normalmente se resuelve recargando. Si pasa cada vez que abres el juego, puede que la partida que carga esté dañada.',
+  'crash.reload': 'Recargar',
+  'crash.deleteSave': 'Borrar esta partida',
+  'crash.confirmDelete': '¿Borrar la partida que jugabas y empezar de nuevo? No hay vuelta atrás.',
 
   // ── Clasificación ────────────────────────────────────────────────────────
   'table.band.champion': 'Campeón',
@@ -628,6 +635,7 @@ export const es: Dictionary = {
   'error.offer.notYours': 'Esa oferta no te toca responderla',
   'error.offer.settled': 'Esa oferta ya está resuelta',
   'error.offer.cannotSpare': 'Ya no puedes prescindir de él',
+  'error.offer.buyerCannot': 'El club comprador ya no puede cerrar la operación',
   'error.list.notYours': 'Solo puedes poner en venta a tus jugadores',
   'error.list.firstTeam': '{player} está en tu once titular — sácalo del equipo primero',
   'error.list.coverKeeper': 'Vender a {player} te dejaría con un solo portero',

@@ -37,14 +37,12 @@ at `0f75a23`), and each entry is one Done line below.
 
 Small, real, and deferred more than once. They moved here from the roadmap on 2026-10-02.
 
-- [ ] **Matchday number disagrees by one.** `TableScreen.tsx` computes `Math.ceil(played / 10)`, which is rounds _completed_, while the hub and title bar show the round _about to be played_. A one-line fix, deferred twice as "a screen this change was not asked to touch". Decide which number is right and make both sites say it.
 - [ ] **Disabled-tile accessible name reads `CanteraM7`.** In `HubScreen.tsx` the label and milestone spans are adjacent with no separator. Fixing it is one attribute (`aria-hidden` on the badge, whose `title` already carries the milestone). A test builds the expected name as `` `${label}${tile.milestone}` ``, so the test changes with the fix.
 - [ ] **The overdraft has no teeth.** `board.ts` judges league position and nothing else. This was a deliberate cost at M5b: a club may run to its limit and nobody mentions it. Debt becomes a consequence once there is something to attach it to.
 - [ ] **The harness is still blind to the tactics slider.** `simulate.harness.test.ts` runs every club on balanced tactics in 4-4-2. The formation sweep (`packages/data/src/formations.harness.test.ts`, re-derived at 50 seasons on 2026-08-18) covers approach by strength, squad shape and formation × slider. The slider alone and the 50-season distribution bands remain balanced-only.
 - [ ] **Five breakpoints with no shared token.** The screen stylesheets use 48, 52, 60, 64 and 68rem, and `App.css` has none. Each was picked where one grid broke, which is defensible per screen and incoherent across ten. A `--fm-break-*` token set would make them one decision.
 - [ ] **Distribution bands still run on generated squads.** `simulateSeasons` takes `rosters` and the formation arms use them. The 50-season bands still run on `TEST_CLUBS`, where generated squads are arguably right because they describe the shape of a league rather than this one.
 - [ ] **`TableScreen`'s "Últims resultats" is a weaker copy.** It reads `store.feed` (capped at 60, which does survive a reload), while `ResultsScreen` reads `season.fixtures`. The weaker of two copies keeps winning the click. Decide deliberately whether to remove it.
-- [ ] **The results grid pushes the page 14px at a 500px viewport.** The classification and the squad contain themselves at that width. Neither `min-width: 0` on the scroller nor `overflow-x: hidden` moves it, so the cause is further up the shell. Everything from 900px up is clean. **Cause found by the 2026-10-03 audit:** `.visually-hidden` is `position: absolute` (`chrome.css:325`) and the `.screen` scrollers are static, so the hidden spans escape the scroller and widen the document. It also widens Squad at 390px by 79px. Injecting `.screen { position: relative }` brings both to the viewport width.
 - [ ] **`BAR_FLOOR = 45` contradicts its own comment ("plotted from 40").** In `PlayerScreen.tsx` an attribute of 45 draws an empty bar. Measure the league's lowest attribute first, then fix one of the two. Generation also gives a player very little internal spread (the best keeper spans 71–80), which limits the radar more than the floor does.
 - [ ] **Stadium expansion is a dominant strategy.** `occupancy` never reads `capacity` (`finance.ts`), so gate income is linear in seats. A bigger ground also raises `debtLimit` and lowers `wagePremium`. It needs a demand ceiling. This will move calibrated bands.
 - [ ] **A season reaches only nine settlement days.** Settlement is the 1st of the month, and the clock runs 15 Aug → 1 May, so wages, TV and sponsorship are paid at 9/12. `calendar.test.ts` pins the nine dates and will fail loudly when this is fixed.
@@ -57,7 +55,7 @@ Small, real, and deferred more than once. They moved here from the roadmap on 20
 - [ ] **`ShellFoot.test.tsx` quick-save race** reproduces under two concurrent full suites: it asserts `queryByRole('dialog')` synchronously while the close lands a tick later.
 - [ ] **`competition.name` is still `'Primera División'` inside `GameState`**, so the title bar names it while the rest of the app no longer does. It needs a migration.
 - [ ] **`es.ts` keeps the calques fixed in Catalan** (`en el idioma de`, `el calendario`, `Mostrando`, `cubrir este sistema`). `attribute.short.finishing` (`DEF`) collides with `position.DF` on the ficha.
-- [ ] **`importSave` / `exportSave` are unwired.** When they are wired, validate imported saves (see security.md). The validator is the audit's **Saves are trusted on load** item below.
+- [ ] **`importSave` / `exportSave` are unwired.** When they are wired, send imports through `readSave` and `isGameState`, as `restore` does (security.md).
 
 ### Design system and mobile layouts
 
@@ -71,7 +69,6 @@ Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.m
 
 **Game model**
 
-- [ ] **AI offers can be accepted after the window closes, and the AI buyer can go overdrawn.** `respondToOffer` (`reduce.ts:923`) has no window check, and offers live 7 days, so an offer from 31 Aug is accepted on 1 Sep. `bestOfferFor` (`reduce.ts:1189,1195`) tests `budget < fee` instead of `signingOutlay(fee)`, and nothing re-checks the buyer on acceptance (Bilbao 9143 → −44). This contradicts market-model.md ("nothing is bought or sold outside a window", "the AI never borrows to buy"). Fix: gate on `isTransferWindowOpen` or lapse offers at close; use `signingOutlay`; re-check the buyer's budget and squad size.
 - [ ] **Renewals: pay cuts are free, and doing nothing beats renewing.** `offerTerms` (`bids.ts:268`) judges a renewal against `wanted`, never the current wage, so renewing at `wanted` cuts the wage bill 2–10% and can be repeated every August. The rollover (`season.ts:636-645`) re-signs retained players at `expectedWage`, below `wanted`, so leaving a contract to expire is cheaper than renewing it (P10). Fix: floor renewals at the current wage, and have the rollover ask the managed club's players for `wanted` or release them.
 - [ ] **Club ratings are frozen, yet sponsorship, crowds, the overdraft and the board read them.** `Club.attack/defence` never changes after creation but drives `occupancy`, `sponsorMoney`, `annualIncome`/`debtLimit` (`finance.ts:236,292,327`) and `standingOf` (`board.ts:62`). Signing a 92-rated player moves sponsorship by 0, contradicting market-model.md ("sponsorship tracks the squad"). Fix: derive them from the live best XI or refresh at rollover. This will move bands; re-measure.
 - [ ] **Every career starts from the same seed.** `store.ts:311` always uses `START_SEED = 20260813`, so two careers at the same club with the same commands play identically. Decide: seed each career (chosen outside `domain`, stored in the save) or record the fixed seed in an ADR.
@@ -91,7 +88,6 @@ Explained in plain words in [docs/audits/2026-10-03.md](docs/audits/2026-10-03.m
 
 **Security and dependencies**
 
-- [ ] **Saves are trusted on load.** `migratePayload` (`migrations.ts:345-365`) rejects only versions above current or below 1, so a missing or `NaN` `schemaVersion` skips every migration and is stamped current. The store then casts with no check (`store.ts:495-496`, `:573-575`). Garbage that is accepted crashes the render, there is no ErrorBoundary, and `fm.lastSlot` restores the same slot on every reload, so the only way out is clearing site data. Fix: require an integer version, shape-check the payload, `rngState` (four uint32s), `feed` and `unread`, and add a top-level ErrorBoundary that offers to delete the save. Needed before `importSave` is wired.
 - [ ] **No Content Security Policy.** GitHub Pages can't send headers, but the built `index.html` has no inline script or style, so a strict meta CSP fits: `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; manifest-src 'self'; connect-src 'none'; base-uri 'none'; form-action 'none'`, plus `<meta name="referrer" content="strict-origin-when-cross-origin">`. Inject it only at build (a Vite `transformIndexHtml` plugin with `apply: 'build'`), because the dev server's HMR breaks under it, and add a test against `dist/index.html`.
 - [ ] **The custom domain may not be verified.** `protected_domain_state` is null. If Pages were turned off while DNS still points at GitHub, another account could claim `futbol.pearpages.com`. Verify `pearpages.com` under account Settings → Pages.
 
@@ -156,6 +152,12 @@ What is weak is cohesion and coupling _inside_ the packages. Two modules, `store
 
 ## Done
 
+- [x] 2026-10-06: The README's What's new is v0.8.1.
+- [x] 2026-10-06: Offers for your players lapse when the window closes, come only from a club that can pay the fee and bonus without borrowing, and re-check the window and the buyer on acceptance.
+- [x] 2026-10-06: Saves are checked on load (whole-number version, uint32 rng state, `isGameState` payload), the save list says when one cannot be read, and a crash screen offers a reload or deleting the save.
+- [x] 2026-10-06: The table's matchday is the round about to be played, the same as the hub's.
+- [x] 2026-10-06: The results grid and Squad no longer scroll sideways at 390, 500, 700 or 850px in the built game, even with the `.screen { position: relative }` rule removed: the one shell (ADR 0022) took the cause away. Closed with no change.
+- [x] 2026-10-06: Maturity assessment — verdict Ready to advertise, 0 gaps added to Open (the two soft spots are already Open items).
 - [x] 2026-10-05: The README's What's new is v0.8.0.
 - [x] 2026-10-05: Club ratings re-ranked from the league's results (ADR 0025): the same twenty rating pairs handed out by goal difference per match over 2025–26 and 2026–27, so Barcelona leads (89/87) and Madrid follows (87/88). Newcomers who were already in the foreign league take that row's value, so Rodri arrives at Barcelona as its third midfielder. `TEST_CLUBS` stays frozen at the August league.
 - [x] 2026-10-05: The hub's art is back. Each place wears its old section's colour (Lliga green, Equip blue, Mercat brick, Club amber) on its rail marker and lit segment, at AA; on the desk the place's member of staff stands at the foot of the rail and all four line the foot of Avui's standing panel.

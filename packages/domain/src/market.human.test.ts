@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { suggestedTerms } from './bids.ts'
 import type { ClubId } from './entities.ts'
 import { bidIsLive } from './bids.ts'
-import { FINANCE } from './finance.ts'
+import { FINANCE, signingOutlay } from './finance.ts'
 import { bestXI, type Formation, startersOf } from './lineup.ts'
 import {
   COVER_KEEPERS,
+  isTransferWindowOpen,
   listedForSale,
   MAX_SQUAD,
   MIN_SQUAD,
@@ -525,6 +526,99 @@ describe('offers for your players', () => {
     // You receive the whole fee; the buying club also pays the player a signing
     // bonus, and that is the part which leaves the league.
     expect(totalBudget(state)).toBe(before - Math.round(offer.fee * FINANCE.SIGNING_BONUS))
+  })
+})
+
+describe('an offer is bound by the window and by the buyer’s money', () => {
+  const MID = TEST_CLUBS[13]?.id ?? SELLER
+
+  /** Tick to the first offer, keeping the state the offer was generated from. */
+  function firstOffer(): {
+    offer: Extract<Event, { type: 'OfferReceived' }>
+    before: GameState
+  } {
+    for (let day = 0; day < 200; day++) {
+      const before = state
+      const offer = dispatch({ type: 'AdvanceDay' }).find((e) => e.type === 'OfferReceived')
+      if (offer !== undefined) return { offer, before }
+    }
+    /* c8 ignore next */
+    throw new Error('no offer arrived in 200 days')
+  }
+
+  const budgetOf = (s: GameState, id: ClubId) =>
+    [...s.clubs, ...s.foreign.clubs].find((c) => c.id === id)?.budget ?? 0
+
+  beforeEach(() => {
+    rng = createRng(4242)
+    state = newSeason(TEST_CLUBS, 2026, { names: TEST_NAMES, rng, managedClubId: MID })
+  })
+
+  it('lapses when the window shuts, though its seven days have not run', () => {
+    // Made the day before the window's last day, so its seven days are nowhere
+    // near up when the clock steps from 31 August into September.
+    const { offer } = firstOffer()
+    const { y } = toCivil(state.season.currentDate)
+    const lastDay = fromCivil(y, 8, 31)
+    state = {
+      ...state,
+      season: { ...state.season, currentDate: lastDay },
+      bids: state.bids.map((b) =>
+        b.id === offer.bidId ? { ...b, madeOn: addDays(lastDay, -1) } : b,
+      ),
+    }
+    dispatch({ type: 'AdvanceDay' })
+
+    expect(isTransferWindowOpen(state.season.currentDate)).toBe(false)
+    expect(state.bids.find((b) => b.id === offer.bidId)?.status).toBe('rejected')
+  })
+
+  it('cannot be accepted once the window is shut', () => {
+    const { offer } = firstOffer()
+    // Straight to 1 September, past the tick that would have lapsed it: the
+    // reducer's own check is what is under test.
+    const { y } = toCivil(state.season.currentDate)
+    state = { ...state, season: { ...state.season, currentDate: fromCivil(y, 9, 1) } }
+
+    expect(() => dispatch({ type: 'RespondToOffer', bidId: offer.bidId, accept: true })).toThrow(
+      'The transfer window is closed',
+    )
+    expect(state.squads[MID]?.some((p) => p.id === offer.playerId)).toBe(true)
+  })
+
+  it('is never made by a club that would have to borrow to pay it', () => {
+    // The buyer had the fee but not the fee plus the signing bonus. The AI never
+    // borrows to buy (market-model.md), so the offer must not exist.
+    const { offer, before } = firstOffer()
+    const short = <C extends { id: ClubId; budget: number }>(c: C): C =>
+      c.id === offer.from ? { ...c, budget: offer.fee } : c
+    state = {
+      ...before,
+      clubs: before.clubs.map(short),
+      foreign: { ...before.foreign, clubs: before.foreign.clubs.map(short) },
+    }
+    const budgets = state
+
+    const again = dispatch({ type: 'AdvanceDay' }).find((e) => e.type === 'OfferReceived')
+    if (again !== undefined) {
+      expect(budgetOf(budgets, again.from)).toBeGreaterThanOrEqual(signingOutlay(again.fee))
+    }
+  })
+
+  it('is refused at acceptance if the buyer can no longer pay', () => {
+    const { offer } = firstOffer()
+    const broke = <C extends { id: ClubId; budget: number }>(c: C): C =>
+      c.id === offer.from ? { ...c, budget: offer.fee - 1 } : c
+    state = {
+      ...state,
+      clubs: state.clubs.map(broke),
+      foreign: { ...state.foreign, clubs: state.foreign.clubs.map(broke) },
+    }
+
+    expect(() => dispatch({ type: 'RespondToOffer', bidId: offer.bidId, accept: true })).toThrow(
+      'can no longer complete',
+    )
+    expect(budgetOf(state, offer.from)).toBe(offer.fee - 1)
   })
 })
 

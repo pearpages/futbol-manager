@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { computeTable, type TableRow } from '@fm/domain'
 import { type Band, BANDS, bandFor } from '../bands.ts'
 import { useT } from '../i18n/useT.ts'
+import { matchdayFor } from '../matchday.ts'
 import {
   ClubCell,
   DataTable,
@@ -60,8 +61,10 @@ export function TableScreen() {
 
   const table = computeTable(game.competition.clubIds, game.season.fixtures)
   const names = new Map(game.clubs.map((c) => [c.id, c]))
-  const played = game.season.fixtures.filter((f) => f.result !== null).length
-  const round = Math.max(1, Math.ceil(played / 10))
+  // The round about to be played, as the hub names it, so "Matchday" means one
+  // thing on every screen. Once the season is over, its last round.
+  const round =
+    matchdayFor(game)?.fixture.round ?? Math.max(1, ...game.season.fixtures.map((f) => f.round))
 
   const standings: Standing[] = table.map((row, index) => ({
     row,

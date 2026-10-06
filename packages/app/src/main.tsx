@@ -6,12 +6,15 @@ import '@fm/design-system/tokens.css'
 import '@fm/design-system/reset.css'
 import '@fm/design-system/chrome.css'
 import { App } from './App.tsx'
+import { CrashBoundary } from './shell/CrashScreen.tsx'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('#root missing from index.html')
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <CrashBoundary>
+      <App />
+    </CrashBoundary>
   </StrictMode>,
 )
