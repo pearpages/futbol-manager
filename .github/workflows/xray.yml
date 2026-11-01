@@ -1,0 +1,31 @@
+name: xray
+
+# PR report from pearpages/xray: dependencies, interactions, impact and risk, public API and
+# bundle size, as one comment that updates on every push. Trial: see the PR that adds it.
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  xray:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # xray diffs against the merge base
+          persist-credentials: false # the bundle analysis runs install and build scripts
+
+      - uses: jdx/mise-action@v2
+      - run: pnpm install --frozen-lockfile
+
+      # Line coverage for xray's impact and risk section. A failing test must not hide the
+      # report: the CI workflow is where tests gate the PR.
+      - run: pnpm test -- --run --coverage --coverage.reporter=lcov
+        continue-on-error: true
+
+      - uses: pearpages/xray@v0
+        with:
+          bundle: "true"
