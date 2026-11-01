@@ -22,8 +22,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Line coverage for xray's impact and risk section. A failing test must not hide the
-      # report: the CI workflow is where tests gate the PR.
-      - run: pnpm test -- --run --coverage --coverage.reporter=lcov
+      # report: the CI workflow is where tests gate the PR. Vitest is called directly:
+      # `pnpm test -- …` passes a literal `--`, after which Vitest ignores the flags.
+      - run: pnpm exec vitest run --coverage --coverage.reporter=lcov
         continue-on-error: true
 
       - uses: pearpages/xray@v0
