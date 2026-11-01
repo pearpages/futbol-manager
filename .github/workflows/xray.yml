@@ -1,0 +1,39 @@
+name: xray
+
+# A report on every PR from pearpages/xray (https://github.com/pearpages/xray): which modules and
+# features a change reaches, how well tested and how much more complex it got, what changed in the
+# packages' exported API, and how the bundle moved. One comment, updated on every push. It never
+# fails the PR: the CI workflow is where checks gate merging.
+on:
+  pull_request:
+
+# Read-only, except writing the one comment.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  xray:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # xray diffs against the merge base
+          persist-credentials: false # the bundle analysis runs install and build scripts
+
+      # Same versions as everywhere else: mise.toml pins Node and pnpm.
+      - uses: jdx/mise-action@v5
+      - run: pnpm install --frozen-lockfile
+
+      # Line and branch coverage for xray's impact and risk section. Vitest is called directly
+      # (`pnpm test -- …` passes a literal `--`, after which Vitest ignores the flags). The report
+      # is written even if a test fails or slows down under instrumentation: tests gate the PR in
+      # CI, not here.
+      - run: >-
+          pnpm exec vitest run --coverage --coverage.reporter=lcov
+          --coverage.reportOnFailure --testTimeout=60000
+        continue-on-error: true
+
+      - uses: pearpages/xray@v0
+        with:
+          bundle: "true" # builds the base and the PR's @fm/app and compares the bundles

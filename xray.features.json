@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "features": [
+    {
+      "id": "new-career",
+      "name": "New career",
+      "description": "Open the game, pick a club and start or load a career",
+      "entryPoints": [
+        "packages/app/src/screens/LandingScreen.tsx#LandingScreen",
+        "packages/app/src/screens/SetupScreen.tsx#SetupScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/LandingScreen.tsx",
+        "packages/app/src/screens/SetupScreen.tsx"
+      ]
+    },
+    {
+      "id": "hub",
+      "name": "Hub",
+      "description": "The manager's home: who you are, what happened, when you next play, and advancing the day",
+      "entryPoints": [
+        "packages/app/src/screens/HubScreen.tsx#HubScreen",
+        "packages/app/src/screens/NewsDialog.tsx#NewsDialog"
+      ],
+      "files": [
+        "packages/app/src/screens/HubScreen.tsx",
+        "packages/app/src/screens/NewsDialog.tsx"
+      ]
+    },
+    {
+      "id": "table",
+      "name": "League table",
+      "description": "See the standings",
+      "entryPoints": [
+        "packages/app/src/screens/TableScreen.tsx#TableScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/TableScreen.tsx"
+      ]
+    },
+    {
+      "id": "results",
+      "name": "Results and history",
+      "description": "Round results, the season's grid, past seasons and the roll of honour",
+      "entryPoints": [
+        "packages/app/src/screens/ResultsScreen.tsx#ResultsScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/ResultsScreen.tsx"
+      ]
+    },
+    {
+      "id": "calendar",
+      "name": "Calendar",
+      "description": "Your fixtures, with the league's deadlines among them",
+      "entryPoints": [
+        "packages/app/src/screens/CalendarScreen.tsx#CalendarScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/CalendarScreen.tsx"
+      ]
+    },
+    {
+      "id": "squad",
+      "name": "Squad",
+      "description": "Your players at a glance",
+      "entryPoints": [
+        "packages/app/src/screens/SquadScreen.tsx#SquadScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/SquadScreen.tsx"
+      ]
+    },
+    {
+      "id": "lineup",
+      "name": "Line-up and tactics",
+      "description": "Pick the eleven, the formation, the approach and the tempo",
+      "entryPoints": [
+        "packages/app/src/screens/LineupScreen.tsx#LineupScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/LineupScreen.tsx"
+      ]
+    },
+    {
+      "id": "player",
+      "name": "Player file (ficha)",
+      "description": "One player's attributes compared with your own, with bids and contract renewals",
+      "entryPoints": [
+        "packages/app/src/screens/PlayerScreen.tsx#PlayerScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/PlayerScreen.tsx",
+        "packages/app/src/screens/BidPanel.tsx",
+        "packages/app/src/screens/RenewPanel.tsx"
+      ]
+    },
+    {
+      "id": "market",
+      "name": "Transfer market",
+      "description": "Browse clubs and listings and negotiate signings in the transfer windows",
+      "entryPoints": [
+        "packages/app/src/screens/MarketScreen.tsx#MarketScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/MarketScreen.tsx"
+      ]
+    },
+    {
+      "id": "finances",
+      "name": "Finances (Caja)",
+      "description": "The books: every income and expense behind the balance",
+      "entryPoints": [
+        "packages/app/src/screens/CajaScreen.tsx#CajaScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/CajaScreen.tsx"
+      ]
+    },
+    {
+      "id": "board",
+      "name": "Board (Decisiones)",
+      "description": "What the board wants and how much patience is left",
+      "entryPoints": [
+        "packages/app/src/screens/DecisionesScreen.tsx#DecisionesScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/DecisionesScreen.tsx"
+      ]
+    },
+    {
+      "id": "stadium",
+      "name": "Stadium (Estadio)",
+      "description": "Set ticket prices and expand the ground",
+      "entryPoints": [
+        "packages/app/src/screens/EstadioScreen.tsx#EstadioScreen"
+      ],
+      "files": [
+        "packages/app/src/screens/EstadioScreen.tsx",
+        "packages/app/src/screens/StadiumView.tsx",
+        "packages/app/src/screens/stadium.ts"
+      ]
+    },
+    {
+      "id": "saves-and-settings",
+      "name": "Saves and settings",
+      "description": "Save, load and delete careers, and change the language",
+      "entryPoints": [
+        "packages/app/src/screens/SaveManagerModal.tsx#SaveManagerModal",
+        "packages/app/src/screens/SettingsMenu.tsx#SettingsMenu"
+      ],
+      "files": [
+        "packages/app/src/screens/SaveManagerModal.tsx",
+        "packages/app/src/screens/SettingsMenu.tsx"
+      ]
+    }
+  ]
+}
