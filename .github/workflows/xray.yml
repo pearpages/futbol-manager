@@ -21,10 +21,14 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: pnpm install --frozen-lockfile
 
-      # Line coverage for xray's impact and risk section. A failing test must not hide the
-      # report: the CI workflow is where tests gate the PR. Vitest is called directly:
-      # `pnpm test -- …` passes a literal `--`, after which Vitest ignores the flags.
-      - run: pnpm exec vitest run --coverage --coverage.reporter=lcov
+      # Line coverage for xray's impact and risk section. The CI workflow is where tests gate
+      # the PR, so here a failure must not stop the report: Vitest writes the report even when
+      # tests fail (reportOnFailure), and instrumented tests get more time than the usual 15 s.
+      # Vitest is called directly: `pnpm test -- …` passes a literal `--`, after which Vitest
+      # ignores the flags.
+      - run: >-
+          pnpm exec vitest run --coverage --coverage.reporter=lcov
+          --coverage.reportOnFailure --testTimeout=60000
         continue-on-error: true
 
       - uses: pearpages/xray@v0
