@@ -454,7 +454,7 @@ Listed so they stay decided rather than getting relitigated at 1am:
 
 ## Known open items
 
-Moved to [`tasks.md`](../tasks.md#known-open-items) on 2026-10-02, with the rationale for each item. That is the list to tick.
+Moved to `tasks.md` on 2026-10-02, and from there to [GitHub Issues](https://github.com/pearpages/futbol-manager/issues) on 2026-11-04. That is the list to work from.
 
 ---
 

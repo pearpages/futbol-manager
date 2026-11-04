@@ -10,14 +10,14 @@ browser.
 
 ## Project documents — read before working
 
-| File                               | Holds                                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------- |
-| [principles.md](principles.md)     | The rules every change must follow (the ground rules live here)              |
-| [architecture.md](architecture.md) | How the project is built: packages, data flow, build, deploy                 |
-| [decisions.md](decisions.md)       | Index of ADRs in `docs/adr/`: why each choice was made                       |
-| [tasks.md](tasks.md)               | Open work and the dated log of what was done                                 |
-| [security.md](security.md)         | Threat surface, secrets, dependency policy, how to report a vulnerability    |
-| [LICENSE](LICENSE)                 | Proprietary, all rights reserved: the source is visible, nothing is licensed |
+| File                                                         | Holds                                                                                 |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| [principles.md](principles.md)                               | The rules every change must follow (the ground rules live here)                       |
+| [architecture.md](architecture.md)                           | How the project is built: packages, data flow, build, deploy                          |
+| [decisions.md](decisions.md)                                 | Index of ADRs in `docs/adr/`: why each choice was made                                |
+| [Issues](https://github.com/pearpages/futbol-manager/issues) | Open work, also on the [Backlog](https://github.com/users/pearpages/projects/3) board |
+| [security.md](security.md)                                   | Threat surface, secrets, dependency policy, how to report a vulnerability             |
+| [LICENSE](LICENSE)                                           | Proprietary, all rights reserved: the source is visible, nothing is licensed          |
 
 Domain references. Read the one that covers the area you are changing:
 
@@ -38,8 +38,9 @@ Domain references. Read the one that covers the area you are changing:
    without saying why the ADR is wrong.
 2. **Know which side of the 5.0 / 2001 line a feature sits on** before adding it. M0–M5 is
    the 5.0-shaped game and M6–M7 is the move toward 2001.
-3. **Every change updates `tasks.md`**: tick or add Open items, and add a dated line at the
-   top of Done.
+3. **Work is tracked in GitHub Issues**, not in a file. New work → `gh issue create` with
+   `type:*`, `priority:*` and `area:*` labels. Finished work → close the issue from the commit
+   or PR (`Fixes #N`).
 4. **A structural or behavioural change updates `architecture.md` in the same commit**, and
    updates the README too when users can see it. A milestone moving updates `docs/roadmap.md`,
    and so does a stretch of work that touches no milestone.

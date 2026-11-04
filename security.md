@@ -77,9 +77,9 @@ Small by construction. This is a static single-page app on GitHub Pages:
 
 - **GitHub Actions are pinned by tag (`@v4`, `@v2`), not by commit SHA.** A compromised
   upstream tag would run in CI with the deploy permissions above. This is accepted for now
-  given the small blast radius (a static site), and tracked in tasks.md.
+  given the small blast radius (a static site), and tracked as an issue.
 - **No dependency audit in CI.** This is accepted because the runtime set is four packages,
-  and tracked in tasks.md.
+  and tracked as an issue.
 - **Intellectual property, not security, but the same kind of exposure:** the shipped rosters
   carry real squad shapes with altered names. The risk is accepted and bounded in
   [ADR 0010](docs/adr/0010-real-squad-shapes.md) and [ADR 0011](docs/adr/0011-a-market-abroad.md).

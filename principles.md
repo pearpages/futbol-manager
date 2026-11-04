@@ -143,7 +143,7 @@ _Check:_ `shell/parity.test.tsx` (the same controls on every screen at both widt
 ## Process
 
 **P19. Knowledge lives in its file.** How to work goes in `AGENTS.md`; rules go here; how it
-is built goes in `architecture.md`; why goes in an ADR; work goes in `tasks.md`; risk goes in
+is built goes in `architecture.md`; why goes in an ADR; work goes in GitHub Issues; risk goes in
 `security.md`; model findings go in the `docs/` reference they belong to.
 _Why:_ a session log in the agent file hides decisions from the next person.
 [ADR 0013](docs/adr/0013-project-knowledge-files.md)
