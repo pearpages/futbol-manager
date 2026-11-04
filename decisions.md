@@ -39,6 +39,7 @@ record same-day partial reversals in place, which predates this rule.)
 | [0025](docs/adr/0025-ratings-from-results.md)        | Club ratings follow the league's results                                           | Accepted                                        | 2026-10-05 |
 | [0026](docs/adr/0026-footfall-visit-counting.md)     | Visits are counted by footfall, cookieless and self-hosted                         | Accepted                                        | 2026-10-06 |
 | [0027](docs/adr/0027-accessibility-conventions.md)   | Accessibility conventions: focus, announcements, names and timing                  | Accepted                                        | 2026-10-06 |
+| [0028](docs/adr/0028-work-in-github-issues.md)       | Work is tracked in GitHub Issues, not `tasks.md`                                   | Accepted                                        | 2026-11-04 |
 
 ## Format
 

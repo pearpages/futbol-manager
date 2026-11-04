@@ -1,6 +1,6 @@
 # ADR 0013 — Project knowledge lives in principles, architecture, decisions, tasks and security
 
-**Status:** accepted · 2026-10-02
+**Status:** accepted · 2026-10-02 · its `tasks.md` part superseded by 0028
 
 ## Context
 
